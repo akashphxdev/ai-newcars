@@ -1,0 +1,9 @@
+node_modules
+dist
+.env
+*.log
+
+# Uploaded files should never be committed — only the folder structure
+# (kept via .gitkeep files) is tracked, not the actual images.
+uploads/**/*
+!uploads/**/.gitkeep
