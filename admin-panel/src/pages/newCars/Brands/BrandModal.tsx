@@ -26,6 +26,7 @@ interface FieldErrors {
   name?: string;
   slug?: string;
   logo?: string;
+  countryOriginId?: string;
 }
 
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
@@ -56,16 +57,9 @@ export default function BrandModal({
   const { data: countriesData } = useGetCountriesQuery({ limit: 100, sortBy: "name", sortOrder: "asc" });
   const countries = countriesData?.data ?? [];
 
-  // Initialized directly from props (lazy initializer), not via a
-  // useEffect — the parent only renders this component while `open` is
-  // true and remounts it (key={editingBrand?.id ?? "add"}) whenever the
-  // target record changes, so a fresh mount is all that's needed to
-  // "reset"/"pre-fill" the form.
   const [countryOriginId, setCountryOriginId] = useState<number | "">(brand?.countryOriginId ?? "");
   const [name, setName] = useState(brand ? brand.name : "");
   const [slug, setSlug] = useState(brand ? brand.slug : "");
-  // Once true, typing in Name no longer auto-regenerates Slug. Starts
-  // true in edit mode (existing slug is intentional/possibly bookmarked).
   const [slugTouched, setSlugTouched] = useState(isEditMode);
   const [isActive, setIsActive] = useState(brand ? brand.isActive : true);
 
@@ -159,6 +153,9 @@ export default function BrandModal({
     if (!isEditMode && !pendingLogoFile) {
       next.logo = "Brand logo is required.";
     }
+    if (countryOriginId === "") {
+      next.countryOriginId = "Country of origin is required.";
+    }
     setErrors(next);
     return Object.keys(next).length === 0;
   };
@@ -176,7 +173,7 @@ export default function BrandModal({
             name: name.trim(),
             slug: slug.trim() || undefined, // leave empty to let the backend auto-generate
             // Explicit null clears an existing country-of-origin.
-            countryOriginId: countryOriginId === "" ? null : Number(countryOriginId),
+            countryOriginId: Number(countryOriginId),
             isActive,
           },
         }).unwrap();
@@ -186,7 +183,7 @@ export default function BrandModal({
         await createBrand({
           name: name.trim(),
           slug: slug.trim() || undefined,
-          countryOriginId: countryOriginId === "" ? undefined : Number(countryOriginId),
+          countryOriginId: Number(countryOriginId),
           isActive,
           logo: pendingLogoFile as File,
         }).unwrap();
@@ -309,19 +306,23 @@ export default function BrandModal({
             </Field>
           </div>
 
-          <Field label="Country of origin (optional)">
+          <Field label="Country of origin">
             <select
               value={countryOriginId}
               onChange={(e) => setCountryOriginId(e.target.value ? Number(e.target.value) : "")}
-              className="cursor-pointer w-full text-sm font-medium text-[#1c1a17] bg-[#f7f5f1] border border-[#e2ddd5] rounded-xl px-3 py-2.5 outline-none transition-all focus:bg-white"
+              className="cursor-pointer w-full text-sm font-medium text-[#1c1a17] bg-[#f7f5f1] border rounded-xl px-3 py-2.5 outline-none transition-all focus:bg-white"
+              style={{ borderColor: errors.countryOriginId ? "#f0997b" : "#e2ddd5" }}
             >
-              <option value="">None</option>
+              <option value="">Select a country</option>
               {countries.map((c) => (
                 <option key={c.id} value={c.id}>
                   {c.name}
                 </option>
               ))}
             </select>
+            {errors.countryOriginId && (
+              <p className="text-[11px] font-medium text-[#D4300F] mt-1">{errors.countryOriginId}</p>
+            )}
           </Field>
 
           <label className="flex items-center gap-1.5 cursor-pointer text-[12px] font-semibold text-[#4a4640] pt-1">

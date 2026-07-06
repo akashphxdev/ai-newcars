@@ -47,6 +47,8 @@ export const axiosBaseQuery = (): BaseQueryFn<
 export const api = createApi({
   reducerPath: "api",
   baseQuery: axiosBaseQuery(),
-  tagTypes: ["Auth", "Admin", "Role", "Permission", "AdminLog", "Country", "State", "District", "City", "Brand",  "CarModel", "Variant", "PowertrainIce", "PowertrainElectric", "CarColor", "CarImage"],
+  tagTypes: ["Auth", "Admin", "Role", "Permission", "AdminLog", "Country", "State", "District", "City", "Brand",
+             "CarModel", "Variant", "PowertrainIce", "PowertrainElectric", "CarColor", "CarImage", "Feature", "Faq",
+             "Offer", "Video"],
   endpoints: () => ({}),
 });

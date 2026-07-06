@@ -10,6 +10,7 @@ import {
 import { useGetCountriesQuery } from "../../Locations/Countries/country.api";
 import { extractApiError, getUploadUrl } from "../../../lib/apiClient";
 import BrandModal from "./BrandModal";
+import ConfirmDialog from "../../../components/common/ConfirmDialog";
 import DataTable, { type DataTableColumn } from "../../../components/common/DataTable";
 import Pagination from "../../../components/common/Pagination";
 import { SearchFilterBar, SearchInput, FilterSelect } from "../../../components/common/SearchFilterBar";
@@ -96,6 +97,7 @@ export default function AllBrands() {
 
   const [togglingId, setTogglingId] = useState<number | null>(null);
   const [deletingId, setDeletingId] = useState<number | null>(null);
+  const [pendingDelete, setPendingDelete] = useState<BrandRecord | null>(null);
   const [actionError, setActionError] = useState("");
 
   const handleToggleStatus = async (brand: BrandRecord) => {
@@ -110,11 +112,13 @@ export default function AllBrands() {
     }
   };
 
-  const handleDelete = async (id: number) => {
+  const handleConfirmDelete = async () => {
+    if (!pendingDelete) return;
     setActionError("");
-    setDeletingId(id);
+    setDeletingId(pendingDelete.id);
     try {
-      await deleteBrand(id).unwrap();
+      await deleteBrand(pendingDelete.id).unwrap();
+      setPendingDelete(null);
     } catch (err) {
       setActionError(extractApiError(err));
     } finally {
@@ -166,11 +170,10 @@ export default function AllBrands() {
             Edit
           </button>
           <button
-            onClick={() => handleDelete(b.id)}
-            disabled={deletingId === b.id}
-            className="cursor-pointer text-[10px] font-bold px-2.5 py-1 rounded-lg border border-red-100 text-red-500 hover:bg-red-50 transition-colors disabled:opacity-50"
+            onClick={() => setPendingDelete(b)}
+            className="cursor-pointer text-[10px] font-bold px-2.5 py-1 rounded-lg border border-red-100 text-red-500 hover:bg-red-50 transition-colors"
           >
-            {deletingId === b.id ? "..." : "Delete"}
+            Delete
           </button>
         </div>
       ),
@@ -251,6 +254,15 @@ export default function AllBrands() {
           brand={editingBrand}
         />
       )}
+
+      <ConfirmDialog
+        open={!!pendingDelete}
+        title="Delete brand?"
+        itemName={pendingDelete?.name}
+        loading={deletingId === pendingDelete?.id}
+        onCancel={() => setPendingDelete(null)}
+        onConfirm={handleConfirmDelete}
+      />
     </div>
   );
 }

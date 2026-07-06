@@ -7,6 +7,7 @@ import {
   type TransmissionType,
 } from "./variant.api";
 import { useGetCarModelsQuery } from "../carModels/carModel.api";
+import { useGetBrandsQuery } from "../Brands/brand.api";
 import { extractApiError } from "../../../lib/apiClient";
 
 const ACCENT = "#D4300F";
@@ -22,6 +23,7 @@ const TRANSMISSIONS: { value: TransmissionType; label: string }[] = [
 // Every field here is required, on both Add and Edit — no optional
 // fields in this module (per explicit product requirement).
 interface FieldErrors {
+  brandId?: string;
   modelId?: string;
   variantName?: string;
   price?: string;
@@ -60,6 +62,12 @@ export default function VariantModal({
   const { data: carModelsData } = useGetCarModelsQuery({ limit: 100, sortBy: "name", sortOrder: "asc" });
   const carModels = carModelsData?.data ?? [];
 
+  const { data: brandsData } = useGetBrandsQuery({ limit: 100, sortBy: "name", sortOrder: "asc" });
+  const brands = brandsData?.data ?? [];
+
+  const [brandId, setBrandId] = useState<number | "">(variant?.model.brand.id ?? "");
+  const modelsForBrand = brandId ? carModels.filter((m) => m.brandId === brandId) : [];
+
   const [modelId, setModelId] = useState<number | "">(variant?.modelId ?? "");
   const [variantName, setVariantName] = useState(variant ? variant.variantName : "");
   const [price, setPrice] = useState(variant ? variant.price : "");
@@ -82,6 +90,7 @@ export default function VariantModal({
   const saving = creating || updating;
 
   const resetForm = () => {
+    setBrandId("");
     setModelId("");
     setVariantName("");
     setPrice("");
@@ -101,6 +110,7 @@ export default function VariantModal({
 
   const validate = (): boolean => {
     const next: FieldErrors = {};
+    if (!brandId) next.brandId = "Brand is required.";
     if (!modelId) next.modelId = "Car model is required.";
     if (variantName.trim().length < 2) next.variantName = "Variant name must be at least 2 characters.";
     if (price === "" || Number(price) <= 0) next.price = "Price is required and must be greater than 0.";
@@ -179,17 +189,39 @@ export default function VariantModal({
         </div>
 
         <form onSubmit={handleSubmit} className="px-6 pb-6 pt-5 space-y-4" noValidate>
+          <Field label="Brand">
+            <select
+              value={brandId}
+              onChange={(e) => {
+                const next = e.target.value ? Number(e.target.value) : "";
+                setBrandId(next);
+                setModelId("");
+              }}
+              className="cursor-pointer w-full text-sm font-medium text-[#1c1a17] bg-[#f7f5f1] border rounded-xl px-3 py-2.5 outline-none transition-all focus:bg-white"
+              style={{ borderColor: errors.brandId ? "#f0997b" : "#e2ddd5" }}
+            >
+              <option value="">Select a brand</option>
+              {brands.map((b) => (
+                <option key={b.id} value={b.id}>
+                  {b.name}
+                </option>
+              ))}
+            </select>
+            {errors.brandId && <p className="text-[11px] font-medium text-[#D4300F] mt-1">{errors.brandId}</p>}
+          </Field>
+
           <Field label="Car model">
             <select
               value={modelId}
               onChange={(e) => setModelId(e.target.value ? Number(e.target.value) : "")}
-              className="cursor-pointer w-full text-sm font-medium text-[#1c1a17] bg-[#f7f5f1] border rounded-xl px-3 py-2.5 outline-none transition-all focus:bg-white"
+              disabled={!brandId}
+              className="cursor-pointer w-full text-sm font-medium text-[#1c1a17] bg-[#f7f5f1] border rounded-xl px-3 py-2.5 outline-none transition-all focus:bg-white disabled:opacity-50 disabled:cursor-not-allowed"
               style={{ borderColor: errors.modelId ? "#f0997b" : "#e2ddd5" }}
             >
-              <option value="">Select a car model</option>
-              {carModels.map((m) => (
+              <option value="">{brandId ? "Select a car model" : "Select a brand first"}</option>
+              {modelsForBrand.map((m) => (
                 <option key={m.id} value={m.id}>
-                  {m.brand.name} — {m.name}
+                  {m.name}
                 </option>
               ))}
             </select>

@@ -35,7 +35,7 @@ export interface ListBrandsParams {
 export interface CreateBrandInput {
   name: string;
   slug?: string;
-  countryOriginId?: number;
+  countryOriginId: number;
   isActive?: boolean;
   // Required on create — same as CreateCityInput's logo.
   logo: File;
@@ -93,7 +93,7 @@ export const brandApi = api.injectEndpoints({
         const formData = new FormData();
         formData.append("name", fields.name);
         if (fields.slug) formData.append("slug", fields.slug);
-        if (fields.countryOriginId) formData.append("countryOriginId", String(fields.countryOriginId));
+        formData.append("countryOriginId", String(fields.countryOriginId));
         formData.append("isActive", String(fields.isActive ?? true));
         formData.append("logo", logo);
         return { url: "/new-cars/brands", method: "POST", data: formData };

@@ -21,15 +21,15 @@ const router = Router();
 // Every admin-management route requires a logged-in admin.
 router.use(requireAuth(['admin']));
 
-router.get('/', requirePermission('admins.view'), asyncHandler(getAdmins));
-router.get('/:id', requirePermission('admins.view'), asyncHandler(getAdminById));
-router.post('/', requirePermission('admins.create'), asyncHandler(createAdmin));
-router.patch('/:id', requirePermission('admins.update'), asyncHandler(updateAdmin));
+router.get('/', requirePermission('alladmins.view'), asyncHandler(getAdmins));
+router.get('/:id', requirePermission('alladmins.view'), asyncHandler(getAdminById));
+router.post('/', requirePermission('alladmins.create'), asyncHandler(createAdmin));
+router.patch('/:id', requirePermission('alladmins.update'), asyncHandler(updateAdmin));
 // ADDED: dedicated quick status-toggle route (Active/Inactive/Suspended)
-router.patch('/:id/status', requirePermission('admins.update'), asyncHandler(updateAdminStatus));
-router.patch('/:id/password', requirePermission('admins.update'), asyncHandler(changeAdminPassword));
-router.patch('/:id/lock', requirePermission('admins.update'), asyncHandler(lockAdmin));
-router.patch('/:id/unlock', requirePermission('admins.update'), asyncHandler(unlockAdmin));
-router.delete('/:id', requirePermission('admins.delete'), asyncHandler(deactivateAdmin));
+router.patch('/:id/status', requirePermission('alladmins.update'), asyncHandler(updateAdminStatus));
+router.patch('/:id/password', requirePermission('alladmins.update'), asyncHandler(changeAdminPassword));
+router.patch('/:id/lock', requirePermission('alladmins.update'), asyncHandler(lockAdmin));
+router.patch('/:id/unlock', requirePermission('alladmins.update'), asyncHandler(unlockAdmin));
+router.delete('/:id', requirePermission('alladmins.delete'), asyncHandler(deactivateAdmin));
 
 export default router;

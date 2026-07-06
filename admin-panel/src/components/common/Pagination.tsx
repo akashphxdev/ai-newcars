@@ -12,9 +12,7 @@ interface PaginationProps {
   pagination: PaginationInfo | null | undefined;
   onPageChange: (page: number) => void;
   variant?: "simple" | "compact" | "numbered";
-  /** e.g. "admins", "log entries" — enables the "Showing X of Y <itemLabel>" text */
   itemLabel?: string;
-  /** rows.length — required together with itemLabel to show the "Showing X of Y" text */
   currentCount?: number;
 }
 

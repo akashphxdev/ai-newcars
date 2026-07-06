@@ -12,25 +12,25 @@ const router = Router();
 // Every location-management route requires a logged-in admin.
 router.use(requireAuth(['admin']));
 
-router.get('/', requirePermission('locations.view'), asyncHandler(getCities));
-router.get('/:id', requirePermission('locations.view'), asyncHandler(getCityById));
+router.get('/', requirePermission('cities.view'), asyncHandler(getCities));
+router.get('/:id', requirePermission('cities.view'), asyncHandler(getCityById));
 
 router.post(
   '/',
-  requirePermission('locations.create'),
+  requirePermission('cities.create'),
   imageUploader('cities').single('logo'),
   asyncHandler(createCity),
 );
-router.patch('/:id', requirePermission('locations.update'), asyncHandler(updateCity));
+router.patch('/:id', requirePermission('cities.update'), asyncHandler(updateCity));
 // Dedicated quick toggle route (Metro / Top city / Sell car enabled) for the row-level switches.
-router.patch('/:id/flags', requirePermission('locations.update'), asyncHandler(updateCityFlags));
+router.patch('/:id/flags', requirePermission('cities.update'), asyncHandler(updateCityFlags));
 
 router.patch(
   '/:id/logo',
-  requirePermission('locations.update'),
+  requirePermission('cities.update'),
   imageUploader('cities').single('logo'),
   asyncHandler(uploadCityLogo),
 );
-router.delete('/:id', requirePermission('locations.delete'), asyncHandler(deleteCity));
+router.delete('/:id', requirePermission('cities.delete'), asyncHandler(deleteCity));
 
 export default router;

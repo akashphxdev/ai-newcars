@@ -17,15 +17,11 @@ const router = Router();
 
 // Every powertrain-management route requires a logged-in admin.
 router.use(requireAuth(['admin']));
-
-// Electric powertrain lives under the existing "cars" permission module —
-// same module Brand, CarModel, Variant, and PowertrainIce use (see
-// MODULES in seedRbac.ts) — not a new module of its own.
-router.get('/', requirePermission('cars.view'), asyncHandler(getPowertrainElectricList));
-router.get('/:id', requirePermission('cars.view'), asyncHandler(getPowertrainElectricById));
-router.post('/', requirePermission('cars.create'), asyncHandler(createPowertrainElectric));
-router.patch('/:id/restore', requirePermission('cars.update'), asyncHandler(restorePowertrainElectric));
-router.patch('/:id', requirePermission('cars.update'), asyncHandler(updatePowertrainElectric));
-router.delete('/:id', requirePermission('cars.delete'), asyncHandler(deletePowertrainElectric));
+router.get('/', requirePermission('powertraineselectric.view'), asyncHandler(getPowertrainElectricList));
+router.get('/:id', requirePermission('powertraineselectric.view'), asyncHandler(getPowertrainElectricById));
+router.post('/', requirePermission('powertraineselectric.create'), asyncHandler(createPowertrainElectric));
+router.patch('/:id/restore', requirePermission('powertraineselectric.update'), asyncHandler(restorePowertrainElectric));
+router.patch('/:id', requirePermission('powertraineselectric.update'), asyncHandler(updatePowertrainElectric));
+router.delete('/:id', requirePermission('powertraineselectric.delete'), asyncHandler(deletePowertrainElectric));
 
 export default router;

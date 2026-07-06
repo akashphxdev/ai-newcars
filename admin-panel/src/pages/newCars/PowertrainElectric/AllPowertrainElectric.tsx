@@ -7,8 +7,11 @@ import {
   type PowertrainElectricRecord,
 } from "./powertrainElectric.api";
 import { useGetVariantsQuery } from "../Variants/variant.api";
+import { useGetCarModelsQuery } from "../carModels/carModel.api";
+import { useGetBrandsQuery } from "../Brands/brand.api";
 import { extractApiError } from "../../../lib/apiClient";
 import PowertrainElectricModal from "./PowertrainElectricModal";
+import ConfirmDialog from "../../../components/common/ConfirmDialog";
 import DataTable, { type DataTableColumn } from "../../../components/common/DataTable";
 import Pagination from "../../../components/common/Pagination";
 import { SearchFilterBar, FilterSelect } from "../../../components/common/SearchFilterBar";
@@ -25,15 +28,31 @@ function formatDecimal(value: string | null, suffix = ""): string {
 
 export default function AllPowertrainElectric() {
   const [page, setPage] = useState(1);
+  const [filterBrandId, setFilterBrandId] = useState<number | "">("");
+  const [filterModelId, setFilterModelId] = useState<number | "">("");
   const [filterVariantId, setFilterVariantId] = useState<number | "">("");
   // "Archived" tab — soft-deleted rows are hidden by default (see
   // includeDeleted in powertrainElectric.api.ts / .validation.ts).
   const [showArchived, setShowArchived] = useState(false);
 
+  const { data: brandsData } = useGetBrandsQuery({ limit: 100, sortBy: "name", sortOrder: "asc" });
+  const brands = brandsData?.data ?? [];
+
+  // NOTE: same 100-row cap used elsewhere — fine while the car-models
+  // table stays under 100 rows.
+  const { data: carModelsData } = useGetCarModelsQuery({ limit: 100, sortBy: "name", sortOrder: "asc" });
+  const carModels = carModelsData?.data ?? [];
+  const modelsForBrand = filterBrandId ? carModels.filter((m) => m.brandId === filterBrandId) : carModels;
+
   // NOTE: same 100-row cap used elsewhere — fine while the variants
   // table stays under 100 rows.
   const { data: variantsData } = useGetVariantsQuery({ limit: 100, sortBy: "variantName", sortOrder: "asc" });
   const variants = variantsData?.data ?? [];
+  const variantsForModel = filterModelId
+    ? variants.filter((v) => v.modelId === filterModelId)
+    : filterBrandId
+      ? variants.filter((v) => v.model.brand.id === filterBrandId)
+      : variants;
 
   const {
     data: powertrainData,
@@ -73,13 +92,16 @@ export default function AllPowertrainElectric() {
   const [deletePowertrainElectric] = useDeletePowertrainElectricMutation();
   const [restorePowertrainElectric] = useRestorePowertrainElectricMutation();
   const [busyId, setBusyId] = useState<number | null>(null);
+  const [pendingDelete, setPendingDelete] = useState<PowertrainElectricRecord | null>(null);
   const [actionError, setActionError] = useState("");
 
-  const handleDelete = async (id: number) => {
+  const handleConfirmDelete = async () => {
+    if (!pendingDelete) return;
     setActionError("");
-    setBusyId(id);
+    setBusyId(pendingDelete.id);
     try {
-      await deletePowertrainElectric(id).unwrap();
+      await deletePowertrainElectric(pendingDelete.id).unwrap();
+      setPendingDelete(null);
     } catch (err) {
       setActionError(extractApiError(err));
     } finally {
@@ -149,11 +171,10 @@ export default function AllPowertrainElectric() {
                 Edit
               </button>
               <button
-                onClick={() => handleDelete(p.id)}
-                disabled={busyId === p.id}
-                className="cursor-pointer text-[10px] font-bold px-2.5 py-1 rounded-lg border border-red-100 text-red-500 hover:bg-red-50 transition-colors disabled:opacity-50"
+                onClick={() => setPendingDelete(p)}
+                className="cursor-pointer text-[10px] font-bold px-2.5 py-1 rounded-lg border border-red-100 text-red-500 hover:bg-red-50 transition-colors"
               >
-                {busyId === p.id ? "..." : "Delete"}
+                Delete
               </button>
             </>
           )}
@@ -197,12 +218,35 @@ export default function AllPowertrainElectric() {
         }
       >
         <FilterSelect
+          value={filterBrandId}
+          onChange={(v) => {
+            const next = v ? Number(v) : "";
+            setFilterBrandId(next);
+            setFilterModelId("");
+            setFilterVariantId("");
+            setPage(1);
+          }}
+          options={brands.map((b) => ({ value: b.id, label: b.name }))}
+          placeholder="All brands"
+        />
+        <FilterSelect
+          value={filterModelId}
+          onChange={(v) => {
+            const next = v ? Number(v) : "";
+            setFilterModelId(next);
+            setFilterVariantId("");
+            setPage(1);
+          }}
+          options={modelsForBrand.map((m) => ({ value: m.id, label: m.name }))}
+          placeholder="All models"
+        />
+        <FilterSelect
           value={filterVariantId}
           onChange={(v) => {
             setFilterVariantId(v ? Number(v) : "");
             setPage(1);
           }}
-          options={variants.map((v) => ({
+          options={variantsForModel.map((v) => ({
             value: v.id,
             label: `${v.model.brand.name} — ${v.model.name} — ${v.variantName}`,
           }))}
@@ -243,6 +287,15 @@ export default function AllPowertrainElectric() {
           powertrain={editingPowertrain}
         />
       )}
+
+      <ConfirmDialog
+        open={!!pendingDelete}
+        title="Delete Electric powertrain?"
+        itemName={pendingDelete?.variant.variantName}
+        loading={busyId === pendingDelete?.id}
+        onCancel={() => setPendingDelete(null)}
+        onConfirm={handleConfirmDelete}
+      />
     </div>
   );
 }

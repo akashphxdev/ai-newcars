@@ -18,12 +18,12 @@ const router = Router();
 // Every location-management route requires a logged-in admin.
 router.use(requireAuth(['admin']));
 
-router.get('/', requirePermission('locations.view'), asyncHandler(getCountries));
-router.get('/:id', requirePermission('locations.view'), asyncHandler(getCountryById));
-router.post('/', requirePermission('locations.create'), asyncHandler(createCountry));
-router.patch('/:id', requirePermission('locations.update'), asyncHandler(updateCountry));
+router.get('/', requirePermission('countries.view'), asyncHandler(getCountries));
+router.get('/:id', requirePermission('countries.view'), asyncHandler(getCountryById));
+router.post('/', requirePermission('countries.create'), asyncHandler(createCountry));
+router.patch('/:id', requirePermission('countries.update'), asyncHandler(updateCountry));
 // Dedicated quick status-toggle route (Active/Inactive) for the row-level switch.
-router.patch('/:id/status', requirePermission('locations.update'), asyncHandler(updateCountryStatus));
-router.delete('/:id', requirePermission('locations.delete'), asyncHandler(deleteCountry));
+router.patch('/:id/status', requirePermission('countries.update'), asyncHandler(updateCountryStatus));
+router.delete('/:id', requirePermission('countries.delete'), asyncHandler(deleteCountry));
 
 export default router;

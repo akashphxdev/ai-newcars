@@ -12,18 +12,16 @@ const router = Router();
 // Every color-management route requires a logged-in admin.
 router.use(requireAuth(['admin']));
 
-// Colors live under the existing "cars" permission module (see MODULES
-// in prisma/seedRbac.ts) — same convention as brand/carModel/variant.
-router.get('/', requirePermission('cars.view'), asyncHandler(getColors));
-router.get('/:id', requirePermission('cars.view'), asyncHandler(getColorById));
-router.post('/', requirePermission('cars.create'), imageUploader('colors').single('image'), asyncHandler(createColor));
-router.patch('/:id', requirePermission('cars.update'), asyncHandler(updateColor));
+router.get('/', requirePermission('colors.view'), asyncHandler(getColors));
+router.get('/:id', requirePermission('colors.view'), asyncHandler(getColorById));
+router.post('/', requirePermission('colors.create'), imageUploader('colors').single('image'), asyncHandler(createColor));
+router.patch('/:id', requirePermission('colors.update'), asyncHandler(updateColor));
 router.patch(
   '/:id/image',
-  requirePermission('cars.update'),
+  requirePermission('colors.update'),
   imageUploader('colors').single('image'),
   asyncHandler(uploadColorImage),
 );
-router.delete('/:id', requirePermission('cars.delete'), asyncHandler(deleteColor));
+router.delete('/:id', requirePermission('colors.delete'), asyncHandler(deleteColor));
 
 export default router;

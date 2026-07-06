@@ -3,6 +3,7 @@
 import { Request, Response } from 'express';
 import { ApiError } from '@/core/errors/ApiError';
 import { sendSuccess, sendPaginated } from '@/core/utils/sendResponse';
+import { createLog } from '@/core/utils/createLog';
 import { buildPublicPath, deleteUploadedFile } from '@/core/utils/fileStorage.util';
 import * as imageService from './image.service';
 import {
@@ -24,6 +25,16 @@ export async function getImages(req: Request, res: Response) {
 export async function getImageById(req: Request, res: Response) {
   const { id } = imageIdParamSchema.parse(req.params);
   const image = await imageService.getImageById(id);
+
+  // View activity is logged too (not just create/update/delete) so the
+  // admin-logs screen shows a complete audit trail of who looked at what.
+  if (req.auth) {
+    await createLog({
+      adminId: req.auth.id,
+      description: `Viewed image (id ${id}) for car model id ${image.modelId}`,
+    });
+  }
+
   return sendSuccess(res, image, 'Image fetched successfully');
 }
 

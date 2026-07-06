@@ -7,12 +7,6 @@ import { asyncHandler } from '@/core/utils/asyncHandler';
 import { requireAuth } from '@/core/middleware/auth';
 
 const router = Router();
-
-// FIXED: the only rate limit that existed before was the global one in
-// app.ts (1000 req / 15 min) — same allowance for /health as for
-// /auth/login and /auth/verify-otp. That's far too loose for
-// password-guessing or 6-digit-OTP-guessing attempts, so these three
-// endpoints now get their own much tighter limiter, keyed per-IP.
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   limit: 10,

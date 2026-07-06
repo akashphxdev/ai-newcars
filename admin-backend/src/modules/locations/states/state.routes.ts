@@ -11,10 +11,10 @@ const router = Router();
 // Every location-management route requires a logged-in admin.
 router.use(requireAuth(['admin']));
 
-router.get('/', requirePermission('locations.view'), asyncHandler(getStates));
-router.get('/:id', requirePermission('locations.view'), asyncHandler(getStateById));
-router.post('/', requirePermission('locations.create'), asyncHandler(createState));
-router.patch('/:id', requirePermission('locations.update'), asyncHandler(updateState));
-router.delete('/:id', requirePermission('locations.delete'), asyncHandler(deleteState));
+router.get('/', requirePermission('states.view'), asyncHandler(getStates));
+router.get('/:id', requirePermission('states.view'), asyncHandler(getStateById));
+router.post('/', requirePermission('states.create'), asyncHandler(createState));
+router.patch('/:id', requirePermission('states.update'), asyncHandler(updateState));
+router.delete('/:id', requirePermission('states.delete'), asyncHandler(deleteState));
 
 export default router;

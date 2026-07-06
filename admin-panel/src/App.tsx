@@ -20,6 +20,10 @@ import AllPowertrainElectric from "./pages/newCars/PowertrainElectric/AllPowertr
 import AllPowertrainIce from "./pages/newCars/PowertrainIce/AllPowertrainIce";
 import NotFound from "./pages/NotFound";
 import AllColorsImages from "./pages/newCars/ColorsImages/AllColorsImages";
+import AllFeatures from "./pages/newCars/Features/AllFeatures";
+import AllFaqs from "./pages/newCars/Faqs/AllFaqs";
+import AllOffers from "./pages/newCars/Offers/AllOffers";
+import AllVideos from "./pages/newCars/Videos/AllVideos";
 // ── Auth guard — baad mein real auth logic lagao ──────────────────────────────
 function RequireAuth({ children }: { children: React.ReactNode }) {
   const isLoggedIn = !!localStorage.getItem("admin_token"); // apna auth check yahan
@@ -59,12 +63,16 @@ export default function App() {
           <Route path ="/new-cars/powertrain-eletric" element={<AllPowertrainElectric/>}/>
           <Route path ="/new-cars/powertrain-ice" element={<AllPowertrainIce/>}/>
           <Route path ="/new-cars/colors" element={<AllColorsImages/>}/>
+          <Route path ="/new-cars/features" element={<AllFeatures/>}/>
+          <Route path ="/new-cars/offers" element={<AllOffers/>}/>
+          <Route path ="/new-cars/faqs" element={<AllFaqs/>}/>
+          <Route path ="/new-cars/videos" element={<AllVideos/>}/>
  
 
            
         </Route>
 
-        {/* Koi bhi unknown path → dashboard */}
+        {/* unknown path → NotFound */}
         <Route path ="*" element={<NotFound/>}/>
       </Routes>
     </BrowserRouter>

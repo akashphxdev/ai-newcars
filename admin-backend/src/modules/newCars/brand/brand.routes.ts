@@ -20,26 +20,25 @@ const router = Router();
 // Every brand-management route requires a logged-in admin.
 router.use(requireAuth(['admin']));
 
-// Brand lives under the existing "cars" permission module
-// (see MODULES in prisma/seedRbac.ts) — not a new module of its own.
-router.get('/', requirePermission('cars.view'), asyncHandler(getBrands));
-router.get('/:id', requirePermission('cars.view'), asyncHandler(getBrandById));
+
+router.get('/', requirePermission('brands.view'), asyncHandler(getBrands));
+router.get('/:id', requirePermission('brands.view'), asyncHandler(getBrandById));
 router.post(
   '/',
-  requirePermission('cars.create'),
+  requirePermission('brands.create'),
   imageUploader('brands').single('logo'),
   asyncHandler(createBrand),
 );
-router.patch('/:id', requirePermission('cars.update'), asyncHandler(updateBrand));
+router.patch('/:id', requirePermission('brands.update'), asyncHandler(updateBrand));
 // Dedicated quick status-toggle route (Active/Inactive) for the row-level switch.
-router.patch('/:id/status', requirePermission('cars.update'), asyncHandler(updateBrandStatus));
+router.patch('/:id/status', requirePermission('brands.update'), asyncHandler(updateBrandStatus));
 
 router.patch(
   '/:id/logo',
-  requirePermission('cars.update'),
+  requirePermission('brands.update'),
   imageUploader('brands').single('logo'),
   asyncHandler(uploadBrandLogo),
-);
-router.delete('/:id', requirePermission('cars.delete'), asyncHandler(deleteBrand));
+)
+router.delete('/:id', requirePermission('brands.delete'), asyncHandler(deleteBrand));
 
 export default router;

@@ -9,6 +9,7 @@ import {
 import { useGetCarModelsQuery } from "../carModels/carModel.api";
 import { extractApiError } from "../../../lib/apiClient";
 import VariantModal from "./VariantModal";
+import ConfirmDialog from "../../../components/common/ConfirmDialog";
 import DataTable, { type DataTableColumn } from "../../../components/common/DataTable";
 import Pagination from "../../../components/common/Pagination";
 import { SearchFilterBar, SearchInput, FilterSelect } from "../../../components/common/SearchFilterBar";
@@ -80,13 +81,16 @@ export default function AllVariants() {
 
   const [deleteVariant] = useDeleteVariantMutation();
   const [deletingId, setDeletingId] = useState<number | null>(null);
+  const [pendingDelete, setPendingDelete] = useState<VariantRecord | null>(null);
   const [actionError, setActionError] = useState("");
 
-  const handleDelete = async (id: number) => {
+  const handleConfirmDelete = async () => {
+    if (!pendingDelete) return;
     setActionError("");
-    setDeletingId(id);
+    setDeletingId(pendingDelete.id);
     try {
-      await deleteVariant(id).unwrap();
+      await deleteVariant(pendingDelete.id).unwrap();
+      setPendingDelete(null);
     } catch (err) {
       setActionError(extractApiError(err));
     } finally {
@@ -138,11 +142,10 @@ export default function AllVariants() {
             Edit
           </button>
           <button
-            onClick={() => handleDelete(v.id)}
-            disabled={deletingId === v.id}
-            className="cursor-pointer text-[10px] font-bold px-2.5 py-1 rounded-lg border border-red-100 text-red-500 hover:bg-red-50 transition-colors disabled:opacity-50"
+            onClick={() => setPendingDelete(v)}
+            className="cursor-pointer text-[10px] font-bold px-2.5 py-1 rounded-lg border border-red-100 text-red-500 hover:bg-red-50 transition-colors"
           >
-            {deletingId === v.id ? "..." : "Delete"}
+            Delete
           </button>
         </div>
       ),
@@ -232,6 +235,15 @@ export default function AllVariants() {
           variant={editingVariant}
         />
       )}
+
+      <ConfirmDialog
+        open={!!pendingDelete}
+        title="Delete variant?"
+        itemName={pendingDelete?.variantName}
+        loading={deletingId === pendingDelete?.id}
+        onCancel={() => setPendingDelete(null)}
+        onConfirm={handleConfirmDelete}
+      />
     </div>
   );
 }

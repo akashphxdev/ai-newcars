@@ -44,6 +44,9 @@ export const createCarModelSchema = z
     brandId: z.coerce.number().int().positive('brandId is required'),
     name: z.string().trim().min(2, 'Name must be at least 2 characters').max(100),
 
+    // Slug stays optional by design — it's auto-generated from `name` when
+    // omitted (see generateUniqueSlug in the service). Forcing it here would
+    // just make callers retype something we can derive safely.
     slug: z
       .string()
       .trim()
@@ -52,17 +55,30 @@ export const createCarModelSchema = z
       .max(100)
       .regex(slugRegex, 'Slug must be lowercase letters/numbers separated by hyphens (e.g. "creta-2026")')
       .optional(),
-    bodyType: z.enum(BODY_TYPES).optional(),
+    // Required going forward — every car model needs a body type and a
+    // price range for the public site's filters/cards to work correctly.
+    bodyType: z.enum(BODY_TYPES, { errorMap: () => ({ message: 'Body type is required' }) }),
     launchStatus: z.enum(LAUNCH_STATUSES).default('available'),
     expectedLaunchDate: z.coerce.date().optional(),
-    priceMin: z.coerce.number().nonnegative().optional(),
-    priceMax: z.coerce.number().nonnegative().optional(),
+    priceMin: z.coerce.number().nonnegative('Price min is required'),
+    priceMax: z.coerce.number().nonnegative('Price max is required'),
   })
   .refine(refinePriceRange, {
     message: 'priceMax must be greater than or equal to priceMin',
     path: ['priceMax'],
+  })
+  // expectedLaunchDate is conditionally required — only meaningful (and
+  // mandatory) when the model is actually "upcoming".
+  .refine((data) => data.launchStatus !== 'upcoming' || !!data.expectedLaunchDate, {
+    message: 'Expected launch date is required when launch status is "upcoming"',
+    path: ['expectedLaunchDate'],
   });
 
+// NOTE ON REQUIRED FIELDS: bodyType/priceMin/priceMax/expectedLaunchDate are
+// mandatory on CREATE (see createCarModelSchema above). This schema (for
+// PATCH) is intentionally kept partial — that's standard REST PATCH
+// semantics (send only the fields you're changing). A field is never wiped
+// out by omission here; explicit `null` is required to clear it.
 export const updateCarModelSchema = z
   .object({
     brandId: z.coerce.number().int().positive().optional(),

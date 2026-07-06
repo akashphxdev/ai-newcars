@@ -5,11 +5,13 @@ import { prisma } from '@/prisma/client';
 import { ApiError } from '@/core/errors/ApiError';
 import { createLog } from '@/core/utils/createLog';
 import { slugify } from '@/core/utils/slugify';
+import { buildPublicPath, deleteUploadedFile } from '@/core/utils/fileStorage.util';
 import type {
   CarModelListQueryParsed,
   CreateCarModelParsed,
   UpdateCarModelParsed,
 } from './carModel.validation';
+import type { CarModelCoverImageResult } from './carModel.types';
 
 const CAR_MODEL_SELECT = {
   id: true,
@@ -119,7 +121,11 @@ async function generateUniqueSlug(name: string): Promise<string> {
   throw ApiError.internal('Could not generate a unique slug — please provide one manually');
 }
 
-export async function createCarModel(input: CreateCarModelParsed, actorId: number) {
+export async function createCarModel(
+  input: CreateCarModelParsed,
+  actorId: number,
+  coverImageFilename?: string,
+) {
   await assertBrandExists(input.brandId);
 
   const slug = input.slug ? input.slug : await generateUniqueSlug(input.name);
@@ -137,6 +143,7 @@ export async function createCarModel(input: CreateCarModelParsed, actorId: numbe
       expectedLaunchDate: input.expectedLaunchDate,
       priceMin: input.priceMin,
       priceMax: input.priceMax,
+      coverImageUrl: coverImageFilename ? buildPublicPath('car-model-covers', coverImageFilename) : null,
     },
     select: CAR_MODEL_SELECT,
   });
@@ -206,6 +213,37 @@ export async function updateCarModelLaunchStatus(id: number, launchStatus: strin
   return carModel;
 }
 
+// PATCH /car-models/:id/cover-image — dedicated endpoint for replacing just
+// the cover thumbnail without resending the whole edit form. Mirrors
+// image.service.ts's replaceImageFile: write the new file, update the DB,
+// and only delete the old file AFTER the DB write succeeds.
+export async function uploadCarModelCoverImage(
+  id: number,
+  savedFilename: string,
+  actorId: number,
+): Promise<CarModelCoverImageResult> {
+  const existing = await getCarModelById(id);
+
+  const newCoverImageUrl = buildPublicPath('car-model-covers', savedFilename);
+
+  const carModel = await prisma.carModel.update({
+    where: { id },
+    data: { coverImageUrl: newCoverImageUrl },
+    select: { id: true, coverImageUrl: true },
+  });
+
+  if (existing.coverImageUrl) {
+    await deleteUploadedFile(existing.coverImageUrl);
+  }
+
+  await createLog({
+    adminId: actorId,
+    description: `Replaced cover image for car model "${existing.name}" (id ${id})`,
+  });
+
+  return carModel as CarModelCoverImageResult;
+}
+
 export async function deleteCarModel(id: number, actorId: number) {
   const carModel = await getCarModelById(id);
 
@@ -222,6 +260,11 @@ export async function deleteCarModel(id: number, actorId: number) {
   }
 
   await prisma.carModel.delete({ where: { id } });
+
+  // Row is gone — its cover image file on disk (if any) is now orphaned.
+  if (carModel.coverImageUrl) {
+    await deleteUploadedFile(carModel.coverImageUrl);
+  }
 
   await createLog({
     adminId: actorId,

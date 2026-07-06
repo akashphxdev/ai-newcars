@@ -20,20 +20,18 @@ const router = Router();
 // Every image-management route requires a logged-in admin.
 router.use(requireAuth(['admin']));
 
-// Images live under the existing "cars" permission module (see MODULES
-// in prisma/seedRbac.ts) — same convention as brand/carModel/variant/color.
-router.get('/', requirePermission('cars.view'), asyncHandler(getImages));
-router.get('/:id', requirePermission('cars.view'), asyncHandler(getImageById));
-router.post('/', requirePermission('cars.create'), imageUploader('car-images').single('image'), asyncHandler(createImage));
-router.patch('/:id', requirePermission('cars.update'), asyncHandler(updateImage));
+router.get('/', requirePermission('images.view'), asyncHandler(getImages));
+router.get('/:id', requirePermission('images.view'), asyncHandler(getImageById));
+router.post('/', requirePermission('images.create'), imageUploader('car-images').single('image'), asyncHandler(createImage));
+router.patch('/:id', requirePermission('images.update'), asyncHandler(updateImage));
 // Dedicated quick "set as cover" toggle for the gallery's row-level action.
-router.patch('/:id/set-primary', requirePermission('cars.update'), asyncHandler(setPrimaryImage));
+router.patch('/:id/set-primary', requirePermission('images.update'), asyncHandler(setPrimaryImage));
 router.patch(
   '/:id/file',
-  requirePermission('cars.update'),
+  requirePermission('images.update'),
   imageUploader('car-images').single('image'),
   asyncHandler(replaceImageFile),
 );
-router.delete('/:id', requirePermission('cars.delete'), asyncHandler(deleteImage));
+router.delete('/:id', requirePermission('images.delete'), asyncHandler(deleteImage));
 
 export default router;

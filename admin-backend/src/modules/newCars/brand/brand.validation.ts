@@ -3,11 +3,6 @@
 import { z } from 'zod';
 
 const slugRegex = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
-
-// Create/update requests are now sent as multipart FormData (to allow an
-// optional logo file), so booleans arrive as the strings "true"/"false"
-// instead of real JS booleans. This coerces them the same way
-// city.validation.ts does for isMetro/isTopCity/isSellCarEnabled.
 const booleanish = z.preprocess((val) => {
   if (typeof val === 'string') return val === 'true';
   return val;
@@ -40,7 +35,7 @@ export const createBrandSchema = z.object({
     .max(100)
     .regex(slugRegex, 'Slug must be lowercase letters/numbers separated by hyphens (e.g. "toyota")')
     .optional(),
-  countryOriginId: z.coerce.number().int().positive().optional(),
+  countryOriginId: z.coerce.number().int().positive('countryOriginId is required'),
   isActive: booleanish.optional(),
 });
 

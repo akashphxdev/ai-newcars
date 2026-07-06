@@ -8,6 +8,7 @@ import {
 } from "./image.api";
 import { extractApiError, getUploadUrl } from "../../../lib/apiClient";
 import ImageModal from "./ImageModal";
+import ConfirmDialog from "../../../components/common/ConfirmDialog";
 import Pagination from "../../../components/common/Pagination";
 
 const ACCENT = "#D4300F";
@@ -49,12 +50,16 @@ export default function ImagesTab({ modelId }: { modelId: number }) {
   const [deletingId, setDeletingId] = useState<number | null>(null);
   const [togglingId, setTogglingId] = useState<number | null>(null);
   const [actionError, setActionError] = useState("");
+  // Row pending delete confirmation — drives the shared ConfirmDialog popup.
+  const [pendingDelete, setPendingDelete] = useState<CarImageRecord | null>(null);
 
-  const handleDelete = async (id: number) => {
+  const handleConfirmDelete = async () => {
+    if (!pendingDelete) return;
     setActionError("");
-    setDeletingId(id);
+    setDeletingId(pendingDelete.id);
     try {
-      await deleteImage(id).unwrap();
+      await deleteImage(pendingDelete.id).unwrap();
+      setPendingDelete(null);
     } catch (err) {
       setActionError(extractApiError(err));
     } finally {
@@ -142,11 +147,10 @@ export default function ImagesTab({ modelId }: { modelId: number }) {
                       Edit
                     </button>
                     <button
-                      onClick={() => handleDelete(img.id)}
-                      disabled={deletingId === img.id}
-                      className="cursor-pointer text-[9.5px] font-bold px-1.5 py-1 rounded-lg border border-red-100 text-red-500 hover:bg-red-50 transition-colors disabled:opacity-50"
+                      onClick={() => setPendingDelete(img)}
+                      className="cursor-pointer text-[9.5px] font-bold px-1.5 py-1 rounded-lg border border-red-100 text-red-500 hover:bg-red-50 transition-colors"
                     >
-                      {deletingId === img.id ? "..." : "Del"}
+                      Del
                     </button>
                   </div>
                 </div>
@@ -167,6 +171,15 @@ export default function ImagesTab({ modelId }: { modelId: number }) {
           image={editingImage}
         />
       )}
+
+      <ConfirmDialog
+        open={!!pendingDelete}
+        title="Delete this image?"
+        itemName={pendingDelete ? (pendingDelete.angle ?? `image #${pendingDelete.id}`) : null}
+        loading={deletingId === pendingDelete?.id}
+        onCancel={() => setPendingDelete(null)}
+        onConfirm={handleConfirmDelete}
+      />
     </div>
   );
 }

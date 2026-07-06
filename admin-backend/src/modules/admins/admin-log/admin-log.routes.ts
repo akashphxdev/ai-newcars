@@ -9,6 +9,6 @@ import { getAdminLogs } from './admin-log.controller';
 const router = Router();
 
 router.use(requireAuth(['admin']));
-router.get('/', requirePermission('admins.view'), asyncHandler(getAdminLogs));
+router.get('/', requirePermission('adminlogs.view'), asyncHandler(getAdminLogs));
 
 export default router;

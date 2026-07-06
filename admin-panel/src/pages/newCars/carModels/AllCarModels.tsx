@@ -8,8 +8,9 @@ import {
   type LaunchStatus,
 } from "./carModel.api";
 import { useGetBrandsQuery } from "../Brands/brand.api";
-import { extractApiError } from "../../../lib/apiClient";
+import { extractApiError, getUploadUrl } from "../../../lib/apiClient";
 import CarModelModal from "./CarModelModal";
+import ConfirmDialog from "../../../components/common/ConfirmDialog";
 import DataTable, { type DataTableColumn } from "../../../components/common/DataTable";
 import Pagination from "../../../components/common/Pagination";
 import { SearchFilterBar, SearchInput, FilterSelect } from "../../../components/common/SearchFilterBar";
@@ -96,6 +97,9 @@ export default function AllCarModels() {
 
   const [togglingId, setTogglingId] = useState<number | null>(null);
   const [deletingId, setDeletingId] = useState<number | null>(null);
+  // Row pending delete confirmation — set on "Delete" click, cleared on
+  // cancel/confirm. Drives the shared ConfirmDialog popup.
+  const [pendingDelete, setPendingDelete] = useState<CarModelRecord | null>(null);
   const [actionError, setActionError] = useState("");
 
   const handleLaunchStatusChange = async (carModel: CarModelRecord, launchStatus: LaunchStatus) => {
@@ -111,11 +115,13 @@ export default function AllCarModels() {
     }
   };
 
-  const handleDelete = async (id: number) => {
+  const handleConfirmDelete = async () => {
+    if (!pendingDelete) return;
     setActionError("");
-    setDeletingId(id);
+    setDeletingId(pendingDelete.id);
     try {
-      await deleteCarModel(id).unwrap();
+      await deleteCarModel(pendingDelete.id).unwrap();
+      setPendingDelete(null);
     } catch (err) {
       setActionError(extractApiError(err));
     } finally {
@@ -124,6 +130,18 @@ export default function AllCarModels() {
   };
 
   const columns: DataTableColumn<CarModelRecord>[] = [
+    {
+      header: "Cover",
+      render: (cm) => (
+        <div className="w-12 h-9 rounded-lg border border-[#e8e4dc] bg-[#f7f5f1] overflow-hidden flex items-center justify-center">
+          {cm.coverImageUrl ? (
+            <img src={getUploadUrl(cm.coverImageUrl) ?? undefined} alt="" className="w-full h-full object-cover" />
+          ) : (
+            <span className="text-[8px] text-[#a39e96]">—</span>
+          )}
+        </div>
+      ),
+    },
     {
       header: "Name",
       render: (cm) => (
@@ -175,11 +193,10 @@ export default function AllCarModels() {
             Edit
           </button>
           <button
-            onClick={() => handleDelete(cm.id)}
-            disabled={deletingId === cm.id}
-            className="cursor-pointer text-[10px] font-bold px-2.5 py-1 rounded-lg border border-red-100 text-red-500 hover:bg-red-50 transition-colors disabled:opacity-50"
+            onClick={() => setPendingDelete(cm)}
+            className="cursor-pointer text-[10px] font-bold px-2.5 py-1 rounded-lg border border-red-100 text-red-500 hover:bg-red-50 transition-colors"
           >
-            {deletingId === cm.id ? "..." : "Delete"}
+            Delete
           </button>
         </div>
       ),
@@ -269,6 +286,15 @@ export default function AllCarModels() {
           carModel={editingCarModel}
         />
       )}
+
+      <ConfirmDialog
+        open={!!pendingDelete}
+        title="Delete car model?"
+        itemName={pendingDelete?.name}
+        loading={deletingId === pendingDelete?.id}
+        onCancel={() => setPendingDelete(null)}
+        onConfirm={handleConfirmDelete}
+      />
     </div>
   );
 }

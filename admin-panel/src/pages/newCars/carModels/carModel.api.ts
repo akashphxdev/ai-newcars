@@ -51,12 +51,15 @@ export interface ListCarModelsParams {
 export interface CreateCarModelInput {
   brandId: number;
   name: string;
-  slug?: string;
-  bodyType?: BodyType;
+  slug?: string; // auto-generated from name if left blank — intentionally optional
+  bodyType: BodyType;
   launchStatus?: LaunchStatus;
+  // Required only when launchStatus === "upcoming" — enforced by the backend too.
   expectedLaunchDate?: string;
-  priceMin?: number;
-  priceMax?: number;
+  priceMin: number;
+  priceMax: number;
+  // Optional at create time — can also be set/replaced later via uploadCoverImage.
+  coverImage?: File;
 }
 
 export interface UpdateCarModelInput {
@@ -64,7 +67,7 @@ export interface UpdateCarModelInput {
   name?: string;
   slug?: string;
   // Explicit `null` clears the field, `undefined`/omitted leaves it
-  // untouched — mirrors the backend's updateCarModelSchema.
+  // untouched — mirrors the backend's updateCarModelSchema (PATCH semantics).
   bodyType?: BodyType | null;
   launchStatus?: LaunchStatus;
   expectedLaunchDate?: string | null;
@@ -111,7 +114,19 @@ export const carModelApi = api.injectEndpoints({
     }),
 
     createCarModel: builder.mutation<CarModelRecord, CreateCarModelInput>({
-      query: (body) => ({ url: "/new-cars/car-models", method: "POST", data: body }),
+      query: ({ coverImage, ...fields }) => {
+        const formData = new FormData();
+        formData.append("brandId", String(fields.brandId));
+        formData.append("name", fields.name);
+        if (fields.slug) formData.append("slug", fields.slug);
+        formData.append("bodyType", fields.bodyType);
+        if (fields.launchStatus) formData.append("launchStatus", fields.launchStatus);
+        if (fields.expectedLaunchDate) formData.append("expectedLaunchDate", fields.expectedLaunchDate);
+        formData.append("priceMin", String(fields.priceMin));
+        formData.append("priceMax", String(fields.priceMax));
+        if (coverImage) formData.append("coverImage", coverImage);
+        return { url: "/new-cars/car-models", method: "POST", data: formData };
+      },
       transformResponse: (res: CarModelSingleRawResponse) => res.data,
       invalidatesTags: [CAR_MODEL_LIST_TAG],
     }),
@@ -119,6 +134,22 @@ export const carModelApi = api.injectEndpoints({
     updateCarModel: builder.mutation<CarModelRecord, { id: number; input: UpdateCarModelInput }>({
       query: ({ id, input }) => ({ url: `/new-cars/car-models/${id}`, method: "PATCH", data: input }),
       transformResponse: (res: CarModelSingleRawResponse) => res.data,
+      invalidatesTags: (_result, _error, { id }) => [{ type: "CarModel", id }, CAR_MODEL_LIST_TAG],
+    }),
+
+    // Dedicated "replace just the cover image" mutation — mirrors
+    // image.api.ts's replaceImageFile, so the modal doesn't need to resend
+    // the whole edit form just to swap the thumbnail.
+    uploadCarModelCoverImage: builder.mutation<
+      { id: number; coverImageUrl: string | null },
+      { id: number; file: File }
+    >({
+      query: ({ id, file }) => {
+        const formData = new FormData();
+        formData.append("coverImage", file);
+        return { url: `/new-cars/car-models/${id}/cover-image`, method: "PATCH", data: formData };
+      },
+      transformResponse: (res: { success: true; data: { id: number; coverImageUrl: string | null } }) => res.data,
       invalidatesTags: (_result, _error, { id }) => [{ type: "CarModel", id }, CAR_MODEL_LIST_TAG],
     }),
 
@@ -148,5 +179,6 @@ export const {
   useCreateCarModelMutation,
   useUpdateCarModelMutation,
   useUpdateCarModelLaunchStatusMutation,
+  useUploadCarModelCoverImageMutation,
   useDeleteCarModelMutation,
 } = carModelApi;

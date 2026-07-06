@@ -3,12 +3,13 @@ import { useRef, useState } from "react";
 import {
   useCreateCarModelMutation,
   useUpdateCarModelMutation,
+  useUploadCarModelCoverImageMutation,
   type CarModelRecord,
   type BodyType,
   type LaunchStatus,
 } from "./carModel.api";
 import { useGetBrandsQuery } from "../Brands/brand.api";
-import { extractApiError } from "../../../lib/apiClient";
+import { extractApiError, getUploadUrl } from "../../../lib/apiClient";
 
 const ACCENT = "#D4300F";
 
@@ -50,7 +51,11 @@ interface FieldErrors {
   name?: string;
   slug?: string;
   brandId?: string;
+  bodyType?: string;
+  priceMin?: string;
   priceMax?: string;
+  expectedLaunchDate?: string;
+  coverImage?: string;
 }
 
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
@@ -97,13 +102,28 @@ export default function CarModelModal({
   const [priceMin, setPriceMin] = useState(carModel?.priceMin ?? "");
   const [priceMax, setPriceMax] = useState(carModel?.priceMax ?? "");
 
+  // Cover image: `coverImageFile` holds a newly-picked file (create OR
+  // replace-in-edit-mode); `coverImagePreview` is what's shown in the
+  // thumbnail (existing URL, or a local object URL for a freshly picked file).
+  const [coverImageFile, setCoverImageFile] = useState<File | null>(null);
+  const [coverImagePreview, setCoverImagePreview] = useState<string | null>(
+    getUploadUrl(carModel?.coverImageUrl ?? null),
+  );
+  const coverInputRef = useRef<HTMLInputElement>(null);
+
   const [errors, setErrors] = useState<FieldErrors>({});
   const [serverError, setServerError] = useState("");
   const nameRef = useRef<HTMLInputElement>(null);
 
   const [createCarModel, { isLoading: creating }] = useCreateCarModelMutation();
   const [updateCarModel, { isLoading: updating }] = useUpdateCarModelMutation();
-  const saving = creating || updating;
+  const [uploadCoverImage, { isLoading: uploadingCover }] = useUploadCarModelCoverImageMutation();
+  const saving = creating || updating || uploadingCover;
+
+  const handleCoverImageChange = (file: File | null) => {
+    setCoverImageFile(file);
+    setCoverImagePreview(file ? URL.createObjectURL(file) : getUploadUrl(carModel?.coverImageUrl ?? null));
+  };
 
   const resetForm = () => {
     setBrandId("");
@@ -115,6 +135,8 @@ export default function CarModelModal({
     setExpectedLaunchDate("");
     setPriceMin("");
     setPriceMax("");
+    setCoverImageFile(null);
+    setCoverImagePreview(null);
     setErrors({});
     setServerError("");
   };
@@ -145,8 +167,17 @@ export default function CarModelModal({
       next.slug = "Slug must be lowercase letters/numbers separated by hyphens (e.g. \"creta-2026\").";
     }
     if (!brandId) next.brandId = "Brand is required.";
+    if (!bodyType) next.bodyType = "Body type is required.";
+    if (priceMin === "") next.priceMin = "Price min is required.";
+    if (priceMax === "") next.priceMax = "Price max is required.";
     if (priceMin !== "" && priceMax !== "" && Number(priceMax) < Number(priceMin)) {
       next.priceMax = "Max price must be greater than or equal to min price.";
+    }
+    if (launchStatus === "upcoming" && !expectedLaunchDate) {
+      next.expectedLaunchDate = "Expected launch date is required for upcoming models.";
+    }
+    if (!isEditMode && !coverImageFile) {
+      next.coverImage = "Cover image is required.";
     }
     setErrors(next);
     return Object.keys(next).length === 0;
@@ -165,23 +196,30 @@ export default function CarModelModal({
             brandId: Number(brandId),
             name: name.trim(),
             slug: slug.trim() || undefined, // leave empty to let the backend auto-generate
-            bodyType: bodyType || null,
+            bodyType: (bodyType || null) as BodyType | null,
             launchStatus,
             expectedLaunchDate: expectedLaunchDate || null,
             priceMin: priceMin === "" ? null : Number(priceMin),
             priceMax: priceMax === "" ? null : Number(priceMax),
           },
         }).unwrap();
+
+        // Cover image is a separate call in edit mode — only fired if the
+        // admin actually picked a new file.
+        if (coverImageFile) {
+          await uploadCoverImage({ id: carModel.id, file: coverImageFile }).unwrap();
+        }
       } else {
         await createCarModel({
           brandId: Number(brandId),
           name: name.trim(),
           slug: slug.trim() || undefined,
-          bodyType: bodyType || undefined,
+          bodyType: bodyType as BodyType,
           launchStatus,
           expectedLaunchDate: expectedLaunchDate || undefined,
-          priceMin: priceMin === "" ? undefined : Number(priceMin),
-          priceMax: priceMax === "" ? undefined : Number(priceMax),
+          priceMin: Number(priceMin),
+          priceMax: Number(priceMax),
+          coverImage: coverImageFile ?? undefined,
         }).unwrap();
       }
       resetForm();
@@ -224,6 +262,38 @@ export default function CarModelModal({
         </div>
 
         <form onSubmit={handleSubmit} className="px-6 pb-6 pt-5 space-y-4" noValidate>
+          <Field label="Cover image">
+            <div className="flex items-center gap-3">
+              <div className="w-20 h-16 rounded-xl border border-[#e8e4dc] bg-[#f7f5f1] overflow-hidden shrink-0 flex items-center justify-center">
+                {coverImagePreview ? (
+                  <img src={coverImagePreview} alt="" className="w-full h-full object-cover" />
+                ) : (
+                  <span className="text-[9px] text-[#a39e96] text-center px-1">No image</span>
+                )}
+              </div>
+              <div>
+                <input
+                  ref={coverInputRef}
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp"
+                  onChange={(e) => handleCoverImageChange(e.target.files?.[0] ?? null)}
+                  className="hidden"
+                  id="cover-image-input"
+                />
+                <label
+                  htmlFor="cover-image-input"
+                  className="cursor-pointer inline-block text-[11px] font-bold px-3 py-2 rounded-lg border border-[#e2ddd5] text-[#4a4640] hover:bg-[#f7f5f1] transition-colors"
+                >
+                  {coverImagePreview ? "Change image" : "Upload image"}
+                </label>
+                <p className="text-[10px] text-[#a39e96] mt-1">JPG, PNG or WEBP — max 2MB.</p>
+              </div>
+            </div>
+            {errors.coverImage && (
+              <p className="text-[11px] font-medium text-[#D4300F] mt-1.5">{errors.coverImage}</p>
+            )}
+          </Field>
+
           <div className="grid grid-cols-2 gap-3">
             <Field label="Name">
               <input
@@ -281,19 +351,21 @@ export default function CarModelModal({
           </Field>
 
           <div className="grid grid-cols-2 gap-3">
-            <Field label="Body type (optional)">
+            <Field label="Body type">
               <select
                 value={bodyType}
                 onChange={(e) => setBodyType((e.target.value as BodyType) || "")}
-                className="cursor-pointer w-full text-sm font-medium text-[#1c1a17] bg-[#f7f5f1] border border-[#e2ddd5] rounded-xl px-3 py-2.5 outline-none transition-all focus:bg-white capitalize"
+                className="cursor-pointer w-full text-sm font-medium text-[#1c1a17] bg-[#f7f5f1] border rounded-xl px-3 py-2.5 outline-none transition-all focus:bg-white capitalize"
+                style={{ borderColor: errors.bodyType ? "#f0997b" : "#e2ddd5" }}
               >
-                <option value="">None</option>
+                <option value="">Select a body type</option>
                 {BODY_TYPES.map((bt) => (
                   <option key={bt} value={bt} className="capitalize">
                     {bt}
                   </option>
                 ))}
               </select>
+              {errors.bodyType && <p className="text-[11px] font-medium text-[#D4300F] mt-1">{errors.bodyType}</p>}
             </Field>
 
             <Field label="Launch status">
@@ -318,13 +390,19 @@ export default function CarModelModal({
                 value={expectedLaunchDate}
                 onChange={(e) => setExpectedLaunchDate(e.target.value)}
                 className={inputClass}
-                style={{ borderColor: "#e2ddd5" }}
+                style={{
+                  borderColor: errors.expectedLaunchDate ? "#f0997b" : "#e2ddd5",
+                  boxShadow: errors.expectedLaunchDate ? "0 0 0 2px rgba(216,90,48,0.1)" : "none",
+                }}
               />
+              {errors.expectedLaunchDate && (
+                <p className="text-[11px] font-medium text-[#D4300F] mt-1">{errors.expectedLaunchDate}</p>
+              )}
             </Field>
           )}
 
           <div className="grid grid-cols-2 gap-3">
-            <Field label="Price min (₹, optional)">
+            <Field label="Price min (₹)">
               <input
                 type="number"
                 min={0}
@@ -333,11 +411,15 @@ export default function CarModelModal({
                 onChange={(e) => setPriceMin(e.target.value)}
                 placeholder="e.g. 1099000"
                 className={inputClass}
-                style={{ borderColor: "#e2ddd5" }}
+                style={{
+                  borderColor: errors.priceMin ? "#f0997b" : "#e2ddd5",
+                  boxShadow: errors.priceMin ? "0 0 0 2px rgba(216,90,48,0.1)" : "none",
+                }}
               />
+              {errors.priceMin && <p className="text-[11px] font-medium text-[#D4300F] mt-1">{errors.priceMin}</p>}
             </Field>
 
-            <Field label="Price max (₹, optional)">
+            <Field label="Price max (₹)">
               <input
                 type="number"
                 min={0}

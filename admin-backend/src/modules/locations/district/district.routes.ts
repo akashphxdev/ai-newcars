@@ -17,10 +17,10 @@ const router = Router();
 // Every location-management route requires a logged-in admin.
 router.use(requireAuth(['admin']));
 
-router.get('/', requirePermission('locations.view'), asyncHandler(getDistricts));
-router.get('/:id', requirePermission('locations.view'), asyncHandler(getDistrictById));
-router.post('/', requirePermission('locations.create'), asyncHandler(createDistrict));
-router.patch('/:id', requirePermission('locations.update'), asyncHandler(updateDistrict));
-router.delete('/:id', requirePermission('locations.delete'), asyncHandler(deleteDistrict));
+router.get('/', requirePermission('districts.view'), asyncHandler(getDistricts));
+router.get('/:id', requirePermission('districts.view'), asyncHandler(getDistrictById));
+router.post('/', requirePermission('districts.create'), asyncHandler(createDistrict));
+router.patch('/:id', requirePermission('districts.update'), asyncHandler(updateDistrict));
+router.delete('/:id', requirePermission('districts.delete'), asyncHandler(deleteDistrict));
 
 export default router;

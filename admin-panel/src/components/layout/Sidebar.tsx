@@ -121,7 +121,8 @@ const NAV: NavGroup[] = [
           { label: "Colors & Images", href: "/new-cars/colors" },
           { label: "Features", href: "/new-cars/features" },
           { label: "Offers", href: "/new-cars/offers" },
-          { label: "FAQs & Videos", href: "/new-cars/faqs" },
+          { label: "FAQs", href: "/new-cars/faqs" },
+          { label: "Videos", href: "/new-cars/videos" },
         ],
       },
       {
