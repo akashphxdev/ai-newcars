@@ -9,6 +9,7 @@ import {
   getFaqById,
   createFaq,
   updateFaq,
+  updateFaqStatus,
   deleteFaq,
 } from './faq.controller';
 
@@ -21,6 +22,7 @@ router.get('/', requirePermission('faqs.view'), asyncHandler(getFaqs));
 router.get('/:id', requirePermission('faqs.view'), asyncHandler(getFaqById));
 router.post('/', requirePermission('faqs.create'), asyncHandler(createFaq));
 router.patch('/:id', requirePermission('faqs.update'), asyncHandler(updateFaq));
+router.patch('/:id/status', requirePermission('faqs.update'), asyncHandler(updateFaqStatus));
 router.delete('/:id', requirePermission('faqs.delete'), asyncHandler(deleteFaq));
 
 export default router;

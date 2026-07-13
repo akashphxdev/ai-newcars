@@ -18,7 +18,10 @@ const CAR_MODEL_SELECT = {
   brandId: true,
   name: true,
   slug: true,
-  bodyType: true,
+  bodyTypeId: true,
+  bodyType: {
+    select: { id: true, name: true, slug: true },
+  },
   launchStatus: true,
   expectedLaunchDate: true,
   priceMin: true,
@@ -32,11 +35,11 @@ const CAR_MODEL_SELECT = {
 } as const;
 
 export async function listCarModels(query: CarModelListQueryParsed) {
-  const { page, limit, search, brandId, bodyType, launchStatus, sortBy, sortOrder } = query;
+  const { page, limit, search, brandId, bodyTypeId, launchStatus, sortBy, sortOrder } = query;
 
   const where: Prisma.CarModelWhereInput = {
     ...(brandId ? { brandId } : {}),
-    ...(bodyType ? { bodyType } : {}),
+    ...(bodyTypeId ? { bodyTypeId } : {}),
     ...(launchStatus ? { launchStatus } : {}),
     ...(search
       ? {
@@ -90,6 +93,16 @@ async function assertBrandExists(brandId: number) {
   }
 }
 
+// Same "validate the parent foreign key" rule as assertBrandExists above —
+// bodyTypeId now points at the body_types table instead of being a
+// hardcoded enum, so it needs the same existence check.
+async function assertBodyTypeExists(bodyTypeId: number) {
+  const bodyType = await prisma.bodyType.findUnique({ where: { id: bodyTypeId }, select: { id: true } });
+  if (!bodyType) {
+    throw ApiError.badRequest('Invalid bodyTypeId — body type does not exist');
+  }
+}
+
 // `slug` IS @unique in schema.prisma (DB-level) — same pattern as
 // brand.service.ts's assertSlugAvailable.
 async function assertSlugAvailable(slug: string, excludeId?: number) {
@@ -106,13 +119,16 @@ async function assertSlugAvailable(slug: string, excludeId?: number) {
 // supply one explicitly — e.g. "Creta" -> "creta", and if that's taken,
 // "creta-2", "creta-3", etc. Same bounded-loop guard as
 // brand.service.ts's generateUniqueSlug.
-async function generateUniqueSlug(name: string): Promise<string> {
+async function generateUniqueSlug(name: string, excludeId?: number): Promise<string> {
   const base = slugify(name);
   let candidate = base;
   let suffix = 2;
 
   for (let attempts = 0; attempts < 50; attempts++) {
-    const existing = await prisma.carModel.findFirst({ where: { slug: candidate }, select: { id: true } });
+    const existing = await prisma.carModel.findFirst({
+      where: { slug: candidate, id: excludeId ? { not: excludeId } : undefined },
+      select: { id: true },
+    });
     if (!existing) return candidate;
     candidate = `${base}-${suffix}`;
     suffix += 1;
@@ -127,6 +143,7 @@ export async function createCarModel(
   coverImageFilename?: string,
 ) {
   await assertBrandExists(input.brandId);
+  await assertBodyTypeExists(input.bodyTypeId);
 
   const slug = input.slug ? input.slug : await generateUniqueSlug(input.name);
   if (input.slug) {
@@ -138,7 +155,7 @@ export async function createCarModel(
       brandId: input.brandId,
       name: input.name,
       slug,
-      bodyType: input.bodyType,
+      bodyTypeId: input.bodyTypeId,
       launchStatus: input.launchStatus,
       expectedLaunchDate: input.expectedLaunchDate,
       priceMin: input.priceMin,
@@ -163,24 +180,55 @@ export async function updateCarModel(id: number, input: UpdateCarModelParsed, ac
     await assertBrandExists(input.brandId);
   }
 
-  // Slug is only ever changed if the caller explicitly sends a new one —
-  // renaming the model does NOT auto-regenerate the slug (same reasoning
-  // as brand.service.ts: don't silently break an existing URL/bookmark).
-  if (input.slug && input.slug !== existing.slug) {
-    await assertSlugAvailable(input.slug, id);
+  if (typeof input.bodyTypeId === 'number') {
+    await assertBodyTypeExists(input.bodyTypeId);
+  }
+
+  // Slug is optional in the payload — if the caller gave one explicitly,
+  // honor it (after checking it's free). Otherwise, auto-derive it from
+  // the (possibly changed) name, same behavior as create.
+  let slug = existing.slug;
+  if (input.slug) {
+    slug = input.slug;
+    if (slug !== existing.slug) {
+      await assertSlugAvailable(slug, id);
+    }
+  } else if (input.name && input.name !== existing.name) {
+    slug = await generateUniqueSlug(input.name, id);
+  }
+
+  // Figure out the *effective* launch status/date this update would result
+  // in (payload value if given, else whatever's already on the record) —
+  // needed because the schema-level refine only catches the case where
+  // launchStatus is explicitly set to "upcoming" in this request; it can't
+  // see that a record already sitting at "upcoming" mustn't lose its date.
+  const effectiveLaunchStatus = input.launchStatus ?? existing.launchStatus;
+  let effectiveExpectedLaunchDate: Date | null;
+  if (effectiveLaunchStatus === 'upcoming') {
+    effectiveExpectedLaunchDate =
+      input.expectedLaunchDate !== undefined ? input.expectedLaunchDate : existing.expectedLaunchDate;
+    if (!effectiveExpectedLaunchDate) {
+      throw ApiError.badRequest('Expected launch date is required when launch status is "upcoming"');
+    }
+  } else {
+    // Not upcoming (anymore) — a stale expected-launch-date has no
+    // business meaning once a model is available/discontinued, so clear it
+    // rather than leaving old data sitting around silently.
+    effectiveExpectedLaunchDate = null;
   }
 
   const carModel = await prisma.carModel.update({
     where: { id },
     data: {
       ...input,
-      // bodyType / expectedLaunchDate / priceMin / priceMax can all be
-      // explicitly nulled out — Prisma needs `null` passed through as-is
-      // here, not skipped, same reasoning as Brand's countryOriginId.
-      bodyType: input.bodyType,
-      expectedLaunchDate: input.expectedLaunchDate,
+      slug,
+      // bodyTypeId / priceMin / priceMax are required fields now (schema
+      // no longer allows null) — passing them through as-is is fine and
+      // matches Prisma's "omit the key to leave unchanged" semantics.
+      bodyTypeId: input.bodyTypeId,
       priceMin: input.priceMin,
       priceMax: input.priceMax,
+      expectedLaunchDate: effectiveExpectedLaunchDate,
     },
     select: CAR_MODEL_SELECT,
   });
@@ -196,12 +244,33 @@ export async function updateCarModel(id: number, input: UpdateCarModelParsed, ac
 // Lightweight launch-status-only update, used by the row-level quick
 // select on the car model listing page — same pattern as
 // brand.service.ts's updateBrandStatus.
-export async function updateCarModelLaunchStatus(id: number, launchStatus: string, actorId: number) {
-  await getCarModelById(id);
+export async function updateCarModelLaunchStatus(
+  id: number,
+  launchStatus: string,
+  expectedLaunchDate: Date | undefined,
+  actorId: number,
+) {
+  const existing = await getCarModelById(id);
+
+  let effectiveExpectedLaunchDate: Date | null;
+  if (launchStatus === 'upcoming') {
+    // Use the date that came with this request if given, otherwise fall
+    // back to whatever the record already had (covers re-saving the same
+    // status). The validation schema already requires the caller to send
+    // one when the record isn't already "upcoming".
+    effectiveExpectedLaunchDate = expectedLaunchDate ?? existing.expectedLaunchDate;
+    if (!effectiveExpectedLaunchDate) {
+      throw ApiError.badRequest('Expected launch date is required when launch status is "upcoming"');
+    }
+  } else {
+    // Moving away from "upcoming" — clear the now-meaningless date rather
+    // than leaving stale data behind.
+    effectiveExpectedLaunchDate = null;
+  }
 
   const carModel = await prisma.carModel.update({
     where: { id },
-    data: { launchStatus },
+    data: { launchStatus, expectedLaunchDate: effectiveExpectedLaunchDate },
     select: CAR_MODEL_SELECT,
   });
 
@@ -247,15 +316,50 @@ export async function uploadCarModelCoverImage(
 export async function deleteCarModel(id: number, actorId: number) {
   const carModel = await getCarModelById(id);
 
-  // A car model with variants under it can't be deleted outright — same
-  // "protect referenced child rows" rule as brand.service.ts's
-  // deleteBrand (carModelCount check). Variants are the primary child
-  // entity here; leads/reviews/images cascade from the model itself and
-  // aren't a reason to block deletion.
-  const variantCount = await prisma.carVariant.count({ where: { modelId: id } });
-  if (variantCount > 0) {
+  // A car model with any of these still pointing at it can't be deleted
+  // outright — same "protect referenced child rows" rule as
+  // brand.service.ts's deleteBrand (carModelCount check). All of these
+  // are RESTRICT foreign keys at the DB level (unlike the various lead
+  // tables and MediaStory, which are SET NULL on modelId and so don't
+  // block deletion) — without checking each one up front, deleting a
+  // model that still has e.g. images or reviews on it would fail with a
+  // raw DB foreign-key error instead of this friendly message.
+  const [
+    variantCount,
+    imageCount,
+    faqCount,
+    videoCount,
+    colorCount,
+    offerCount,
+    usedListingCount,
+    reviewCount,
+    storyModelCount,
+  ] = await Promise.all([
+    prisma.carVariant.count({ where: { modelId: id } }),
+    prisma.carImage.count({ where: { modelId: id } }),
+    prisma.carFaq.count({ where: { modelId: id } }),
+    prisma.carVideo.count({ where: { modelId: id } }),
+    prisma.carColor.count({ where: { modelId: id } }),
+    prisma.newCarOffer.count({ where: { modelId: id } }),
+    prisma.usedCarListing.count({ where: { modelId: id } }),
+    prisma.review.count({ where: { modelId: id } }),
+    prisma.storyModel.count({ where: { modelId: id } }),
+  ]);
+
+  const linkedParts: string[] = [];
+  if (variantCount > 0) linkedParts.push(`${variantCount} variant(s)`);
+  if (imageCount > 0) linkedParts.push(`${imageCount} image(s)`);
+  if (faqCount > 0) linkedParts.push(`${faqCount} FAQ(s)`);
+  if (videoCount > 0) linkedParts.push(`${videoCount} video(s)`);
+  if (colorCount > 0) linkedParts.push(`${colorCount} color(s)`);
+  if (offerCount > 0) linkedParts.push(`${offerCount} offer(s)`);
+  if (usedListingCount > 0) linkedParts.push(`${usedListingCount} used-car listing(s)`);
+  if (reviewCount > 0) linkedParts.push(`${reviewCount} review(s)`);
+  if (storyModelCount > 0) linkedParts.push(`${storyModelCount} story link(s)`);
+
+  if (linkedParts.length > 0) {
     throw ApiError.badRequest(
-      `Cannot delete this car model — ${variantCount} variant(s) are linked to it. Delete or reassign them first.`,
+      `Cannot delete this car model — ${linkedParts.join(', ')} are linked to it. Delete or reassign them first.`,
     );
   }
 

@@ -195,17 +195,23 @@ export async function updateCityFlags(id: number, flags: UpdateCityFlagsParsed, 
 
 export async function deleteCity(id: number, actorId: number) {
   const city = await getCityById(id);
-  const [listingCount, userCount] = await Promise.all([
+  const [listingCount, userCount, addressCount] = await Promise.all([
     prisma.usedCarListing.count({ where: { cityId: id } }),
     prisma.user.count({ where: { cityId: id } }),
+    // UserAddress.cityId is a RESTRICT FK (unlike User.cityId, which is
+    // SET NULL) — without this check, deleting a city with addresses
+    // still on it would fail with a raw DB foreign-key error instead of
+    // this friendly message.
+    prisma.userAddress.count({ where: { cityId: id } }),
   ]);
 
-  if (listingCount > 0 || userCount > 0) {
+  if (listingCount > 0 || userCount > 0 || addressCount > 0) {
     const parts: string[] = [];
     if (listingCount > 0) parts.push(`${listingCount} used-car listing(s)`);
     if (userCount > 0) parts.push(`${userCount} user(s)`);
+    if (addressCount > 0) parts.push(`${addressCount} user address(es)`);
     throw ApiError.badRequest(
-      `Cannot delete this city — ${parts.join(' and ')} are linked to it. Reassign or remove them first.`,
+      `Cannot delete this city — ${parts.join(', ')} are linked to it. Reassign or remove them first.`,
     );
   }
 

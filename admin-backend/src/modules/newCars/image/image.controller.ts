@@ -12,6 +12,7 @@ import {
   createImageSchema,
   updateImageSchema,
   setPrimaryImageSchema,
+  bulkCreateImagesSchema,
 } from './image.validation';
 
 // GET /images
@@ -53,6 +54,30 @@ export async function createImage(req: Request, res: Response) {
     return sendSuccess(res, image, 'Image uploaded successfully', 201);
   } catch (err) {
     await deleteUploadedFile(buildPublicPath('car-images', req.file.filename));
+    throw err;
+  }
+}
+
+// POST /images/bulk
+// Multiple files in one request (multer .array('images', MAX)), same
+// scoping fields applied to every file — see bulkCreateImagesSchema.
+export async function createImagesBulk(req: Request, res: Response) {
+  if (!req.auth) {
+    throw ApiError.unauthorized();
+  }
+  const files = (req.files as Express.Multer.File[] | undefined) ?? [];
+  if (files.length === 0) {
+    throw ApiError.badRequest('At least one image file is required (expected field name "images")');
+  }
+
+  try {
+    const input = bulkCreateImagesSchema.parse(req.body);
+    const images = await imageService.createImagesBulk(input, req.auth.id, files.map((f) => f.filename));
+    return sendSuccess(res, images, `${images.length} image(s) uploaded successfully`, 201);
+  } catch (err) {
+    await Promise.all(
+      files.map((f) => deleteUploadedFile(buildPublicPath('car-images', f.filename))),
+    );
     throw err;
   }
 }

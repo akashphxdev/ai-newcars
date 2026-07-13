@@ -4,9 +4,9 @@ import {
   useGetVariantsQuery,
   useDeleteVariantMutation,
   type VariantRecord,
-  type TransmissionType,
 } from "./variant.api";
 import { useGetCarModelsQuery } from "../carModels/carModel.api";
+import { useGetAttributeOptionsQuery } from "../AttributeOptions/attributeOption.api";
 import { extractApiError } from "../../../lib/apiClient";
 import VariantModal from "./VariantModal";
 import ConfirmDialog from "../../../components/common/ConfirmDialog";
@@ -16,14 +16,6 @@ import { SearchFilterBar, SearchInput, FilterSelect } from "../../../components/
 
 const ACCENT = "#D4300F";
 const PAGE_SIZE = 20;
-
-const TRANSMISSION_OPTIONS: { value: TransmissionType; label: string }[] = [
-  { value: "manual", label: "Manual" },
-  { value: "automatic", label: "Automatic" },
-  { value: "amt", label: "AMT" },
-  { value: "cvt", label: "CVT" },
-  { value: "dct", label: "DCT" },
-];
 
 function formatPrice(value: string): string {
   const num = Number(value);
@@ -35,12 +27,22 @@ export default function AllVariants() {
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState("");
   const [filterModelId, setFilterModelId] = useState<number | "">("");
-  const [filterTransmission, setFilterTransmission] = useState<TransmissionType | "">("");
+  const [filterTransmissionId, setFilterTransmissionId] = useState<number | "">("");
 
-  // NOTE: same 100-row cap used elsewhere — fine while the car-models
-  // table stays under 100 rows.
-  const { data: carModelsData } = useGetCarModelsQuery({ limit: 100, sortBy: "name", sortOrder: "asc" });
+  // Raised from 100 to 500 — see VariantModal.tsx for why: past 100 rows,
+  // options silently disappear from these dropdowns/filters.
+  const { data: carModelsData } = useGetCarModelsQuery({ limit: 500, sortBy: "name", sortOrder: "asc" });
   const carModels = carModelsData?.data ?? [];
+
+  // Transmission filter options now come from the dynamic attribute
+  // options lookup instead of a hardcoded enum.
+  const { data: transmissionsData } = useGetAttributeOptionsQuery({
+    category: "transmission",
+    limit: 500,
+    sortBy: "name",
+    sortOrder: "asc",
+  });
+  const transmissions = transmissionsData?.data ?? [];
 
   const {
     data: variantsData,
@@ -52,7 +54,7 @@ export default function AllVariants() {
     limit: PAGE_SIZE,
     search: search || undefined,
     modelId: filterModelId || undefined,
-    transmission: filterTransmission || undefined,
+    transmissionId: filterTransmissionId || undefined,
   });
 
   const variants = variantsData?.data ?? [];
@@ -126,7 +128,7 @@ export default function AllVariants() {
       header: "Transmission",
       render: (v) => (
         <span className="text-[10px] font-bold px-2 py-0.5 rounded-full text-[#4a4640] bg-[#f7f5f1] uppercase">
-          {v.transmission}
+          {v.transmission?.name ?? "—"}
         </span>
       ),
     },
@@ -204,12 +206,12 @@ export default function AllVariants() {
           placeholder="All models"
         />
         <FilterSelect
-          value={filterTransmission}
+          value={filterTransmissionId}
           onChange={(v) => {
-            setFilterTransmission((v as TransmissionType) || "");
+            setFilterTransmissionId(v ? Number(v) : "");
             setPage(1);
           }}
-          options={TRANSMISSION_OPTIONS}
+          options={transmissions.map((t) => ({ value: t.id, label: t.name }))}
           placeholder="All transmissions"
         />
       </SearchFilterBar>

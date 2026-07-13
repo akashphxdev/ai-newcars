@@ -22,7 +22,7 @@ router.use(requireAuth(['admin']));
 
 router.get('/', requirePermission('carmodels.view'), asyncHandler(getCarModels));
 router.get('/:id', requirePermission('carmodels.view'), asyncHandler(getCarModelById));
-// Cover image is optional at create time — multipart field name "coverImage".
+// Cover image is required at create time — multipart field name "coverImage".
 // Same uploader/validation (jpg/png/webp, 2MB) as the gallery images.
 router.post(
   '/',

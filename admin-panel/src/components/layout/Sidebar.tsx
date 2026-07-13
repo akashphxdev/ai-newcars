@@ -115,6 +115,8 @@ const NAV: NavGroup[] = [
         children: [
           { label: "Brands", href: "/new-cars/brands" },
           { label: "Car Models", href: "/new-cars/models" },
+          { label: "Body Types", href: "/new-cars/body-types" },
+          { label: "Attribute Options", href: "/new-cars/attribute-options" },
           { label: "Variants", href: "/new-cars/variants" },
           { label: "Powertrains Electric", href: "/new-cars/powertrain-eletric" },
           { label: "Powertrains Ice", href: "/new-cars/powertrain-ice" },
@@ -181,6 +183,20 @@ const NAV: NavGroup[] = [
   {
     group: "Content",
     items: [
+      {
+        label: "Articles",
+        icon: (
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
+            <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
+            <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" />
+          </svg>
+        ),
+        children: [
+          { label: "Category", href: "/articles/category" },
+          { label: "All Articles", href: "/articles" },
+          { label: "Article Comments", href: "articles/article-comments" },
+        ],
+      },
       {
         label: "Stories",
         icon: (

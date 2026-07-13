@@ -4,21 +4,13 @@ import {
   useCreateVariantMutation,
   useUpdateVariantMutation,
   type VariantRecord,
-  type TransmissionType,
 } from "./variant.api";
 import { useGetCarModelsQuery } from "../carModels/carModel.api";
 import { useGetBrandsQuery } from "../Brands/brand.api";
+import { useGetAttributeOptionsQuery } from "../AttributeOptions/attributeOption.api";
 import { extractApiError } from "../../../lib/apiClient";
 
 const ACCENT = "#D4300F";
-
-const TRANSMISSIONS: { value: TransmissionType; label: string }[] = [
-  { value: "manual", label: "Manual" },
-  { value: "automatic", label: "Automatic" },
-  { value: "amt", label: "AMT" },
-  { value: "cvt", label: "CVT" },
-  { value: "dct", label: "DCT" },
-];
 
 // Every field here is required, on both Add and Edit — no optional
 // fields in this module (per explicit product requirement).
@@ -28,7 +20,7 @@ interface FieldErrors {
   variantName?: string;
   price?: string;
   seatingCapacity?: string;
-  transmission?: string;
+  transmissionId?: string;
 }
 
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
@@ -57,13 +49,26 @@ export default function VariantModal({
 }) {
   const isEditMode = !!variant;
 
-  // NOTE: same 100-row cap used elsewhere (Brand dropdown, Country
-  // dropdown) — fine while the car-models table stays under 100 rows.
-  const { data: carModelsData } = useGetCarModelsQuery({ limit: 100, sortBy: "name", sortOrder: "asc" });
+  // Raised from 100 to 1000: at 100, once car-models/brands/transmissions
+  // pass 100 rows, options past the cap silently vanish from these
+  // dropdowns — most visibly in Edit mode, where the variant's own
+  // model/brand could fall outside the fetched page and show up as a
+  // blank select even though the correct id is still held in state.
+  const { data: carModelsData } = useGetCarModelsQuery({ limit: 500, sortBy: "name", sortOrder: "asc" });
   const carModels = carModelsData?.data ?? [];
 
-  const { data: brandsData } = useGetBrandsQuery({ limit: 100, sortBy: "name", sortOrder: "asc" });
+  const { data: brandsData } = useGetBrandsQuery({ limit: 500, sortBy: "name", sortOrder: "asc" });
   const brands = brandsData?.data ?? [];
+
+  // Transmission is now a dynamic lookup (category "transmission" in
+  // attribute_options) instead of a hardcoded enum.
+  const { data: transmissionsData } = useGetAttributeOptionsQuery({
+    category: "transmission",
+    limit: 500,
+    sortBy: "name",
+    sortOrder: "asc",
+  });
+  const transmissions = transmissionsData?.data ?? [];
 
   const [brandId, setBrandId] = useState<number | "">(variant?.model.brand.id ?? "");
   const modelsForBrand = brandId ? carModels.filter((m) => m.brandId === brandId) : [];
@@ -74,8 +79,8 @@ export default function VariantModal({
   const [seatingCapacity, setSeatingCapacity] = useState(
     variant ? String(variant.seatingCapacity) : "",
   );
-  const [transmission, setTransmission] = useState<TransmissionType | "">(
-    variant?.transmission ?? "",
+  const [transmissionId, setTransmissionId] = useState<number | "">(
+    variant?.transmissionId ?? "",
   );
   // No default — isTopSeller must be an explicit, deliberate choice on
   // every save (same "all fields mandatory" rule as everything else here).
@@ -95,7 +100,7 @@ export default function VariantModal({
     setVariantName("");
     setPrice("");
     setSeatingCapacity("");
-    setTransmission("");
+    setTransmissionId("");
     setIsTopSeller(false);
     setErrors({});
     setServerError("");
@@ -122,7 +127,7 @@ export default function VariantModal({
     ) {
       next.seatingCapacity = "Seating capacity is required (2–15).";
     }
-    if (!transmission) next.transmission = "Transmission is required.";
+    if (!transmissionId) next.transmissionId = "Transmission is required.";
     setErrors(next);
     return Object.keys(next).length === 0;
   };
@@ -132,14 +137,14 @@ export default function VariantModal({
     setServerError("");
     if (!validate()) return;
 
-    // validate() above already guarantees modelId/transmission are set —
-    // the casts here just satisfy TypeScript.
+    // validate() above already guarantees modelId/transmissionId are set —
+    // the Number(...) casts here just satisfy TypeScript.
     const payload = {
       modelId: Number(modelId),
       variantName: variantName.trim(),
       price: Number(price),
       seatingCapacity: Number(seatingCapacity),
-      transmission: transmission as TransmissionType,
+      transmissionId: Number(transmissionId),
       isTopSeller,
     };
 
@@ -287,20 +292,20 @@ export default function VariantModal({
 
           <Field label="Transmission">
             <select
-              value={transmission}
-              onChange={(e) => setTransmission((e.target.value as TransmissionType) || "")}
+              value={transmissionId}
+              onChange={(e) => setTransmissionId(e.target.value ? Number(e.target.value) : "")}
               className="cursor-pointer w-full text-sm font-medium text-[#1c1a17] bg-[#f7f5f1] border rounded-xl px-3 py-2.5 outline-none transition-all focus:bg-white"
-              style={{ borderColor: errors.transmission ? "#f0997b" : "#e2ddd5" }}
+              style={{ borderColor: errors.transmissionId ? "#f0997b" : "#e2ddd5" }}
             >
               <option value="">Select transmission</option>
-              {TRANSMISSIONS.map((t) => (
-                <option key={t.value} value={t.value}>
-                  {t.label}
+              {transmissions.map((t) => (
+                <option key={t.id} value={t.id}>
+                  {t.name}
                 </option>
               ))}
             </select>
-            {errors.transmission && (
-              <p className="text-[11px] font-medium text-[#D4300F] mt-1">{errors.transmission}</p>
+            {errors.transmissionId && (
+              <p className="text-[11px] font-medium text-[#D4300F] mt-1">{errors.transmissionId}</p>
             )}
           </Field>
 

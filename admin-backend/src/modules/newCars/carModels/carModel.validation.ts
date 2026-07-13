@@ -4,25 +4,14 @@ import { z } from 'zod';
 
 const slugRegex = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 
-const BODY_TYPES = [
-  'hatchback',
-  'sedan',
-  'suv',
-  'muv',
-  'coupe',
-  'convertible',
-  'pickup',
-  'van',
-] as const;
-
 const LAUNCH_STATUSES = ['available', 'upcoming', 'discontinued'] as const;
 
 export const carModelListQuerySchema = z.object({
   page: z.coerce.number().int().min(1).default(1),
-  limit: z.coerce.number().int().min(1).max(100).default(20),
+  limit: z.coerce.number().int().min(1).max(500).default(20),
   search: z.string().trim().min(1).optional(),
   brandId: z.coerce.number().int().positive().optional(),
-  bodyType: z.enum(BODY_TYPES).optional(),
+  bodyTypeId: z.coerce.number().int().positive().optional(),
   launchStatus: z.enum(LAUNCH_STATUSES).optional(),
   sortBy: z.enum(['name', 'id', 'priceMin', 'createdAt']).default('createdAt'),
   sortOrder: z.enum(['asc', 'desc']).default('desc'),
@@ -57,7 +46,8 @@ export const createCarModelSchema = z
       .optional(),
     // Required going forward — every car model needs a body type and a
     // price range for the public site's filters/cards to work correctly.
-    bodyType: z.enum(BODY_TYPES, { errorMap: () => ({ message: 'Body type is required' }) }),
+    // Now an FK into the body_types table rather than a hardcoded enum.
+    bodyTypeId: z.coerce.number().int().positive('Body type is required'),
     launchStatus: z.enum(LAUNCH_STATUSES).default('available'),
     expectedLaunchDate: z.coerce.date().optional(),
     priceMin: z.coerce.number().nonnegative('Price min is required'),
@@ -74,23 +64,22 @@ export const createCarModelSchema = z
     path: ['expectedLaunchDate'],
   });
 
-// NOTE ON REQUIRED FIELDS: bodyType/priceMin/priceMax/expectedLaunchDate are
-// mandatory on CREATE (see createCarModelSchema above). This schema (for
-// PATCH) is intentionally kept partial — that's standard REST PATCH
-// semantics (send only the fields you're changing). A field is never wiped
-// out by omission here; explicit `null` is required to clear it.
 export const updateCarModelSchema = z
   .object({
     brandId: z.coerce.number().int().positive().optional(),
     name: z.string().trim().min(2).max(100).optional(),
     slug: z.string().trim().toLowerCase().min(2).max(100).regex(slugRegex).optional(),
-    bodyType: z.enum(BODY_TYPES).nullable().optional(),
+    // No longer nullable — bodyType is a required business field (same as
+    // create). Omit the key to leave it unchanged; you can no longer send
+    // `null` to silently clear it out.
+    bodyTypeId: z.coerce.number().int().positive('Body type is required').optional(),
     launchStatus: z.enum(LAUNCH_STATUSES).optional(),
     // Explicit null clears an already-set expected launch date (e.g.
     // once a model actually launches and moves to "available").
     expectedLaunchDate: z.coerce.date().nullable().optional(),
-    priceMin: z.coerce.number().nonnegative().nullable().optional(),
-    priceMax: z.coerce.number().nonnegative().nullable().optional(),
+    // No longer nullable — price range is required (same as create).
+    priceMin: z.coerce.number().nonnegative('Price min is required').optional(),
+    priceMax: z.coerce.number().nonnegative('Price max is required').optional(),
   })
   .refine((data) => Object.keys(data).length > 0, {
     message: 'At least one field must be provided to update',
@@ -102,10 +91,29 @@ export const updateCarModelSchema = z
         priceMax: data.priceMax ?? undefined,
       }),
     { message: 'priceMax must be greater than or equal to priceMin', path: ['priceMax'] },
-  );
-export const updateCarModelLaunchStatusSchema = z.object({
-  launchStatus: z.enum(LAUNCH_STATUSES),
-});
+  )
+  // Same conditional rule as create: if the caller is explicitly setting
+  // launchStatus to "upcoming" in this request, a date must come with it.
+  // (The case where launchStatus is left unchanged but was already
+  // "upcoming" is enforced in the service, where the existing record's
+  // current status/date is known.)
+  .refine((data) => data.launchStatus !== 'upcoming' || !!data.expectedLaunchDate, {
+    message: 'Expected launch date is required when launch status is "upcoming"',
+    path: ['expectedLaunchDate'],
+  });
+
+export const updateCarModelLaunchStatusSchema = z
+  .object({
+    launchStatus: z.enum(LAUNCH_STATUSES),
+    // Required specifically when the new status is "upcoming" — see
+    // refine below. This is what the row-level quick-status dropdown on
+    // the listing page now needs to send.
+    expectedLaunchDate: z.coerce.date().optional(),
+  })
+  .refine((data) => data.launchStatus !== 'upcoming' || !!data.expectedLaunchDate, {
+    message: 'Expected launch date is required when launch status is "upcoming"',
+    path: ['expectedLaunchDate'],
+  });
 
 export type CarModelListQueryParsed = z.infer<typeof carModelListQuerySchema>;
 export type CreateCarModelParsed = z.infer<typeof createCarModelSchema>;

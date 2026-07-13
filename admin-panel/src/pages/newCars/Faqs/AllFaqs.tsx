@@ -2,12 +2,14 @@
 import { useState } from "react";
 import {
   useGetFaqsQuery,
+  useUpdateFaqStatusMutation,
   useDeleteFaqMutation,
   type FaqRecord,
 } from "./faq.api";
 import { useGetCarModelsQuery } from "../carModels/carModel.api";
 import { extractApiError } from "../../../lib/apiClient";
 import FaqModal from "./FaqModal";
+import ConfirmDialog from "../../../components/common/ConfirmDialog";
 import DataTable, { type DataTableColumn } from "../../../components/common/DataTable";
 import Pagination from "../../../components/common/Pagination";
 import { SearchFilterBar, SearchInput, FilterSelect } from "../../../components/common/SearchFilterBar";
@@ -19,6 +21,35 @@ const STATUS_OPTIONS: { value: "true" | "false"; label: string }[] = [
   { value: "true", label: "Active" },
   { value: "false", label: "Inactive" },
 ];
+
+// Small pill-style toggle switch — same pattern as AllBrands.tsx's
+// StatusToggle / AllCountries.tsx's StatusToggle.
+function StatusToggle({
+  checked,
+  onChange,
+  disabled,
+}: {
+  checked: boolean;
+  onChange: () => void;
+  disabled?: boolean;
+}) {
+  return (
+    <button
+      type="button"
+      role="switch"
+      aria-checked={checked}
+      onClick={onChange}
+      disabled={disabled}
+      className="cursor-pointer relative inline-flex h-5 w-9 items-center rounded-full transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+      style={{ background: checked ? ACCENT : "#e2ddd5" }}
+    >
+      <span
+        className="inline-block h-3.5 w-3.5 transform rounded-full bg-white shadow transition-transform"
+        style={{ transform: checked ? "translateX(18px)" : "translateX(3px)" }}
+      />
+    </button>
+  );
+}
 
 function truncate(text: string, max = 80): string {
   return text.length > max ? `${text.slice(0, max)}…` : text;
@@ -72,15 +103,33 @@ export default function AllFaqs() {
     setEditingFaq(null);
   };
 
+  const [updateFaqStatus] = useUpdateFaqStatusMutation();
   const [deleteFaq] = useDeleteFaqMutation();
+
+  const [togglingId, setTogglingId] = useState<number | null>(null);
   const [deletingId, setDeletingId] = useState<number | null>(null);
+  const [pendingDelete, setPendingDelete] = useState<FaqRecord | null>(null);
   const [actionError, setActionError] = useState("");
 
-  const handleDelete = async (id: number) => {
+  const handleToggleStatus = async (faq: FaqRecord) => {
     setActionError("");
-    setDeletingId(id);
+    setTogglingId(faq.id);
     try {
-      await deleteFaq(id).unwrap();
+      await updateFaqStatus({ id: faq.id, isActive: !faq.isActive }).unwrap();
+    } catch (err) {
+      setActionError(extractApiError(err));
+    } finally {
+      setTogglingId(null);
+    }
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!pendingDelete) return;
+    setActionError("");
+    setDeletingId(pendingDelete.id);
+    try {
+      await deleteFaq(pendingDelete.id).unwrap();
+      setPendingDelete(null);
     } catch (err) {
       setActionError(extractApiError(err));
     } finally {
@@ -91,16 +140,7 @@ export default function AllFaqs() {
   const columns: DataTableColumn<FaqRecord>[] = [
     {
       header: "Question",
-      render: (f) => (
-        <>
-          <p className="font-semibold text-[#1c1a17]">{truncate(f.question)}</p>
-          {!f.isActive && (
-            <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-[#f7f5f1] text-[#a39e96]">
-              Inactive
-            </span>
-          )}
-        </>
-      ),
+      render: (f) => <p className="font-semibold text-[#1c1a17]">{truncate(f.question)}</p>,
     },
     {
       header: "Answer",
@@ -116,6 +156,21 @@ export default function AllFaqs() {
     },
     { header: "Order", render: (f) => <span className="text-[#7a7670]">{f.displayOrder}</span> },
     {
+      header: "Status",
+      render: (f) => (
+        <div className="flex items-center gap-2">
+          <StatusToggle
+            checked={f.isActive}
+            disabled={togglingId === f.id}
+            onChange={() => handleToggleStatus(f)}
+          />
+          <span className={`text-[10px] font-bold ${f.isActive ? "text-green-600" : "text-[#a39e96]"}`}>
+            {f.isActive ? "Active" : "Inactive"}
+          </span>
+        </div>
+      ),
+    },
+    {
       header: "",
       align: "right",
       render: (f) => (
@@ -127,11 +182,10 @@ export default function AllFaqs() {
             Edit
           </button>
           <button
-            onClick={() => handleDelete(f.id)}
-            disabled={deletingId === f.id}
-            className="cursor-pointer text-[10px] font-bold px-2.5 py-1 rounded-lg border border-red-100 text-red-500 hover:bg-red-50 transition-colors disabled:opacity-50"
+            onClick={() => setPendingDelete(f)}
+            className="cursor-pointer text-[10px] font-bold px-2.5 py-1 rounded-lg border border-red-100 text-red-500 hover:bg-red-50 transition-colors"
           >
-            {deletingId === f.id ? "..." : "Delete"}
+            Delete
           </button>
         </div>
       ),
@@ -221,6 +275,15 @@ export default function AllFaqs() {
           faq={editingFaq}
         />
       )}
+
+      <ConfirmDialog
+        open={!!pendingDelete}
+        title="Delete FAQ?"
+        itemName={pendingDelete?.question}
+        loading={deletingId === pendingDelete?.id}
+        onCancel={() => setPendingDelete(null)}
+        onConfirm={handleConfirmDelete}
+      />
     </div>
   );
 }

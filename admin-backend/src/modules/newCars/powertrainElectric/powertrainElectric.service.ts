@@ -9,7 +9,7 @@ import type {
   CreatePowertrainElectricParsed,
   UpdatePowertrainElectricParsed,
 } from './powertrainElectric.validation';
-import type { PowertrainElectricRecord } from './powertrainElectric.types';
+import type { PowertrainElectricRecord, PowertrainElectricListItem } from './powertrainElectric.types';
 
 const POWERTRAIN_ELECTRIC_SELECT = {
   id: true,
@@ -19,7 +19,8 @@ const POWERTRAIN_ELECTRIC_SELECT = {
   batteryCapacity: true,
   batteryChemistry: true,
   thermalManagementSystem: true,
-  drivetrain: true,
+  drivetrainId: true,
+  drivetrain: { select: { id: true, name: true, slug: true } },
   powerPs: true,
   torqueNm: true,
   claimedRange: true,
@@ -66,7 +67,38 @@ const POWERTRAIN_ELECTRIC_SELECT = {
   },
 } as const;
 
-export async function listPowertrainElectric(query: PowertrainElectricListQueryParsed) {
+// Listing only ships what the table actually renders — full spec sheet is
+// fetched separately via getById when a row is expanded on the frontend.
+const POWERTRAIN_ELECTRIC_LIST_SELECT = {
+  id: true,
+  variantId: true,
+  batteryCapacity: true,
+  drivetrain: { select: { id: true, name: true, slug: true } },
+  powerPs: true,
+  torqueNm: true,
+  claimedRange: true,
+  isDefault: true,
+  isDeleted: true,
+  createdAt: true,
+  variant: {
+    select: {
+      id: true,
+      variantName: true,
+      model: {
+        select: {
+          id: true,
+          name: true,
+          brand: { select: { id: true, name: true } },
+        },
+      },
+    },
+  },
+} as const;
+
+export async function listPowertrainElectric(query: PowertrainElectricListQueryParsed): Promise<{
+  items: PowertrainElectricListItem[];
+  pagination: { page: number; limit: number; total: number; totalPages: number };
+}> {
   const { page, limit, variantId, isDefault, includeDeleted, sortBy, sortOrder } = query;
 
   const where: Prisma.CarPowertrainElectricWhereInput = {
@@ -78,7 +110,7 @@ export async function listPowertrainElectric(query: PowertrainElectricListQueryP
   const [items, total] = await Promise.all([
     prisma.carPowertrainElectric.findMany({
       where,
-      select: POWERTRAIN_ELECTRIC_SELECT,
+      select: POWERTRAIN_ELECTRIC_LIST_SELECT,
       orderBy: { [sortBy]: sortOrder },
       skip: (page - 1) * limit,
       take: limit,
@@ -110,9 +142,6 @@ export async function getPowertrainElectricById(id: number): Promise<PowertrainE
   return powertrain as unknown as PowertrainElectricRecord;
 }
 
-// Every powertrain row must belong to a real, existing variant — same
-// "validate the parent foreign key" rule as
-// powertrainIce.service.ts's assertVariantExists.
 async function assertVariantExists(variantId: number) {
   const variant = await prisma.carVariant.findUnique({ where: { id: variantId }, select: { id: true } });
   if (!variant) {
@@ -120,9 +149,16 @@ async function assertVariantExists(variantId: number) {
   }
 }
 
-// Only one EV powertrain per variant may be marked "default" — same
-// rule (and same transactional approach) as
-// powertrainIce.service.ts's unsetOtherDefaults.
+async function assertDrivetrainExists(drivetrainId: number) {
+  const option = await prisma.attributeOption.findFirst({
+    where: { id: drivetrainId, category: 'drivetrain' },
+    select: { id: true },
+  });
+  if (!option) {
+    throw ApiError.badRequest('Invalid drivetrainId — option does not exist');
+  }
+}
+
 async function unsetOtherDefaults(
   tx: Prisma.TransactionClient,
   variantId: number,
@@ -144,6 +180,9 @@ export async function createPowertrainElectric(
   actorId: number,
 ) {
   await assertVariantExists(input.variantId);
+  if (typeof input.drivetrainId === 'number') {
+    await assertDrivetrainExists(input.drivetrainId);
+  }
 
   const powertrain = await prisma.$transaction(async (tx) => {
     if (input.isDefault) {
@@ -158,7 +197,7 @@ export async function createPowertrainElectric(
         batteryCapacity: input.batteryCapacity,
         batteryChemistry: input.batteryChemistry,
         thermalManagementSystem: input.thermalManagementSystem,
-        drivetrain: input.drivetrain,
+        drivetrainId: input.drivetrainId,
         powerPs: input.powerPs,
         torqueNm: input.torqueNm,
         claimedRange: input.claimedRange,
@@ -208,6 +247,9 @@ export async function updatePowertrainElectric(
   if (typeof input.variantId === 'number') {
     await assertVariantExists(input.variantId);
   }
+  if (typeof input.drivetrainId === 'number') {
+    await assertDrivetrainExists(input.drivetrainId);
+  }
 
   const targetVariantId = input.variantId ?? existing.variantId;
 
@@ -220,15 +262,12 @@ export async function updatePowertrainElectric(
       where: { id },
       data: {
         ...input,
-        // Nullable spec fields need `null` passed through as-is when the
-        // caller explicitly clears them — same reasoning as
-        // powertrainIce.service.ts's updatePowertrainIce.
         numMotors: input.numMotors,
         motorType: input.motorType,
         batteryCapacity: input.batteryCapacity,
         batteryChemistry: input.batteryChemistry,
         thermalManagementSystem: input.thermalManagementSystem,
-        drivetrain: input.drivetrain,
+        drivetrainId: input.drivetrainId,
         powerPs: input.powerPs,
         torqueNm: input.torqueNm,
         claimedRange: input.claimedRange,
@@ -267,9 +306,6 @@ export async function updatePowertrainElectric(
   return powertrain;
 }
 
-// Soft delete — matches the isDeleted/deletedBy/deletedAt columns baked
-// into car_powertrains_electric. Same reasoning as
-// powertrainIce.service.ts's deletePowertrainIce.
 export async function deletePowertrainElectric(id: number, actorId: number) {
   const powertrain = await getPowertrainElectricById(id);
 
@@ -295,8 +331,6 @@ export async function deletePowertrainElectric(id: number, actorId: number) {
   return { message: 'Electric powertrain deleted successfully' };
 }
 
-// Restore a soft-deleted row — same "lightweight status flip" pattern as
-// powertrainIce.service.ts's restorePowertrainIce.
 export async function restorePowertrainElectric(id: number, actorId: number) {
   const powertrain = await getPowertrainElectricById(id);
 

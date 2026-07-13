@@ -1,6 +1,6 @@
 // src/modules/newCars/powertrainIce/powertrainIce.types.ts
 
-import type { FuelType, IceTransmissionType, Drivetrain } from './powertrainIce.validation';
+import type { FuelType } from './powertrainIce.validation';
 
 export interface PowertrainIceVariantSummary {
   id: number;
@@ -8,13 +8,17 @@ export interface PowertrainIceVariantSummary {
   model: { id: number; name: string; brand: { id: number; name: string } };
 }
 
+export interface AttributeOptionSummary {
+  id: number;
+  name: string;
+  slug: string;
+}
+
 export interface PowertrainIceRecord {
   id: number;
   variantId: number;
   fuelType: FuelType;
   fuelTypeSubCategory: string | null;
-  // Decimal fields come back from Prisma serialized as strings — same
-  // convention used across CarModel/CarVariant.
   fuelTankCapacity: string | null;
   cngTankCapacity: string | null;
   kerbWeight: number | null;
@@ -22,12 +26,14 @@ export interface PowertrainIceRecord {
   cubicCapacity: number | null;
   cylinders: number | null;
   cylinderCapacity: string | null;
-  transmissionType: IceTransmissionType | null;
+  transmissionTypeId: number | null;
+  transmissionType: AttributeOptionSummary | null;
   transmissionSubType: string | null;
   transmissionSpeed: number | null;
   numGears: number | null;
   isFourByFour: boolean;
-  drivetrain: Drivetrain | null;
+  drivetrainId: number | null;
+  drivetrain: AttributeOptionSummary | null;
   powerPs: number | null;
   powerMinRpm: number | null;
   powerMaxRpm: number | null;
@@ -50,6 +56,24 @@ export interface PowertrainIceRecord {
   deletedBy: number | null;
   deletedAt: Date | null;
   expiresAt: Date | null;
+  createdAt: Date;
+  variant: PowertrainIceVariantSummary;
+}
+
+// What the listing table actually renders — everything else (mileage,
+// speed, sub-specs, URLs, etc.) is fetched on demand via getById when a
+// row is expanded, instead of being shipped on every list call.
+export interface PowertrainIceListItem {
+  id: number;
+  variantId: number;
+  fuelType: FuelType;
+  fuelTypeSubCategory: string | null;
+  engineDisplacement: string | null;
+  powerPs: number | null;
+  torqueNm: number | null;
+  transmissionType: AttributeOptionSummary | null;
+  isDefault: boolean;
+  isDeleted: boolean;
   createdAt: Date;
   variant: PowertrainIceVariantSummary;
 }

@@ -1,27 +1,25 @@
 // src/pages/newCars/carModels/carModel.api.ts
 import { api } from "../../../store/baseApi";
 
-export type BodyType =
-  | "hatchback"
-  | "sedan"
-  | "suv"
-  | "muv"
-  | "coupe"
-  | "convertible"
-  | "pickup"
-  | "van";
-
 export type LaunchStatus = "available" | "upcoming" | "discontinued";
+
+// Minimal body type shape embedded in the car model record — mirrors
+// BodyTypeRecord in BodyTypes/bodyType.api.ts.
+export interface BodyTypeSummary {
+  id: number;
+  name: string;
+  slug: string;
+}
 
 export interface CarModelRecord {
   id: number;
   brandId: number;
   name: string;
   slug: string;
-  bodyType: BodyType | null;
+  bodyTypeId: number | null;
+  bodyType: BodyTypeSummary | null;
   launchStatus: LaunchStatus;
   expectedLaunchDate: string | null;
-  // Decimal fields come back from Prisma serialized as strings.
   priceMin: string | null;
   priceMax: string | null;
   ratingAvg: string | null;
@@ -42,7 +40,7 @@ export interface ListCarModelsParams {
   limit?: number;
   search?: string;
   brandId?: number;
-  bodyType?: BodyType;
+  bodyTypeId?: number;
   launchStatus?: LaunchStatus;
   sortBy?: "name" | "id" | "priceMin" | "createdAt";
   sortOrder?: "asc" | "desc";
@@ -52,13 +50,11 @@ export interface CreateCarModelInput {
   brandId: number;
   name: string;
   slug?: string; // auto-generated from name if left blank — intentionally optional
-  bodyType: BodyType;
+  bodyTypeId: number;
   launchStatus?: LaunchStatus;
-  // Required only when launchStatus === "upcoming" — enforced by the backend too.
   expectedLaunchDate?: string;
   priceMin: number;
   priceMax: number;
-  // Optional at create time — can also be set/replaced later via uploadCoverImage.
   coverImage?: File;
 }
 
@@ -66,9 +62,7 @@ export interface UpdateCarModelInput {
   brandId?: number;
   name?: string;
   slug?: string;
-  // Explicit `null` clears the field, `undefined`/omitted leaves it
-  // untouched — mirrors the backend's updateCarModelSchema (PATCH semantics).
-  bodyType?: BodyType | null;
+  bodyTypeId?: number | null;
   launchStatus?: LaunchStatus;
   expectedLaunchDate?: string | null;
   priceMin?: number | null;
@@ -119,7 +113,7 @@ export const carModelApi = api.injectEndpoints({
         formData.append("brandId", String(fields.brandId));
         formData.append("name", fields.name);
         if (fields.slug) formData.append("slug", fields.slug);
-        formData.append("bodyType", fields.bodyType);
+        formData.append("bodyTypeId", String(fields.bodyTypeId));
         if (fields.launchStatus) formData.append("launchStatus", fields.launchStatus);
         if (fields.expectedLaunchDate) formData.append("expectedLaunchDate", fields.expectedLaunchDate);
         formData.append("priceMin", String(fields.priceMin));
@@ -137,13 +131,7 @@ export const carModelApi = api.injectEndpoints({
       invalidatesTags: (_result, _error, { id }) => [{ type: "CarModel", id }, CAR_MODEL_LIST_TAG],
     }),
 
-    // Dedicated "replace just the cover image" mutation — mirrors
-    // image.api.ts's replaceImageFile, so the modal doesn't need to resend
-    // the whole edit form just to swap the thumbnail.
-    uploadCarModelCoverImage: builder.mutation<
-      { id: number; coverImageUrl: string | null },
-      { id: number; file: File }
-    >({
+  uploadCarModelCoverImage: builder.mutation<{ id: number; coverImageUrl: string | null }, { id: number; file: File }>({
       query: ({ id, file }) => {
         const formData = new FormData();
         formData.append("coverImage", file);
@@ -153,14 +141,14 @@ export const carModelApi = api.injectEndpoints({
       invalidatesTags: (_result, _error, { id }) => [{ type: "CarModel", id }, CAR_MODEL_LIST_TAG],
     }),
 
-    // Lightweight row-level quick launch-status change — separate from
-    // the full edit mutation so changing it doesn't need the whole
-    // edit form's payload.
-    updateCarModelLaunchStatus: builder.mutation<CarModelRecord, { id: number; launchStatus: LaunchStatus }>({
-      query: ({ id, launchStatus }) => ({
+    updateCarModelLaunchStatus: builder.mutation<
+      CarModelRecord,
+      { id: number; launchStatus: LaunchStatus; expectedLaunchDate?: string }
+    >({
+      query: ({ id, launchStatus, expectedLaunchDate }) => ({
         url: `/new-cars/car-models/${id}/launch-status`,
         method: "PATCH",
-        data: { launchStatus },
+        data: { launchStatus, expectedLaunchDate },
       }),
       transformResponse: (res: CarModelSingleRawResponse) => res.data,
       invalidatesTags: (_result, _error, { id }) => [{ type: "CarModel", id }, CAR_MODEL_LIST_TAG],

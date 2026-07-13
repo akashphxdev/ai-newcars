@@ -2,12 +2,15 @@
 import { useState } from "react";
 import {
   useGetOffersQuery,
+  useUpdateOfferStatusMutation,
   useDeleteOfferMutation,
   type OfferRecord,
 } from "./offer.api";
 import { useGetCarModelsQuery } from "../carModels/carModel.api";
-import { extractApiError } from "../../../lib/apiClient";
+import { getOfferTypeLabel } from "../../../lib/lookups";
+import { extractApiError, getUploadUrl } from "../../../lib/apiClient";
 import OfferModal from "./OfferModal";
+import ConfirmDialog from "../../../components/common/ConfirmDialog";
 import DataTable, { type DataTableColumn } from "../../../components/common/DataTable";
 import Pagination from "../../../components/common/Pagination";
 import { SearchFilterBar, SearchInput, FilterSelect } from "../../../components/common/SearchFilterBar";
@@ -30,6 +33,35 @@ function formatAmount(value: string | null): string {
 function formatDate(value: string | null): string {
   if (!value) return "—";
   return new Date(value).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" });
+}
+
+// Small pill-style toggle switch — same pattern as AllBrands.tsx's
+// StatusToggle / AllCountries.tsx's StatusToggle.
+function StatusToggle({
+  checked,
+  onChange,
+  disabled,
+}: {
+  checked: boolean;
+  onChange: () => void;
+  disabled?: boolean;
+}) {
+  return (
+    <button
+      type="button"
+      role="switch"
+      aria-checked={checked}
+      onClick={onChange}
+      disabled={disabled}
+      className="cursor-pointer relative inline-flex h-5 w-9 items-center rounded-full transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+      style={{ background: checked ? ACCENT : "#e2ddd5" }}
+    >
+      <span
+        className="inline-block h-3.5 w-3.5 transform rounded-full bg-white shadow transition-transform"
+        style={{ transform: checked ? "translateX(18px)" : "translateX(3px)" }}
+      />
+    </button>
+  );
 }
 
 export default function AllOffers() {
@@ -80,15 +112,36 @@ export default function AllOffers() {
     setEditingOffer(null);
   };
 
+  const [updateOfferStatus] = useUpdateOfferStatusMutation();
   const [deleteOffer] = useDeleteOfferMutation();
+
+  const [togglingId, setTogglingId] = useState<number | null>(null);
   const [deletingId, setDeletingId] = useState<number | null>(null);
+  // Delete goes through the shared ConfirmDialog popup instead of
+  // firing immediately on click — pendingDelete holds the row awaiting
+  // confirmation, cleared on cancel/confirm.
+  const [pendingDelete, setPendingDelete] = useState<OfferRecord | null>(null);
   const [actionError, setActionError] = useState("");
 
-  const handleDelete = async (id: number) => {
+  const handleToggleStatus = async (offer: OfferRecord) => {
     setActionError("");
-    setDeletingId(id);
+    setTogglingId(offer.id);
     try {
-      await deleteOffer(id).unwrap();
+      await updateOfferStatus({ id: offer.id, isActive: !offer.isActive }).unwrap();
+    } catch (err) {
+      setActionError(extractApiError(err));
+    } finally {
+      setTogglingId(null);
+    }
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!pendingDelete) return;
+    setActionError("");
+    setDeletingId(pendingDelete.id);
+    try {
+      await deleteOffer(pendingDelete.id).unwrap();
+      setPendingDelete(null);
     } catch (err) {
       setActionError(extractApiError(err));
     } finally {
@@ -98,18 +151,26 @@ export default function AllOffers() {
 
   const columns: DataTableColumn<OfferRecord>[] = [
     {
+      header: "Image",
+      render: (o) =>
+        getUploadUrl(o.imageUrl) ? (
+          <img
+            src={getUploadUrl(o.imageUrl)!}
+            alt=""
+            className="w-9 h-9 rounded-lg object-cover border border-[#e8e4dc]"
+          />
+        ) : (
+          <div className="w-9 h-9 rounded-lg bg-[#f7f5f1] border border-[#e8e4dc]" />
+        ),
+    },
+    {
       header: "Offer",
       render: (o) => (
         <>
           <p className="font-semibold text-[#1c1a17]">{o.description || "—"}</p>
-          {o.offerType && (
+          {o.offerType != null && (
             <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-[#f7f5f1] text-[#4a4640] uppercase">
-              {o.offerType.replace(/_/g, " ")}
-            </span>
-          )}
-          {!o.isActive && (
-            <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-[#f7f5f1] text-[#a39e96] ml-1">
-              Inactive
+              {getOfferTypeLabel(o.offerType)}
             </span>
           )}
         </>
@@ -135,6 +196,21 @@ export default function AllOffers() {
       ),
     },
     {
+      header: "Status",
+      render: (o) => (
+        <div className="flex items-center gap-2">
+          <StatusToggle
+            checked={o.isActive}
+            disabled={togglingId === o.id}
+            onChange={() => handleToggleStatus(o)}
+          />
+          <span className={`text-[10px] font-bold ${o.isActive ? "text-green-600" : "text-[#a39e96]"}`}>
+            {o.isActive ? "Active" : "Inactive"}
+          </span>
+        </div>
+      ),
+    },
+    {
       header: "",
       align: "right",
       render: (o) => (
@@ -146,7 +222,7 @@ export default function AllOffers() {
             Edit
           </button>
           <button
-            onClick={() => handleDelete(o.id)}
+            onClick={() => setPendingDelete(o)}
             disabled={deletingId === o.id}
             className="cursor-pointer text-[10px] font-bold px-2.5 py-1 rounded-lg border border-red-100 text-red-500 hover:bg-red-50 transition-colors disabled:opacity-50"
           >
@@ -240,6 +316,15 @@ export default function AllOffers() {
           offer={editingOffer}
         />
       )}
+
+      <ConfirmDialog
+        open={!!pendingDelete}
+        title="Delete offer?"
+        itemName={pendingDelete?.description ?? undefined}
+        loading={deletingId === pendingDelete?.id}
+        onCancel={() => setPendingDelete(null)}
+        onConfirm={handleConfirmDelete}
+      />
     </div>
   );
 }

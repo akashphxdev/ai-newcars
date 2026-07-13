@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useUpdateAdminMutation, type AdminRecord } from "./admin.api";
 import { useGetRolesQuery } from "../Roles/role.api";
 import { extractApiError } from "../../../lib/apiClient";
+import { useAuth } from "../../../context/useAuth";
 
 const ACCENT = "#D4300F";
 
@@ -76,6 +77,14 @@ export default function EditAdminModal({
   onClose: () => void;
   onUpdate: (admin: AdminRecord) => void;
 }) {
+  const { admin: currentAdmin } = useAuth();
+  // The backend rejects a self-role change outright (see admin.service.ts —
+  // an admin can never change their own roleId, same as they can never
+  // change their own status). Disable the field here too so the person
+  // sees why up front instead of hitting a server error after filling out
+  // the whole form.
+  const isEditingSelf = !!currentAdmin && !!admin && currentAdmin.id === admin.id;
+
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [mobile, setMobile] = useState("");
@@ -239,8 +248,8 @@ export default function EditAdminModal({
             <select
               value={parentRoleId}
               onChange={(e) => handleParentRoleChange(e.target.value)}
-              disabled={rolesLoading}
-              className="cursor-pointer w-full text-sm font-medium text-[#1c1a17] bg-[#f7f5f1] border rounded-xl px-3 py-2.5 outline-none transition-all focus:bg-white disabled:opacity-60"
+              disabled={rolesLoading || isEditingSelf}
+              className="cursor-pointer w-full text-sm font-medium text-[#1c1a17] bg-[#f7f5f1] border rounded-xl px-3 py-2.5 outline-none transition-all focus:bg-white disabled:opacity-60 disabled:cursor-not-allowed"
               style={{ borderColor: errors.roleId ? "#f0997b" : "#e2ddd5" }}
             >
               <option value="" disabled>
@@ -253,6 +262,11 @@ export default function EditAdminModal({
               ))}
             </select>
             {rolesError && <p className="text-[11px] font-medium text-[#D4300F] mt-1">{rolesError}</p>}
+            {isEditingSelf && (
+              <p className="text-[11px] text-[#a39e96] mt-1">
+                You can't change your own role. Ask another admin to do this for you.
+              </p>
+            )}
           </Field>
 
           {hasSubRoles && (
@@ -260,7 +274,8 @@ export default function EditAdminModal({
               <select
                 value={subRoleId}
                 onChange={(e) => setSubRoleId(e.target.value ? Number(e.target.value) : "")}
-                className="cursor-pointer w-full text-sm font-medium text-[#1c1a17] bg-[#f7f5f1] border rounded-xl px-3 py-2.5 outline-none transition-all focus:bg-white"
+                disabled={isEditingSelf}
+                className="cursor-pointer w-full text-sm font-medium text-[#1c1a17] bg-[#f7f5f1] border rounded-xl px-3 py-2.5 outline-none transition-all focus:bg-white disabled:opacity-60 disabled:cursor-not-allowed"
                 style={{ borderColor: errors.roleId ? "#f0997b" : "#e2ddd5" }}
               >
                 <option value="" disabled>

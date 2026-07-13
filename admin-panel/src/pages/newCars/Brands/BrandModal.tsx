@@ -60,7 +60,7 @@ export default function BrandModal({
   const [countryOriginId, setCountryOriginId] = useState<number | "">(brand?.countryOriginId ?? "");
   const [name, setName] = useState(brand ? brand.name : "");
   const [slug, setSlug] = useState(brand ? brand.slug : "");
-  const [slugTouched, setSlugTouched] = useState(isEditMode);
+  const [slugTouched, setSlugTouched] = useState(false);
   const [isActive, setIsActive] = useState(brand ? brand.isActive : true);
 
   const [errors, setErrors] = useState<FieldErrors>({});
@@ -171,7 +171,7 @@ export default function BrandModal({
           id: brand.id,
           input: {
             name: name.trim(),
-            slug: slug.trim() || undefined, // leave empty to let the backend auto-generate
+            slug: slugTouched ? slug.trim() || undefined : undefined, // leave empty to let the backend auto-generate
             // Explicit null clears an existing country-of-origin.
             countryOriginId: Number(countryOriginId),
             isActive,

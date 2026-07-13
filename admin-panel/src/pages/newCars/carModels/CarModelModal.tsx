@@ -5,24 +5,13 @@ import {
   useUpdateCarModelMutation,
   useUploadCarModelCoverImageMutation,
   type CarModelRecord,
-  type BodyType,
   type LaunchStatus,
 } from "./carModel.api";
 import { useGetBrandsQuery } from "../Brands/brand.api";
+import { useGetBodyTypesQuery } from "../BodyTypes/bodyType.api";
 import { extractApiError, getUploadUrl } from "../../../lib/apiClient";
 
 const ACCENT = "#D4300F";
-
-const BODY_TYPES: BodyType[] = [
-  "hatchback",
-  "sedan",
-  "suv",
-  "muv",
-  "coupe",
-  "convertible",
-  "pickup",
-  "van",
-];
 
 const LAUNCH_STATUS_OPTIONS: { value: LaunchStatus; label: string }[] = [
   { value: "available", label: "Available" },
@@ -51,7 +40,7 @@ interface FieldErrors {
   name?: string;
   slug?: string;
   brandId?: string;
-  bodyType?: string;
+  bodyTypeId?: string;
   priceMin?: string;
   priceMax?: string;
   expectedLaunchDate?: string;
@@ -84,17 +73,20 @@ export default function CarModelModal({
 }) {
   const isEditMode = !!carModel;
 
-  // NOTE: same 100-row cap as elsewhere — fine while the brands table
-  // stays under 100 rows.
+  // NOTE: same 100-row cap as elsewhere — fine while the brands/body-types
+  // tables stay under 100 rows.
   const { data: brandsData } = useGetBrandsQuery({ limit: 100, sortBy: "name", sortOrder: "asc" });
   const brands = brandsData?.data ?? [];
+  const { data: bodyTypesData } = useGetBodyTypesQuery({ limit: 100, sortBy: "name", sortOrder: "asc" });
+  const bodyTypes = bodyTypesData?.data ?? [];
+
   const [brandId, setBrandId] = useState<number | "">(carModel?.brandId ?? "");
   const [name, setName] = useState(carModel ? carModel.name : "");
   const [slug, setSlug] = useState(carModel ? carModel.slug : "");
   // Once true, typing in Name no longer auto-regenerates Slug. Starts
   // true in edit mode (existing slug is intentional/possibly bookmarked).
-  const [slugTouched, setSlugTouched] = useState(isEditMode);
-  const [bodyType, setBodyType] = useState<BodyType | "">(carModel?.bodyType ?? "");
+  const [slugTouched, setSlugTouched] = useState(false);
+  const [bodyTypeId, setBodyTypeId] = useState<number | "">(carModel?.bodyTypeId ?? "");
   const [launchStatus, setLaunchStatus] = useState<LaunchStatus>(carModel?.launchStatus ?? "available");
   const [expectedLaunchDate, setExpectedLaunchDate] = useState(
     toDateInputValue(carModel?.expectedLaunchDate ?? null),
@@ -130,7 +122,7 @@ export default function CarModelModal({
     setName("");
     setSlug("");
     setSlugTouched(false);
-    setBodyType("");
+    setBodyTypeId("");
     setLaunchStatus("available");
     setExpectedLaunchDate("");
     setPriceMin("");
@@ -167,7 +159,7 @@ export default function CarModelModal({
       next.slug = "Slug must be lowercase letters/numbers separated by hyphens (e.g. \"creta-2026\").";
     }
     if (!brandId) next.brandId = "Brand is required.";
-    if (!bodyType) next.bodyType = "Body type is required.";
+    if (!bodyTypeId) next.bodyTypeId = "Body type is required.";
     if (priceMin === "") next.priceMin = "Price min is required.";
     if (priceMax === "") next.priceMax = "Price max is required.";
     if (priceMin !== "" && priceMax !== "" && Number(priceMax) < Number(priceMin)) {
@@ -195,8 +187,8 @@ export default function CarModelModal({
           input: {
             brandId: Number(brandId),
             name: name.trim(),
-            slug: slug.trim() || undefined, // leave empty to let the backend auto-generate
-            bodyType: (bodyType || null) as BodyType | null,
+            slug: slugTouched ? slug.trim() || undefined : undefined, // leave empty to let the backend auto-generate
+            bodyTypeId: bodyTypeId === "" ? null : Number(bodyTypeId),
             launchStatus,
             expectedLaunchDate: expectedLaunchDate || null,
             priceMin: priceMin === "" ? null : Number(priceMin),
@@ -204,8 +196,6 @@ export default function CarModelModal({
           },
         }).unwrap();
 
-        // Cover image is a separate call in edit mode — only fired if the
-        // admin actually picked a new file.
         if (coverImageFile) {
           await uploadCoverImage({ id: carModel.id, file: coverImageFile }).unwrap();
         }
@@ -214,7 +204,7 @@ export default function CarModelModal({
           brandId: Number(brandId),
           name: name.trim(),
           slug: slug.trim() || undefined,
-          bodyType: bodyType as BodyType,
+          bodyTypeId: Number(bodyTypeId),
           launchStatus,
           expectedLaunchDate: expectedLaunchDate || undefined,
           priceMin: Number(priceMin),
@@ -353,19 +343,19 @@ export default function CarModelModal({
           <div className="grid grid-cols-2 gap-3">
             <Field label="Body type">
               <select
-                value={bodyType}
-                onChange={(e) => setBodyType((e.target.value as BodyType) || "")}
-                className="cursor-pointer w-full text-sm font-medium text-[#1c1a17] bg-[#f7f5f1] border rounded-xl px-3 py-2.5 outline-none transition-all focus:bg-white capitalize"
-                style={{ borderColor: errors.bodyType ? "#f0997b" : "#e2ddd5" }}
+                value={bodyTypeId}
+                onChange={(e) => setBodyTypeId(e.target.value ? Number(e.target.value) : "")}
+                className="cursor-pointer w-full text-sm font-medium text-[#1c1a17] bg-[#f7f5f1] border rounded-xl px-3 py-2.5 outline-none transition-all focus:bg-white"
+                style={{ borderColor: errors.bodyTypeId ? "#f0997b" : "#e2ddd5" }}
               >
                 <option value="">Select a body type</option>
-                {BODY_TYPES.map((bt) => (
-                  <option key={bt} value={bt} className="capitalize">
-                    {bt}
+                {bodyTypes.map((bt) => (
+                  <option key={bt.id} value={bt.id}>
+                    {bt.name}
                   </option>
                 ))}
               </select>
-              {errors.bodyType && <p className="text-[11px] font-medium text-[#D4300F] mt-1">{errors.bodyType}</p>}
+              {errors.bodyTypeId && <p className="text-[11px] font-medium text-[#D4300F] mt-1">{errors.bodyTypeId}</p>}
             </Field>
 
             <Field label="Launch status">

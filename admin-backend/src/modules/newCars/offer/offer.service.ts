@@ -4,8 +4,9 @@ import { Prisma } from '@prisma/client';
 import { prisma } from '@/prisma/client';
 import { ApiError } from '@/core/errors/ApiError';
 import { createLog } from '@/core/utils/createLog';
+import { buildPublicPath, deleteUploadedFile } from '@/core/utils/fileStorage.util';
 import type { OfferListQueryParsed, CreateOfferParsed, UpdateOfferParsed } from './offer.validation';
-import type { OfferRecord } from './offer.types';
+import type { OfferRecord, OfferUploadImageResult } from './offer.types';
 
 const OFFER_SELECT = {
   id: true,
@@ -18,6 +19,7 @@ const OFFER_SELECT = {
   validFrom: true,
   validUntil: true,
   isActive: true,
+  imageUrl: true,
   model: {
     select: {
       id: true,
@@ -107,7 +109,7 @@ async function assertCityExists(cityId: number) {
   }
 }
 
-export async function createOffer(input: CreateOfferParsed, actorId: number) {
+export async function createOffer(input: CreateOfferParsed, actorId: number, imageFilename: string) {
   await assertModelExists(input.modelId);
   if (input.variantId) await assertVariantExists(input.variantId, input.modelId);
   if (input.cityId) await assertCityExists(input.cityId);
@@ -123,6 +125,9 @@ export async function createOffer(input: CreateOfferParsed, actorId: number) {
       validFrom: input.validFrom ?? null,
       validUntil: input.validUntil ?? null,
       isActive: input.isActive,
+      // Image is required on create — controller already rejects the
+      // request before this point if no file was uploaded.
+      imageUrl: buildPublicPath('offers', imageFilename),
     },
     select: OFFER_SELECT,
   });
@@ -136,7 +141,9 @@ export async function createOffer(input: CreateOfferParsed, actorId: number) {
 }
 
 // Full replace on every edit — same convention as faq.service.ts /
-// variant.service.ts, not a partial PATCH like Brand/CarModel.
+// variant.service.ts, not a partial PATCH like Brand/CarModel. Image is
+// NOT touched here — it has its own dedicated route/mutation
+// (uploadOfferImage), same split as Brand's logo.
 export async function updateOffer(id: number, input: UpdateOfferParsed, actorId: number) {
   await getOfferById(id);
   await assertModelExists(input.modelId);
@@ -167,10 +174,64 @@ export async function updateOffer(id: number, input: UpdateOfferParsed, actorId:
   return offer;
 }
 
-export async function deleteOffer(id: number, actorId: number) {
+// Lightweight row-level Active/Inactive toggle — separate from the full
+// edit mutation so flipping the switch doesn't need the whole edit
+// form's payload. Same pattern as brand.service.ts's updateBrandStatus.
+export async function updateOfferStatus(id: number, isActive: boolean, actorId: number) {
   await getOfferById(id);
 
+  const offer = await prisma.newCarOffer.update({
+    where: { id },
+    data: { isActive },
+    select: OFFER_SELECT,
+  });
+
+  await createLog({
+    adminId: actorId,
+    description: `${isActive ? 'Activated' : 'Deactivated'} offer (id ${id})`,
+  });
+
+  return offer;
+}
+
+// Dedicated image-replace route — same split as brand.service.ts's
+// uploadBrandLogo (main PATCH /:id is JSON-only; swapping the image
+// needs multipart, so it gets its own endpoint).
+export async function uploadOfferImage(
+  id: number,
+  savedFilename: string,
+  actorId: number,
+): Promise<OfferUploadImageResult> {
+  const existing = await getOfferById(id);
+
+  const newImageUrl = buildPublicPath('offers', savedFilename);
+
+  const offer = await prisma.newCarOffer.update({
+    where: { id },
+    data: { imageUrl: newImageUrl },
+    select: { id: true, imageUrl: true },
+  });
+
+  // Only delete the old file AFTER the DB write succeeds — if the
+  // update had failed we'd want the old image to remain intact.
+  await deleteUploadedFile(existing.imageUrl);
+
+  await createLog({
+    adminId: actorId,
+    description: `Updated image for offer (id ${id})`,
+  });
+
+  return offer;
+}
+
+export async function deleteOffer(id: number, actorId: number) {
+  const offer = await getOfferById(id);
+
   await prisma.newCarOffer.delete({ where: { id } });
+
+  // Offer row is gone — its image file on disk is now orphaned, clean
+  // it up. Same order-of-operations as brand.service.ts's deleteBrand.
+  await deleteUploadedFile(offer.imageUrl);
 
   await createLog({
     adminId: actorId,

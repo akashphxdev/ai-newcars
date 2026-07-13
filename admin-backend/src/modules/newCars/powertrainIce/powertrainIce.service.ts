@@ -9,7 +9,7 @@ import type {
   CreatePowertrainIceParsed,
   UpdatePowertrainIceParsed,
 } from './powertrainIce.validation';
-import type { PowertrainIceRecord } from './powertrainIce.types';
+import type { PowertrainIceRecord, PowertrainIceListItem } from './powertrainIce.types';
 
 const POWERTRAIN_ICE_SELECT = {
   id: true,
@@ -23,12 +23,14 @@ const POWERTRAIN_ICE_SELECT = {
   cubicCapacity: true,
   cylinders: true,
   cylinderCapacity: true,
-  transmissionType: true,
+  transmissionTypeId: true,
+  transmissionType: { select: { id: true, name: true, slug: true } },
   transmissionSubType: true,
   transmissionSpeed: true,
   numGears: true,
   isFourByFour: true,
-  drivetrain: true,
+  drivetrainId: true,
+  drivetrain: { select: { id: true, name: true, slug: true } },
   powerPs: true,
   powerMinRpm: true,
   powerMaxRpm: true,
@@ -67,7 +69,39 @@ const POWERTRAIN_ICE_SELECT = {
   },
 } as const;
 
-export async function listPowertrainIce(query: PowertrainIceListQueryParsed) {
+// Listing only ships what the table actually renders — full spec sheet is
+// fetched separately via getById when a row is expanded on the frontend.
+const POWERTRAIN_ICE_LIST_SELECT = {
+  id: true,
+  variantId: true,
+  fuelType: true,
+  fuelTypeSubCategory: true,
+  engineDisplacement: true,
+  powerPs: true,
+  torqueNm: true,
+  transmissionType: { select: { id: true, name: true, slug: true } },
+  isDefault: true,
+  isDeleted: true,
+  createdAt: true,
+  variant: {
+    select: {
+      id: true,
+      variantName: true,
+      model: {
+        select: {
+          id: true,
+          name: true,
+          brand: { select: { id: true, name: true } },
+        },
+      },
+    },
+  },
+} as const;
+
+export async function listPowertrainIce(query: PowertrainIceListQueryParsed): Promise<{
+  items: PowertrainIceListItem[];
+  pagination: { page: number; limit: number; total: number; totalPages: number };
+}> {
   const { page, limit, variantId, fuelType, isDefault, includeDeleted, sortBy, sortOrder } = query;
 
   const where: Prisma.CarPowertrainIceWhereInput = {
@@ -80,7 +114,7 @@ export async function listPowertrainIce(query: PowertrainIceListQueryParsed) {
   const [items, total] = await Promise.all([
     prisma.carPowertrainIce.findMany({
       where,
-      select: POWERTRAIN_ICE_SELECT,
+      select: POWERTRAIN_ICE_LIST_SELECT,
       orderBy: { [sortBy]: sortOrder },
       skip: (page - 1) * limit,
       take: limit,
@@ -112,9 +146,6 @@ export async function getPowertrainIceById(id: number): Promise<PowertrainIceRec
   return powertrain as unknown as PowertrainIceRecord;
 }
 
-// Every powertrain row must belong to a real, existing variant — same
-// "validate the parent foreign key" rule as variant.service.ts's
-// assertModelExists.
 async function assertVariantExists(variantId: number) {
   const variant = await prisma.carVariant.findUnique({ where: { id: variantId }, select: { id: true } });
   if (!variant) {
@@ -122,10 +153,16 @@ async function assertVariantExists(variantId: number) {
   }
 }
 
-// Only one ICE powertrain per variant may be marked "default" (used to
-// decide which spec sheet shows on the public model page by default).
-// Runs inside the caller's transaction so the un-default + set-default
-// happen atomically.
+async function assertAttributeOptionExists(id: number, category: string, label: string) {
+  const option = await prisma.attributeOption.findFirst({
+    where: { id, category },
+    select: { id: true },
+  });
+  if (!option) {
+    throw ApiError.badRequest(`Invalid ${label}Id — option does not exist`);
+  }
+}
+
 async function unsetOtherDefaults(
   tx: Prisma.TransactionClient,
   variantId: number,
@@ -144,6 +181,12 @@ async function unsetOtherDefaults(
 
 export async function createPowertrainIce(input: CreatePowertrainIceParsed, actorId: number) {
   await assertVariantExists(input.variantId);
+  if (typeof input.transmissionTypeId === 'number') {
+    await assertAttributeOptionExists(input.transmissionTypeId, 'transmission', 'transmissionType');
+  }
+  if (typeof input.drivetrainId === 'number') {
+    await assertAttributeOptionExists(input.drivetrainId, 'drivetrain', 'drivetrain');
+  }
 
   const powertrain = await prisma.$transaction(async (tx) => {
     if (input.isDefault) {
@@ -162,12 +205,12 @@ export async function createPowertrainIce(input: CreatePowertrainIceParsed, acto
         cubicCapacity: input.cubicCapacity,
         cylinders: input.cylinders,
         cylinderCapacity: input.cylinderCapacity,
-        transmissionType: input.transmissionType,
+        transmissionTypeId: input.transmissionTypeId,
         transmissionSubType: input.transmissionSubType,
         transmissionSpeed: input.transmissionSpeed,
         numGears: input.numGears,
         isFourByFour: input.isFourByFour,
-        drivetrain: input.drivetrain,
+        drivetrainId: input.drivetrainId,
         powerPs: input.powerPs,
         powerMinRpm: input.powerMinRpm,
         powerMaxRpm: input.powerMaxRpm,
@@ -209,6 +252,12 @@ export async function updatePowertrainIce(
   if (typeof input.variantId === 'number') {
     await assertVariantExists(input.variantId);
   }
+  if (typeof input.transmissionTypeId === 'number') {
+    await assertAttributeOptionExists(input.transmissionTypeId, 'transmission', 'transmissionType');
+  }
+  if (typeof input.drivetrainId === 'number') {
+    await assertAttributeOptionExists(input.drivetrainId, 'drivetrain', 'drivetrain');
+  }
 
   const targetVariantId = input.variantId ?? existing.variantId;
 
@@ -221,9 +270,6 @@ export async function updatePowertrainIce(
       where: { id },
       data: {
         ...input,
-        // Nullable spec fields need `null` passed through as-is when the
-        // caller explicitly clears them — same reasoning as CarModel's
-        // bodyType/priceMin handling.
         fuelTypeSubCategory: input.fuelTypeSubCategory,
         fuelTankCapacity: input.fuelTankCapacity,
         cngTankCapacity: input.cngTankCapacity,
@@ -232,11 +278,11 @@ export async function updatePowertrainIce(
         cubicCapacity: input.cubicCapacity,
         cylinders: input.cylinders,
         cylinderCapacity: input.cylinderCapacity,
-        transmissionType: input.transmissionType,
+        transmissionTypeId: input.transmissionTypeId,
         transmissionSubType: input.transmissionSubType,
         transmissionSpeed: input.transmissionSpeed,
         numGears: input.numGears,
-        drivetrain: input.drivetrain,
+        drivetrainId: input.drivetrainId,
         powerPs: input.powerPs,
         powerMinRpm: input.powerMinRpm,
         powerMaxRpm: input.powerMaxRpm,
@@ -267,9 +313,6 @@ export async function updatePowertrainIce(
   return powertrain;
 }
 
-// Soft delete — matches the isDeleted/deletedBy/deletedAt columns baked
-// into car_powertrains_ice. The row stays in the DB for audit/recovery;
-// it's just excluded from the default list view (see listPowertrainIce).
 export async function deletePowertrainIce(id: number, actorId: number) {
   const powertrain = await getPowertrainIceById(id);
 
@@ -283,8 +326,6 @@ export async function deletePowertrainIce(id: number, actorId: number) {
       isDeleted: true,
       deletedBy: actorId,
       deletedAt: new Date(),
-      // A soft-deleted row should never remain the "default" spec shown
-      // publicly for its variant.
       isDefault: false,
     },
   });
@@ -297,9 +338,6 @@ export async function deletePowertrainIce(id: number, actorId: number) {
   return { message: 'ICE powertrain deleted successfully' };
 }
 
-// Restore a soft-deleted row — the counterpart quick action to delete,
-// same "lightweight status flip" pattern as
-// carModel.service.ts's updateCarModelLaunchStatus.
 export async function restorePowertrainIce(id: number, actorId: number) {
   const powertrain = await getPowertrainIceById(id);
 

@@ -162,6 +162,94 @@ export default function AllAdmins() {
 
   const loading = isLoading || isFetching;
 
+  const renderExpandedAdmin = (a: AdminRecord) => (
+    <div className="space-y-4">
+      <div>
+        <p className="text-[10px] font-bold uppercase tracking-widest text-[#a39e96] mb-2">Account</p>
+        <div className="grid grid-cols-4 gap-x-6 gap-y-3">
+          <div>
+            <p className="text-[10px] font-semibold text-[#a39e96] mb-1">Admin ID</p>
+            <p className="text-[12.5px] font-mono text-[#1c1a17]">#{a.id}</p>
+          </div>
+          <div>
+            <p className="text-[10px] font-semibold text-[#a39e96] mb-1">Mobile</p>
+            <p className="text-[12.5px] font-mono text-[#1c1a17]">{a.mobile || "—"}</p>
+          </div>
+          <div>
+            <p className="text-[10px] font-semibold text-[#a39e96] mb-1">Access start</p>
+            <p className="text-[12.5px] text-[#1c1a17]">{a.accessStartDate ? formatDate(a.accessStartDate) : "—"}</p>
+          </div>
+          <div>
+            <p className="text-[10px] font-semibold text-[#a39e96] mb-1">Access end</p>
+            <p className="text-[12.5px] text-[#1c1a17]">{a.accessEndDate ? formatDate(a.accessEndDate) : "No end date"}</p>
+          </div>
+          <div>
+            <p className="text-[10px] font-semibold text-[#a39e96] mb-1">Role ID</p>
+            <p className="text-[12.5px] font-mono text-[#1c1a17]">#{a.roleId}</p>
+          </div>
+          <div>
+            <p className="text-[10px] font-semibold text-[#a39e96] mb-1">Created by (ID)</p>
+            <p className="text-[12.5px] font-mono text-[#1c1a17]">{a.createdBy ? `#${a.createdBy}` : "—"}</p>
+          </div>
+        </div>
+      </div>
+
+      <div className="pt-3 border-t border-[#f0ece6]">
+        <p className="text-[10px] font-bold uppercase tracking-widest text-[#a39e96] mb-2">Login &amp; security</p>
+        <div className="grid grid-cols-4 gap-x-6 gap-y-3">
+          <div>
+            <p className="text-[10px] font-semibold text-[#a39e96] mb-1">Last login</p>
+            <p className="text-[12.5px] text-[#1c1a17]">{formatRelative(a.lastLoginAt)}</p>
+          </div>
+          <div>
+            <p className="text-[10px] font-semibold text-[#a39e96] mb-1">Last login IP</p>
+            <p className="text-[12.5px] font-mono text-[#1c1a17]">{formatIpv4(a.lastLoginIp)}</p>
+          </div>
+          <div>
+            <p className="text-[10px] font-semibold text-[#a39e96] mb-1">Failed login attempts</p>
+            <p className={`text-[12.5px] font-semibold ${a.failedLoginAttempts > 0 ? "text-[#D4300F]" : "text-[#1c1a17]"}`}>
+              {a.failedLoginAttempts}
+            </p>
+          </div>
+          <div>
+            <p className="text-[10px] font-semibold text-[#a39e96] mb-1">Lock type</p>
+            <p className="text-[12.5px] text-[#1c1a17]">{a.lockType || "—"}</p>
+          </div>
+        </div>
+      </div>
+
+      {(a.isLocked || a.lockedAt || a.unlockedAt) && (
+        <div className="pt-3 border-t border-[#f0ece6]">
+          <p className="text-[10px] font-bold uppercase tracking-widest text-[#a39e96] mb-2">Lock history</p>
+          <div className="grid grid-cols-4 gap-x-6 gap-y-3">
+            <div>
+              <p className="text-[10px] font-semibold text-[#a39e96] mb-1">Locked at</p>
+              <p className="text-[12.5px] text-[#1c1a17]">{a.lockedAt ? formatDate(a.lockedAt) : "—"}</p>
+            </div>
+            <div>
+              <p className="text-[10px] font-semibold text-[#a39e96] mb-1">Locked by</p>
+              <p className="text-[12.5px] text-[#1c1a17]">{a.lockedBy ? `Admin #${a.lockedBy}` : "—"}</p>
+            </div>
+            <div>
+              <p className="text-[10px] font-semibold text-[#a39e96] mb-1">Unlocked at</p>
+              <p className="text-[12.5px] text-[#1c1a17]">{a.unlockedAt ? formatDate(a.unlockedAt) : "—"}</p>
+            </div>
+            <div>
+              <p className="text-[10px] font-semibold text-[#a39e96] mb-1">Unlocked by</p>
+              <p className="text-[12.5px] text-[#1c1a17]">{a.unlockedBy ? `Admin #${a.unlockedBy}` : "—"}</p>
+            </div>
+            {a.isLocked && (
+              <div className="col-span-4">
+                <p className="text-[10px] font-semibold text-[#a39e96] mb-1">Lock reason</p>
+                <p className="text-[12.5px] text-[#D4300F] font-medium">{a.lockedReason || "No reason provided"}</p>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+
   const columns: DataTableColumn<AdminRecord>[] = [
     { header: "ID", className: "font-mono", render: (a) => <span className="text-[#a39e96]">#{a.id}</span> },
     {
@@ -181,7 +269,6 @@ export default function AllAdmins() {
         </div>
       ),
     },
-    { header: "Mobile", className: "font-mono", render: (a) => <span className="text-[#7a7670]">{a.mobile}</span> },
     { header: "Role", render: (a) => <RoleBadge roleName={a.role?.roleName ?? "—"} /> },
     {
       header: "Status",
@@ -345,6 +432,8 @@ export default function AllAdmins() {
           error={error}
           loadingMessage="Loading admins..."
           emptyMessage="No admins match these filters."
+          expandable
+          renderExpanded={renderExpandedAdmin}
         />
         <Pagination
           pagination={pagination}
@@ -359,8 +448,6 @@ export default function AllAdmins() {
         open={modalOpen}
         onClose={() => setModalOpen(false)}
         onCreate={() => {
-          // Cache invalidation from the mutation already triggers a
-          // refetch — jumping to page 1 just makes the new admin visible.
           setPage(1);
         }}
       />

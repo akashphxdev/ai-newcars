@@ -19,11 +19,13 @@ export interface CarImageRecord {
   id: number;
   modelId: number;
   variantId: number | null;
+  colorId: number | null;
   imageUrl: string;
   isPrimary: boolean;
   angle: CarImageAngle | null;
   model: { id: number; name: string };
   variant: { id: number; variantName: string } | null;
+  color: { id: number; colorName: string } | null;
 }
 
 export interface Pagination {
@@ -38,6 +40,7 @@ export interface ListImagesParams {
   limit?: number;
   modelId?: number;
   variantId?: number;
+  colorId?: number;
   angle?: CarImageAngle;
   isPrimary?: boolean;
   sortBy?: "id" | "isPrimary";
@@ -47,15 +50,27 @@ export interface ListImagesParams {
 export interface CreateImageInput {
   modelId: number;
   variantId?: number;
+  colorId?: number;
   isPrimary?: boolean;
   angle?: CarImageAngle;
   // Required on create — every gallery row is exactly one image file.
   image: File;
 }
 
+export interface BulkCreateImagesInput {
+  modelId: number;
+  variantId?: number;
+  colorId?: number;
+  angle?: CarImageAngle;
+  // Multiple files in one call — none are marked primary (see backend
+  // bulkCreateImagesSchema comment), set that afterwards per-image.
+  images: File[];
+}
+
 export interface UpdateImageInput {
   modelId?: number;
   variantId?: number | null;
+  colorId?: number | null;
   isPrimary?: boolean;
   angle?: CarImageAngle | null;
 }
@@ -103,12 +118,29 @@ export const imageApi = api.injectEndpoints({
         const formData = new FormData();
         formData.append("modelId", String(fields.modelId));
         if (fields.variantId) formData.append("variantId", String(fields.variantId));
+        if (fields.colorId) formData.append("colorId", String(fields.colorId));
         formData.append("isPrimary", String(fields.isPrimary ?? false));
         if (fields.angle) formData.append("angle", fields.angle);
         formData.append("image", image);
         return { url: "/new-cars/images", method: "POST", data: formData };
       },
       transformResponse: (res: ImageSingleRawResponse) => res.data,
+      invalidatesTags: [IMAGE_LIST_TAG],
+    }),
+
+    // Multiple files in one call — used by both the general gallery's
+    // "Add images" button and the per-color inline uploader.
+    createImagesBulk: builder.mutation<CarImageRecord[], BulkCreateImagesInput>({
+      query: ({ images, ...fields }) => {
+        const formData = new FormData();
+        formData.append("modelId", String(fields.modelId));
+        if (fields.variantId) formData.append("variantId", String(fields.variantId));
+        if (fields.colorId) formData.append("colorId", String(fields.colorId));
+        if (fields.angle) formData.append("angle", fields.angle);
+        for (const file of images) formData.append("images", file);
+        return { url: "/new-cars/images/bulk", method: "POST", data: formData };
+      },
+      transformResponse: (res: { success: true; data: CarImageRecord[] }) => res.data,
       invalidatesTags: [IMAGE_LIST_TAG],
     }),
 
@@ -151,6 +183,7 @@ export const {
   useGetImagesQuery,
   useGetImageByIdQuery,
   useCreateImageMutation,
+  useCreateImagesBulkMutation,
   useUpdateImageMutation,
   useSetPrimaryImageMutation,
   useReplaceImageFileMutation,

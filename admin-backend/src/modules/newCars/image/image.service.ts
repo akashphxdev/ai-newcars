@@ -5,13 +5,19 @@ import { prisma } from '@/prisma/client';
 import { ApiError } from '@/core/errors/ApiError';
 import { createLog } from '@/core/utils/createLog';
 import { buildPublicPath, deleteUploadedFile } from '@/core/utils/fileStorage.util';
-import type { CreateImageParsed, ImageListQueryParsed, UpdateImageParsed } from './image.validation';
+import type {
+  CreateImageParsed,
+  ImageListQueryParsed,
+  UpdateImageParsed,
+  BulkCreateImagesParsed,
+} from './image.validation';
 import type { ImageReplaceFileResult } from './image.types';
 
 const IMAGE_SELECT = {
   id: true,
   modelId: true,
   variantId: true,
+  colorId: true,
   imageUrl: true,
   isPrimary: true,
   angle: true,
@@ -20,6 +26,9 @@ const IMAGE_SELECT = {
   },
   variant: {
     select: { id: true, variantName: true },
+  },
+  color: {
+    select: { id: true, colorName: true },
   },
 } as const;
 
@@ -43,12 +52,26 @@ async function assertVariantBelongsToModel(variantId: number, modelId: number) {
   }
 }
 
+async function assertColorBelongsToModel(colorId: number, modelId: number) {
+  const color = await prisma.carColor.findUnique({
+    where: { id: colorId },
+    select: { id: true, modelId: true },
+  });
+  if (!color) {
+    throw ApiError.badRequest('Invalid colorId — color does not exist');
+  }
+  if (color.modelId !== modelId) {
+    throw ApiError.badRequest('This color does not belong to the given modelId');
+  }
+}
+
 export async function listImages(query: ImageListQueryParsed) {
-  const { page, limit, modelId, variantId, angle, isPrimary, sortBy, sortOrder } = query;
+  const { page, limit, modelId, variantId, colorId, angle, isPrimary, sortBy, sortOrder } = query;
 
   const where: Prisma.CarImageWhereInput = {
     ...(modelId ? { modelId } : {}),
     ...(variantId ? { variantId } : {}),
+    ...(colorId ? { colorId } : {}),
     ...(angle ? { angle } : {}),
     ...(typeof isPrimary === 'boolean' ? { isPrimary } : {}),
   };
@@ -93,6 +116,9 @@ export async function createImage(input: CreateImageParsed, actorId: number, ima
   if (input.variantId) {
     await assertVariantBelongsToModel(input.variantId, input.modelId);
   }
+  if (input.colorId) {
+    await assertColorBelongsToModel(input.colorId, input.modelId);
+  }
 
   const image = await prisma.$transaction(async (tx) => {
     if (input.isPrimary) {
@@ -106,6 +132,7 @@ export async function createImage(input: CreateImageParsed, actorId: number, ima
       data: {
         modelId: input.modelId,
         variantId: input.variantId,
+        colorId: input.colorId,
         angle: input.angle,
         isPrimary: input.isPrimary ?? false,
         imageUrl: buildPublicPath('car-images', imageFilename),
@@ -122,15 +149,80 @@ export async function createImage(input: CreateImageParsed, actorId: number, ima
   return image;
 }
 
+// POST /images/bulk — same shape as createImage but for N files in one
+// call/transaction. None of the created rows are marked primary (see the
+// comment on bulkCreateImagesSchema) — that stays a deliberate one-at-a-
+// time choice via setPrimaryImage.
+export async function createImagesBulk(
+  input: BulkCreateImagesParsed,
+  actorId: number,
+  filenames: string[],
+) {
+  if (filenames.length === 0) {
+    throw ApiError.badRequest('No image files received (expected field name "images")');
+  }
+
+  await assertModelExists(input.modelId);
+  if (input.variantId) {
+    await assertVariantBelongsToModel(input.variantId, input.modelId);
+  }
+  if (input.colorId) {
+    await assertColorBelongsToModel(input.colorId, input.modelId);
+  }
+
+  const images = await prisma.$transaction((tx) =>
+    Promise.all(
+      filenames.map((filename) =>
+        tx.carImage.create({
+          data: {
+            modelId: input.modelId,
+            variantId: input.variantId,
+            colorId: input.colorId,
+            angle: input.angle,
+            isPrimary: false,
+            imageUrl: buildPublicPath('car-images', filename),
+          },
+          select: IMAGE_SELECT,
+        }),
+      ),
+    ),
+  );
+
+  await createLog({
+    adminId: actorId,
+    description: `Bulk-uploaded ${images.length} image(s) for car model id ${input.modelId}`,
+  });
+
+  return images;
+}
+
 export async function updateImage(id: number, input: UpdateImageParsed, actorId: number) {
   const existing = await getImageById(id);
 
   const targetModelId = input.modelId ?? existing.modelId;
+  const modelIsChanging = typeof input.modelId === 'number' && input.modelId !== existing.modelId;
+
   if (typeof input.modelId === 'number') {
     await assertModelExists(input.modelId);
   }
+
   if (typeof input.variantId === 'number') {
     await assertVariantBelongsToModel(input.variantId, targetModelId);
+  } else if (input.variantId === undefined && modelIsChanging && existing.variantId != null) {
+    // modelId is changing but variantId wasn't touched in this request —
+    // the existing variant link would now point at a variant under the
+    // OLD model, which is inconsistent. Re-validate it against the new
+    // model instead of silently leaving stale/mismatched data; if it
+    // doesn't belong, the caller must explicitly pass a new variantId
+    // (or null to clear it).
+    await assertVariantBelongsToModel(existing.variantId, targetModelId);
+  }
+
+  if (typeof input.colorId === 'number') {
+    await assertColorBelongsToModel(input.colorId, targetModelId);
+  } else if (input.colorId === undefined && modelIsChanging && existing.colorId != null) {
+    // Same reasoning as variantId above.
+    await assertColorBelongsToModel(existing.colorId, targetModelId);
   }
 
   const image = await prisma.$transaction(async (tx) => {
@@ -180,9 +272,6 @@ export async function setPrimaryImage(id: number, isPrimary: boolean, actorId: n
   return image;
 }
 
-// Transaction-bound variant of clearOtherPrimaryFlags — kept separate
-// so the standalone (non-transactional) helper above stays usable for
-// simpler call sites that don't need one.
 async function clearOtherPrimaryFlagsTx(
   tx: Prisma.TransactionClient,
   modelId: number,

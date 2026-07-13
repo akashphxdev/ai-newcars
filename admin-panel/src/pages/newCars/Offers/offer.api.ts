@@ -1,25 +1,14 @@
 // src/pages/newCars/Offers/offer.api.ts
 import { api } from "../../../store/baseApi";
 
-// Free-text on the DB (VARCHAR(30), no enum) — this list is just the
-// suggested set shown in the dropdown, not a hard constraint.
-export const OFFER_TYPES = [
-  "cash_discount",
-  "exchange_bonus",
-  "corporate_discount",
-  "loyalty_bonus",
-  "finance_offer",
-  "other",
-] as const;
-
-export type OfferTypeValue = (typeof OFFER_TYPES)[number];
-
 export interface OfferRecord {
   id: number;
   modelId: number;
   variantId: number | null;
   cityId: number | null;
-  offerType: string | null;
+  // Numeric code — resolve to a label via ../../../lib/lookups's
+  // getOfferTypeLabel().
+  offerType: number | null;
   // Decimal field comes back from Prisma serialized as a string — same
   // convention as VariantRecord's price.
   offerAmount: string | null;
@@ -27,6 +16,7 @@ export interface OfferRecord {
   validFrom: string | null;
   validUntil: string | null;
   isActive: boolean;
+  imageUrl: string;
   model: { id: number; name: string; brand: { id: number; name: string } };
   variant: { id: number; variantName: string } | null;
   city: { id: number; name: string } | null;
@@ -51,20 +41,26 @@ export interface ListOffersParams {
   sortOrder?: "asc" | "desc";
 }
 
-// modelId is the only mandatory field — everything else mirrors the
-// schema's own nullability. Full replace on edit too — same
-// OfferFormInput shape as create (same convention as FaqFormInput /
-// VariantFormInput): the form always submits the complete payload.
+// modelId and image are the only mandatory fields on create —
+// everything else mirrors the schema's own nullability. Full replace on
+// edit too (same convention as FaqFormInput / VariantFormInput), except
+// the image, which has its own dedicated upload mutation below (same
+// split as Brand's logo).
 export interface OfferFormInput {
   modelId: number;
   variantId: number | null;
   cityId: number | null;
-  offerType: string | null;
+  offerType: number | null;
   offerAmount: number | null;
   description: string | null;
   validFrom: string | null;
   validUntil: string | null;
   isActive: boolean;
+}
+
+export interface CreateOfferInput extends OfferFormInput {
+  // Required on create — same as CreateBrandInput's logo.
+  image: File;
 }
 
 interface OfferListRawResponse {
@@ -105,8 +101,23 @@ export const offerApi = api.injectEndpoints({
       providesTags: (_result, _error, id) => [{ type: "Offer", id }],
     }),
 
-    createOffer: builder.mutation<OfferRecord, OfferFormInput>({
-      query: (body) => ({ url: "/new-cars/offers", method: "POST", data: body }),
+    // Multipart — image rides along with the rest of the form, same
+    // shape as brand.api.ts's createBrand.
+    createOffer: builder.mutation<OfferRecord, CreateOfferInput>({
+      query: ({ image, ...fields }) => {
+        const formData = new FormData();
+        formData.append("modelId", String(fields.modelId));
+        if (fields.variantId != null) formData.append("variantId", String(fields.variantId));
+        if (fields.cityId != null) formData.append("cityId", String(fields.cityId));
+        if (fields.offerType != null) formData.append("offerType", String(fields.offerType));
+        if (fields.offerAmount != null) formData.append("offerAmount", String(fields.offerAmount));
+        if (fields.description) formData.append("description", fields.description);
+        if (fields.validFrom) formData.append("validFrom", fields.validFrom);
+        if (fields.validUntil) formData.append("validUntil", fields.validUntil);
+        formData.append("isActive", String(fields.isActive));
+        formData.append("image", image);
+        return { url: "/new-cars/offers", method: "POST", data: formData };
+      },
       transformResponse: (res: OfferSingleRawResponse) => res.data,
       invalidatesTags: [OFFER_LIST_TAG],
     }),
@@ -114,6 +125,30 @@ export const offerApi = api.injectEndpoints({
     updateOffer: builder.mutation<OfferRecord, { id: number; input: OfferFormInput }>({
       query: ({ id, input }) => ({ url: `/new-cars/offers/${id}`, method: "PATCH", data: input }),
       transformResponse: (res: OfferSingleRawResponse) => res.data,
+      invalidatesTags: (_result, _error, { id }) => [{ type: "Offer", id }, OFFER_LIST_TAG],
+    }),
+
+    // Lightweight row-level Active/Inactive toggle — separate from the
+    // full edit mutation so flipping the switch doesn't need the whole
+    // edit form's payload. Same pattern as brand.api.ts's
+    // updateBrandStatus.
+    updateOfferStatus: builder.mutation<OfferRecord, { id: number; isActive: boolean }>({
+      query: ({ id, isActive }) => ({
+        url: `/new-cars/offers/${id}/status`,
+        method: "PATCH",
+        data: { isActive },
+      }),
+      transformResponse: (res: OfferSingleRawResponse) => res.data,
+      invalidatesTags: (_result, _error, { id }) => [{ type: "Offer", id }, OFFER_LIST_TAG],
+    }),
+
+    uploadOfferImage: builder.mutation<{ id: number; imageUrl: string }, { id: number; file: File }>({
+      query: ({ id, file }) => {
+        const formData = new FormData();
+        formData.append("image", file);
+        return { url: `/new-cars/offers/${id}/image`, method: "PATCH", data: formData };
+      },
+      transformResponse: (res: { success: true; data: { id: number; imageUrl: string } }) => res.data,
       invalidatesTags: (_result, _error, { id }) => [{ type: "Offer", id }, OFFER_LIST_TAG],
     }),
 
@@ -129,5 +164,7 @@ export const {
   useGetOfferByIdQuery,
   useCreateOfferMutation,
   useUpdateOfferMutation,
+  useUpdateOfferStatusMutation,
+  useUploadOfferImageMutation,
   useDeleteOfferMutation,
 } = offerApi;

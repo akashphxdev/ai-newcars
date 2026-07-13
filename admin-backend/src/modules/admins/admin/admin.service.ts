@@ -1,4 +1,4 @@
-// src/modules/admin/admin.service.ts
+// src/modules/admins/admin/admin.service.ts
 
 import bcrypt from 'bcrypt';
 import { Prisma } from '@prisma/client';
@@ -120,6 +120,15 @@ export async function updateAdmin(id: number, input: UpdateAdminParsed, actorId:
 
   if (id === actorId && input.status && input.status !== existing.status) {
     throw ApiError.badRequest('You cannot change your own account status');
+  }
+
+  // Same self-protection as status above: without this, any admin whose
+  // role happens to carry `alladmins.update` could PATCH their own record
+  // with a higher-privileged roleId (e.g. Super Admin) and grant
+  // themselves full access. Role changes for an account must always come
+  // from a *different* admin.
+  if (id === actorId && input.roleId && input.roleId !== existing.roleId) {
+    throw ApiError.badRequest('You cannot change your own role');
   }
 
   if (input.email || input.mobile) {

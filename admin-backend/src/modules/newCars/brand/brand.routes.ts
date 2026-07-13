@@ -17,7 +17,6 @@ import {
 
 const router = Router();
 
-// Every brand-management route requires a logged-in admin.
 router.use(requireAuth(['admin']));
 
 

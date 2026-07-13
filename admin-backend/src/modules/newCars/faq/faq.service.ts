@@ -78,8 +78,24 @@ async function assertModelExists(modelId: number) {
   }
 }
 
+// `(modelId, displayOrder)` IS @@unique in schema.prisma (DB-level) — this
+// gives a friendly error before hitting the raw Prisma constraint. Same
+// pattern as brand.service.ts's assertSlugAvailable.
+async function assertDisplayOrderAvailable(modelId: number, displayOrder: number, excludeId?: number) {
+  const conflict = await prisma.carFaq.findFirst({
+    where: { modelId, displayOrder, id: excludeId ? { not: excludeId } : undefined },
+    select: { id: true },
+  });
+  if (conflict) {
+    throw ApiError.conflict(
+      `Display order ${displayOrder} is already used by another FAQ for this car model`
+    );
+  }
+}
+
 export async function createFaq(input: CreateFaqParsed, actorId: number) {
   await assertModelExists(input.modelId);
+  await assertDisplayOrderAvailable(input.modelId, input.displayOrder);
 
   const faq = await prisma.carFaq.create({
     data: {
@@ -105,6 +121,7 @@ export async function createFaq(input: CreateFaqParsed, actorId: number) {
 export async function updateFaq(id: number, input: UpdateFaqParsed, actorId: number) {
   await getFaqById(id);
   await assertModelExists(input.modelId);
+  await assertDisplayOrderAvailable(input.modelId, input.displayOrder, id);
 
   const faq = await prisma.carFaq.update({
     where: { id },
@@ -121,6 +138,25 @@ export async function updateFaq(id: number, input: UpdateFaqParsed, actorId: num
   await createLog({
     adminId: actorId,
     description: `Updated FAQ "${faq.question}" (id ${id})`,
+  });
+
+  return faq;
+}
+
+// Lightweight row-level Active/Inactive toggle — separate from the full
+// update so flipping the switch doesn't need the whole edit form's payload.
+export async function updateFaqStatus(id: number, isActive: boolean, actorId: number) {
+  await getFaqById(id);
+
+  const faq = await prisma.carFaq.update({
+    where: { id },
+    data: { isActive },
+    select: FAQ_SELECT,
+  });
+
+  await createLog({
+    adminId: actorId,
+    description: `${isActive ? 'Activated' : 'Deactivated'} FAQ "${faq.question}" (id ${id})`,
   });
 
   return faq;

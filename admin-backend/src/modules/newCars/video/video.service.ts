@@ -4,8 +4,9 @@ import { Prisma } from '@prisma/client';
 import { prisma } from '@/prisma/client';
 import { ApiError } from '@/core/errors/ApiError';
 import { createLog } from '@/core/utils/createLog';
+import { buildPublicPath, deleteUploadedFile } from '@/core/utils/fileStorage.util';
 import type { VideoListQueryParsed, CreateVideoParsed, UpdateVideoParsed } from './video.validation';
-import type { VideoRecord } from './video.types';
+import type { VideoRecord, VideoUploadThumbnailResult } from './video.types';
 
 const VIDEO_SELECT = {
   id: true,
@@ -17,6 +18,7 @@ const VIDEO_SELECT = {
   durationSeconds: true,
   viewCount: true,
   publishedAt: true,
+  isActive: true,
   createdAt: true,
   model: {
     select: {
@@ -28,11 +30,12 @@ const VIDEO_SELECT = {
 } as const;
 
 export async function listVideos(query: VideoListQueryParsed) {
-  const { page, limit, search, modelId, videoType, sortBy, sortOrder } = query;
+  const { page, limit, search, modelId, videoType, isActive, sortBy, sortOrder } = query;
 
   const where: Prisma.CarVideoWhereInput = {
     ...(modelId ? { modelId } : {}),
-    ...(videoType ? { videoType } : {}),
+    ...(typeof videoType === 'number' ? { videoType } : {}),
+    ...(typeof isActive === 'boolean' ? { isActive } : {}),
     ...(search ? { title: { contains: search, mode: 'insensitive' } } : {}),
   };
 
@@ -72,7 +75,7 @@ export async function getVideoById(id: number): Promise<VideoRecord> {
 }
 
 // Every video must belong to a real, existing car model — same
-// "validate the parent foreign key" rule as variant/faq/offer.service.ts.
+// "validate the parent foreign key" rule as faq/variant/offer.service.ts.
 async function assertModelExists(modelId: number) {
   const model = await prisma.carModel.findUnique({ where: { id: modelId }, select: { id: true } });
   if (!model) {
@@ -80,20 +83,21 @@ async function assertModelExists(modelId: number) {
   }
 }
 
-export async function createVideo(input: CreateVideoParsed, actorId: number) {
+export async function createVideo(input: CreateVideoParsed, actorId: number, thumbnailFilename: string) {
   await assertModelExists(input.modelId);
 
   const video = await prisma.carVideo.create({
     data: {
       modelId: input.modelId,
       title: input.title,
-      videoType: input.videoType ?? null,
+      videoType: input.videoType,
       videoUrl: input.videoUrl,
-      thumbnailUrl: input.thumbnailUrl ?? null,
-      durationSeconds: input.durationSeconds ?? null,
-      publishedAt: input.publishedAt ?? null,
-      // viewCount is intentionally omitted — it uses the schema default
-      // of 0 and is never set directly from this form.
+      // Thumbnail is required on create — controller already rejects the
+      // request before this point if no file was uploaded.
+      thumbnailUrl: buildPublicPath('car-videos', thumbnailFilename),
+      durationSeconds: input.durationSeconds,
+      publishedAt: input.publishedAt,
+      isActive: input.isActive,
     },
     select: VIDEO_SELECT,
   });
@@ -106,10 +110,9 @@ export async function createVideo(input: CreateVideoParsed, actorId: number) {
   return video;
 }
 
-// Full replace on every edit — same convention as faq/variant/offer,
-// not a partial PATCH like Brand/CarModel. viewCount is never touched
-// by this path — it's incremented elsewhere (e.g. a public-facing
-// "watch" endpoint), not from the admin edit form.
+// Full replace on every edit — same convention as faq/variant/offer.
+// Thumbnail is NOT touched here — it's replaced via the dedicated
+// uploadVideoThumbnail() below (same split as Brand's logo).
 export async function updateVideo(id: number, input: UpdateVideoParsed, actorId: number) {
   await getVideoById(id);
   await assertModelExists(input.modelId);
@@ -119,11 +122,11 @@ export async function updateVideo(id: number, input: UpdateVideoParsed, actorId:
     data: {
       modelId: input.modelId,
       title: input.title,
-      videoType: input.videoType ?? null,
+      videoType: input.videoType,
       videoUrl: input.videoUrl,
-      thumbnailUrl: input.thumbnailUrl ?? null,
-      durationSeconds: input.durationSeconds ?? null,
-      publishedAt: input.publishedAt ?? null,
+      durationSeconds: input.durationSeconds,
+      publishedAt: input.publishedAt,
+      isActive: input.isActive,
     },
     select: VIDEO_SELECT,
   });
@@ -136,10 +139,62 @@ export async function updateVideo(id: number, input: UpdateVideoParsed, actorId:
   return video;
 }
 
+// Lightweight row-level Active/Inactive toggle — separate from the full
+// update so flipping the switch doesn't need the whole edit form's payload.
+export async function updateVideoStatus(id: number, isActive: boolean, actorId: number) {
+  await getVideoById(id);
+
+  const video = await prisma.carVideo.update({
+    where: { id },
+    data: { isActive },
+    select: VIDEO_SELECT,
+  });
+
+  await createLog({
+    adminId: actorId,
+    description: `${isActive ? 'Activated' : 'Deactivated'} video "${video.title}" (id ${id})`,
+  });
+
+  return video;
+}
+
+// `logoUrl`-style dedicated file-replace endpoint — same pattern as
+// brand.service.ts's uploadBrandLogo / image.service.ts's replaceImageFile.
+export async function uploadVideoThumbnail(
+  id: number,
+  savedFilename: string,
+  actorId: number,
+): Promise<VideoUploadThumbnailResult> {
+  const existing = await getVideoById(id);
+
+  const newThumbnailUrl = buildPublicPath('car-videos', savedFilename);
+
+  const video = await prisma.carVideo.update({
+    where: { id },
+    data: { thumbnailUrl: newThumbnailUrl },
+    select: { id: true, thumbnailUrl: true },
+  });
+
+  // Only delete the old file AFTER the DB write succeeds — if the update
+  // had failed we'd want the old thumbnail to remain intact.
+  await deleteUploadedFile(existing.thumbnailUrl);
+
+  await createLog({
+    adminId: actorId,
+    description: `Updated thumbnail for video "${existing.title}" (id ${id})`,
+  });
+
+  return video as VideoUploadThumbnailResult;
+}
+
 export async function deleteVideo(id: number, actorId: number) {
   const video = await getVideoById(id);
 
   await prisma.carVideo.delete({ where: { id } });
+
+  // Video row is gone — its thumbnail file on disk is now orphaned,
+  // clean it up. Same order-of-operations as brand.service.ts's deleteBrand.
+  await deleteUploadedFile(video.thumbnailUrl);
 
   await createLog({
     adminId: actorId,

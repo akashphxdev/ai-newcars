@@ -83,6 +83,22 @@ export default function RoleModal({
     });
   };
 
+  // Master checkbox per module — selects every permission in that module
+  // in one click if not all are already selected, otherwise clears them.
+  const toggleModule = (mod: string) => {
+    const modPermIds = (permissionsByModule[mod] ?? []).map((p) => p.id);
+    const allSelected = modPermIds.every((id) => selectedPermissionIds.has(id));
+    setSelectedPermissionIds((prev) => {
+      const next = new Set(prev);
+      if (allSelected) {
+        modPermIds.forEach((id) => next.delete(id));
+      } else {
+        modPermIds.forEach((id) => next.add(id));
+      }
+      return next;
+    });
+  };
+
   const validate = (): boolean => {
     const next: FieldErrors = {};
     if (roleName.trim().length < 2) next.roleName = "Role name must be at least 2 characters.";
@@ -193,33 +209,71 @@ export default function RoleModal({
           </div>
 
           <div>
-            <label className="block text-[10px] font-bold uppercase tracking-widest text-[#a39e96] mb-2">
-              Permissions
-            </label>
+            <div className="flex items-center justify-between mb-2">
+              <label className="block text-[10px] font-bold uppercase tracking-widest text-[#a39e96]">
+                Permissions
+              </label>
+              {moduleNames.length > 0 && (
+                <span className="text-[10px] font-bold text-[#a39e96]">
+                  {selectedPermissionIds.size} selected
+                </span>
+              )}
+            </div>
             {moduleNames.length === 0 ? (
               <p className="text-[12px] text-[#a39e96]">
                 No permissions exist yet — create some on the Permissions page first.
               </p>
             ) : (
-              <div className="grid grid-cols-2 gap-3 max-h-[240px] overflow-y-auto pr-1">
-                {moduleNames.map((mod) => (
-                  <div key={mod} className="border border-[#e8e4dc] rounded-lg px-3 py-2.5">
-                    <p className="text-[11px] font-bold uppercase tracking-wider text-[#7a7670] mb-1.5">{mod}</p>
-                    <div className="flex flex-wrap gap-x-3 gap-y-1.5">
-                      {permissionsByModule[mod].map((p) => (
-                        <label key={p.id} className="flex items-center gap-1.5 cursor-pointer text-[12px] text-[#4a4640]">
+              <div className="grid grid-cols-2 gap-2.5 max-h-[260px] overflow-y-auto pr-1">
+                {moduleNames.map((mod) => {
+                  const modPerms = permissionsByModule[mod];
+                  const modPermIds = modPerms.map((p) => p.id);
+                  const selectedCount = modPermIds.filter((id) => selectedPermissionIds.has(id)).length;
+                  const allSelected = selectedCount === modPermIds.length;
+                  const someSelected = selectedCount > 0 && !allSelected;
+
+                  return (
+                    <div
+                      key={mod}
+                      className={`rounded-lg px-3 py-2.5 border transition-colors ${
+                        selectedCount > 0 ? "border-[#f0997b] bg-[#fef9f8]" : "border-[#e8e4dc] bg-white"
+                      }`}
+                    >
+                      <label className="flex items-center justify-between gap-2 cursor-pointer mb-1.5 pb-1.5 border-b border-black/5">
+                        <span className="flex items-center gap-1.5">
                           <input
                             type="checkbox"
-                            checked={selectedPermissionIds.has(p.id)}
-                            onChange={() => togglePermission(p.id)}
+                            checked={allSelected}
+                            ref={(el) => {
+                              if (el) el.indeterminate = someSelected;
+                            }}
+                            onChange={() => toggleModule(mod)}
                             className="cursor-pointer accent-[#D4300F]"
                           />
-                          {p.action}
-                        </label>
-                      ))}
+                          <span className="text-[11px] font-bold uppercase tracking-wider text-[#4a4640]">
+                            {mod}
+                          </span>
+                        </span>
+                        <span className="text-[10px] font-semibold text-[#a39e96]">
+                          {selectedCount}/{modPermIds.length}
+                        </span>
+                      </label>
+                      <div className="flex flex-wrap gap-x-3 gap-y-1.5">
+                        {modPerms.map((p) => (
+                          <label key={p.id} className="flex items-center gap-1.5 cursor-pointer text-[12px] text-[#4a4640]">
+                            <input
+                              type="checkbox"
+                              checked={selectedPermissionIds.has(p.id)}
+                              onChange={() => togglePermission(p.id)}
+                              className="cursor-pointer accent-[#D4300F]"
+                            />
+                            {p.action}
+                          </label>
+                        ))}
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             )}
           </div>

@@ -4,6 +4,7 @@ import { useGetFeaturesQuery, useDeleteFeatureMutation, type FeatureRecord } fro
 import { useGetVariantsQuery } from "../Variants/variant.api";
 import { extractApiError } from "../../../lib/apiClient";
 import FeatureModal from "./FeatureModal";
+import ConfirmDialog from "../../../components/common/ConfirmDialog";
 import DataTable, { type DataTableColumn } from "../../../components/common/DataTable";
 import Pagination from "../../../components/common/Pagination";
 import { SearchFilterBar, FilterSelect } from "../../../components/common/SearchFilterBar";
@@ -21,6 +22,127 @@ function countEnabled(f: FeatureRecord): number {
     f.connectedCarTech, f.wirelessCharging,
   ];
   return flags.filter(Boolean).length;
+}
+
+function formatDate(value: string | null): string {
+  if (!value) return "—";
+  return new Date(value).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" });
+}
+
+function SpecItem({ label, value }: { label: string; value: React.ReactNode }) {
+  return (
+    <div>
+      <p className="text-[9px] font-bold uppercase tracking-wider text-[#a39e96]">{label}</p>
+      <p className="text-[12px] font-semibold text-[#1c1a17] mt-0.5">{value}</p>
+    </div>
+  );
+}
+
+// Yes/No pill for boolean spec fields — greyed out when off so an
+// expanded sheet full of "No"s doesn't visually compete with the ones
+// that are actually turned on.
+function BoolItem({ label, value }: { label: string; value: boolean }) {
+  return (
+    <div>
+      <p className="text-[9px] font-bold uppercase tracking-wider text-[#a39e96]">{label}</p>
+      <p className={`text-[12px] font-semibold mt-0.5 ${value ? "text-[#1c1a17]" : "text-[#c0bab0]"}`}>
+        {value ? "Yes" : "No"}
+      </p>
+    </div>
+  );
+}
+
+function ExpandedFeatureDetail({ f }: { f: FeatureRecord }) {
+  // The list endpoint already returns every field on the feature sheet
+  // (same FEATURE_SELECT used for both list + getById on the backend),
+  // so no extra fetch is needed here — just render what's already on `f`.
+  return (
+    <div className="space-y-4">
+      <div>
+        <p className="text-[10px] font-black uppercase tracking-wider text-[#1c1a17] border-b border-[#f0ece6] pb-1.5 mb-3">
+          Safety
+        </p>
+        <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-x-4 gap-y-3">
+          <SpecItem label="Airbags" value={f.airbagsCount ?? "—"} />
+          <SpecItem label="NCAP rating" value={f.ncapRating != null ? `${f.ncapRating} ★` : "—"} />
+          <BoolItem label="ABS with EBD" value={f.absWithEbd} />
+          <BoolItem label="ESC" value={f.esc} />
+          <BoolItem label="Hill assist" value={f.hillAssist} />
+          <BoolItem label="Rear parking camera" value={f.rearParkingCamera} />
+          <BoolItem label="Front parking sensors" value={f.frontParkingSensors} />
+          <BoolItem label="TPMS" value={f.tpms} />
+          <BoolItem label="ISOFIX mounts" value={f.isofixMounts} />
+        </div>
+      </div>
+
+      <div>
+        <p className="text-[10px] font-black uppercase tracking-wider text-[#1c1a17] border-b border-[#f0ece6] pb-1.5 mb-3">
+          Comfort & convenience
+        </p>
+        <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-x-4 gap-y-3">
+          <BoolItem label="Sunroof" value={f.sunroof} />
+          <BoolItem label="Keyless entry" value={f.keylessEntry} />
+          <BoolItem label="Push button start" value={f.pushButtonStart} />
+          <BoolItem label="Cruise control" value={f.cruiseControl} />
+          <BoolItem label="Climate control" value={f.climateControl} />
+          <BoolItem label="Rear AC vents" value={f.rearAcVents} />
+          <BoolItem label="Auto-dimming mirror" value={f.autoDimmingMirror} />
+          <BoolItem label="Power windows" value={f.powerWindows} />
+        </div>
+      </div>
+
+      <div>
+        <p className="text-[10px] font-black uppercase tracking-wider text-[#1c1a17] border-b border-[#f0ece6] pb-1.5 mb-3">
+          Seating
+        </p>
+        <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-x-4 gap-y-3">
+          <SpecItem label="Upholstery type" value={f.upholsteryType ?? "—"} />
+          <BoolItem label="Adjustable seats" value={f.adjustableSeats} />
+          <BoolItem label="Ventilated seats" value={f.ventilatedSeats} />
+          <BoolItem label="Rear armrest" value={f.rearArmrest} />
+        </div>
+      </div>
+
+      <div>
+        <p className="text-[10px] font-black uppercase tracking-wider text-[#1c1a17] border-b border-[#f0ece6] pb-1.5 mb-3">
+          Exterior
+        </p>
+        <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-x-4 gap-y-3">
+          <BoolItem label="LED headlamps" value={f.ledHeadlamps} />
+          <BoolItem label="LED DRLs" value={f.ledDrls} />
+          <BoolItem label="Alloy wheels" value={f.alloyWheels} />
+          <BoolItem label="Roof rails" value={f.roofRails} />
+          <BoolItem label="Fog lamps" value={f.fogLamps} />
+        </div>
+      </div>
+
+      <div>
+        <p className="text-[10px] font-black uppercase tracking-wider text-[#1c1a17] border-b border-[#f0ece6] pb-1.5 mb-3">
+          Infotainment & tech
+        </p>
+        <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-x-4 gap-y-3">
+          <SpecItem label="Touchscreen" value={f.touchscreenSizeInch != null ? `${f.touchscreenSizeInch}"` : "—"} />
+          <SpecItem label="Speakers" value={f.numberOfSpeakers ?? "—"} />
+          <BoolItem label="Android Auto" value={f.androidAuto} />
+          <BoolItem label="Apple CarPlay" value={f.appleCarplay} />
+          <BoolItem label="Connected car tech" value={f.connectedCarTech} />
+          <BoolItem label="Wireless charging" value={f.wirelessCharging} />
+        </div>
+      </div>
+
+      <div>
+        <p className="text-[10px] font-black uppercase tracking-wider text-[#1c1a17] border-b border-[#f0ece6] pb-1.5 mb-3">
+          Extra
+        </p>
+        <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-x-4 gap-y-3">
+          <SpecItem label="Created" value={formatDate(f.createdAt)} />
+          <div className="col-span-2 sm:col-span-3 lg:col-span-5">
+            <SpecItem label="Extra features (free text)" value={f.extraFeatures ?? "—"} />
+          </div>
+        </div>
+      </div>
+    </div>
+  );
 }
 
 export default function AllFeatures() {
@@ -70,11 +192,18 @@ export default function AllFeatures() {
   const [busyId, setBusyId] = useState<number | null>(null);
   const [actionError, setActionError] = useState("");
 
-  const handleDelete = async (id: number) => {
+  // Delete goes through the shared ConfirmDialog popup instead of firing
+  // immediately on click — pendingDelete holds the row awaiting
+  // confirmation, cleared on cancel/confirm.
+  const [pendingDelete, setPendingDelete] = useState<FeatureRecord | null>(null);
+
+  const handleConfirmDelete = async () => {
+    if (!pendingDelete) return;
     setActionError("");
-    setBusyId(id);
+    setBusyId(pendingDelete.id);
     try {
-      await deleteFeature(id).unwrap();
+      await deleteFeature(pendingDelete.id).unwrap();
+      setPendingDelete(null);
     } catch (err) {
       setActionError(extractApiError(err));
     } finally {
@@ -119,7 +248,7 @@ export default function AllFeatures() {
       header: "",
       align: "right",
       render: (f) => (
-        <div className="flex items-center justify-end gap-1.5">
+        <div className="flex items-center justify-end gap-1.5" onClick={(e) => e.stopPropagation()}>
           <button
             onClick={() => openEditModal(f)}
             className="cursor-pointer text-[10px] font-bold px-2.5 py-1 rounded-lg border border-[#e8e4dc] text-[#4a4640] hover:bg-[#f7f5f1] transition-colors"
@@ -127,7 +256,7 @@ export default function AllFeatures() {
             Edit
           </button>
           <button
-            onClick={() => handleDelete(f.id)}
+            onClick={() => setPendingDelete(f)}
             disabled={busyId === f.id}
             className="cursor-pointer text-[10px] font-bold px-2.5 py-1 rounded-lg border border-red-100 text-red-500 hover:bg-red-50 transition-colors disabled:opacity-50"
           >
@@ -195,6 +324,8 @@ export default function AllFeatures() {
           error={error}
           loadingMessage="Loading feature sheets..."
           emptyMessage="No feature sheets found."
+          expandable
+          renderExpanded={(f) => <ExpandedFeatureDetail f={f} />}
         />
         <Pagination pagination={pagination ?? null} onPageChange={setPage} variant="simple" />
       </div>
@@ -207,6 +338,15 @@ export default function AllFeatures() {
           feature={editingFeature}
         />
       )}
+
+      <ConfirmDialog
+        open={!!pendingDelete}
+        title="Delete feature sheet?"
+        itemName={pendingDelete?.variant.variantName}
+        loading={busyId === pendingDelete?.id}
+        onCancel={() => setPendingDelete(null)}
+        onConfirm={handleConfirmDelete}
+      />
     </div>
   );
 }

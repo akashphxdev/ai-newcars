@@ -17,7 +17,10 @@ const VARIANT_SELECT = {
   variantName: true,
   price: true,
   seatingCapacity: true,
-  transmission: true,
+  transmissionId: true,
+  transmission: {
+    select: { id: true, name: true, slug: true },
+  },
   isTopSeller: true,
   createdAt: true,
   model: {
@@ -30,11 +33,11 @@ const VARIANT_SELECT = {
 } as const;
 
 export async function listVariants(query: VariantListQueryParsed) {
-  const { page, limit, search, modelId, transmission, isTopSeller, sortBy, sortOrder } = query;
+  const { page, limit, search, modelId, transmissionId, isTopSeller, sortBy, sortOrder } = query;
 
   const where: Prisma.CarVariantWhereInput = {
     ...(modelId ? { modelId } : {}),
-    ...(transmission ? { transmission } : {}),
+    ...(transmissionId ? { transmissionId } : {}),
     ...(typeof isTopSeller === 'boolean' ? { isTopSeller } : {}),
     ...(search ? { variantName: { contains: search, mode: 'insensitive' } } : {}),
   };
@@ -84,8 +87,43 @@ async function assertModelExists(modelId: number) {
   }
 }
 
+// transmissionId must point at a real attribute_options row that actually
+// belongs to the "transmission" category (not, say, a "drivetrain" option
+// that happens to share an id range) — same shape check as
+// attributeOption.service.ts's own category-scoped lookups.
+async function assertTransmissionOptionExists(transmissionId: number) {
+  const option = await prisma.attributeOption.findFirst({
+    where: { id: transmissionId, category: 'transmission' },
+    select: { id: true },
+  });
+  if (!option) {
+    throw ApiError.badRequest('Invalid transmissionId — transmission option does not exist');
+  }
+}
+
+// No two variants under the same car model may share a name (e.g. two
+// "SX(O) Turbo DCT" under the same model). Backed by a DB-level unique
+// index too — this check just turns that into a friendly error instead
+// of a raw constraint failure, same pattern as Brand/CarModel's
+// assertSlugAvailable checks.
+async function assertVariantNameUnique(modelId: number, variantName: string, excludeId?: number) {
+  const conflict = await prisma.carVariant.findFirst({
+    where: {
+      modelId,
+      variantName,
+      id: excludeId ? { not: excludeId } : undefined,
+    },
+    select: { id: true },
+  });
+  if (conflict) {
+    throw ApiError.conflict(`A variant named "${variantName}" already exists for this car model`);
+  }
+}
+
 export async function createVariant(input: CreateVariantParsed, actorId: number) {
   await assertModelExists(input.modelId);
+  await assertTransmissionOptionExists(input.transmissionId);
+  await assertVariantNameUnique(input.modelId, input.variantName);
 
   const variant = await prisma.carVariant.create({
     data: {
@@ -93,7 +131,7 @@ export async function createVariant(input: CreateVariantParsed, actorId: number)
       variantName: input.variantName,
       price: input.price,
       seatingCapacity: input.seatingCapacity,
-      transmission: input.transmission,
+      transmissionId: input.transmissionId,
       isTopSeller: input.isTopSeller,
     },
     select: VARIANT_SELECT,
@@ -112,6 +150,8 @@ export async function createVariant(input: CreateVariantParsed, actorId: number)
 export async function updateVariant(id: number, input: UpdateVariantParsed, actorId: number) {
   await getVariantById(id);
   await assertModelExists(input.modelId);
+  await assertTransmissionOptionExists(input.transmissionId);
+  await assertVariantNameUnique(input.modelId, input.variantName, id);
 
   const variant = await prisma.carVariant.update({
     where: { id },
@@ -120,7 +160,7 @@ export async function updateVariant(id: number, input: UpdateVariantParsed, acto
       variantName: input.variantName,
       price: input.price,
       seatingCapacity: input.seatingCapacity,
-      transmission: input.transmission,
+      transmissionId: input.transmissionId,
       isTopSeller: input.isTopSeller,
     },
     select: VARIANT_SELECT,
@@ -136,6 +176,37 @@ export async function updateVariant(id: number, input: UpdateVariantParsed, acto
 
 export async function deleteVariant(id: number, actorId: number) {
   const variant = await getVariantById(id);
+
+  // A variant can't be deleted while ICE/electric powertrains (or other
+  // dependent records) still reference it — the DB would reject this with
+  // a raw foreign-key error, so check up front and tell the user exactly
+  // what's still attached, same pattern as attributeOption.service.ts's
+  // deleteAttributeOption usage check.
+  // CarFeature is also a RESTRICT FK on variantId (car_images, new_car_offers,
+  // used_car_listings, and reviews are SET NULL there and so don't block
+  // deletion — only the powertrains and features do).
+  const [icePowertrainCount, electricPowertrainCount, featureCount] = await Promise.all([
+    prisma.carPowertrainIce.count({ where: { variantId: id } }),
+    prisma.carPowertrainElectric.count({ where: { variantId: id } }),
+    prisma.carFeature.count({ where: { variantId: id } }),
+  ]);
+
+  const linkedParts: string[] = [];
+  if (icePowertrainCount > 0) {
+    linkedParts.push(`${icePowertrainCount} ICE powertrain${icePowertrainCount > 1 ? 's' : ''}`);
+  }
+  if (electricPowertrainCount > 0) {
+    linkedParts.push(`${electricPowertrainCount} electric powertrain${electricPowertrainCount > 1 ? 's' : ''}`);
+  }
+  if (featureCount > 0) {
+    linkedParts.push(`${featureCount} feature record${featureCount > 1 ? 's' : ''}`);
+  }
+
+  if (linkedParts.length > 0) {
+    throw ApiError.badRequest(
+      `Cannot delete this variant — it still has ${linkedParts.join(' and ')} linked to it. Delete those first, then try again.`,
+    );
+  }
 
   await prisma.carVariant.delete({ where: { id } });
 

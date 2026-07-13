@@ -1,8 +1,15 @@
 // src/pages/newCars/PowertrainElectric/powertrainElectric.api.ts
 import { api } from "../../../store/baseApi";
 
-export type ElectricDrivetrain = "FWD" | "RWD" | "AWD" | "4WD";
-export type TestCycleType = "ARAI" | "WLTP" | "EPA" | "NEDC";
+// Numeric code — see TEST_CYCLE_TYPE_OPTIONS in lib/lookups.ts for the
+// label mapping. Mirrors TEST_CYCLE_TYPE_CODES in the backend.
+export type TestCycleType = 1 | 2 | 3 | 4;
+
+export interface AttributeOptionSummary {
+  id: number;
+  name: string;
+  slug: string;
+}
 
 export interface PowertrainElectricVariantSummary {
   id: number;
@@ -15,12 +22,11 @@ export interface PowertrainElectricRecord {
   variantId: number;
   numMotors: number | null;
   motorType: string | null;
-  // Decimal fields come back from Prisma serialized as strings — same
-  // convention as PowertrainIceRecord.
   batteryCapacity: string | null;
   batteryChemistry: string | null;
   thermalManagementSystem: string | null;
-  drivetrain: ElectricDrivetrain | null;
+  drivetrainId: number | null;
+  drivetrain: AttributeOptionSummary | null;
   powerPs: number | null;
   torqueNm: number | null;
   claimedRange: number | null;
@@ -55,6 +61,23 @@ export interface PowertrainElectricRecord {
   variant: PowertrainElectricVariantSummary;
 }
 
+// What GET /new-cars/powertrains/electric (listing) actually returns —
+// just the table-visible fields. Full spec sheet comes from
+// getPowertrainElectricById, fetched on demand when a row is expanded.
+export interface PowertrainElectricListItem {
+  id: number;
+  variantId: number;
+  batteryCapacity: string | null;
+  drivetrain: AttributeOptionSummary | null;
+  powerPs: number | null;
+  torqueNm: number | null;
+  claimedRange: number | null;
+  isDefault: boolean;
+  isDeleted: boolean;
+  createdAt: string;
+  variant: PowertrainElectricVariantSummary;
+}
+
 export interface Pagination {
   page: number;
   limit: number;
@@ -72,8 +95,6 @@ export interface ListPowertrainElectricParams {
   sortOrder?: "asc" | "desc";
 }
 
-// Only variantId is mandatory — every other spec field is optional and
-// filled in progressively, same reasoning as PowertrainIceFormInput.
 export interface PowertrainElectricFormInput {
   variantId: number;
   numMotors?: number | null;
@@ -81,7 +102,7 @@ export interface PowertrainElectricFormInput {
   batteryCapacity?: number | null;
   batteryChemistry?: string | null;
   thermalManagementSystem?: string | null;
-  drivetrain?: ElectricDrivetrain | null;
+  drivetrainId?: number | null;
   powerPs?: number | null;
   torqueNm?: number | null;
   claimedRange?: number | null;
@@ -112,7 +133,7 @@ export interface PowertrainElectricFormInput {
 
 interface PowertrainElectricListRawResponse {
   success: true;
-  data: PowertrainElectricRecord[];
+  data: PowertrainElectricListItem[];
   pagination: Pagination;
 }
 
@@ -122,7 +143,7 @@ interface PowertrainElectricSingleRawResponse {
 }
 
 export interface PowertrainElectricListResult {
-  data: PowertrainElectricRecord[];
+  data: PowertrainElectricListItem[];
   pagination: Pagination;
 }
 
@@ -157,22 +178,18 @@ export const powertrainElectricApi = api.injectEndpoints({
       invalidatesTags: [POWERTRAIN_ELECTRIC_LIST_TAG],
     }),
 
-    // Partial update — only the fields present in `input` are sent.
-    updatePowertrainElectric: builder.mutation<
-      PowertrainElectricRecord,
-      { id: number; input: Partial<PowertrainElectricFormInput> }
-    >({
-      query: ({ id, input }) => ({
-        url: `/new-cars/powertrains/electric/${id}`,
-        method: "PATCH",
-        data: input,
-      }),
-      transformResponse: (res: PowertrainElectricSingleRawResponse) => res.data,
-      invalidatesTags: (_result, _error, { id }) => [
-        { type: "PowertrainElectric", id },
-        POWERTRAIN_ELECTRIC_LIST_TAG,
-      ],
+  updatePowertrainElectric: builder.mutation<PowertrainElectricRecord, { id: number; input: Partial<PowertrainElectricFormInput> }>({
+    query: ({ id, input }) => ({
+      url: `/new-cars/powertrains/electric/${id}`,
+      method: "PATCH",
+      data: input,
     }),
+    transformResponse: (res: PowertrainElectricSingleRawResponse) => res.data,
+    invalidatesTags: (_result, _error, { id }) => [
+      { type: "PowertrainElectric", id },
+      POWERTRAIN_ELECTRIC_LIST_TAG,
+    ],
+  }),
 
     restorePowertrainElectric: builder.mutation<void, number>({
       query: (id) => ({ url: `/new-cars/powertrains/electric/${id}/restore`, method: "PATCH" }),

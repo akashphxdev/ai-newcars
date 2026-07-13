@@ -12,6 +12,7 @@ import CountryModal from "./CountryModal";
 import DataTable, { type DataTableColumn } from "../../../components/common/DataTable";
 import Pagination from "../../../components/common/Pagination";
 import { SearchFilterBar, SearchInput } from "../../../components/common/SearchFilterBar";
+import ConfirmDialog from "../../../components/common/ConfirmDialog";
 
 const ACCENT = "#D4300F";
 const PAGE_SIZE = 20;
@@ -85,6 +86,7 @@ export default function AllCountries() {
 
   const [togglingId, setTogglingId] = useState<number | null>(null);
   const [deletingId, setDeletingId] = useState<number | null>(null);
+  const [pendingDelete, setPendingDelete] = useState<CountryRecord | null>(null);
   const [actionError, setActionError] = useState("");
 
   const handleToggleStatus = async (country: CountryRecord) => {
@@ -99,11 +101,13 @@ export default function AllCountries() {
     }
   };
 
-  const handleDelete = async (id: number) => {
+  const handleConfirmDelete = async () => {
+    if (!pendingDelete) return;
     setActionError("");
-    setDeletingId(id);
+    setDeletingId(pendingDelete.id);
     try {
-      await deleteCountry(id).unwrap();
+      await deleteCountry(pendingDelete.id).unwrap();
+      setPendingDelete(null);
     } catch (err) {
       setActionError(extractApiError(err));
     } finally {
@@ -116,11 +120,21 @@ export default function AllCountries() {
     { header: "Code", render: (c) => <span className="text-[#7a7670]">{c.code}</span> },
     {
       header: "Currency",
-      render: (c) => (
-        <span className="text-[#7a7670]">
-          {c.currencyCode || c.currencySymbol ? `${c.currencySymbol ?? ""} ${c.currencyCode ?? ""}`.trim() : "—"}
-        </span>
-      ),
+      render: (c) => {
+        const symbolAndCode = `${c.currencySymbol ?? ""} ${c.currencyCode ?? ""}`.trim();
+        return (
+          <span className="text-[#7a7670]">
+            {c.currency ? (
+              <>
+                <span className="text-[#1c1a17] font-medium">{c.currency}</span>
+                {symbolAndCode && <span className="text-[#a39e96]"> ({symbolAndCode})</span>}
+              </>
+            ) : (
+              symbolAndCode || "—"
+            )}
+          </span>
+        );
+      },
     },
     { header: "Exchange rate", render: (c) => <span className="text-[#7a7670]">{c.exchangeRate ?? "—"}</span> },
     {
@@ -156,7 +170,7 @@ export default function AllCountries() {
             Edit
           </button>
           <button
-            onClick={() => handleDelete(c.id)}
+            onClick={() => setPendingDelete(c)}
             disabled={deletingId === c.id}
             className="cursor-pointer text-[10px] font-bold px-2.5 py-1 rounded-lg border border-red-100 text-red-500 hover:bg-red-50 transition-colors disabled:opacity-50"
           >
@@ -226,6 +240,15 @@ export default function AllCountries() {
       </div>
 
       <CountryModal open={modalOpen} onClose={closeModal} country={editingCountry} />
+
+      <ConfirmDialog
+        open={!!pendingDelete}
+        title="Delete country?"
+        itemName={pendingDelete?.name}
+        loading={deletingId === pendingDelete?.id}
+        onCancel={() => setPendingDelete(null)}
+        onConfirm={handleConfirmDelete}
+      />
     </div>
   );
 }

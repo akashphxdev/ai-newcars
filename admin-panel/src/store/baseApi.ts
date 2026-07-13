@@ -49,6 +49,6 @@ export const api = createApi({
   baseQuery: axiosBaseQuery(),
   tagTypes: ["Auth", "Admin", "Role", "Permission", "AdminLog", "Country", "State", "District", "City", "Brand",
              "CarModel", "Variant", "PowertrainIce", "PowertrainElectric", "CarColor", "CarImage", "Feature", "Faq",
-             "Offer", "Video"],
+             "Offer", "Video", "BodyType", "AttributeOption", "Article", "ArticleCategory", "ArticleComment"],
   endpoints: () => ({}),
 });

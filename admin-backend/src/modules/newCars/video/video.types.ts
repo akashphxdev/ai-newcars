@@ -10,12 +10,18 @@ export interface VideoRecord {
   id: number;
   modelId: number;
   title: string;
-  videoType: string | null;
+  videoType: number;
   videoUrl: string;
-  thumbnailUrl: string | null;
-  durationSeconds: number | null;
+  thumbnailUrl: string;
+  durationSeconds: number;
   viewCount: number;
-  publishedAt: Date | null;
+  publishedAt: Date;
+  isActive: boolean;
   createdAt: Date;
   model: VideoModelSummary;
+}
+
+export interface VideoUploadThumbnailResult {
+  id: number;
+  thumbnailUrl: string;
 }

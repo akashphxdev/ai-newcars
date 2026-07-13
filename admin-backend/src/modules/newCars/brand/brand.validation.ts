@@ -10,7 +10,7 @@ const booleanish = z.preprocess((val) => {
 
 export const brandListQuerySchema = z.object({
   page: z.coerce.number().int().min(1).default(1),
-  limit: z.coerce.number().int().min(1).max(100).default(20),
+  limit: z.coerce.number().int().min(1).max(500).default(20),
   search: z.string().trim().min(1).optional(),
   // Filter by "country of origin" (e.g. all German brands).
   countryOriginId: z.coerce.number().int().positive().optional(),

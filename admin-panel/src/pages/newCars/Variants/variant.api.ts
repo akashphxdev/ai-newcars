@@ -1,7 +1,13 @@
 // src/pages/newCars/Variants/variant.api.ts
 import { api } from "../../../store/baseApi";
 
-export type TransmissionType = "manual" | "automatic" | "amt" | "cvt" | "dct";
+// Minimal transmission attribute-option shape embedded in the variant
+// record — mirrors AttributeOptionRecord in AttributeOptions/attributeOption.api.ts.
+export interface TransmissionSummary {
+  id: number;
+  name: string;
+  slug: string;
+}
 
 export interface VariantRecord {
   id: number;
@@ -11,7 +17,8 @@ export interface VariantRecord {
   // convention as CarModelRecord's priceMin/priceMax.
   price: string;
   seatingCapacity: number;
-  transmission: TransmissionType;
+  transmissionId: number;
+  transmission: TransmissionSummary;
   isTopSeller: boolean;
   createdAt: string;
   model: { id: number; name: string; brand: { id: number; name: string } };
@@ -29,7 +36,7 @@ export interface ListVariantsParams {
   limit?: number;
   search?: string;
   modelId?: number;
-  transmission?: TransmissionType;
+  transmissionId?: number;
   isTopSeller?: boolean;
   sortBy?: "variantName" | "id" | "price" | "createdAt";
   sortOrder?: "asc" | "desc";
@@ -43,7 +50,7 @@ export interface VariantFormInput {
   variantName: string;
   price: number;
   seatingCapacity: number;
-  transmission: TransmissionType;
+  transmissionId: number;
   isTopSeller: boolean;
 }
 

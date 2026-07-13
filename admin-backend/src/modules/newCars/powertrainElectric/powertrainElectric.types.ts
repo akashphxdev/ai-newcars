@@ -1,6 +1,6 @@
 // src/modules/newCars/powertrainElectric/powertrainElectric.types.ts
 
-import type { TestCycleType, ElectricDrivetrain } from './powertrainElectric.validation';
+import type { TestCycleType } from './powertrainElectric.validation';
 
 export interface PowertrainElectricVariantSummary {
   id: number;
@@ -8,17 +8,22 @@ export interface PowertrainElectricVariantSummary {
   model: { id: number; name: string; brand: { id: number; name: string } };
 }
 
+export interface AttributeOptionSummary {
+  id: number;
+  name: string;
+  slug: string;
+}
+
 export interface PowertrainElectricRecord {
   id: number;
   variantId: number;
   numMotors: number | null;
   motorType: string | null;
-  // Decimal fields come back from Prisma serialized as strings — same
-  // convention used across CarModel/CarVariant/PowertrainIce.
   batteryCapacity: string | null;
   batteryChemistry: string | null;
   thermalManagementSystem: string | null;
-  drivetrain: ElectricDrivetrain | null;
+  drivetrainId: number | null;
+  drivetrain: AttributeOptionSummary | null;
   powerPs: number | null;
   torqueNm: number | null;
   claimedRange: number | null;
@@ -49,6 +54,23 @@ export interface PowertrainElectricRecord {
   deletedBy: number | null;
   deletedAt: Date | null;
   expiresAt: Date | null;
+  createdAt: Date;
+  variant: PowertrainElectricVariantSummary;
+}
+
+// What the listing table actually renders — everything else (charging
+// specs, warranty, URLs, etc.) is fetched on demand via getById when a
+// row is expanded, instead of being shipped on every list call.
+export interface PowertrainElectricListItem {
+  id: number;
+  variantId: number;
+  batteryCapacity: string | null;
+  drivetrain: AttributeOptionSummary | null;
+  powerPs: number | null;
+  torqueNm: number | null;
+  claimedRange: number | null;
+  isDefault: boolean;
+  isDeleted: boolean;
   createdAt: Date;
   variant: PowertrainElectricVariantSummary;
 }

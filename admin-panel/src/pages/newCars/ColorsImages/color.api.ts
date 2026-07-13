@@ -4,12 +4,19 @@
 
 import { api } from "../../../store/baseApi";
 
+export interface CarColorShade {
+  id: number;
+  colorHex: string;
+  sortOrder: number;
+}
+
 export interface CarColorRecord {
   id: number;
   modelId: number;
   colorName: string;
-  colorHex: string | null;
-  isDualTone: boolean;
+  // Ordered list of hex shades — 0 (name/photo only), 1 (single tone), or
+  // 2+ (a "mix" color) shades. Replaces the old single colorHex + isDualTone flag.
+  shades: CarColorShade[];
   imageUrl: string | null;
   // Decimal field comes back from Prisma serialized as a string.
   additionalCost: string | null;
@@ -28,7 +35,6 @@ export interface ListColorsParams {
   limit?: number;
   search?: string;
   modelId?: number;
-  isDualTone?: boolean;
   sortBy?: "colorName" | "id";
   sortOrder?: "asc" | "desc";
 }
@@ -36,18 +42,20 @@ export interface ListColorsParams {
 export interface CreateColorInput {
   modelId: number;
   colorName: string;
-  colorHex?: string;
-  isDualTone?: boolean;
+  // Optional — many colors are represented by name/photo alone. 1 entry =
+  // single tone, 2+ = a mix color. Max 4 (enforced server-side too).
+  colorHexes?: string[];
   additionalCost?: number;
-  // Optional — many colors are represented by colorHex alone.
+  // Optional — many colors are represented by hex codes alone with no photo.
   image?: File;
 }
 
 export interface UpdateColorInput {
   modelId?: number;
   colorName?: string;
-  colorHex?: string | null;
-  isDualTone?: boolean;
+  // If provided, REPLACES the full shade list — send the complete
+  // desired set of hex codes each time, not just the ones changing.
+  colorHexes?: string[];
   additionalCost?: number | null;
 }
 
@@ -90,12 +98,11 @@ export const colorApi = api.injectEndpoints({
     }),
 
     createColor: builder.mutation<CarColorRecord, CreateColorInput>({
-      query: ({ image, ...fields }) => {
+      query: ({ image, colorHexes, ...fields }) => {
         const formData = new FormData();
         formData.append("modelId", String(fields.modelId));
         formData.append("colorName", fields.colorName);
-        if (fields.colorHex) formData.append("colorHex", fields.colorHex);
-        formData.append("isDualTone", String(fields.isDualTone ?? false));
+        for (const hex of colorHexes ?? []) formData.append("colorHexes", hex);
         if (typeof fields.additionalCost === "number") {
           formData.append("additionalCost", String(fields.additionalCost));
         }

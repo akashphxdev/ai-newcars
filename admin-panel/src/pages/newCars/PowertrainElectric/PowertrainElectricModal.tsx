@@ -1,37 +1,30 @@
 // src/pages/newCars/PowertrainElectric/PowertrainElectricModal.tsx
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   useCreatePowertrainElectricMutation,
   useUpdatePowertrainElectricMutation,
+  useGetPowertrainElectricByIdQuery,
   type PowertrainElectricRecord,
-  type ElectricDrivetrain,
   type TestCycleType,
 } from "./powertrainElectric.api";
 import { useGetVariantsQuery } from "../Variants/variant.api";
 import { useGetCarModelsQuery } from "../carModels/carModel.api";
 import { useGetBrandsQuery } from "../Brands/brand.api";
+import { useGetAttributeOptionsGroupedQuery } from "../AttributeOptions/attributeOption.api";
 import { extractApiError } from "../../../lib/apiClient";
+import { TEST_CYCLE_TYPE_OPTIONS } from "../../../lib/lookups";
 
 const ACCENT = "#D4300F";
-
-const DRIVETRAINS: { value: ElectricDrivetrain; label: string }[] = [
-  { value: "FWD", label: "FWD" },
-  { value: "RWD", label: "RWD" },
-  { value: "AWD", label: "AWD" },
-  { value: "4WD", label: "4WD" },
-];
-
-const TEST_CYCLE_TYPES: { value: TestCycleType; label: string }[] = [
-  { value: "ARAI", label: "ARAI" },
-  { value: "WLTP", label: "WLTP" },
-  { value: "EPA", label: "EPA" },
-  { value: "NEDC", label: "NEDC" },
-];
 
 interface FieldErrors {
   brandId?: string;
   modelId?: string;
   variantId?: string;
+  batteryCapacity?: string;
+  drivetrainId?: string;
+  powerPs?: string;
+  torqueNm?: string;
+  claimedRange?: string;
 }
 interface FormState {
   variantId: number | "";
@@ -40,7 +33,7 @@ interface FormState {
   batteryCapacity: string;
   batteryChemistry: string;
   thermalManagementSystem: string;
-  drivetrain: ElectricDrivetrain | "";
+  drivetrainId: number | "";
   powerPs: string;
   torqueNm: string;
   claimedRange: string;
@@ -77,7 +70,7 @@ function buildInitialState(p?: PowertrainElectricRecord | null): FormState {
     batteryCapacity: p?.batteryCapacity ?? "",
     batteryChemistry: p?.batteryChemistry ?? "",
     thermalManagementSystem: p?.thermalManagementSystem ?? "",
-    drivetrain: p?.drivetrain ?? "",
+    drivetrainId: p?.drivetrainId ?? "",
     powerPs: p?.powerPs != null ? String(p.powerPs) : "",
     torqueNm: p?.torqueNm != null ? String(p.torqueNm) : "",
     claimedRange: p?.claimedRange != null ? String(p.claimedRange) : "",
@@ -107,12 +100,10 @@ function buildInitialState(p?: PowertrainElectricRecord | null): FormState {
   };
 }
 
-// "" -> null (clears the field on the server), otherwise Number(value).
 function numOrNull(value: string): number | null {
   return value === "" ? null : Number(value);
 }
 
-// "" -> null, otherwise the trimmed string.
 function strOrNull(value: string): string | null {
   const trimmed = value.trim();
   return trimmed === "" ? null : trimmed;
@@ -156,14 +147,21 @@ const selectClass = "cursor-pointer " + inputClass;
 export default function PowertrainElectricModal({
   open,
   onClose,
-  powertrain,
+  editId,
 }: {
   open: boolean;
   onClose: () => void;
-  // Present -> edit mode. Absent/null -> create mode.
-  powertrain?: PowertrainElectricRecord | null;
+  // Only the row's id comes in from the listing (it only holds the
+  // lightweight table fields now) — the modal fetches the full spec
+  // sheet itself so Edit never overwrites fields it can't see.
+  editId?: number | null;
 }) {
-  const isEditMode = !!powertrain;
+  const isEditMode = editId != null;
+
+  const { data: powertrain, isFetching: loadingPowertrain } = useGetPowertrainElectricByIdQuery(editId ?? 0, {
+    skip: editId == null,
+  });
+
   const { data: variantsData } = useGetVariantsQuery({ limit: 100, sortBy: "variantName", sortOrder: "asc" });
   const variants = variantsData?.data ?? [];
 
@@ -173,14 +171,27 @@ export default function PowertrainElectricModal({
   const { data: carModelsData } = useGetCarModelsQuery({ limit: 100, sortBy: "name", sortOrder: "asc" });
   const carModels = carModelsData?.data ?? [];
 
-  const [brandId, setBrandId] = useState<number | "">(powertrain?.variant.model.brand.id ?? "");
-  const [modelId, setModelId] = useState<number | "">(powertrain?.variant.model.id ?? "");
+  const { data: attributeOptionsGrouped } = useGetAttributeOptionsGroupedQuery();
+  const drivetrains = attributeOptionsGrouped?.drivetrain ?? [];
+
+  const [brandId, setBrandId] = useState<number | "">("");
+  const [modelId, setModelId] = useState<number | "">("");
   const modelsForBrand = brandId ? carModels.filter((m) => m.brandId === brandId) : [];
   const variantsForModel = modelId ? variants.filter((v) => v.modelId === modelId) : [];
 
-  const [form, setForm] = useState<FormState>(buildInitialState(powertrain));
+  const [form, setForm] = useState<FormState>(buildInitialState(null));
   const [errors, setErrors] = useState<FieldErrors>({});
   const [serverError, setServerError] = useState("");
+
+  // Full record arrives async (fresh fetch, or instantly from cache if
+  // this row was already expanded) — sync the form once it's here.
+  useEffect(() => {
+    if (powertrain) {
+      setForm(buildInitialState(powertrain));
+      setBrandId(powertrain.variant.model.brand.id);
+      setModelId(powertrain.variant.model.id);
+    }
+  }, [powertrain]);
 
   const [createPowertrainElectric, { isLoading: creating }] = useCreatePowertrainElectricMutation();
   const [updatePowertrainElectric, { isLoading: updating }] = useUpdatePowertrainElectricMutation();
@@ -190,6 +201,21 @@ export default function PowertrainElectricModal({
     setForm((f) => ({ ...f, [key]: value }));
 
   if (!open) return null;
+
+  // Edit mode, but the full record hasn't arrived yet — show a small
+  // loading state instead of a form that would look empty/wrong for a
+  // moment. Usually instant if this row was already expanded (cached).
+  if (isEditMode && !powertrain) {
+    return (
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
+        <div className="w-full max-w-[720px] bg-white border border-[#e8e4dc] rounded-2xl shadow-xl p-10 text-center">
+          <p className="text-[#a39e96] text-sm font-medium">
+            {loadingPowertrain ? "Loading powertrain details..." : "Powertrain not found."}
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   const handleClose = () => {
     setForm(buildInitialState(null));
@@ -205,6 +231,12 @@ export default function PowertrainElectricModal({
     if (!brandId) next.brandId = "Brand is required.";
     if (!modelId) next.modelId = "Car model is required.";
     if (!form.variantId) next.variantId = "Variant is required.";
+    if (form.batteryCapacity === "" || Number(form.batteryCapacity) <= 0)
+      next.batteryCapacity = "Battery capacity is required.";
+    if (!form.drivetrainId) next.drivetrainId = "Drivetrain is required.";
+    if (form.powerPs === "" || Number(form.powerPs) <= 0) next.powerPs = "Power (PS) is required.";
+    if (form.torqueNm === "" || Number(form.torqueNm) <= 0) next.torqueNm = "Torque (Nm) is required.";
+    if (form.claimedRange === "" || Number(form.claimedRange) <= 0) next.claimedRange = "Claimed range is required.";
     setErrors(next);
     return Object.keys(next).length === 0;
   };
@@ -221,7 +253,7 @@ export default function PowertrainElectricModal({
       batteryCapacity: numOrNull(form.batteryCapacity),
       batteryChemistry: strOrNull(form.batteryChemistry),
       thermalManagementSystem: strOrNull(form.thermalManagementSystem),
-      drivetrain: form.drivetrain || null,
+      drivetrainId: form.drivetrainId === "" ? null : Number(form.drivetrainId),
       powerPs: numOrNull(form.powerPs),
       torqueNm: numOrNull(form.torqueNm),
       claimedRange: numOrNull(form.claimedRange),
@@ -278,7 +310,7 @@ export default function PowertrainElectricModal({
             <p className="text-[#a39e96] text-xs mt-1">
               {isEditMode
                 ? `Update spec details for "${powertrain?.variant.variantName}"`
-                : "Variant is required — everything else can be filled in later."}
+                : "Variant, battery capacity, drivetrain, power, torque and claimed range are required — everything else can be filled in later."}
             </p>
           </div>
           <button
@@ -349,11 +381,15 @@ export default function PowertrainElectricModal({
                 ))}
               </select>
             </Field>
-            <Field label="Drivetrain">
-              <select value={form.drivetrain} onChange={(e) => set("drivetrain", (e.target.value as ElectricDrivetrain) || "")} className={selectClass}>
+            <Field label="Drivetrain" error={errors.drivetrainId}>
+              <select
+                value={form.drivetrainId}
+                onChange={(e) => set("drivetrainId", e.target.value ? Number(e.target.value) : "")}
+                className={selectClass}
+              >
                 <option value="">Not set</option>
-                {DRIVETRAINS.map((d) => (
-                  <option key={d.value} value={d.value}>{d.label}</option>
+                {drivetrains.map((d) => (
+                  <option key={d.id} value={d.id}>{d.name}</option>
                 ))}
               </select>
             </Field>
@@ -366,7 +402,7 @@ export default function PowertrainElectricModal({
             <Field label="Motor type">
               <input type="text" value={form.motorType} onChange={(e) => set("motorType", e.target.value)} placeholder="e.g. PMSM" className={inputClass} />
             </Field>
-            <Field label="Battery capacity (kWh)">
+            <Field label="Battery capacity (kWh)" error={errors.batteryCapacity}>
               <input type="number" min={0} step="0.1" value={form.batteryCapacity} onChange={(e) => set("batteryCapacity", e.target.value)} className={inputClass} />
             </Field>
             <Field label="Battery chemistry">
@@ -381,22 +417,22 @@ export default function PowertrainElectricModal({
           </Section>
 
           <Section title="Power, range & performance">
-            <Field label="Power (PS)">
+            <Field label="Power (PS)" error={errors.powerPs}>
               <input type="number" min={0} value={form.powerPs} onChange={(e) => set("powerPs", e.target.value)} className={inputClass} />
             </Field>
-            <Field label="Torque (Nm)">
+            <Field label="Torque (Nm)" error={errors.torqueNm}>
               <input type="number" min={0} value={form.torqueNm} onChange={(e) => set("torqueNm", e.target.value)} className={inputClass} />
             </Field>
-            <Field label="Claimed range (km)">
+            <Field label="Claimed range (km)" error={errors.claimedRange}>
               <input type="number" min={0} value={form.claimedRange} onChange={(e) => set("claimedRange", e.target.value)} className={inputClass} />
             </Field>
             <Field label="Real world range (km)">
               <input type="number" min={0} value={form.realWorldRange} onChange={(e) => set("realWorldRange", e.target.value)} className={inputClass} />
             </Field>
             <Field label="Test cycle type">
-              <select value={form.testCycleType} onChange={(e) => set("testCycleType", (e.target.value as TestCycleType) || "")} className={selectClass}>
+              <select value={form.testCycleType} onChange={(e) => set("testCycleType", e.target.value ? (Number(e.target.value) as TestCycleType) : "")} className={selectClass}>
                 <option value="">Not set</option>
-                {TEST_CYCLE_TYPES.map((t) => (
+                {TEST_CYCLE_TYPE_OPTIONS.map((t) => (
                   <option key={t.value} value={t.value}>{t.label}</option>
                 ))}
               </select>

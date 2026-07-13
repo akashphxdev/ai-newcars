@@ -1,8 +1,14 @@
--- CreateTable
+﻿-- CreateTable
 CREATE TABLE "countries" (
     "id" SERIAL NOT NULL,
     "name" VARCHAR(100) NOT NULL,
     "code" VARCHAR(5) NOT NULL,
+    "currency" VARCHAR(50),
+    "currency_symbol" VARCHAR(10),
+    "currency_code" VARCHAR(10),
+    "exchange_rate" DECIMAL(12,6),
+    "distance_unit" VARCHAR(10) DEFAULT 'KM',
+    "fuel_unit" VARCHAR(10) DEFAULT 'Liter',
     "is_active" BOOLEAN NOT NULL DEFAULT true,
 
     CONSTRAINT "countries_pkey" PRIMARY KEY ("id")
@@ -34,10 +40,33 @@ CREATE TABLE "cities" (
     "name" VARCHAR(100) NOT NULL,
     "slug" VARCHAR(100) NOT NULL,
     "is_metro" BOOLEAN NOT NULL DEFAULT false,
-    "latitude" DECIMAL(9,6),
-    "longitude" DECIMAL(9,6),
+    "is_top_city" BOOLEAN NOT NULL DEFAULT false,
+    "is_sell_car_enabled" BOOLEAN NOT NULL DEFAULT false,
+    "logo_url" VARCHAR(255),
 
     CONSTRAINT "cities_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "body_types" (
+    "id" SERIAL NOT NULL,
+    "name" VARCHAR(50) NOT NULL,
+    "slug" VARCHAR(50) NOT NULL,
+    "icon_url" VARCHAR(255),
+    "description" VARCHAR(255),
+    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "body_types_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "attribute_options" (
+    "id" SERIAL NOT NULL,
+    "category" VARCHAR(30) NOT NULL,
+    "name" VARCHAR(50) NOT NULL,
+    "slug" VARCHAR(50) NOT NULL,
+
+    CONSTRAINT "attribute_options_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
@@ -156,7 +185,7 @@ CREATE TABLE "brands" (
     "name" VARCHAR(100) NOT NULL,
     "slug" VARCHAR(100) NOT NULL,
     "logo_url" VARCHAR(255),
-    "country_origin" VARCHAR(100),
+    "country_origin_id" INTEGER,
     "is_active" BOOLEAN NOT NULL DEFAULT true,
     "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
@@ -169,7 +198,7 @@ CREATE TABLE "car_models" (
     "brand_id" INTEGER NOT NULL,
     "name" VARCHAR(100) NOT NULL,
     "slug" VARCHAR(100) NOT NULL,
-    "body_type" VARCHAR(30),
+    "body_type_id" INTEGER,
     "launch_status" VARCHAR(20) NOT NULL DEFAULT 'available',
     "expected_launch_date" DATE,
     "price_min" DECIMAL(12,2),
@@ -186,9 +215,9 @@ CREATE TABLE "car_variants" (
     "id" SERIAL NOT NULL,
     "model_id" INTEGER NOT NULL,
     "variant_name" VARCHAR(100) NOT NULL,
-    "price" DECIMAL(12,2),
-    "seating_capacity" INTEGER,
-    "transmission" VARCHAR(20),
+    "price" DECIMAL(12,2) NOT NULL,
+    "seating_capacity" INTEGER NOT NULL,
+    "transmission_id" INTEGER NOT NULL,
     "is_top_seller" BOOLEAN NOT NULL DEFAULT false,
     "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
@@ -199,7 +228,7 @@ CREATE TABLE "car_variants" (
 CREATE TABLE "car_powertrains_ice" (
     "id" SERIAL NOT NULL,
     "variant_id" INTEGER NOT NULL,
-    "fuel_type" VARCHAR(20) NOT NULL,
+    "fuel_type" INTEGER NOT NULL,
     "fuel_type_sub_category" VARCHAR(30),
     "fuel_tank_capacity" DECIMAL(5,2),
     "cng_tank_capacity" DECIMAL(5,2),
@@ -208,12 +237,12 @@ CREATE TABLE "car_powertrains_ice" (
     "cubic_capacity" INTEGER,
     "cylinders" INTEGER,
     "cylinder_capacity" DECIMAL(6,2),
-    "transmission_type" VARCHAR(20),
+    "transmission_type_id" INTEGER,
     "transmission_sub_type" VARCHAR(20),
     "transmission_speed" INTEGER,
     "num_gears" INTEGER,
     "is_four_by_four" BOOLEAN NOT NULL DEFAULT false,
-    "drivetrain" VARCHAR(10),
+    "drivetrain_id" INTEGER,
     "power_ps" INTEGER,
     "power_min_rpm" INTEGER,
     "power_max_rpm" INTEGER,
@@ -250,12 +279,12 @@ CREATE TABLE "car_powertrains_electric" (
     "battery_capacity" DECIMAL(6,2),
     "battery_chemistry" VARCHAR(30),
     "thermal_management_system" VARCHAR(50),
-    "drivetrain" VARCHAR(10),
+    "drivetrain_id" INTEGER,
     "power_ps" INTEGER,
     "torque_nm" INTEGER,
     "claimed_range" INTEGER,
     "real_world_range" INTEGER,
-    "test_cycle_type" VARCHAR(20),
+    "test_cycle_type" INTEGER,
     "top_speed_kmph" INTEGER,
     "top_speed_time_sec" DECIMAL(5,2),
     "ac_charging_output" DECIMAL(5,2),
@@ -291,6 +320,7 @@ CREATE TABLE "car_images" (
     "id" SERIAL NOT NULL,
     "model_id" INTEGER NOT NULL,
     "variant_id" INTEGER,
+    "color_id" INTEGER,
     "image_url" VARCHAR(255) NOT NULL,
     "is_primary" BOOLEAN NOT NULL DEFAULT false,
     "angle" VARCHAR(30),
@@ -358,13 +388,14 @@ CREATE TABLE "car_videos" (
     "id" SERIAL NOT NULL,
     "model_id" INTEGER NOT NULL,
     "title" VARCHAR(200) NOT NULL,
-    "video_type" VARCHAR(30),
+    "video_type" INTEGER NOT NULL,
     "video_url" VARCHAR(255) NOT NULL,
-    "thumbnail_url" VARCHAR(255),
-    "duration_seconds" INTEGER,
+    "thumbnail_url" VARCHAR(255) NOT NULL,
+    "duration_seconds" INTEGER NOT NULL,
     "view_count" INTEGER NOT NULL DEFAULT 0,
-    "published_at" TIMESTAMP(3),
+    "published_at" TIMESTAMP(3) NOT NULL,
     "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "is_active" BOOLEAN NOT NULL DEFAULT true,
 
     CONSTRAINT "car_videos_pkey" PRIMARY KEY ("id")
 );
@@ -374,12 +405,20 @@ CREATE TABLE "car_colors" (
     "id" SERIAL NOT NULL,
     "model_id" INTEGER NOT NULL,
     "color_name" VARCHAR(50) NOT NULL,
-    "color_hex" VARCHAR(7),
-    "is_dual_tone" BOOLEAN NOT NULL DEFAULT false,
     "image_url" VARCHAR(255),
     "additional_cost" DECIMAL(8,2),
 
     CONSTRAINT "car_colors_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "car_color_shades" (
+    "id" SERIAL NOT NULL,
+    "color_id" INTEGER NOT NULL,
+    "color_hex" VARCHAR(7) NOT NULL,
+    "sort_order" INTEGER NOT NULL DEFAULT 0,
+
+    CONSTRAINT "car_color_shades_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
@@ -388,12 +427,13 @@ CREATE TABLE "new_car_offers" (
     "model_id" INTEGER NOT NULL,
     "variant_id" INTEGER,
     "city_id" INTEGER,
-    "offer_type" VARCHAR(30),
+    "offer_type" INTEGER,
     "offer_amount" DECIMAL(10,2),
     "description" VARCHAR(255),
     "valid_from" DATE,
     "valid_until" DATE,
     "is_active" BOOLEAN NOT NULL DEFAULT true,
+    "image_url" VARCHAR(255) NOT NULL,
 
     CONSTRAINT "new_car_offers_pkey" PRIMARY KEY ("id")
 );
@@ -931,8 +971,87 @@ CREATE TABLE "user_addresses" (
     CONSTRAINT "user_addresses_pkey" PRIMARY KEY ("id")
 );
 
+-- CreateTable
+CREATE TABLE "article_categories" (
+    "id" SERIAL NOT NULL,
+    "name" VARCHAR(50) NOT NULL,
+    "slug" VARCHAR(50) NOT NULL,
+    "is_active" BOOLEAN NOT NULL DEFAULT true,
+    "created_by" INTEGER,
+    "updated_by" INTEGER,
+    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updated_at" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "article_categories_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "articles" (
+    "id" SERIAL NOT NULL,
+    "category_id" INTEGER NOT NULL,
+    "author_id" INTEGER NOT NULL,
+    "created_by" INTEGER,
+    "updated_by" INTEGER,
+    "title" VARCHAR(200) NOT NULL,
+    "slug" VARCHAR(200) NOT NULL,
+    "excerpt" VARCHAR(300),
+    "body" TEXT,
+    "cover_image_url" VARCHAR(255),
+    "read_time_minutes" INTEGER,
+    "status" VARCHAR(20) NOT NULL DEFAULT 'draft',
+    "is_active" BOOLEAN NOT NULL DEFAULT true,
+    "scheduled_at" TIMESTAMP(3),
+    "published_at" TIMESTAMP(3),
+    "view_count" INTEGER NOT NULL DEFAULT 0,
+    "meta_title" VARCHAR(160),
+    "meta_description" VARCHAR(300),
+    "meta_keywords" VARCHAR(255),
+    "og_image_url" VARCHAR(255),
+    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updated_at" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "articles_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "article_brands" (
+    "id" SERIAL NOT NULL,
+    "article_id" INTEGER NOT NULL,
+    "brand_id" INTEGER NOT NULL,
+
+    CONSTRAINT "article_brands_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "article_car_models" (
+    "id" SERIAL NOT NULL,
+    "article_id" INTEGER NOT NULL,
+    "model_id" INTEGER NOT NULL,
+
+    CONSTRAINT "article_car_models_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "article_comments" (
+    "id" SERIAL NOT NULL,
+    "article_id" INTEGER NOT NULL,
+    "user_id" INTEGER NOT NULL,
+    "parent_comment_id" INTEGER,
+    "body" TEXT NOT NULL,
+    "status" VARCHAR(20) NOT NULL DEFAULT 'visible',
+    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "article_comments_pkey" PRIMARY KEY ("id")
+);
+
 -- CreateIndex
 CREATE UNIQUE INDEX "cities_slug_key" ON "cities"("slug");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "body_types_slug_key" ON "body_types"("slug");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "attribute_options_category_slug_key" ON "attribute_options"("category", "slug");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "permissions_permission_key_key" ON "permissions"("permission_key");
@@ -956,6 +1075,12 @@ CREATE UNIQUE INDEX "brands_slug_key" ON "brands"("slug");
 CREATE UNIQUE INDEX "car_models_slug_key" ON "car_models"("slug");
 
 -- CreateIndex
+CREATE UNIQUE INDEX "car_variants_model_id_variant_name_key" ON "car_variants"("model_id", "variant_name");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "car_faqs_model_id_display_order_key" ON "car_faqs"("model_id", "display_order");
+
+-- CreateIndex
 CREATE UNIQUE INDEX "review_helpful_votes_review_id_user_id_key" ON "review_helpful_votes"("review_id", "user_id");
 
 -- CreateIndex
@@ -969,6 +1094,18 @@ CREATE UNIQUE INDEX "ad_placements_slug_key" ON "ad_placements"("slug");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "seo_redirects_old_path_key" ON "seo_redirects"("old_path");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "article_categories_slug_key" ON "article_categories"("slug");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "articles_slug_key" ON "articles"("slug");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "article_brands_article_id_brand_id_key" ON "article_brands"("article_id", "brand_id");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "article_car_models_article_id_model_id_key" ON "article_car_models"("article_id", "model_id");
 
 -- AddForeignKey
 ALTER TABLE "states" ADD CONSTRAINT "states_country_id_fkey" FOREIGN KEY ("country_id") REFERENCES "countries"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
@@ -1004,19 +1141,37 @@ ALTER TABLE "admin_otp_verifications" ADD CONSTRAINT "admin_otp_verifications_ad
 ALTER TABLE "users" ADD CONSTRAINT "users_city_id_fkey" FOREIGN KEY ("city_id") REFERENCES "cities"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
+ALTER TABLE "brands" ADD CONSTRAINT "brands_country_origin_id_fkey" FOREIGN KEY ("country_origin_id") REFERENCES "countries"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
 ALTER TABLE "car_models" ADD CONSTRAINT "car_models_brand_id_fkey" FOREIGN KEY ("brand_id") REFERENCES "brands"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "car_models" ADD CONSTRAINT "car_models_body_type_id_fkey" FOREIGN KEY ("body_type_id") REFERENCES "body_types"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "car_variants" ADD CONSTRAINT "car_variants_model_id_fkey" FOREIGN KEY ("model_id") REFERENCES "car_models"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
+ALTER TABLE "car_variants" ADD CONSTRAINT "car_variants_transmission_id_fkey" FOREIGN KEY ("transmission_id") REFERENCES "attribute_options"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
 ALTER TABLE "car_powertrains_ice" ADD CONSTRAINT "car_powertrains_ice_variant_id_fkey" FOREIGN KEY ("variant_id") REFERENCES "car_variants"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "car_powertrains_ice" ADD CONSTRAINT "car_powertrains_ice_transmission_type_id_fkey" FOREIGN KEY ("transmission_type_id") REFERENCES "attribute_options"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "car_powertrains_ice" ADD CONSTRAINT "car_powertrains_ice_drivetrain_id_fkey" FOREIGN KEY ("drivetrain_id") REFERENCES "attribute_options"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "car_powertrains_ice" ADD CONSTRAINT "car_powertrains_ice_deleted_by_fkey" FOREIGN KEY ("deleted_by") REFERENCES "admin_users"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "car_powertrains_electric" ADD CONSTRAINT "car_powertrains_electric_variant_id_fkey" FOREIGN KEY ("variant_id") REFERENCES "car_variants"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "car_powertrains_electric" ADD CONSTRAINT "car_powertrains_electric_drivetrain_id_fkey" FOREIGN KEY ("drivetrain_id") REFERENCES "attribute_options"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "car_powertrains_electric" ADD CONSTRAINT "car_powertrains_electric_deleted_by_fkey" FOREIGN KEY ("deleted_by") REFERENCES "admin_users"("id") ON DELETE SET NULL ON UPDATE CASCADE;
@@ -1026,6 +1181,9 @@ ALTER TABLE "car_images" ADD CONSTRAINT "car_images_model_id_fkey" FOREIGN KEY (
 
 -- AddForeignKey
 ALTER TABLE "car_images" ADD CONSTRAINT "car_images_variant_id_fkey" FOREIGN KEY ("variant_id") REFERENCES "car_variants"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "car_images" ADD CONSTRAINT "car_images_color_id_fkey" FOREIGN KEY ("color_id") REFERENCES "car_colors"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "car_features" ADD CONSTRAINT "car_features_variant_id_fkey" FOREIGN KEY ("variant_id") REFERENCES "car_variants"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
@@ -1038,6 +1196,9 @@ ALTER TABLE "car_videos" ADD CONSTRAINT "car_videos_model_id_fkey" FOREIGN KEY (
 
 -- AddForeignKey
 ALTER TABLE "car_colors" ADD CONSTRAINT "car_colors_model_id_fkey" FOREIGN KEY ("model_id") REFERENCES "car_models"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "car_color_shades" ADD CONSTRAINT "car_color_shades_color_id_fkey" FOREIGN KEY ("color_id") REFERENCES "car_colors"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "new_car_offers" ADD CONSTRAINT "new_car_offers_model_id_fkey" FOREIGN KEY ("model_id") REFERENCES "car_models"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
@@ -1245,3 +1406,43 @@ ALTER TABLE "user_addresses" ADD CONSTRAINT "user_addresses_user_id_fkey" FOREIG
 
 -- AddForeignKey
 ALTER TABLE "user_addresses" ADD CONSTRAINT "user_addresses_city_id_fkey" FOREIGN KEY ("city_id") REFERENCES "cities"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "article_categories" ADD CONSTRAINT "article_categories_created_by_fkey" FOREIGN KEY ("created_by") REFERENCES "admin_users"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "article_categories" ADD CONSTRAINT "article_categories_updated_by_fkey" FOREIGN KEY ("updated_by") REFERENCES "admin_users"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "articles" ADD CONSTRAINT "articles_category_id_fkey" FOREIGN KEY ("category_id") REFERENCES "article_categories"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "articles" ADD CONSTRAINT "articles_author_id_fkey" FOREIGN KEY ("author_id") REFERENCES "admin_users"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "articles" ADD CONSTRAINT "articles_created_by_fkey" FOREIGN KEY ("created_by") REFERENCES "admin_users"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "articles" ADD CONSTRAINT "articles_updated_by_fkey" FOREIGN KEY ("updated_by") REFERENCES "admin_users"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "article_brands" ADD CONSTRAINT "article_brands_article_id_fkey" FOREIGN KEY ("article_id") REFERENCES "articles"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "article_brands" ADD CONSTRAINT "article_brands_brand_id_fkey" FOREIGN KEY ("brand_id") REFERENCES "brands"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "article_car_models" ADD CONSTRAINT "article_car_models_article_id_fkey" FOREIGN KEY ("article_id") REFERENCES "articles"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "article_car_models" ADD CONSTRAINT "article_car_models_model_id_fkey" FOREIGN KEY ("model_id") REFERENCES "car_models"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "article_comments" ADD CONSTRAINT "article_comments_article_id_fkey" FOREIGN KEY ("article_id") REFERENCES "articles"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "article_comments" ADD CONSTRAINT "article_comments_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "article_comments" ADD CONSTRAINT "article_comments_parent_comment_id_fkey" FOREIGN KEY ("parent_comment_id") REFERENCES "article_comments"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+

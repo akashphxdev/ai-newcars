@@ -78,6 +78,44 @@ model City {
 }
 
 // ============================================================
+// SHARED LOOKUPS (used by new-car specs)
+// ============================================================
+
+model BodyType {
+  id          Int      @id @default(autoincrement())
+  name        String   @db.VarChar(50)
+  slug        String   @unique @db.VarChar(50)
+  iconUrl     String?  @map("icon_url") @db.VarChar(255)
+  description String?  @db.VarChar(255)
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  carModels CarModel[]
+
+  @@map("body_types")
+}
+
+// Shared lookup table for small, fixed-choice vehicle attributes that are
+// reused across multiple specs (transmission, drivetrain, and future ones
+// like fuel-type) — one table instead of a separate one per attribute.
+// `category` scopes each row (e.g. "transmission", "drivetrain"); the
+// (category, slug) pair is what's actually unique, not slug alone, so two
+// different categories are free to both have e.g. slug "standard" later.
+model AttributeOption {
+  id       Int    @id @default(autoincrement())
+  category String @db.VarChar(30)
+  name     String @db.VarChar(50)
+  slug     String @db.VarChar(50)
+
+  variantTransmissions CarVariant[]            @relation("VariantTransmission")
+  iceTransmissionTypes CarPowertrainIce[]       @relation("IceTransmissionType")
+  iceDrivetrains       CarPowertrainIce[]       @relation("IceDrivetrain")
+  electricDrivetrains  CarPowertrainElectric[]  @relation("ElectricDrivetrain")
+
+  @@unique([category, slug])
+  @@map("attribute_options")
+}
+
+// ============================================================
 // ADMIN
 // ============================================================
 
@@ -147,6 +185,15 @@ model AdminUser {
   seoMetaUpdates        SeoMeta[]
   seoRedirectsCreated   SeoRedirect[]
 
+  // Articles — three separate relations to AdminUser (byline author,
+  // who actually created the row, who last edited it) so each needs
+  // its own relation name to disambiguate.
+  articlesAuthored         Article[]         @relation("ArticleAuthor")
+  articlesCreated          Article[]         @relation("ArticleCreatedBy")
+  articlesUpdated          Article[]         @relation("ArticleUpdatedBy")
+  articleCategoriesCreated ArticleCategory[] @relation("ArticleCategoryCreatedBy")
+  articleCategoriesUpdated ArticleCategory[] @relation("ArticleCategoryUpdatedBy")
+
   @@map("admin_users")
 }
 
@@ -209,6 +256,7 @@ model User {
   reviews             Review[]
   reviewHelpfulVotes  ReviewHelpfulVote[]
   storyComments       StoryComment[]
+  articleComments     ArticleComment[]
   mediaStoryViews     MediaStoryView[]
   mileageLogs         MileageLog[]
   adImpressions       AdImpression[]
@@ -257,6 +305,7 @@ model Brand {
   softLeads           SoftLead[]
   priceDropAlertLeads PriceDropAlertLead[]
   mediaStories        MediaStory[]
+  articleBrands       ArticleBrand[]
 
   @@map("brands")
 }
@@ -267,7 +316,8 @@ model CarModel {
   brand              Brand     @relation(fields: [brandId], references: [id])
   name               String    @db.VarChar(100)
   slug               String    @unique @db.VarChar(100)
-  bodyType           String?   @map("body_type") @db.VarChar(30)
+  bodyTypeId         Int?      @map("body_type_id")
+  bodyType           BodyType? @relation(fields: [bodyTypeId], references: [id])
   launchStatus       String    @default("available") @map("launch_status") @db.VarChar(20)
   expectedLaunchDate DateTime? @map("expected_launch_date") @db.Date
   priceMin           Decimal?  @map("price_min") @db.Decimal(12, 2)
@@ -294,6 +344,7 @@ model CarModel {
   storyModels         StoryModel[]
   mediaStories        MediaStory[]
   mileageLogs         MileageLog[]
+  articleCarModels    ArticleCarModel[]
 
   @@map("car_models")
 }
@@ -303,9 +354,15 @@ model CarVariant {
   modelId         Int      @map("model_id")
   model           CarModel @relation(fields: [modelId], references: [id])
   variantName     String   @map("variant_name") @db.VarChar(100)
-  price           Decimal? @db.Decimal(12, 2)
-  seatingCapacity Int?     @map("seating_capacity")
-  transmission    String?  @db.VarChar(20)
+  // Required end-to-end: DB, validation schema, and TS types all agree —
+  // no more silent NULLs slipping in from outside the API.
+  price           Decimal  @db.Decimal(12, 2)
+  seatingCapacity Int      @map("seating_capacity")
+  transmissionId  Int             @map("transmission_id")
+  // onDelete is explicit Restrict now that the column is NOT NULL —
+  // attributeOption.service.ts already pre-checks usage before allowing
+  // a transmission option to be deleted, this is a DB-level backstop.
+  transmission    AttributeOption @relation("VariantTransmission", fields: [transmissionId], references: [id], onDelete: Restrict)
   isTopSeller     Boolean  @default(false) @map("is_top_seller")
   createdAt       DateTime @default(now()) @map("created_at")
 
@@ -317,6 +374,10 @@ model CarVariant {
   usedCarListings     UsedCarListing[]
   reviews             Review[]
 
+  // Prevents two identical variants ("SX(O) Turbo DCT" + "SX(O) Turbo DCT")
+  // under the same car model. App layer also checks this first for a
+  // friendly error message — see assertVariantNameUnique in variant.service.ts.
+  @@unique([modelId, variantName])
   @@map("car_variants")
 }
 
@@ -324,7 +385,10 @@ model CarPowertrainIce {
   id                  Int        @id @default(autoincrement())
   variantId           Int        @map("variant_id")
   variant             CarVariant @relation(fields: [variantId], references: [id])
-  fuelType            String     @map("fuel_type") @db.VarChar(20)
+  // Numeric code, not a string — see FUEL_TYPE_CODES in
+  // powertrainIce.validation.ts. Frontend resolves it to a label via
+  // lib/lookups.ts, same pattern as NewCarOffer.offerType.
+  fuelType            Int        @map("fuel_type")
   fuelTypeSubCategory String?    @map("fuel_type_sub_category") @db.VarChar(30)
   fuelTankCapacity    Decimal?   @map("fuel_tank_capacity") @db.Decimal(5, 2)
   cngTankCapacity     Decimal?   @map("cng_tank_capacity") @db.Decimal(5, 2)
@@ -333,12 +397,14 @@ model CarPowertrainIce {
   cubicCapacity       Int?       @map("cubic_capacity")
   cylinders           Int?
   cylinderCapacity    Decimal?   @map("cylinder_capacity") @db.Decimal(6, 2)
-  transmissionType    String?    @map("transmission_type") @db.VarChar(20)
+  transmissionTypeId  Int?             @map("transmission_type_id")
+  transmissionType    AttributeOption? @relation("IceTransmissionType", fields: [transmissionTypeId], references: [id])
   transmissionSubType String?    @map("transmission_sub_type") @db.VarChar(20)
   transmissionSpeed   Int?       @map("transmission_speed")
   numGears            Int?       @map("num_gears")
   isFourByFour        Boolean    @default(false) @map("is_four_by_four")
-  drivetrain          String?    @db.VarChar(10)
+  drivetrainId        Int?             @map("drivetrain_id")
+  drivetrain          AttributeOption? @relation("IceDrivetrain", fields: [drivetrainId], references: [id])
   powerPs             Int?       @map("power_ps")
   powerMinRpm         Int?       @map("power_min_rpm")
   powerMaxRpm         Int?       @map("power_max_rpm")
@@ -376,12 +442,16 @@ model CarPowertrainElectric {
   batteryCapacity         Decimal?   @map("battery_capacity") @db.Decimal(6, 2)
   batteryChemistry        String?    @map("battery_chemistry") @db.VarChar(30)
   thermalManagementSystem String?    @map("thermal_management_system") @db.VarChar(50)
-  drivetrain              String?    @db.VarChar(10)
+  drivetrainId            Int?             @map("drivetrain_id")
+  drivetrain              AttributeOption? @relation("ElectricDrivetrain", fields: [drivetrainId], references: [id])
   powerPs                 Int?       @map("power_ps")
   torqueNm                Int?       @map("torque_nm")
   claimedRange            Int?       @map("claimed_range")
   realWorldRange          Int?       @map("real_world_range")
-  testCycleType           String?    @map("test_cycle_type") @db.VarChar(20)
+  // Numeric code, not a string — see TEST_CYCLE_TYPE_CODES in
+  // powertrainElectric.validation.ts. Frontend resolves it to a label
+  // via lib/lookups.ts, same pattern as NewCarOffer.offerType.
+  testCycleType           Int?       @map("test_cycle_type")
   topSpeedKmph            Int?       @map("top_speed_kmph")
   topSpeedTimeSec         Decimal?   @map("top_speed_time_sec") @db.Decimal(5, 2)
   acChargingOutput        Decimal?   @map("ac_charging_output") @db.Decimal(5, 2)
@@ -419,6 +489,11 @@ model CarImage {
   model     CarModel    @relation(fields: [modelId], references: [id])
   variantId Int?        @map("variant_id")
   variant   CarVariant? @relation(fields: [variantId], references: [id])
+  // Optional tag: this image is a photo of one specific color option
+  // (e.g. the red Swift's gallery shots) rather than a general model
+  // photo. Same nullable-FK shape as variantId above.
+  colorId   Int?        @map("color_id")
+  color     CarColor?   @relation(fields: [colorId], references: [id])
   imageUrl  String      @map("image_url") @db.VarChar(255)
   isPrimary Boolean     @default(false) @map("is_primary")
   angle     String?     @db.VarChar(30)
@@ -478,6 +553,7 @@ model CarFaq {
   isActive     Boolean  @default(true) @map("is_active")
   createdAt    DateTime @default(now()) @map("created_at")
 
+  @@unique([modelId, displayOrder], name: "car_faqs_model_display_order_unique")   // 👈 line 537 pe ye add karna
   @@map("car_faqs")
 }
 
@@ -486,13 +562,14 @@ model CarVideo {
   modelId         Int       @map("model_id")
   model           CarModel  @relation(fields: [modelId], references: [id])
   title           String    @db.VarChar(200)
-  videoType       String?   @map("video_type") @db.VarChar(30)
+  videoType       Int       @map("video_type")
   videoUrl        String    @map("video_url") @db.VarChar(255)
-  thumbnailUrl    String?   @map("thumbnail_url") @db.VarChar(255)
-  durationSeconds Int?      @map("duration_seconds")
+  thumbnailUrl    String    @map("thumbnail_url") @db.VarChar(255)
+  durationSeconds Int       @map("duration_seconds")
   viewCount       Int       @default(0) @map("view_count")
-  publishedAt     DateTime? @map("published_at")
+  publishedAt     DateTime  @map("published_at")
   createdAt       DateTime  @default(now()) @map("created_at")
+  isActive        Boolean   @default(true) @map("is_active")
 
   @@map("car_videos")
 }
@@ -502,12 +579,28 @@ model CarColor {
   modelId        Int      @map("model_id")
   model          CarModel @relation(fields: [modelId], references: [id])
   colorName      String   @map("color_name") @db.VarChar(50)
-  colorHex       String?  @map("color_hex") @db.VarChar(7)
-  isDualTone     Boolean  @default(false) @map("is_dual_tone")
   imageUrl       String?  @map("image_url") @db.VarChar(255)
   additionalCost Decimal? @map("additional_cost") @db.Decimal(8, 2)
 
+  // A color can be a mix of 2+ shades ("dual tone" and beyond) — modeled
+  // as a proper child table instead of a fixed isDualTone flag + single
+  // colorHex, since the number of shades is now open-ended.
+  shades CarColorShade[]
+  images CarImage[]
+
   @@map("car_colors")
+}
+
+model CarColorShade {
+  id        Int      @id @default(autoincrement())
+  colorId   Int      @map("color_id")
+  color     CarColor @relation(fields: [colorId], references: [id], onDelete: Cascade)
+  colorHex  String   @map("color_hex") @db.VarChar(7)
+  // Display order within the parent color (0, 1, 2...) — keeps a
+  // multi-shade swatch rendering in the order the admin set it.
+  sortOrder Int      @default(0) @map("sort_order")
+
+  @@map("car_color_shades")
 }
 
 // ============================================================
@@ -522,12 +615,19 @@ model NewCarOffer {
   variant     CarVariant? @relation(fields: [variantId], references: [id])
   cityId      Int?        @map("city_id")
   city        City?       @relation(fields: [cityId], references: [id])
-  offerType   String?     @map("offer_type") @db.VarChar(30)
+  // Numeric code — frontend maps this to a label via
+  // front/src/lib/lookups.ts's OFFER_TYPE_OPTIONS (1 = Cash discount,
+  // 2 = Exchange bonus, ... 6 = Other). Backend only validates the code
+  // is in range; it doesn't need to know the label text.
+  offerType   Int?        @map("offer_type")
   offerAmount Decimal?    @map("offer_amount") @db.Decimal(10, 2)
   description String?     @db.VarChar(255)
   validFrom   DateTime?   @map("valid_from") @db.Date
   validUntil  DateTime?   @map("valid_until") @db.Date
   isActive    Boolean     @default(true) @map("is_active")
+  // Required — same "image required on create" convention as Brand's
+  // logoUrl / City's logoUrl.
+  imageUrl    String      @map("image_url") @db.VarChar(255)
 
   @@map("new_car_offers")
 }
@@ -1160,4 +1260,130 @@ model UserAddress {
   createdAt    DateTime @default(now()) @map("created_at")
 
   @@map("user_addresses")
+}
+
+// ============================================================
+// ARTICLES
+// ============================================================
+
+model ArticleCategory {
+  id       Int      @id @default(autoincrement())
+  name     String   @db.VarChar(50)
+  slug     String   @unique @db.VarChar(50)
+  isActive Boolean  @default(true) @map("is_active")
+
+  createdBy      Int?       @map("created_by")
+  createdByAdmin AdminUser? @relation("ArticleCategoryCreatedBy", fields: [createdBy], references: [id])
+  updatedBy      Int?       @map("updated_by")
+  updatedByAdmin AdminUser? @relation("ArticleCategoryUpdatedBy", fields: [updatedBy], references: [id])
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  articles Article[]
+
+  @@map("article_categories")
+}
+
+model Article {
+  id         Int             @id @default(autoincrement())
+  categoryId Int             @map("category_id")
+  category   ArticleCategory @relation(fields: [categoryId], references: [id])
+
+  // Public byline — who this article is credited to. Editable via a
+  // dropdown in the editor; defaults to the creating admin but can be
+  // reassigned to any admin (e.g. an editor publishing under a senior
+  // writer's name).
+  authorId Int       @map("author_id")
+  author   AdminUser @relation("ArticleAuthor", fields: [authorId], references: [id])
+
+  // Pure audit trail — set automatically from the logged-in admin at
+  // create/update time, never user-editable. Deliberately separate
+  // from authorId, which the editor can freely reassign.
+  createdBy      Int?       @map("created_by")
+  createdByAdmin AdminUser? @relation("ArticleCreatedBy", fields: [createdBy], references: [id])
+  updatedBy      Int?       @map("updated_by")
+  updatedByAdmin AdminUser? @relation("ArticleUpdatedBy", fields: [updatedBy], references: [id])
+
+  title           String    @db.VarChar(200)
+  slug            String    @unique @db.VarChar(200)
+  excerpt         String?   @db.VarChar(300)
+  body            String?
+  coverImageUrl   String?   @map("cover_image_url") @db.VarChar(255)
+  readTimeMinutes Int?      @map("read_time_minutes")
+
+  // draft | scheduled | published
+  status      String    @default("draft") @db.VarChar(20)
+  isActive    Boolean   @default(true) @map("is_active")
+  // Future publish time set by the admin. A scheduler job flips status
+  // to "published" and stamps publishedAt once this time arrives.
+  scheduledAt DateTime? @map("scheduled_at")
+  publishedAt DateTime? @map("published_at")
+  viewCount   Int       @default(0) @map("view_count")
+
+  // SEO — kept directly on the article rather than in the shared
+  // SeoMeta table, by design. canonicalUrl is deliberately NOT stored:
+  // slug is unique, so the canonical URL is always derivable as
+  // `${SITE_BASE_URL}/articles/${slug}` — nothing to store or drift.
+  metaTitle       String? @map("meta_title") @db.VarChar(160)
+  metaDescription String? @map("meta_description") @db.VarChar(300)
+  metaKeywords    String? @map("meta_keywords") @db.VarChar(255)
+  ogImageUrl      String? @map("og_image_url") @db.VarChar(255)
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  articleBrands    ArticleBrand[]
+  articleCarModels ArticleCarModel[]
+  articleComments  ArticleComment[]
+
+  @@map("articles")
+}
+
+// Join table — an article can cover multiple brands (e.g. a
+// comparison/roundup piece), so a single brandId column on Article
+// wouldn't fit. Deleting a Brand that's still linked here should be
+// blocked the same way brand.service.ts already blocks deletion when
+// car models are linked.
+model ArticleBrand {
+  id        Int     @id @default(autoincrement())
+  articleId Int     @map("article_id")
+  article   Article @relation(fields: [articleId], references: [id])
+  brandId   Int     @map("brand_id")
+  brand     Brand   @relation(fields: [brandId], references: [id])
+
+  @@unique([articleId, brandId])
+  @@map("article_brands")
+}
+
+// Join table — same reasoning as ArticleBrand, but for car models.
+model ArticleCarModel {
+  id        Int      @id @default(autoincrement())
+  articleId Int      @map("article_id")
+  article   Article  @relation(fields: [articleId], references: [id])
+  modelId   Int      @map("model_id")
+  model     CarModel @relation(fields: [modelId], references: [id])
+
+  @@unique([articleId, modelId])
+  @@map("article_car_models")
+}
+
+model ArticleComment {
+  id        Int     @id @default(autoincrement())
+  articleId Int     @map("article_id")
+  article   Article @relation(fields: [articleId], references: [id])
+  userId    Int     @map("user_id")
+  user      User    @relation(fields: [userId], references: [id])
+
+  parentCommentId Int?             @map("parent_comment_id")
+  parentComment   ArticleComment?  @relation("ArticleCommentReplies", fields: [parentCommentId], references: [id])
+  replies         ArticleComment[] @relation("ArticleCommentReplies")
+
+  body String
+
+  // visible | hidden | flagged — moderation state
+  status    String   @default("visible") @db.VarChar(20)
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@map("article_comments")
 }

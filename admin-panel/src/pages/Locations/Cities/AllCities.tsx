@@ -16,6 +16,7 @@ import CityModal from "./CityModal";
 import DataTable, { type DataTableColumn } from "../../../components/common/DataTable";
 import Pagination from "../../../components/common/Pagination";
 import { SearchFilterBar, SearchInput, FilterSelect } from "../../../components/common/SearchFilterBar";
+import ConfirmDialog from "../../../components/common/ConfirmDialog";
 
 const ACCENT = "#D4300F";
 const PAGE_SIZE = 20;
@@ -115,15 +116,18 @@ export default function AllCities() {
   const [updateCityFlags] = useUpdateCityFlagsMutation();
 
   const [deletingId, setDeletingId] = useState<number | null>(null);
+  const [pendingDelete, setPendingDelete] = useState<CityRecord | null>(null);
   const [actionError, setActionError] = useState("");
 
   const [togglingKey, setTogglingKey] = useState<string | null>(null);
 
-  const handleDelete = async (id: number) => {
+  const handleConfirmDelete = async () => {
+    if (!pendingDelete) return;
     setActionError("");
-    setDeletingId(id);
+    setDeletingId(pendingDelete.id);
     try {
-      await deleteCity(id).unwrap();
+      await deleteCity(pendingDelete.id).unwrap();
+      setPendingDelete(null);
     } catch (err) {
       setActionError(extractApiError(err));
     } finally {
@@ -204,7 +208,7 @@ export default function AllCities() {
             Edit
           </button>
           <button
-            onClick={() => handleDelete(c.id)}
+            onClick={() => setPendingDelete(c)}
             disabled={deletingId === c.id}
             className="cursor-pointer text-[10px] font-bold px-2.5 py-1 rounded-lg border border-red-100 text-red-500 hover:bg-red-50 transition-colors disabled:opacity-50"
           >
@@ -312,6 +316,15 @@ export default function AllCities() {
           city={editingCity}
         />
       )}
+
+      <ConfirmDialog
+        open={!!pendingDelete}
+        title="Delete city?"
+        itemName={pendingDelete?.name}
+        loading={deletingId === pendingDelete?.id}
+        onCancel={() => setPendingDelete(null)}
+        onConfirm={handleConfirmDelete}
+      />
     </div>
   );
 }

@@ -145,6 +145,15 @@ export async function deleteCountry(id: number, actorId: number) {
     );
   }
 
+  // Same rule for brands whose countryOriginId points to this country —
+  // same pattern as brand.service.ts's deleteBrand (carModelCount check).
+  const brandCount = await prisma.brand.count({ where: { countryOriginId: id } });
+  if (brandCount > 0) {
+    throw ApiError.badRequest(
+      `Cannot delete this country — ${brandCount} brand(s) are linked to it. Delete or reassign them first.`,
+    );
+  }
+
   await prisma.country.delete({ where: { id } });
 
   await createLog({

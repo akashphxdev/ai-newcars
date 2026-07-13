@@ -92,6 +92,19 @@ export const faqApi = api.injectEndpoints({
       invalidatesTags: (_result, _error, { id }) => [{ type: "Faq", id }, FAQ_LIST_TAG],
     }),
 
+    // Lightweight row-level Active/Inactive toggle — separate from the
+    // full edit mutation so flipping the switch doesn't need the whole
+    // edit form's payload.
+    updateFaqStatus: builder.mutation<FaqRecord, { id: number; isActive: boolean }>({
+      query: ({ id, isActive }) => ({
+        url: `/new-cars/faqs/${id}/status`,
+        method: "PATCH",
+        data: { isActive },
+      }),
+      transformResponse: (res: FaqSingleRawResponse) => res.data,
+      invalidatesTags: (_result, _error, { id }) => [{ type: "Faq", id }, FAQ_LIST_TAG],
+    }),
+
     deleteFaq: builder.mutation<void, number>({
       query: (id) => ({ url: `/new-cars/faqs/${id}`, method: "DELETE" }),
       invalidatesTags: (_result, _error, id) => [{ type: "Faq", id }, FAQ_LIST_TAG],
@@ -104,5 +117,6 @@ export const {
   useGetFaqByIdQuery,
   useCreateFaqMutation,
   useUpdateFaqMutation,
+  useUpdateFaqStatusMutation,
   useDeleteFaqMutation,
 } = faqApi;

@@ -9,6 +9,7 @@ import {
   faqIdParamSchema,
   createFaqSchema,
   updateFaqSchema,
+  updateFaqStatusSchema,
 } from './faq.validation';
 
 // GET /faqs
@@ -51,6 +52,20 @@ export async function updateFaq(req: Request, res: Response) {
 
   const faq = await faqService.updateFaq(id, input, req.auth.id);
   return sendSuccess(res, faq, 'FAQ updated successfully');
+}
+
+// PATCH /faqs/:id/status
+// Dedicated quick status-toggle route (Active/Inactive) for the row-level switch.
+export async function updateFaqStatus(req: Request, res: Response) {
+  const { id } = faqIdParamSchema.parse(req.params);
+  const { isActive } = updateFaqStatusSchema.parse(req.body);
+
+  if (!req.auth) {
+    throw ApiError.unauthorized();
+  }
+
+  const faq = await faqService.updateFaqStatus(id, isActive, req.auth.id);
+  return sendSuccess(res, faq, 'FAQ status updated successfully');
 }
 
 // DELETE /faqs/:id

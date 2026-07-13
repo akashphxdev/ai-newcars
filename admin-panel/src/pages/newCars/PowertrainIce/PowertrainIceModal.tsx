@@ -1,55 +1,34 @@
 // src/pages/newCars/PowertrainIce/PowertrainIceModal.tsx
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   useCreatePowertrainIceMutation,
   useUpdatePowertrainIceMutation,
+  useGetPowertrainIceByIdQuery,
   type PowertrainIceRecord,
   type FuelType,
-  type IceTransmissionType,
-  type Drivetrain,
 } from "./powertrainIce.api";
 import { useGetVariantsQuery } from "../Variants/variant.api";
 import { useGetCarModelsQuery } from "../carModels/carModel.api";
 import { useGetBrandsQuery } from "../Brands/brand.api";
+import { useGetAttributeOptionsGroupedQuery } from "../AttributeOptions/attributeOption.api";
 import { extractApiError } from "../../../lib/apiClient";
+import { FUEL_TYPE_OPTIONS } from "../../../lib/lookups";
 
 const ACCENT = "#D4300F";
-
-const FUEL_TYPES: { value: FuelType; label: string }[] = [
-  { value: "petrol", label: "Petrol" },
-  { value: "diesel", label: "Diesel" },
-  { value: "cng", label: "CNG" },
-  { value: "lpg", label: "LPG" },
-  { value: "hybrid", label: "Hybrid" },
-];
-
-const TRANSMISSION_TYPES: { value: IceTransmissionType; label: string }[] = [
-  { value: "manual", label: "Manual" },
-  { value: "automatic", label: "Automatic" },
-  { value: "amt", label: "AMT" },
-  { value: "cvt", label: "CVT" },
-  { value: "dct", label: "DCT" },
-];
-
-const DRIVETRAINS: { value: Drivetrain; label: string }[] = [
-  { value: "FWD", label: "FWD" },
-  { value: "RWD", label: "RWD" },
-  { value: "AWD", label: "AWD" },
-  { value: "4WD", label: "4WD" },
-];
 
 interface FieldErrors {
   brandId?: string;
   modelId?: string;
   variantId?: string;
   fuelType?: string;
+  kerbWeight?: string;
+  engineDisplacement?: string;
+  cylinders?: string;
+  transmissionTypeId?: string;
+  powerPs?: string;
+  torqueNm?: string;
 }
 
-// All spec fields are stored as plain strings in local state (mirrors
-// input value directly) and converted to number | null on submit — this
-// is a "form data bag", not the raw payload shape. Only variantId and
-// fuelType are validated as truly required; everything else is optional
-// spec data filled in progressively.
 interface FormState {
   variantId: number | "";
   fuelType: FuelType | "";
@@ -61,12 +40,12 @@ interface FormState {
   cubicCapacity: string;
   cylinders: string;
   cylinderCapacity: string;
-  transmissionType: IceTransmissionType | "";
+  transmissionTypeId: number | "";
   transmissionSubType: string;
   transmissionSpeed: string;
   numGears: string;
   isFourByFour: boolean;
-  drivetrain: Drivetrain | "";
+  drivetrainId: number | "";
   powerPs: string;
   powerMinRpm: string;
   powerMaxRpm: string;
@@ -99,12 +78,12 @@ function buildInitialState(p?: PowertrainIceRecord | null): FormState {
     cubicCapacity: p?.cubicCapacity != null ? String(p.cubicCapacity) : "",
     cylinders: p?.cylinders != null ? String(p.cylinders) : "",
     cylinderCapacity: p?.cylinderCapacity ?? "",
-    transmissionType: p?.transmissionType ?? "",
+    transmissionTypeId: p?.transmissionTypeId ?? "",
     transmissionSubType: p?.transmissionSubType ?? "",
     transmissionSpeed: p?.transmissionSpeed != null ? String(p.transmissionSpeed) : "",
     numGears: p?.numGears != null ? String(p.numGears) : "",
     isFourByFour: p?.isFourByFour ?? false,
-    drivetrain: p?.drivetrain ?? "",
+    drivetrainId: p?.drivetrainId ?? "",
     powerPs: p?.powerPs != null ? String(p.powerPs) : "",
     powerMinRpm: p?.powerMinRpm != null ? String(p.powerMinRpm) : "",
     powerMaxRpm: p?.powerMaxRpm != null ? String(p.powerMaxRpm) : "",
@@ -126,12 +105,10 @@ function buildInitialState(p?: PowertrainIceRecord | null): FormState {
   };
 }
 
-// "" -> null (clears the field on the server), otherwise Number(value).
 function numOrNull(value: string): number | null {
   return value === "" ? null : Number(value);
 }
 
-// "" -> null, otherwise the trimmed string.
 function strOrNull(value: string): string | null {
   const trimmed = value.trim();
   return trimmed === "" ? null : trimmed;
@@ -175,18 +152,21 @@ const selectClass = "cursor-pointer " + inputClass;
 export default function PowertrainIceModal({
   open,
   onClose,
-  powertrain,
+  editId,
 }: {
   open: boolean;
   onClose: () => void;
-  // Present -> edit mode. Absent/null -> create mode.
-  powertrain?: PowertrainIceRecord | null;
+  // Only the row's id comes in from the listing (it only holds the
+  // lightweight table fields now) — the modal fetches the full spec
+  // sheet itself so Edit never overwrites fields it can't see.
+  editId?: number | null;
 }) {
-  const isEditMode = !!powertrain;
+  const isEditMode = editId != null;
 
-  // NOTE: same 100-row cap used elsewhere (Brand dropdown, CarModel
-  // dropdown in VariantModal) — fine while the variants table stays
-  // under 100 rows.
+  const { data: powertrain, isFetching: loadingPowertrain } = useGetPowertrainIceByIdQuery(editId ?? 0, {
+    skip: editId == null,
+  });
+
   const { data: variantsData } = useGetVariantsQuery({ limit: 100, sortBy: "variantName", sortOrder: "asc" });
   const variants = variantsData?.data ?? [];
 
@@ -196,16 +176,28 @@ export default function PowertrainIceModal({
   const { data: carModelsData } = useGetCarModelsQuery({ limit: 100, sortBy: "name", sortOrder: "asc" });
   const carModels = carModelsData?.data ?? [];
 
-  // brandId/modelId are UI-only cascading filters — only variantId is
-  // actually part of the submitted payload.
-  const [brandId, setBrandId] = useState<number | "">(powertrain?.variant.model.brand.id ?? "");
-  const [modelId, setModelId] = useState<number | "">(powertrain?.variant.model.id ?? "");
+  const { data: attributeOptionsGrouped } = useGetAttributeOptionsGroupedQuery();
+  const transmissionTypes = attributeOptionsGrouped?.transmission ?? [];
+  const drivetrains = attributeOptionsGrouped?.drivetrain ?? [];
+
+  const [brandId, setBrandId] = useState<number | "">("");
+  const [modelId, setModelId] = useState<number | "">("");
   const modelsForBrand = brandId ? carModels.filter((m) => m.brandId === brandId) : [];
   const variantsForModel = modelId ? variants.filter((v) => v.modelId === modelId) : [];
 
-  const [form, setForm] = useState<FormState>(buildInitialState(powertrain));
+  const [form, setForm] = useState<FormState>(buildInitialState(null));
   const [errors, setErrors] = useState<FieldErrors>({});
   const [serverError, setServerError] = useState("");
+
+  // Full record arrives async (fresh fetch, or instantly from cache if
+  // this row was already expanded) — sync the form once it's here.
+  useEffect(() => {
+    if (powertrain) {
+      setForm(buildInitialState(powertrain));
+      setBrandId(powertrain.variant.model.brand.id);
+      setModelId(powertrain.variant.model.id);
+    }
+  }, [powertrain]);
 
   const [createPowertrainIce, { isLoading: creating }] = useCreatePowertrainIceMutation();
   const [updatePowertrainIce, { isLoading: updating }] = useUpdatePowertrainIceMutation();
@@ -215,6 +207,21 @@ export default function PowertrainIceModal({
     setForm((f) => ({ ...f, [key]: value }));
 
   if (!open) return null;
+
+  // Edit mode, but the full record hasn't arrived yet — show a small
+  // loading state instead of a form that would look empty/wrong for a
+  // moment. Usually instant if this row was already expanded (cached).
+  if (isEditMode && !powertrain) {
+    return (
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
+        <div className="w-full max-w-[720px] bg-white border border-[#e8e4dc] rounded-2xl shadow-xl p-10 text-center">
+          <p className="text-[#a39e96] text-sm font-medium">
+            {loadingPowertrain ? "Loading powertrain details..." : "Powertrain not found."}
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   const handleClose = () => {
     setForm(buildInitialState(null));
@@ -231,6 +238,13 @@ export default function PowertrainIceModal({
     if (!modelId) next.modelId = "Car model is required.";
     if (!form.variantId) next.variantId = "Variant is required.";
     if (!form.fuelType) next.fuelType = "Fuel type is required.";
+    if (form.kerbWeight === "" || Number(form.kerbWeight) < 0) next.kerbWeight = "Kerb weight is required.";
+    if (form.engineDisplacement === "" || Number(form.engineDisplacement) <= 0)
+      next.engineDisplacement = "Engine displacement is required.";
+    if (form.cylinders === "" || Number(form.cylinders) <= 0) next.cylinders = "Cylinders is required.";
+    if (!form.transmissionTypeId) next.transmissionTypeId = "Transmission type is required.";
+    if (form.powerPs === "" || Number(form.powerPs) <= 0) next.powerPs = "Power (PS) is required.";
+    if (form.torqueNm === "" || Number(form.torqueNm) <= 0) next.torqueNm = "Torque (Nm) is required.";
     setErrors(next);
     return Object.keys(next).length === 0;
   };
@@ -251,12 +265,12 @@ export default function PowertrainIceModal({
       cubicCapacity: numOrNull(form.cubicCapacity),
       cylinders: numOrNull(form.cylinders),
       cylinderCapacity: numOrNull(form.cylinderCapacity),
-      transmissionType: form.transmissionType || null,
+      transmissionTypeId: form.transmissionTypeId === "" ? null : Number(form.transmissionTypeId),
       transmissionSubType: strOrNull(form.transmissionSubType),
       transmissionSpeed: numOrNull(form.transmissionSpeed),
       numGears: numOrNull(form.numGears),
       isFourByFour: form.isFourByFour,
-      drivetrain: form.drivetrain || null,
+      drivetrainId: form.drivetrainId === "" ? null : Number(form.drivetrainId),
       powerPs: numOrNull(form.powerPs),
       powerMinRpm: numOrNull(form.powerMinRpm),
       powerMaxRpm: numOrNull(form.powerMaxRpm),
@@ -305,7 +319,7 @@ export default function PowertrainIceModal({
             <p className="text-[#a39e96] text-xs mt-1">
               {isEditMode
                 ? `Update spec details for "${powertrain?.variant.variantName}"`
-                : "Variant and fuel type are required — everything else can be filled in later."}
+                : "Variant, fuel type, kerb weight, displacement, cylinders, transmission, power and torque are required — everything else can be filled in later."}
             </p>
           </div>
           <button
@@ -379,11 +393,11 @@ export default function PowertrainIceModal({
             <Field label="Fuel type" error={errors.fuelType}>
               <select
                 value={form.fuelType}
-                onChange={(e) => set("fuelType", (e.target.value as FuelType) || "")}
+                onChange={(e) => set("fuelType", e.target.value ? (Number(e.target.value) as FuelType) : "")}
                 className={selectClass}
               >
                 <option value="">Select fuel type</option>
-                {FUEL_TYPES.map((f) => (
+                {FUEL_TYPE_OPTIONS.map((f) => (
                   <option key={f.value} value={f.value}>
                     {f.label}
                   </option>
@@ -399,7 +413,7 @@ export default function PowertrainIceModal({
                 className={inputClass}
               />
             </Field>
-            <Field label="Kerb weight (kg)">
+            <Field label="Kerb weight (kg)" error={errors.kerbWeight}>
               <input
                 type="number"
                 min={0}
@@ -417,13 +431,13 @@ export default function PowertrainIceModal({
             <Field label="CNG tank capacity (kg)">
               <input type="number" min={0} step="0.1" value={form.cngTankCapacity} onChange={(e) => set("cngTankCapacity", e.target.value)} className={inputClass} />
             </Field>
-            <Field label="Engine displacement (L)">
+            <Field label="Engine displacement (L)" error={errors.engineDisplacement}>
               <input type="number" min={0} step="0.01" value={form.engineDisplacement} onChange={(e) => set("engineDisplacement", e.target.value)} className={inputClass} />
             </Field>
             <Field label="Cubic capacity (cc)">
               <input type="number" min={0} value={form.cubicCapacity} onChange={(e) => set("cubicCapacity", e.target.value)} className={inputClass} />
             </Field>
-            <Field label="Cylinders">
+            <Field label="Cylinders" error={errors.cylinders}>
               <input type="number" min={0} value={form.cylinders} onChange={(e) => set("cylinders", e.target.value)} className={inputClass} />
             </Field>
             <Field label="Cylinder capacity (cc)">
@@ -432,11 +446,15 @@ export default function PowertrainIceModal({
           </Section>
 
           <Section title="Transmission & drivetrain">
-            <Field label="Transmission type">
-              <select value={form.transmissionType} onChange={(e) => set("transmissionType", (e.target.value as IceTransmissionType) || "")} className={selectClass}>
+            <Field label="Transmission type" error={errors.transmissionTypeId}>
+              <select
+                value={form.transmissionTypeId}
+                onChange={(e) => set("transmissionTypeId", e.target.value ? Number(e.target.value) : "")}
+                className={selectClass}
+              >
                 <option value="">Not set</option>
-                {TRANSMISSION_TYPES.map((t) => (
-                  <option key={t.value} value={t.value}>{t.label}</option>
+                {transmissionTypes.map((t) => (
+                  <option key={t.id} value={t.id}>{t.name}</option>
                 ))}
               </select>
             </Field>
@@ -450,10 +468,14 @@ export default function PowertrainIceModal({
               <input type="number" min={0} value={form.numGears} onChange={(e) => set("numGears", e.target.value)} className={inputClass} />
             </Field>
             <Field label="Drivetrain">
-              <select value={form.drivetrain} onChange={(e) => set("drivetrain", (e.target.value as Drivetrain) || "")} className={selectClass}>
+              <select
+                value={form.drivetrainId}
+                onChange={(e) => set("drivetrainId", e.target.value ? Number(e.target.value) : "")}
+                className={selectClass}
+              >
                 <option value="">Not set</option>
-                {DRIVETRAINS.map((d) => (
-                  <option key={d.value} value={d.value}>{d.label}</option>
+                {drivetrains.map((d) => (
+                  <option key={d.id} value={d.id}>{d.name}</option>
                 ))}
               </select>
             </Field>
@@ -466,7 +488,7 @@ export default function PowertrainIceModal({
           </Section>
 
           <Section title="Power & torque">
-            <Field label="Power (PS)">
+            <Field label="Power (PS)" error={errors.powerPs}>
               <input type="number" min={0} value={form.powerPs} onChange={(e) => set("powerPs", e.target.value)} className={inputClass} />
             </Field>
             <Field label="Power-to-weight">
@@ -478,7 +500,7 @@ export default function PowertrainIceModal({
             <Field label="Power max RPM">
               <input type="number" min={0} value={form.powerMaxRpm} onChange={(e) => set("powerMaxRpm", e.target.value)} className={inputClass} />
             </Field>
-            <Field label="Torque (Nm)">
+            <Field label="Torque (Nm)" error={errors.torqueNm}>
               <input type="number" min={0} value={form.torqueNm} onChange={(e) => set("torqueNm", e.target.value)} className={inputClass} />
             </Field>
             <Field label="Torque-to-weight">

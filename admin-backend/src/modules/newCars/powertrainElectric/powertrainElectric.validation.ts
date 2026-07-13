@@ -2,16 +2,18 @@
 
 import { z } from 'zod';
 
-const DRIVETRAINS = ['FWD', 'RWD', 'AWD', '4WD'] as const;
-const TEST_CYCLE_TYPES = ['ARAI', 'WLTP', 'EPA', 'NEDC'] as const;
+// Numeric codes only — labels live on the frontend
+// (front/src/lib/lookups.ts's TEST_CYCLE_TYPE_OPTIONS). Backend just
+// needs to know which codes are currently valid. Same pattern as
+// offer.validation.ts's OFFER_TYPE_CODES.
+//   1 = ARAI, 2 = WLTP, 3 = EPA, 4 = NEDC
+export const TEST_CYCLE_TYPE_CODES = [1, 2, 3, 4] as const;
 
 export const powertrainElectricListQuerySchema = z.object({
   page: z.coerce.number().int().min(1).default(1),
   limit: z.coerce.number().int().min(1).max(100).default(20),
   variantId: z.coerce.number().int().positive().optional(),
   isDefault: z.coerce.boolean().optional(),
-  // Same "hide soft-deleted rows by default" convention as
-  // powertrainIce.validation.ts.
   includeDeleted: z.coerce.boolean().default(false),
   sortBy: z.enum(['id', 'createdAt', 'claimedRange', 'powerPs']).default('createdAt'),
   sortOrder: z.enum(['asc', 'desc']).default('desc'),
@@ -21,22 +23,26 @@ export const powertrainElectricIdParamSchema = z.object({
   id: z.coerce.number().int().positive(),
 });
 
-// Only variantId is mandatory — every EV spec field is filled in
-// progressively by the content team, same reasoning as
-// powertrainIce.validation.ts's create schema.
 const powertrainElectricCreateShape = {
   variantId: z.coerce.number().int().positive('variantId is required'),
   numMotors: z.coerce.number().int().nonnegative().optional(),
   motorType: z.string().trim().max(50).optional(),
-  batteryCapacity: z.coerce.number().nonnegative().optional(),
+  // Core spec fields — required so a powertrain row can't be saved
+  // half-empty. Everything else here stays optional (varies by source /
+  // may not be published yet).
+  batteryCapacity: z.coerce.number().positive('Battery capacity is required'),
   batteryChemistry: z.string().trim().max(30).optional(),
   thermalManagementSystem: z.string().trim().max(50).optional(),
-  drivetrain: z.enum(DRIVETRAINS).optional(),
-  powerPs: z.coerce.number().int().nonnegative().optional(),
-  torqueNm: z.coerce.number().int().nonnegative().optional(),
-  claimedRange: z.coerce.number().int().nonnegative().optional(),
+  drivetrainId: z.coerce.number().int().positive('Drivetrain is required'),
+  powerPs: z.coerce.number().int().positive('Power (PS) is required'),
+  torqueNm: z.coerce.number().int().positive('Torque (Nm) is required'),
+  claimedRange: z.coerce.number().int().positive('Claimed range is required'),
   realWorldRange: z.coerce.number().int().nonnegative().optional(),
-  testCycleType: z.enum(TEST_CYCLE_TYPES).optional(),
+  testCycleType: z.coerce
+    .number()
+    .int()
+    .refine((v) => (TEST_CYCLE_TYPE_CODES as readonly number[]).includes(v), 'Invalid testCycleType code')
+    .optional(),
   topSpeedKmph: z.coerce.number().int().nonnegative().optional(),
   topSpeedTimeSec: z.coerce.number().nonnegative().optional(),
   acChargingOutput: z.coerce.number().nonnegative().optional(),
@@ -46,45 +52,44 @@ const powertrainElectricCreateShape = {
   chargerSizeAc11kwHours: z.coerce.number().int().nonnegative().optional(),
   chargerSizeAc22kwHours: z.coerce.number().int().nonnegative().optional(),
   dcChargingOutput: z.coerce.number().nonnegative().optional(),
-  // Free text on purpose (schema stores this as VarChar, not a number) —
-  // e.g. "10-80% in 30 min", which doesn't fit a single numeric field.
   dcFastChargingTime: z.string().trim().max(50).optional(),
   powertrainBootspace: z.coerce.number().int().nonnegative().optional(),
   batteryWarrantyKm: z.coerce.number().int().nonnegative().optional(),
   batteryWarrantyYears: z.coerce.number().int().nonnegative().optional(),
   motorWarrantyKm: z.coerce.number().int().nonnegative().optional(),
   motorWarrantyYears: z.coerce.number().int().nonnegative().optional(),
-  // Also free text in the schema (e.g. "Unlimited") rather than a plain
-  // number — same reasoning as dcFastChargingTime.
   standardWarrantyKm: z.string().trim().max(20).optional(),
   standardWarrantyYears: z.coerce.number().int().nonnegative().optional(),
   realWorldUrl: z.string().trim().url('Must be a valid URL').max(255).optional(),
   cityUrl: z.string().trim().url('Must be a valid URL').max(255).optional(),
   highwayUrl: z.string().trim().url('Must be a valid URL').max(255).optional(),
-  // Only one EV powertrain per variant can be "default" — enforced in
-  // the service layer, same rule as powertrainIce.validation.ts.
   isDefault: z.boolean().default(false),
 };
 
 export const createPowertrainElectricSchema = z.object(powertrainElectricCreateShape);
 
-// Partial PATCH — same convention as Brand/CarModel and
-// powertrainIce.validation.ts's update schema. Nullable fields accept an
-// explicit `null` to clear a previously-set value.
 export const updatePowertrainElectricSchema = z
   .object({
     variantId: z.coerce.number().int().positive().optional(),
     numMotors: z.coerce.number().int().nonnegative().nullable().optional(),
     motorType: z.string().trim().max(50).nullable().optional(),
-    batteryCapacity: z.coerce.number().nonnegative().nullable().optional(),
+    // Same core-required fields as create — .nullable() removed so an
+    // update can't null these back out, but still .optional() so a PATCH
+    // that doesn't touch them is fine.
+    batteryCapacity: z.coerce.number().positive('Battery capacity is required').optional(),
     batteryChemistry: z.string().trim().max(30).nullable().optional(),
     thermalManagementSystem: z.string().trim().max(50).nullable().optional(),
-    drivetrain: z.enum(DRIVETRAINS).nullable().optional(),
-    powerPs: z.coerce.number().int().nonnegative().nullable().optional(),
-    torqueNm: z.coerce.number().int().nonnegative().nullable().optional(),
-    claimedRange: z.coerce.number().int().nonnegative().nullable().optional(),
+    drivetrainId: z.coerce.number().int().positive('Drivetrain is required').optional(),
+    powerPs: z.coerce.number().int().positive('Power (PS) is required').optional(),
+    torqueNm: z.coerce.number().int().positive('Torque (Nm) is required').optional(),
+    claimedRange: z.coerce.number().int().positive('Claimed range is required').optional(),
     realWorldRange: z.coerce.number().int().nonnegative().nullable().optional(),
-    testCycleType: z.enum(TEST_CYCLE_TYPES).nullable().optional(),
+    testCycleType: z.coerce
+      .number()
+      .int()
+      .refine((v) => (TEST_CYCLE_TYPE_CODES as readonly number[]).includes(v), 'Invalid testCycleType code')
+      .nullable()
+      .optional(),
     topSpeedKmph: z.coerce.number().int().nonnegative().nullable().optional(),
     topSpeedTimeSec: z.coerce.number().nonnegative().nullable().optional(),
     acChargingOutput: z.coerce.number().nonnegative().nullable().optional(),
@@ -114,5 +119,4 @@ export const updatePowertrainElectricSchema = z
 export type PowertrainElectricListQueryParsed = z.infer<typeof powertrainElectricListQuerySchema>;
 export type CreatePowertrainElectricParsed = z.infer<typeof createPowertrainElectricSchema>;
 export type UpdatePowertrainElectricParsed = z.infer<typeof updatePowertrainElectricSchema>;
-export type TestCycleType = (typeof TEST_CYCLE_TYPES)[number];
-export type ElectricDrivetrain = (typeof DRIVETRAINS)[number];
+export type TestCycleType = (typeof TEST_CYCLE_TYPE_CODES)[number];

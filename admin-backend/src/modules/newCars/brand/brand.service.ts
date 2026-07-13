@@ -96,14 +96,17 @@ async function assertSlugAvailable(slug: string, excludeId?: number) {
     throw ApiError.conflict(`A brand with the slug "${slug}" already exists`);
   }
 }
-async function generateUniqueSlug(name: string): Promise<string> {
+async function generateUniqueSlug(name: string, excludeId?: number): Promise<string> {
   const base = slugify(name);
   let candidate = base;
   let suffix = 2;
 
   // Bounded loop — same guard as city.service.ts's generateUniqueSlug.
   for (let attempts = 0; attempts < 50; attempts++) {
-    const existing = await prisma.brand.findFirst({ where: { slug: candidate }, select: { id: true } });
+    const existing = await prisma.brand.findFirst({
+      where: { slug: candidate, id: excludeId ? { not: excludeId } : undefined },
+      select: { id: true },
+    });
     if (!existing) return candidate;
     candidate = `${base}-${suffix}`;
     suffix += 1;
@@ -150,14 +153,24 @@ export async function updateBrand(id: number, input: UpdateBrandParsed, actorId:
     await assertCountryExists(input.countryOriginId);
   }
 
-  if (input.slug && input.slug !== existing.slug) {
-    await assertSlugAvailable(input.slug, id);
+  // Slug is optional in the payload — if the caller gave one explicitly,
+  // honor it (after checking it's free). Otherwise, auto-derive it from
+  // the (possibly changed) name, same behavior as create.
+  let slug = existing.slug;
+  if (input.slug) {
+    slug = input.slug;
+    if (slug !== existing.slug) {
+      await assertSlugAvailable(slug, id);
+    }
+  } else if (input.name && input.name !== existing.name) {
+    slug = await generateUniqueSlug(input.name, id);
   }
 
   const brand = await prisma.brand.update({
     where: { id },
     data: {
       ...input,
+      slug,
       countryOriginId: input.countryOriginId,
     },
     select: BRAND_SELECT,

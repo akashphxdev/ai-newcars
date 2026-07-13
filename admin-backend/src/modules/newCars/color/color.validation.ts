@@ -3,14 +3,19 @@
 import { z } from 'zod';
 
 const hexRegex = /^#[0-9a-fA-F]{6}$/;
+const MAX_SHADES = 4;
 
-// Create/update requests are sent as multipart FormData (optional swatch/
-// color image), so booleans arrive as the strings "true"/"false" instead
-// of real JS booleans — same coercion as brand.validation.ts's booleanish.
-const booleanish = z.preprocess((val) => {
-  if (typeof val === 'string') return val === 'true';
-  return val;
-}, z.boolean());
+// A color can be a single shade or a "mix" of several (formerly the
+// isDualTone flag + one colorHex — now an open-ended list of 0..MAX_SHADES
+// hex codes). Multer gives repeated FormData fields as an array already;
+// normalize a lone string (single shade submitted) into a 1-item array too.
+const colorHexesField = z.preprocess((val) => {
+  if (val == null || val === '') return undefined;
+  return Array.isArray(val) ? val : [val];
+}, z
+  .array(z.string().trim().regex(hexRegex, 'Each shade must be a 6-digit hex code (e.g. "#FFFFFF")'))
+  .max(MAX_SHADES, `A color can have at most ${MAX_SHADES} shades`)
+  .optional());
 
 export const colorListQuerySchema = z.object({
   page: z.coerce.number().int().min(1).default(1),
@@ -19,7 +24,6 @@ export const colorListQuerySchema = z.object({
   // Colors are always scoped to a car model — required for the admin
   // panel's "select a model, then manage its colors" workflow.
   modelId: z.coerce.number().int().positive().optional(),
-  isDualTone: z.coerce.boolean().optional(),
   sortBy: z.enum(['colorName', 'id']).default('id'),
   sortOrder: z.enum(['asc', 'desc']).default('asc'),
 });
@@ -31,12 +35,9 @@ export const colorIdParamSchema = z.object({
 export const createColorSchema = z.object({
   modelId: z.coerce.number().int().positive('modelId is required'),
   colorName: z.string().trim().min(1, 'Color name is required').max(50),
-  colorHex: z
-    .string()
-    .trim()
-    .regex(hexRegex, 'colorHex must be a 6-digit hex code (e.g. "#FFFFFF")')
-    .optional(),
-  isDualTone: booleanish.optional(),
+  // Optional — some colors are represented by name + swatch photo alone,
+  // with no hex codes at all.
+  colorHexes: colorHexesField,
   additionalCost: z.coerce.number().nonnegative().optional(),
 });
 
@@ -44,8 +45,9 @@ export const updateColorSchema = z
   .object({
     modelId: z.coerce.number().int().positive().optional(),
     colorName: z.string().trim().min(1).max(50).optional(),
-    colorHex: z.string().trim().regex(hexRegex).nullable().optional(),
-    isDualTone: booleanish.optional(),
+    // If provided, REPLACES the color's full shade list (not a merge/patch
+    // of individual shades) — send the complete desired list each time.
+    colorHexes: colorHexesField,
     additionalCost: z.coerce.number().nonnegative().nullable().optional(),
   })
   .refine((data) => Object.keys(data).length > 0, {

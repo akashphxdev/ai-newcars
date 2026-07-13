@@ -2,14 +2,16 @@
 import { useState } from "react";
 import {
   useGetPowertrainElectricListQuery,
+  useGetPowertrainElectricByIdQuery,
   useDeletePowertrainElectricMutation,
   useRestorePowertrainElectricMutation,
-  type PowertrainElectricRecord,
+  type PowertrainElectricListItem,
 } from "./powertrainElectric.api";
 import { useGetVariantsQuery } from "../Variants/variant.api";
 import { useGetCarModelsQuery } from "../carModels/carModel.api";
 import { useGetBrandsQuery } from "../Brands/brand.api";
 import { extractApiError } from "../../../lib/apiClient";
+import { getTestCycleTypeLabel } from "../../../lib/lookups";
 import PowertrainElectricModal from "./PowertrainElectricModal";
 import ConfirmDialog from "../../../components/common/ConfirmDialog";
 import DataTable, { type DataTableColumn } from "../../../components/common/DataTable";
@@ -26,26 +28,90 @@ function formatDecimal(value: string | null, suffix = ""): string {
   return `${num}${suffix}`;
 }
 
+function formatInt(value: number | null, suffix = ""): string {
+  return value != null ? `${value}${suffix}` : "—";
+}
+
+function formatDate(value: string | Date | null): string {
+  if (!value) return "—";
+  return new Date(value).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" });
+}
+
+function SpecItem({ label, value }: { label: string; value: React.ReactNode }) {
+  return (
+    <div>
+      <p className="text-[9px] font-bold uppercase tracking-wider text-[#a39e96]">{label}</p>
+      <p className="text-[12px] font-semibold text-[#1c1a17] mt-0.5">{value}</p>
+    </div>
+  );
+}
+
+function ExpandedElectricDetail({ id }: { id: number }) {
+  const { data: p, isFetching, error } = useGetPowertrainElectricByIdQuery(id);
+
+  if (isFetching && !p) {
+    return <p className="text-[12px] text-[#a39e96] font-medium">Loading full spec sheet...</p>;
+  }
+  if (error || !p) {
+    return <p className="text-[12px] text-[#D4300F] font-medium">Couldn't load full spec sheet.</p>;
+  }
+
+  return (
+    <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-x-4 gap-y-3">
+      <SpecItem label="Number of motors" value={formatInt(p.numMotors)} />
+      <SpecItem label="Motor type" value={p.motorType ?? "—"} />
+      <SpecItem label="Battery chemistry" value={p.batteryChemistry ?? "—"} />
+      <SpecItem label="Thermal mgmt" value={p.thermalManagementSystem ?? "—"} />
+      <SpecItem label="Bootspace" value={formatInt(p.powertrainBootspace, " L")} />
+      <SpecItem label="Real world range" value={formatInt(p.realWorldRange, " km")} />
+      <SpecItem label="Test cycle" value={getTestCycleTypeLabel(p.testCycleType)} />
+      <SpecItem label="Top speed" value={formatInt(p.topSpeedKmph, " km/h")} />
+      <SpecItem label="0-100 time" value={formatDecimal(p.topSpeedTimeSec, " sec")} />
+      <SpecItem label="AC charging output" value={formatDecimal(p.acChargingOutput, " kW")} />
+      <SpecItem label="AC charging time" value={formatDecimal(p.acChargingTime, " hrs")} />
+      <SpecItem label="3 kW charger" value={formatInt(p.chargerSizeAc3kwHours, " hrs")} />
+      <SpecItem label="7 kW charger" value={formatInt(p.chargerSizeAc7kwHours, " hrs")} />
+      <SpecItem label="11 kW charger" value={formatInt(p.chargerSizeAc11kwHours, " hrs")} />
+      <SpecItem label="22 kW charger" value={formatInt(p.chargerSizeAc22kwHours, " hrs")} />
+      <SpecItem label="DC charging output" value={formatDecimal(p.dcChargingOutput, " kW")} />
+      <SpecItem label="DC fast charging" value={p.dcFastChargingTime ?? "—"} />
+      <SpecItem label="Battery warranty" value={p.batteryWarrantyKm != null ? `${p.batteryWarrantyKm} km` : "—"} />
+      <SpecItem label="Battery warranty (yrs)" value={formatInt(p.batteryWarrantyYears)} />
+      <SpecItem label="Motor warranty" value={p.motorWarrantyKm != null ? `${p.motorWarrantyKm} km` : "—"} />
+      <SpecItem label="Motor warranty (yrs)" value={formatInt(p.motorWarrantyYears)} />
+      <SpecItem label="Standard warranty" value={p.standardWarrantyKm ?? "—"} />
+      <SpecItem label="Standard warranty (yrs)" value={formatInt(p.standardWarrantyYears)} />
+      <SpecItem
+        label="Real-world test"
+        value={p.realWorldUrl ? <a href={p.realWorldUrl} target="_blank" rel="noreferrer" className="text-[#D4300F] hover:underline">Link</a> : "—"}
+      />
+      <SpecItem
+        label="City test"
+        value={p.cityUrl ? <a href={p.cityUrl} target="_blank" rel="noreferrer" className="text-[#D4300F] hover:underline">Link</a> : "—"}
+      />
+      <SpecItem
+        label="Highway test"
+        value={p.highwayUrl ? <a href={p.highwayUrl} target="_blank" rel="noreferrer" className="text-[#D4300F] hover:underline">Link</a> : "—"}
+      />
+      <SpecItem label="Created" value={formatDate(p.createdAt)} />
+    </div>
+  );
+}
+
 export default function AllPowertrainElectric() {
   const [page, setPage] = useState(1);
   const [filterBrandId, setFilterBrandId] = useState<number | "">("");
   const [filterModelId, setFilterModelId] = useState<number | "">("");
   const [filterVariantId, setFilterVariantId] = useState<number | "">("");
-  // "Archived" tab — soft-deleted rows are hidden by default (see
-  // includeDeleted in powertrainElectric.api.ts / .validation.ts).
   const [showArchived, setShowArchived] = useState(false);
 
   const { data: brandsData } = useGetBrandsQuery({ limit: 100, sortBy: "name", sortOrder: "asc" });
   const brands = brandsData?.data ?? [];
 
-  // NOTE: same 100-row cap used elsewhere — fine while the car-models
-  // table stays under 100 rows.
   const { data: carModelsData } = useGetCarModelsQuery({ limit: 100, sortBy: "name", sortOrder: "asc" });
   const carModels = carModelsData?.data ?? [];
   const modelsForBrand = filterBrandId ? carModels.filter((m) => m.brandId === filterBrandId) : carModels;
 
-  // NOTE: same 100-row cap used elsewhere — fine while the variants
-  // table stays under 100 rows.
   const { data: variantsData } = useGetVariantsQuery({ limit: 100, sortBy: "variantName", sortOrder: "asc" });
   const variants = variantsData?.data ?? [];
   const variantsForModel = filterModelId
@@ -72,27 +138,27 @@ export default function AllPowertrainElectric() {
   const error = queryError ? (queryError as { message?: string }).message ?? "Something went wrong." : "";
 
   const [modalOpen, setModalOpen] = useState(false);
-  const [editingPowertrain, setEditingPowertrain] = useState<PowertrainElectricRecord | null>(null);
+  const [editingId, setEditingId] = useState<number | null>(null);
 
   const openAddModal = () => {
-    setEditingPowertrain(null);
+    setEditingId(null);
     setModalOpen(true);
   };
 
-  const openEditModal = (p: PowertrainElectricRecord) => {
-    setEditingPowertrain(p);
+  const openEditModal = (p: PowertrainElectricListItem) => {
+    setEditingId(p.id);
     setModalOpen(true);
   };
 
   const closeModal = () => {
     setModalOpen(false);
-    setEditingPowertrain(null);
+    setEditingId(null);
   };
 
   const [deletePowertrainElectric] = useDeletePowertrainElectricMutation();
   const [restorePowertrainElectric] = useRestorePowertrainElectricMutation();
   const [busyId, setBusyId] = useState<number | null>(null);
-  const [pendingDelete, setPendingDelete] = useState<PowertrainElectricRecord | null>(null);
+  const [pendingDelete, setPendingDelete] = useState<PowertrainElectricListItem | null>(null);
   const [actionError, setActionError] = useState("");
 
   const handleConfirmDelete = async () => {
@@ -121,7 +187,7 @@ export default function AllPowertrainElectric() {
     }
   };
 
-  const columns: DataTableColumn<PowertrainElectricRecord>[] = [
+  const columns: DataTableColumn<PowertrainElectricListItem>[] = [
     {
       header: "Variant",
       render: (p) => (
@@ -148,12 +214,12 @@ export default function AllPowertrainElectric() {
     { header: "Range", render: (p) => <span className="text-[#7a7670]">{p.claimedRange != null ? `${p.claimedRange} km` : "—"}</span> },
     { header: "Power", render: (p) => <span className="text-[#7a7670]">{p.powerPs != null ? `${p.powerPs} PS` : "—"}</span> },
     { header: "Torque", render: (p) => <span className="text-[#7a7670]">{p.torqueNm != null ? `${p.torqueNm} Nm` : "—"}</span> },
-    { header: "Drivetrain", render: (p) => <span className="text-[#7a7670] uppercase">{p.drivetrain ?? "—"}</span> },
+    { header: "Drivetrain", render: (p) => <span className="text-[#7a7670]">{p.drivetrain?.name ?? "—"}</span> },
     {
       header: "",
       align: "right",
       render: (p) => (
-        <div className="flex items-center justify-end gap-1.5">
+        <div className="flex items-center justify-end gap-1.5" onClick={(e) => e.stopPropagation()}>
           {p.isDeleted ? (
             <button
               onClick={() => handleRestore(p.id)}
@@ -275,16 +341,18 @@ export default function AllPowertrainElectric() {
           error={error}
           loadingMessage="Loading Electric powertrains..."
           emptyMessage="No Electric powertrains found."
+          expandable
+          renderExpanded={(p) => <ExpandedElectricDetail id={p.id} />}
         />
         <Pagination pagination={pagination ?? null} onPageChange={setPage} variant="simple" />
       </div>
 
       {modalOpen && (
         <PowertrainElectricModal
-          key={editingPowertrain ? `edit-${editingPowertrain.id}` : "add"}
+          key={editingId ? `edit-${editingId}` : "add"}
           open={modalOpen}
           onClose={closeModal}
-          powertrain={editingPowertrain}
+          editId={editingId}
         />
       )}
 

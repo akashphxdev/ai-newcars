@@ -3,40 +3,34 @@ import { useRef, useState } from "react";
 import {
   useCreateVideoMutation,
   useUpdateVideoMutation,
-  VIDEO_TYPES,
+  useUploadVideoThumbnailMutation,
   type VideoRecord,
-  type VideoTypeValue,
 } from "./video.api";
 import { useGetCarModelsQuery } from "../carModels/carModel.api";
-import { extractApiError } from "../../../lib/apiClient";
+import { VIDEO_TYPE_OPTIONS } from "../../../lib/lookups";
+import { extractApiError, getUploadUrl } from "../../../lib/apiClient";
 
 const ACCENT = "#D4300F";
 
-const VIDEO_TYPE_LABELS: Record<VideoTypeValue, string> = {
-  review: "Review",
-  teaser: "Teaser",
-  walkaround: "Walkaround",
-  comparison: "Comparison",
-  launch: "Launch",
-  other: "Other",
-};
-
-// modelId, title and videoUrl are required — videoType, thumbnailUrl,
-// durationSeconds and publishedAt are all optional, mirroring the
-// schema's own nullable columns.
+// Every field here is required, on both Add and Edit — no optional
+// fields in this module (same convention as faq/FaqModal.tsx). Thumbnail
+// is required on create; on edit it's replaced via its own upload button
+// (same split as BrandModal.tsx's logo).
 interface FieldErrors {
   modelId?: string;
   title?: string;
+  videoType?: string;
   videoUrl?: string;
-  thumbnailUrl?: string;
   durationSeconds?: string;
+  publishedAt?: string;
+  thumbnail?: string;
 }
 
-function Field({ label, children, optional }: { label: string; children: React.ReactNode; optional?: boolean }) {
+function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div>
       <label className="block text-[10px] font-bold uppercase tracking-widest text-[#a39e96] mb-1.5">
-        {label} {optional && <span className="normal-case font-medium text-[#c0bab0]">(optional)</span>}
+        {label}
       </label>
       {children}
     </div>
@@ -50,7 +44,7 @@ const selectClass =
 
 // Prisma dates arrive as full ISO strings — <input type="date"> needs
 // just the yyyy-mm-dd portion.
-function toDateInputValue(value: string | null): string {
+function toDateInputValue(value: string | null | undefined): string {
   if (!value) return "";
   return value.slice(0, 10);
 }
@@ -77,21 +71,21 @@ export default function VideoModal({
   const isEditMode = !!video;
 
   // NOTE: same 100-row cap used elsewhere (Brand dropdown, Country
-  // dropdown, Variant/Offer modals).
+  // dropdown, Variant/Offer/Faq modals).
   const { data: carModelsData } = useGetCarModelsQuery({ limit: 100, sortBy: "name", sortOrder: "asc" });
   const carModels = carModelsData?.data ?? [];
 
   const [modelId, setModelId] = useState<number | "">(video?.modelId ?? "");
   const [title, setTitle] = useState(video ? video.title : "");
-  const [videoType, setVideoType] = useState<VideoTypeValue | "">(
-    (video?.videoType as VideoTypeValue) ?? "",
-  );
+  const [videoType, setVideoType] = useState<number | "">(video?.videoType ?? "");
   const [videoUrl, setVideoUrl] = useState(video ? video.videoUrl : "");
-  const [thumbnailUrl, setThumbnailUrl] = useState(video?.thumbnailUrl ?? "");
   const [durationSeconds, setDurationSeconds] = useState(
-    video?.durationSeconds != null ? String(video.durationSeconds) : "",
+    video ? String(video.durationSeconds) : "",
   );
-  const [publishedAt, setPublishedAt] = useState(toDateInputValue(video?.publishedAt ?? null));
+  const [publishedAt, setPublishedAt] = useState(toDateInputValue(video?.publishedAt));
+  // No default — isActive must be an explicit, deliberate choice on
+  // every save (same "all fields mandatory" rule as FaqModal.tsx).
+  const [isActive, setIsActive] = useState<boolean>(video?.isActive ?? true);
 
   const [errors, setErrors] = useState<FieldErrors>({});
   const [serverError, setServerError] = useState("");
@@ -101,16 +95,58 @@ export default function VideoModal({
   const [updateVideo, { isLoading: updating }] = useUpdateVideoMutation();
   const saving = creating || updating;
 
+  // Thumbnail is required on create — same upload mechanics as BrandModal.tsx's logo.
+  const [uploadVideoThumbnail, { isLoading: uploadingThumbnail }] = useUploadVideoThumbnailMutation();
+  const [thumbnailUrl, setThumbnailUrl] = useState<string | null>(video?.thumbnailUrl ?? null);
+  const [pendingThumbnailFile, setPendingThumbnailFile] = useState<File | null>(null);
+  const [thumbnailPreview, setThumbnailPreview] = useState<string | null>(null);
+  const [thumbnailError, setThumbnailError] = useState("");
+  const thumbnailInputRef = useRef<HTMLInputElement>(null);
+
+  const handleThumbnailSelect = async (file: File | undefined) => {
+    if (!file) return;
+    setThumbnailError("");
+
+    if (!isEditMode) {
+      // Create mode: nothing to upload yet — just hold the file and
+      // preview it. Actual upload happens on form submit.
+      setPendingThumbnailFile(file);
+      setThumbnailPreview(URL.createObjectURL(file));
+      return;
+    }
+
+    if (!video) return;
+
+    // Edit mode: instant local preview while the upload is in flight.
+    const objectUrl = URL.createObjectURL(file);
+    setThumbnailPreview(objectUrl);
+
+    try {
+      const result = await uploadVideoThumbnail({ id: video.id, file }).unwrap();
+      setThumbnailUrl(result.thumbnailUrl);
+    } catch (err) {
+      setThumbnailError(extractApiError(err));
+    } finally {
+      URL.revokeObjectURL(objectUrl);
+      setThumbnailPreview(null);
+      if (thumbnailInputRef.current) thumbnailInputRef.current.value = "";
+    }
+  };
+
   const resetForm = () => {
+    if (thumbnailPreview) URL.revokeObjectURL(thumbnailPreview);
     setModelId("");
     setTitle("");
     setVideoType("");
     setVideoUrl("");
-    setThumbnailUrl("");
     setDurationSeconds("");
     setPublishedAt("");
+    setIsActive(true);
     setErrors({});
     setServerError("");
+    setPendingThumbnailFile(null);
+    setThumbnailPreview(null);
+    setThumbnailError("");
   };
 
   if (!open) return null;
@@ -124,12 +160,20 @@ export default function VideoModal({
     const next: FieldErrors = {};
     if (!modelId) next.modelId = "Car model is required.";
     if (title.trim().length < 2) next.title = "Title must be at least 2 characters.";
+    if (!videoType) next.videoType = "Video type is required.";
     if (!videoUrl.trim() || !isValidUrl(videoUrl.trim())) next.videoUrl = "A valid video URL is required.";
-    if (thumbnailUrl.trim() && !isValidUrl(thumbnailUrl.trim())) {
-      next.thumbnailUrl = "Thumbnail URL must be a valid URL.";
+    if (
+      durationSeconds === "" ||
+      !Number.isInteger(Number(durationSeconds)) ||
+      Number(durationSeconds) <= 0
+    ) {
+      next.durationSeconds = "Duration is required (a positive whole number of seconds).";
     }
-    if (durationSeconds !== "" && (!Number.isInteger(Number(durationSeconds)) || Number(durationSeconds) <= 0)) {
-      next.durationSeconds = "Duration must be a positive whole number of seconds.";
+    if (!publishedAt) next.publishedAt = "Publish date is required.";
+    // Thumbnail is required on create. In edit mode a thumbnail already
+    // exists (or was replaced separately above) — nothing to validate here.
+    if (!isEditMode && !pendingThumbnailFile) {
+      next.thumbnail = "Video thumbnail is required.";
     }
     setErrors(next);
     return Object.keys(next).length === 0;
@@ -140,23 +184,33 @@ export default function VideoModal({
     setServerError("");
     if (!validate()) return;
 
-    // validate() above already guarantees modelId/videoUrl are set — the
-    // cast here just satisfies TypeScript.
-    const payload = {
-      modelId: Number(modelId),
-      title: title.trim(),
-      videoType: videoType || null,
-      videoUrl: videoUrl.trim(),
-      thumbnailUrl: thumbnailUrl.trim() || null,
-      durationSeconds: durationSeconds === "" ? null : Number(durationSeconds),
-      publishedAt: publishedAt || null,
-    };
-
     try {
       if (isEditMode && video) {
-        await updateVideo({ id: video.id, input: payload }).unwrap();
+        await updateVideo({
+          id: video.id,
+          input: {
+            modelId: Number(modelId),
+            title: title.trim(),
+            videoType: Number(videoType),
+            videoUrl: videoUrl.trim(),
+            durationSeconds: Number(durationSeconds),
+            publishedAt,
+            isActive,
+          },
+        }).unwrap();
       } else {
-        await createVideo(payload).unwrap();
+        // pendingThumbnailFile is guaranteed non-null here — validate()
+        // above already blocked submission without one in create mode.
+        await createVideo({
+          modelId: Number(modelId),
+          title: title.trim(),
+          videoType: Number(videoType),
+          videoUrl: videoUrl.trim(),
+          durationSeconds: Number(durationSeconds),
+          publishedAt,
+          isActive,
+          thumbnail: pendingThumbnailFile as File,
+        }).unwrap();
       }
       resetForm();
       onClose();
@@ -179,7 +233,7 @@ export default function VideoModal({
               {isEditMode ? "Edit video" : "Add video"}
             </h2>
             <p className="text-[#a39e96] text-xs mt-1">
-              {isEditMode ? "Update this video's details" : "Car model, title and video URL are required."}
+              {isEditMode ? "Update this video's details" : "All fields are required."}
             </p>
           </div>
           <button
@@ -196,6 +250,55 @@ export default function VideoModal({
         </div>
 
         <form onSubmit={handleSubmit} className="px-6 pb-6 pt-5 space-y-4" noValidate>
+          <div className="flex items-center gap-3 pb-1">
+            <div
+              className="w-20 h-14 rounded-xl border bg-[#f7f5f1] overflow-hidden flex items-center justify-center shrink-0"
+              style={{ borderColor: errors.thumbnail ? "#f0997b" : "#e2ddd5" }}
+            >
+              {thumbnailPreview || thumbnailUrl ? (
+                <img
+                  src={thumbnailPreview ?? getUploadUrl(thumbnailUrl) ?? undefined}
+                  alt={isEditMode ? `${video?.title} thumbnail` : "Video thumbnail preview"}
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#c0bab0" strokeWidth="2">
+                  <rect x="3" y="3" width="18" height="18" rx="2" />
+                  <circle cx="9" cy="9" r="2" />
+                  <path d="m21 15-5-5L5 21" />
+                </svg>
+              )}
+            </div>
+            <div>
+              <button
+                type="button"
+                onClick={() => thumbnailInputRef.current?.click()}
+                disabled={uploadingThumbnail}
+                className="cursor-pointer text-[11px] font-bold px-3 py-1.5 rounded-lg border border-[#e2ddd5] text-[#4a4640] hover:bg-[#f7f5f1] transition-colors disabled:opacity-50"
+              >
+                {uploadingThumbnail
+                  ? "Uploading..."
+                  : thumbnailUrl || pendingThumbnailFile
+                  ? "Change thumbnail"
+                  : "Upload thumbnail"}
+              </button>
+              <input
+                ref={thumbnailInputRef}
+                type="file"
+                accept="image/jpeg,image/png,image/webp"
+                onChange={(e) => handleThumbnailSelect(e.target.files?.[0])}
+                className="hidden"
+              />
+              <p className="text-[10px] text-[#a39e96] mt-1">JPG, PNG or WEBP, up to 2MB.</p>
+              {errors.thumbnail && (
+                <p className="text-[11px] font-medium text-[#D4300F] mt-1">{errors.thumbnail}</p>
+              )}
+              {thumbnailError && (
+                <p className="text-[11px] font-medium text-[#D4300F] mt-1">{thumbnailError}</p>
+              )}
+            </div>
+          </div>
+
           <Field label="Car model">
             <select
               value={modelId}
@@ -230,23 +333,26 @@ export default function VideoModal({
           </Field>
 
           <div className="grid grid-cols-2 gap-3">
-            <Field label="Video type" optional>
+            <Field label="Video type">
               <select
                 value={videoType}
-                onChange={(e) => setVideoType((e.target.value as VideoTypeValue) || "")}
+                onChange={(e) => setVideoType(e.target.value ? Number(e.target.value) : "")}
                 className={selectClass}
-                style={{ borderColor: "#e2ddd5" }}
+                style={{ borderColor: errors.videoType ? "#f0997b" : "#e2ddd5" }}
               >
                 <option value="">Select type</option>
-                {VIDEO_TYPES.map((t) => (
-                  <option key={t} value={t}>
-                    {VIDEO_TYPE_LABELS[t]}
+                {VIDEO_TYPE_OPTIONS.map((t) => (
+                  <option key={t.value} value={t.value}>
+                    {t.label}
                   </option>
                 ))}
               </select>
+              {errors.videoType && (
+                <p className="text-[11px] font-medium text-[#D4300F] mt-1">{errors.videoType}</p>
+              )}
             </Field>
 
-            <Field label="Duration (seconds)" optional>
+            <Field label="Duration (seconds)">
               <input
                 type="number"
                 min={1}
@@ -281,32 +387,31 @@ export default function VideoModal({
             {errors.videoUrl && <p className="text-[11px] font-medium text-[#D4300F] mt-1">{errors.videoUrl}</p>}
           </Field>
 
-          <Field label="Thumbnail URL" optional>
-            <input
-              type="text"
-              value={thumbnailUrl}
-              onChange={(e) => setThumbnailUrl(e.target.value)}
-              placeholder="e.g. https://.../thumbnail.jpg"
-              className={inputClass}
-              style={{
-                borderColor: errors.thumbnailUrl ? "#f0997b" : "#e2ddd5",
-                boxShadow: errors.thumbnailUrl ? "0 0 0 2px rgba(216,90,48,0.1)" : "none",
-              }}
-            />
-            {errors.thumbnailUrl && (
-              <p className="text-[11px] font-medium text-[#D4300F] mt-1">{errors.thumbnailUrl}</p>
-            )}
-          </Field>
-
-          <Field label="Publish date" optional>
+          <Field label="Publish date">
             <input
               type="date"
               value={publishedAt}
               onChange={(e) => setPublishedAt(e.target.value)}
               className={inputClass}
-              style={{ borderColor: "#e2ddd5" }}
+              style={{
+                borderColor: errors.publishedAt ? "#f0997b" : "#e2ddd5",
+                boxShadow: errors.publishedAt ? "0 0 0 2px rgba(216,90,48,0.1)" : "none",
+              }}
             />
+            {errors.publishedAt && (
+              <p className="text-[11px] font-medium text-[#D4300F] mt-1">{errors.publishedAt}</p>
+            )}
           </Field>
+
+          <label className="flex items-center gap-2.5 cursor-pointer select-none pt-1">
+            <input
+              type="checkbox"
+              checked={isActive}
+              onChange={(e) => setIsActive(e.target.checked)}
+              className="w-4 h-4 rounded accent-[#D4300F] cursor-pointer"
+            />
+            <span className="text-sm font-medium text-[#4a4640]">Active</span>
+          </label>
 
           {serverError && (
             <div className="flex items-center gap-2 bg-red-50 border border-red-100 rounded-lg px-3.5 py-2.5">

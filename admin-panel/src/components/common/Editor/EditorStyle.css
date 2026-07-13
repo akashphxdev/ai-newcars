@@ -1,0 +1,384 @@
+/* ── Editor root / fullscreen mode ── */
+
+.editor-root {
+  position: relative;
+}
+
+.editor-root--fullscreen {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  background: #fff;
+  padding: 16px 24px 24px;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+}
+
+.editor-root--fullscreen .tiptap {
+  flex: 1 1 auto;
+  max-height: none;
+}
+
+/* ── Editor toolbar ── */
+
+.control-group {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background: #fff;
+}
+
+.control-group > div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 8px;
+  border: 1px solid #e4e4e7;
+  border-radius: 10px;
+  background: #fafafa;
+}
+
+.btnSection {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 2px;
+  padding: 3px;
+  border-radius: 8px;
+  background: #f4f4f5;
+}
+
+.btnSection button,
+.button-group button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  margin: 0;
+  font-size: 13px;
+  line-height: 1;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  background: transparent;
+  color: #3f3f46;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.btnSection button:hover,
+.button-group button:hover {
+  background: #e4e4e7;
+  color: #18181b;
+}
+
+.btnSection button:disabled,
+.button-group button:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.btnSection button.is-active,
+.button-group button.is-active {
+  background: #18181b;
+  color: #fff;
+  border-color: #18181b;
+}
+
+.btnSection button svg,
+.button-group button svg {
+  width: 18px;
+  height: 18px;
+}
+
+/* Color preset buttons (text labels, not icons) */
+.btnSection button[title]:not([title="Text color"]) {
+  /* no-op placeholder to keep specificity grouped with the rule below */
+}
+
+.btnSection button:where(:not(:has(svg))) {
+  width: auto;
+  padding: 0 8px;
+  font-size: 11px;
+  font-weight: 500;
+  height: 28px;
+  border-radius: 5px;
+  border: 1px solid #e4e4e7;
+  background: #fff;
+}
+
+.btnSection button:where(:not(:has(svg))):hover {
+  background: #f4f4f5;
+}
+
+.btnSection button:where(:not(:has(svg))).is-active {
+  background: #18181b;
+  color: #fff;
+  border-color: #18181b;
+}
+
+/* Color picker input */
+.btnSection input[type="color"] {
+  width: 28px;
+  height: 28px;
+  padding: 2px;
+  border: 1px solid #e4e4e7;
+  border-radius: 6px;
+  cursor: pointer;
+  background: #fff;
+}
+
+/* ── Editor content area ── */
+
+.editor-container {
+  margin-top: 8px;
+}
+
+.tiptap {
+  padding: 16px 20px;
+  border: 1px solid #e4e4e7;
+  border-radius: 10px;
+  min-height: 420px;
+  max-height: 65vh;
+  overflow-y: auto;
+  font-size: 15px;
+  line-height: 1.7;
+  color: #18181b;
+  background: #fff;
+  outline: none;
+  transition:
+    border-color 0.15s ease,
+    box-shadow 0.15s ease;
+}
+
+.tiptap:focus {
+  border-color: #18181b;
+  box-shadow: 0 0 0 2px rgba(24, 24, 27, 0.08);
+}
+
+/* Lists */
+.tiptap ul {
+  list-style-type: disc;
+  padding-left: 1.5em;
+}
+
+.tiptap ol {
+  list-style-type: decimal;
+  padding-left: 1.5em;
+}
+
+.tiptap li {
+  margin-bottom: 0.25em;
+}
+
+/* Headings */
+.tiptap h1 {
+  font-size: 1.75rem;
+  font-weight: 700;
+  margin: 1em 0 0.4em;
+  line-height: 1.3;
+}
+
+.tiptap h2 {
+  font-size: 1.4rem;
+  font-weight: 600;
+  margin: 0.9em 0 0.35em;
+  line-height: 1.35;
+}
+
+.tiptap h3 {
+  font-size: 1.15rem;
+  font-weight: 600;
+  margin: 0.8em 0 0.3em;
+  line-height: 1.4;
+}
+
+.tiptap h4,
+.tiptap h5,
+.tiptap h6 {
+  font-size: 1rem;
+  font-weight: 600;
+  margin: 0.7em 0 0.25em;
+}
+
+/* Paragraph spacing */
+.tiptap p {
+  margin: 0.4em 0;
+}
+
+/* Tables */
+.tiptap table {
+  border-collapse: collapse;
+  border: 1px solid #d4d4d8;
+  margin: 1rem 0;
+  overflow: hidden;
+  table-layout: fixed;
+  width: 100%;
+  border-radius: 6px;
+}
+
+.tiptap table td,
+.tiptap table th {
+  border: 1px solid #d4d4d8;
+  box-sizing: border-box;
+  min-width: 1em;
+  padding: 8px 12px;
+  position: relative;
+  vertical-align: top;
+}
+
+.tiptap table td > *,
+.tiptap table th > * {
+  margin-bottom: 0;
+}
+
+.tiptap table th {
+  background-color: #f4f4f5;
+  font-weight: 600;
+  font-size: 0.875rem;
+  text-align: left;
+  color: #3f3f46;
+}
+
+.tiptap table .selectedCell::after {
+  content: "";
+  left: 0;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  background: rgba(24, 24, 27, 0.06);
+  pointer-events: none;
+  position: absolute;
+  z-index: 2;
+}
+
+.tiptap table .column-resize-handle {
+  bottom: -2px;
+  pointer-events: none;
+  position: absolute;
+  right: -2px;
+  top: 0;
+  width: 4px;
+  background: #18181b;
+}
+
+.tiptap .tableWrapper {
+  margin: 1rem 0;
+  overflow-x: auto;
+}
+
+.tiptap.resize-cursor {
+  cursor: col-resize;
+}
+
+/* Images */
+.tiptap img {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  border-radius: 8px;
+  margin: 0.75rem 0;
+}
+
+.tiptap img.ProseMirror-selectednode {
+  outline: 2px solid #18181b;
+  outline-offset: 2px;
+}
+
+/* Blockquote */
+.tiptap blockquote {
+  border-left: 3px solid #d4d4d8;
+  margin: 1rem 0;
+  padding-left: 1rem;
+  color: #52525b;
+  font-style: italic;
+}
+
+/* Horizontal rule */
+.tiptap hr {
+  border: none;
+  border-top: 1px solid #e4e4e7;
+  cursor: pointer;
+  margin: 1.5rem 0;
+}
+
+.tiptap hr.ProseMirror-selectednode {
+  border-top: 2px solid #18181b;
+}
+
+/* Inline code */
+.tiptap code {
+  background-color: #f4f4f5;
+  border-radius: 4px;
+  color: #18181b;
+  font-size: 0.85em;
+  padding: 0.2em 0.4em;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+}
+
+/* Highlight / mark */
+.tiptap mark {
+  background-color: #fef08a;
+  border-radius: 3px;
+  box-decoration-break: clone;
+  padding: 0.1rem 0.25rem;
+}
+
+/* Task list */
+.tiptap ul[data-type="taskList"] {
+  list-style: none;
+  margin-left: 0;
+  padding: 0;
+}
+
+.tiptap ul[data-type="taskList"] li {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+}
+
+.tiptap ul[data-type="taskList"] li > label {
+  flex: 0 0 auto;
+  margin-top: 0.25em;
+  user-select: none;
+}
+
+.tiptap ul[data-type="taskList"] li > div {
+  flex: 1 1 auto;
+}
+
+.tiptap ul[data-type="taskList"] input[type="checkbox"] {
+  cursor: pointer;
+  accent-color: #18181b;
+}
+
+.tiptap ul[data-type="taskList"] ul[data-type="taskList"] {
+  margin: 0;
+}
+
+/* Placeholder */
+.tiptap p.is-editor-empty:first-child::before {
+  color: #a1a1aa;
+  content: attr(data-placeholder);
+  float: left;
+  height: 0;
+  pointer-events: none;
+}
+
+/* ── Word count / read time footer ── */
+
+.editor-stats {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 6px;
+  font-size: 11px;
+  font-weight: 500;
+  color: #a1a1aa;
+}
+
+.editor-stats-sep {
+  color: #d4d4d8;
+}

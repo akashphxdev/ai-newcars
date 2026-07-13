@@ -26,8 +26,6 @@ export async function getCarModelById(req: Request, res: Response) {
   const { id } = carModelIdParamSchema.parse(req.params);
   const carModel = await carModelService.getCarModelById(id);
 
-  // View activity is logged too (not just create/update/delete) so the
-  // admin-logs screen shows a complete audit trail of who looked at what.
   if (req.auth) {
     await createLog({
       adminId: req.auth.id,
@@ -38,19 +36,18 @@ export async function getCarModelById(req: Request, res: Response) {
   return sendSuccess(res, carModel, 'Car model fetched successfully');
 }
 
-// POST /car-models
-// Cover image is optional on create (multipart field name "coverImage") —
-// same fail-safe cleanup pattern as image.controller.ts's createImage: if
-// validation/creation fails after the file is already written to disk,
-// delete the orphaned file before re-throwing.
 export async function createCarModel(req: Request, res: Response) {
   if (!req.auth) {
     throw ApiError.unauthorized();
   }
 
+  if (!req.file) {
+    throw ApiError.badRequest('Cover image is required (expected field name "coverImage")');
+  }
+
   try {
     const input = createCarModelSchema.parse(req.body);
-    const carModel = await carModelService.createCarModel(input, req.auth.id, req.file?.filename);
+    const carModel = await carModelService.createCarModel(input, req.auth.id, req.file.filename);
     return sendSuccess(res, carModel, 'Car model created successfully', 201);
   } catch (err) {
     if (req.file) {
@@ -73,24 +70,18 @@ export async function updateCarModel(req: Request, res: Response) {
   return sendSuccess(res, carModel, 'Car model updated successfully');
 }
 
-// PATCH /car-models/:id/launch-status
-// Lightweight endpoint for the row-level quick launch-status change on
-// the car model listing page — doesn't require sending the full edit payload.
 export async function updateCarModelLaunchStatus(req: Request, res: Response) {
   const { id } = carModelIdParamSchema.parse(req.params);
-  const { launchStatus } = updateCarModelLaunchStatusSchema.parse(req.body);
+  const { launchStatus, expectedLaunchDate } = updateCarModelLaunchStatusSchema.parse(req.body);
 
   if (!req.auth) {
     throw ApiError.unauthorized();
   }
 
-  const carModel = await carModelService.updateCarModelLaunchStatus(id, launchStatus, req.auth.id);
+  const carModel = await carModelService.updateCarModelLaunchStatus(id, launchStatus, expectedLaunchDate, req.auth.id);
   return sendSuccess(res, carModel, 'Car model launch status updated successfully');
 }
 
-// PATCH /car-models/:id/cover-image
-// Dedicated endpoint for replacing just the cover thumbnail (multipart
-// field name "coverImage") without resending the whole edit form.
 export async function uploadCarModelCoverImage(req: Request, res: Response) {
   const { id } = carModelIdParamSchema.parse(req.params);
 

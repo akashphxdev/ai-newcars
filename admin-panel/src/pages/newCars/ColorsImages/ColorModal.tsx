@@ -10,10 +10,11 @@ import { extractApiError, getUploadUrl } from "../../../lib/apiClient";
 
 const ACCENT = "#D4300F";
 const hexRegex = /^#[0-9a-fA-F]{6}$/;
+const MAX_SHADES = 4;
 
 interface FieldErrors {
   colorName?: string;
-  colorHex?: string;
+  shades?: string;
 }
 
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
@@ -35,17 +36,15 @@ export default function ColorModal({
 }: {
   open: boolean;
   onClose: () => void;
-  // The car model this color is (or will be) scoped to. Fixed by the
-  // parent's model selector — not editable from inside this modal.
   modelId: number;
-  // Present -> edit mode. Absent/null -> create mode.
   color?: CarColorRecord | null;
 }) {
   const isEditMode = !!color;
 
   const [colorName, setColorName] = useState(color ? color.colorName : "");
-  const [colorHex, setColorHex] = useState(color?.colorHex ?? "#FFFFFF");
-  const [isDualTone, setIsDualTone] = useState(color ? color.isDualTone : false);
+  const [shades, setShades] = useState<string[]>(
+    color ? color.shades.map((s) => s.colorHex) : ["#FFFFFF"],
+  );
   const [additionalCost, setAdditionalCost] = useState(
     color?.additionalCost != null ? color.additionalCost : "",
   );
@@ -57,8 +56,6 @@ export default function ColorModal({
   const [updateColor, { isLoading: updating }] = useUpdateColorMutation();
   const saving = creating || updating;
 
-  // Swatch/reference image is optional — same upload mechanics as
-  // BrandModal's logo, minus the "required on create" rule.
   const [uploadColorImage, { isLoading: uploadingImage }] = useUploadColorImageMutation();
   const [imageUrl, setImageUrl] = useState<string | null>(color?.imageUrl ?? null);
   const [pendingImageFile, setPendingImageFile] = useState<File | null>(null);
@@ -96,8 +93,7 @@ export default function ColorModal({
   const resetForm = () => {
     if (imagePreview) URL.revokeObjectURL(imagePreview);
     setColorName("");
-    setColorHex("#FFFFFF");
-    setIsDualTone(false);
+    setShades(["#FFFFFF"]);
     setAdditionalCost("");
     setErrors({});
     setServerError("");
@@ -113,11 +109,24 @@ export default function ColorModal({
     onClose();
   };
 
+  const setShadeAt = (index: number, value: string) =>
+    setShades((prev) => prev.map((s, i) => (i === index ? value : s)));
+
+  const addShade = () => {
+    if (shades.length >= MAX_SHADES) return;
+    setShades((prev) => [...prev, "#FFFFFF"]);
+  };
+
+  const removeShade = (index: number) =>
+    setShades((prev) => prev.filter((_, i) => i !== index));
+
   const validate = (): boolean => {
     const next: FieldErrors = {};
     if (colorName.trim().length < 1) next.colorName = "Color name is required.";
-    if (colorHex.trim() && !hexRegex.test(colorHex.trim())) {
-      next.colorHex = 'Must be a 6-digit hex code (e.g. "#FFFFFF").';
+    const nonEmptyShades = shades.map((s) => s.trim()).filter(Boolean);
+    const invalidShade = nonEmptyShades.find((s) => !hexRegex.test(s));
+    if (invalidShade) {
+      next.shades = `"${invalidShade}" isn't a valid 6-digit hex code (e.g. "#FFFFFF").`;
     }
     setErrors(next);
     return Object.keys(next).length === 0;
@@ -128,14 +137,15 @@ export default function ColorModal({
     setServerError("");
     if (!validate()) return;
 
+    const cleanShades = shades.map((s) => s.trim()).filter(Boolean);
+
     try {
       if (isEditMode && color) {
         await updateColor({
           id: color.id,
           input: {
             colorName: colorName.trim(),
-            colorHex: colorHex.trim() || null,
-            isDualTone,
+            colorHexes: cleanShades,
             additionalCost: additionalCost === "" ? null : Number(additionalCost),
           },
         }).unwrap();
@@ -143,8 +153,7 @@ export default function ColorModal({
         await createColor({
           modelId,
           colorName: colorName.trim(),
-          colorHex: colorHex.trim() || undefined,
-          isDualTone,
+          colorHexes: cleanShades.length > 0 ? cleanShades : undefined,
           additionalCost: additionalCost === "" ? undefined : Number(additionalCost),
           image: pendingImageFile ?? undefined,
         }).unwrap();
@@ -156,6 +165,16 @@ export default function ColorModal({
     }
   };
 
+  const validShades = shades.map((s) => s.trim()).filter((s) => hexRegex.test(s));
+  const swatchBackground =
+    validShades.length === 0
+      ? "#f7f5f1"
+      : validShades.length === 1
+        ? validShades[0]
+        : `linear-gradient(90deg, ${validShades
+            .map((hex, i) => `${hex} ${(i / validShades.length) * 100}%, ${hex} ${((i + 1) / validShades.length) * 100}%`)
+            .join(", ")})`;
+
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4"
@@ -163,7 +182,7 @@ export default function ColorModal({
         if (e.target === e.currentTarget) handleClose();
       }}
     >
-      <div className="w-full max-w-[480px] bg-white border border-[#e8e4dc] rounded-2xl shadow-xl max-h-[90vh] overflow-y-auto">
+      <div className="w-full max-w-[520px] bg-white border border-[#e8e4dc] rounded-2xl shadow-xl max-h-[90vh] overflow-y-auto">
         <div className="flex items-center justify-between px-6 pt-6">
           <div>
             <h2 className="text-[#1c1a17] text-lg font-black">{isEditMode ? "Edit color" : "Add color"}</h2>
@@ -189,8 +208,8 @@ export default function ColorModal({
             <div
               className="w-14 h-14 rounded-xl border overflow-hidden flex items-center justify-center shrink-0"
               style={{
-                borderColor: errors.colorHex ? "#f0997b" : "#e2ddd5",
-                background: imagePreview || getUploadUrl(imageUrl) ? "#f7f5f1" : hexRegex.test(colorHex) ? colorHex : "#f7f5f1",
+                borderColor: errors.shades ? "#f0997b" : "#e2ddd5",
+                background: imagePreview || getUploadUrl(imageUrl) ? "#f7f5f1" : swatchBackground,
               }}
             >
               {(imagePreview || getUploadUrl(imageUrl)) && (
@@ -222,44 +241,75 @@ export default function ColorModal({
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
-            <Field label="Color name">
-              <input
-                type="text"
-                value={colorName}
-                onChange={(e) => setColorName(e.target.value)}
-                placeholder="e.g. Pearl White"
-                className="w-full text-sm font-medium text-[#1c1a17] bg-[#f7f5f1] border rounded-xl px-3 py-2.5 outline-none transition-all focus:bg-white"
-                style={{
-                  borderColor: errors.colorName ? "#f0997b" : "#e2ddd5",
-                  boxShadow: errors.colorName ? "0 0 0 2px rgba(216,90,48,0.1)" : "none",
-                }}
-              />
-              {errors.colorName && <p className="text-[11px] font-medium text-[#D4300F] mt-1">{errors.colorName}</p>}
-            </Field>
+          <Field label="Color name">
+            <input
+              type="text"
+              value={colorName}
+              onChange={(e) => setColorName(e.target.value)}
+              placeholder="e.g. Pearl White"
+              className="w-full text-sm font-medium text-[#1c1a17] bg-[#f7f5f1] border rounded-xl px-3 py-2.5 outline-none transition-all focus:bg-white"
+              style={{
+                borderColor: errors.colorName ? "#f0997b" : "#e2ddd5",
+                boxShadow: errors.colorName ? "0 0 0 2px rgba(216,90,48,0.1)" : "none",
+              }}
+            />
+            {errors.colorName && <p className="text-[11px] font-medium text-[#D4300F] mt-1">{errors.colorName}</p>}
+          </Field>
 
-            <Field label="Hex code">
-              <div className="flex items-center gap-2">
-                <input
-                  type="color"
-                  value={hexRegex.test(colorHex) ? colorHex : "#ffffff"}
-                  onChange={(e) => setColorHex(e.target.value)}
-                  className="cursor-pointer w-10 h-[42px] rounded-lg border border-[#e2ddd5] shrink-0"
-                />
-                <input
-                  type="text"
-                  value={colorHex}
-                  onChange={(e) => setColorHex(e.target.value)}
-                  placeholder="#FFFFFF"
-                  className="w-full text-sm font-medium text-[#1c1a17] bg-[#f7f5f1] border rounded-xl px-3 py-2.5 outline-none transition-all focus:bg-white"
-                  style={{
-                    borderColor: errors.colorHex ? "#f0997b" : "#e2ddd5",
-                    boxShadow: errors.colorHex ? "0 0 0 2px rgba(216,90,48,0.1)" : "none",
-                  }}
-                />
-              </div>
-              {errors.colorHex && <p className="text-[11px] font-medium text-[#D4300F] mt-1">{errors.colorHex}</p>}
-            </Field>
+          <div>
+            <div className="flex items-center justify-between mb-1.5">
+              <label className="block text-[10px] font-bold uppercase tracking-widest text-[#a39e96]">
+                Shades (optional — add 2+ for a mix color)
+              </label>
+              {shades.length < MAX_SHADES && (
+                <button
+                  type="button"
+                  onClick={addShade}
+                  className="cursor-pointer text-[10.5px] font-bold px-2 py-1 rounded-lg border border-[#e2ddd5] text-[#4a4640] hover:bg-[#f7f5f1] transition-colors"
+                >
+                  + Add another shade
+                </button>
+              )}
+            </div>
+
+            {shades.length === 0 && (
+              <p className="text-[11px] text-[#a39e96] italic">
+                No shades — this color will be represented by name{imageUrl || pendingImageFile ? " and photo" : ""} only.
+              </p>
+            )}
+
+            <div className="space-y-2">
+              {shades.map((hex, i) => (
+                <div key={i} className="flex items-center gap-2">
+                  <input
+                    type="color"
+                    value={hexRegex.test(hex) ? hex : "#ffffff"}
+                    onChange={(e) => setShadeAt(i, e.target.value)}
+                    className="cursor-pointer w-10 h-[42px] rounded-lg border border-[#e2ddd5] shrink-0"
+                  />
+                  <input
+                    type="text"
+                    value={hex}
+                    onChange={(e) => setShadeAt(i, e.target.value)}
+                    placeholder="#FFFFFF"
+                    className="w-full text-sm font-medium text-[#1c1a17] bg-[#f7f5f1] border border-[#e2ddd5] rounded-xl px-3 py-2.5 outline-none transition-all focus:bg-white"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => removeShade(i)}
+                    aria-label="Remove shade"
+                    className="cursor-pointer shrink-0 w-9 h-9 rounded-lg border border-[#e2ddd5] text-[#a39e96] hover:text-[#D4300F] hover:border-red-200 hover:bg-red-50 transition-colors flex items-center justify-center"
+                  >
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <line x1="18" y1="6" x2="6" y2="18" />
+                      <line x1="6" y1="6" x2="18" y2="18" />
+                    </svg>
+                  </button>
+                </div>
+              ))}
+            </div>
+            {errors.shades && <p className="text-[11px] font-medium text-[#D4300F] mt-1">{errors.shades}</p>}
+            <p className="text-[10px] text-[#a39e96] mt-1">Up to {MAX_SHADES} shades per color.</p>
           </div>
 
           <Field label="Additional cost (optional)">
@@ -268,21 +318,11 @@ export default function ColorModal({
               min={0}
               step="0.01"
               value={additionalCost}
-              onChange={(e) => setAdditionalCost(e.target.value === "" ? "" : Number(e.target.value))}
+              onChange={(e) => setAdditionalCost(e.target.value)}
               placeholder="0.00"
               className="w-full text-sm font-medium text-[#1c1a17] bg-[#f7f5f1] border border-[#e2ddd5] rounded-xl px-3 py-2.5 outline-none transition-all focus:bg-white"
             />
           </Field>
-
-          <label className="flex items-center gap-1.5 cursor-pointer text-[12px] font-semibold text-[#4a4640] pt-1">
-            <input
-              type="checkbox"
-              checked={isDualTone}
-              onChange={(e) => setIsDualTone(e.target.checked)}
-              className="cursor-pointer accent-[#D4300F]"
-            />
-            Dual tone
-          </label>
 
           {serverError && (
             <div className="flex items-center gap-2 bg-red-50 border border-red-100 rounded-lg px-3.5 py-2.5">

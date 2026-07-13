@@ -33,6 +33,9 @@ export const imageListQuerySchema = z.object({
   // variant (a CarImage's variantId is nullable — null means "applies
   // to the model generally, not one particular variant").
   variantId: z.coerce.number().int().positive().optional(),
+  // Or narrow to images tagged with one specific color (colorId is
+  // nullable the same way — null means "not tied to a particular color").
+  colorId: z.coerce.number().int().positive().optional(),
   angle: z.enum(ANGLES).optional(),
   isPrimary: z.coerce.boolean().optional(),
   sortBy: z.enum(['id', 'isPrimary']).default('id'),
@@ -46,6 +49,7 @@ export const imageIdParamSchema = z.object({
 export const createImageSchema = z.object({
   modelId: z.coerce.number().int().positive('modelId is required'),
   variantId: z.coerce.number().int().positive().optional(),
+  colorId: z.coerce.number().int().positive().optional(),
   isPrimary: booleanish.optional(),
   angle: z.enum(ANGLES).optional(),
 });
@@ -54,6 +58,7 @@ export const updateImageSchema = z
   .object({
     modelId: z.coerce.number().int().positive().optional(),
     variantId: z.coerce.number().int().positive().nullable().optional(),
+    colorId: z.coerce.number().int().positive().nullable().optional(),
     isPrimary: booleanish.optional(),
     angle: z.enum(ANGLES).nullable().optional(),
   })
@@ -65,7 +70,19 @@ export const setPrimaryImageSchema = z.object({
   isPrimary: z.boolean(),
 });
 
+// POST /images/bulk — same scoping fields as a single create, applied to
+// every file in the batch. isPrimary is deliberately not offered here:
+// "which one photo is the cover shot" should stay an explicit single
+// choice made afterwards, not implied by upload order.
+export const bulkCreateImagesSchema = z.object({
+  modelId: z.coerce.number().int().positive('modelId is required'),
+  variantId: z.coerce.number().int().positive().optional(),
+  colorId: z.coerce.number().int().positive().optional(),
+  angle: z.enum(ANGLES).optional(),
+});
+
 export type ImageListQueryParsed = z.infer<typeof imageListQuerySchema>;
 export type CreateImageParsed = z.infer<typeof createImageSchema>;
 export type UpdateImageParsed = z.infer<typeof updateImageSchema>;
 export type SetPrimaryImageParsed = z.infer<typeof setPrimaryImageSchema>;
+export type BulkCreateImagesParsed = z.infer<typeof bulkCreateImagesSchema>;

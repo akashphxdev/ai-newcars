@@ -3,31 +3,23 @@ import { useRef, useState } from "react";
 import {
   useCreateOfferMutation,
   useUpdateOfferMutation,
-  OFFER_TYPES,
+  useUploadOfferImageMutation,
   type OfferRecord,
-  type OfferTypeValue,
 } from "./offer.api";
 import { useGetCarModelsQuery } from "../carModels/carModel.api";
 import { useGetVariantsQuery } from "../Variants/variant.api";
 import { useGetCitiesQuery } from "../../Locations/Cities/city.api";
-import { extractApiError } from "../../../lib/apiClient";
+import { OFFER_TYPE_OPTIONS } from "../../../lib/lookups";
+import { extractApiError, getUploadUrl } from "../../../lib/apiClient";
 
 const ACCENT = "#D4300F";
 
-const OFFER_TYPE_LABELS: Record<OfferTypeValue, string> = {
-  cash_discount: "Cash discount",
-  exchange_bonus: "Exchange bonus",
-  corporate_discount: "Corporate discount",
-  loyalty_bonus: "Loyalty bonus",
-  finance_offer: "Finance offer",
-  other: "Other",
-};
-
-// modelId and isActive are the only truly required fields — variant,
-// city, offerType, amount, description and dates are all optional,
-// mirroring the schema's own nullable columns.
+// modelId, image, and isActive are the only truly required fields —
+// variant, city, offerType, amount, description and dates are all
+// optional, mirroring the schema's own nullable columns.
 interface FieldErrors {
   modelId?: string;
+  image?: string;
   offerAmount?: string;
   validUntil?: string;
 }
@@ -85,9 +77,7 @@ export default function OfferModal({
 
   const [variantId, setVariantId] = useState<number | "">(offer?.variantId ?? "");
   const [cityId, setCityId] = useState<number | "">(offer?.cityId ?? "");
-  const [offerType, setOfferType] = useState<OfferTypeValue | "">(
-    (offer?.offerType as OfferTypeValue) ?? "",
-  );
+  const [offerType, setOfferType] = useState<number | "">(offer?.offerType ?? "");
   const [offerAmount, setOfferAmount] = useState(offer?.offerAmount ?? "");
   const [description, setDescription] = useState(offer?.description ?? "");
   const [validFrom, setValidFrom] = useState(toDateInputValue(offer?.validFrom ?? null));
@@ -104,7 +94,49 @@ export default function OfferModal({
   const [updateOffer, { isLoading: updating }] = useUpdateOfferMutation();
   const saving = creating || updating;
 
+  // Image is required on create — same upload mechanics as
+  // BrandModal.tsx's logo (instant re-upload in edit mode via a
+  // dedicated mutation; held in local state and sent with the form on
+  // create mode).
+  const [uploadOfferImage, { isLoading: uploadingImage }] = useUploadOfferImageMutation();
+  const [imageUrl, setImageUrl] = useState<string | null>(offer?.imageUrl ?? null);
+  const [pendingImageFile, setPendingImageFile] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [imageError, setImageError] = useState("");
+  const imageInputRef = useRef<HTMLInputElement>(null);
+
+  const handleImageSelect = async (file: File | undefined) => {
+    if (!file) return;
+    setImageError("");
+
+    if (!isEditMode) {
+      // Create mode: nothing to upload yet — just hold the file and
+      // preview it. Actual upload happens on form submit.
+      setPendingImageFile(file);
+      setImagePreview(URL.createObjectURL(file));
+      return;
+    }
+
+    if (!offer) return;
+
+    // Edit mode: instant local preview while the upload is in flight.
+    const objectUrl = URL.createObjectURL(file);
+    setImagePreview(objectUrl);
+
+    try {
+      const result = await uploadOfferImage({ id: offer.id, file }).unwrap();
+      setImageUrl(result.imageUrl);
+    } catch (err) {
+      setImageError(extractApiError(err));
+    } finally {
+      URL.revokeObjectURL(objectUrl);
+      setImagePreview(null);
+      if (imageInputRef.current) imageInputRef.current.value = "";
+    }
+  };
+
   const resetForm = () => {
+    if (imagePreview) URL.revokeObjectURL(imagePreview);
     setModelId("");
     setVariantId("");
     setCityId("");
@@ -116,6 +148,9 @@ export default function OfferModal({
     setIsActive(true);
     setErrors({});
     setServerError("");
+    setPendingImageFile(null);
+    setImagePreview(null);
+    setImageError("");
   };
 
   if (!open) return null;
@@ -128,6 +163,11 @@ export default function OfferModal({
   const validate = (): boolean => {
     const next: FieldErrors = {};
     if (!modelId) next.modelId = "Car model is required.";
+    // Image is required on create. In edit mode an image already
+    // exists (or was uploaded separately above) — nothing to validate.
+    if (!isEditMode && !pendingImageFile) {
+      next.image = "Offer image is required.";
+    }
     if (offerAmount !== "" && Number(offerAmount) <= 0) {
       next.offerAmount = "Offer amount must be greater than 0.";
     }
@@ -143,13 +183,11 @@ export default function OfferModal({
     setServerError("");
     if (!validate()) return;
 
-    // validate() above already guarantees modelId is set — the cast here
-    // just satisfies TypeScript.
-    const payload = {
+    const formFields = {
       modelId: Number(modelId),
       variantId: variantId ? Number(variantId) : null,
       cityId: cityId ? Number(cityId) : null,
-      offerType: offerType || null,
+      offerType: offerType === "" ? null : Number(offerType),
       offerAmount: offerAmount === "" ? null : Number(offerAmount),
       description: description.trim() || null,
       validFrom: validFrom || null,
@@ -159,9 +197,11 @@ export default function OfferModal({
 
     try {
       if (isEditMode && offer) {
-        await updateOffer({ id: offer.id, input: payload }).unwrap();
+        await updateOffer({ id: offer.id, input: formFields }).unwrap();
       } else {
-        await createOffer(payload).unwrap();
+        // pendingImageFile is guaranteed non-null here — validate()
+        // above already blocked submission without one in create mode.
+        await createOffer({ ...formFields, image: pendingImageFile as File }).unwrap();
       }
       resetForm();
       onClose();
@@ -184,7 +224,7 @@ export default function OfferModal({
               {isEditMode ? "Edit offer" : "Add offer"}
             </h2>
             <p className="text-[#a39e96] text-xs mt-1">
-              {isEditMode ? "Update this offer's details" : "Car model is required; the rest are optional."}
+              {isEditMode ? "Update this offer's details" : "Car model and image are required; the rest are optional."}
             </p>
           </div>
           <button
@@ -201,6 +241,47 @@ export default function OfferModal({
         </div>
 
         <form onSubmit={handleSubmit} className="px-6 pb-6 pt-5 space-y-4" noValidate>
+          <div className="flex items-center gap-3 pb-1">
+            <div
+              className="w-14 h-14 rounded-xl border bg-[#f7f5f1] overflow-hidden flex items-center justify-center shrink-0"
+              style={{ borderColor: errors.image ? "#f0997b" : "#e2ddd5" }}
+            >
+              {imagePreview || imageUrl ? (
+                <img
+                  src={imagePreview ?? getUploadUrl(imageUrl) ?? undefined}
+                  alt={isEditMode ? "Offer image" : "Offer image preview"}
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#c0bab0" strokeWidth="2">
+                  <rect x="3" y="3" width="18" height="18" rx="2" />
+                  <circle cx="9" cy="9" r="2" />
+                  <path d="m21 15-5-5L5 21" />
+                </svg>
+              )}
+            </div>
+            <div>
+              <button
+                type="button"
+                onClick={() => imageInputRef.current?.click()}
+                disabled={uploadingImage}
+                className="cursor-pointer text-[11px] font-bold px-3 py-1.5 rounded-lg border border-[#e2ddd5] text-[#4a4640] hover:bg-[#f7f5f1] transition-colors disabled:opacity-50"
+              >
+                {uploadingImage ? "Uploading..." : imageUrl || pendingImageFile ? "Change image" : "Upload image"}
+              </button>
+              <input
+                ref={imageInputRef}
+                type="file"
+                accept="image/jpeg,image/png,image/webp"
+                onChange={(e) => handleImageSelect(e.target.files?.[0])}
+                className="hidden"
+              />
+              <p className="text-[10px] text-[#a39e96] mt-1">JPG, PNG or WEBP, up to 2MB.</p>
+              {errors.image && <p className="text-[11px] font-medium text-[#D4300F] mt-1">{errors.image}</p>}
+              {imageError && <p className="text-[11px] font-medium text-[#D4300F] mt-1">{imageError}</p>}
+            </div>
+          </div>
+
           <Field label="Car model">
             <select
               value={modelId}
@@ -262,14 +343,14 @@ export default function OfferModal({
             <Field label="Offer type" optional>
               <select
                 value={offerType}
-                onChange={(e) => setOfferType((e.target.value as OfferTypeValue) || "")}
+                onChange={(e) => setOfferType(e.target.value ? Number(e.target.value) : "")}
                 className={selectClass}
                 style={{ borderColor: "#e2ddd5" }}
               >
                 <option value="">Select type</option>
-                {OFFER_TYPES.map((t) => (
-                  <option key={t} value={t}>
-                    {OFFER_TYPE_LABELS[t]}
+                {OFFER_TYPE_OPTIONS.map((t) => (
+                  <option key={t.value} value={t.value}>
+                    {t.label}
                   </option>
                 ))}
               </select>

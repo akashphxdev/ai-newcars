@@ -22,8 +22,8 @@ export async function getColorById(req: Request, res: Response) {
 }
 
 // POST /colors
-// Image is optional on create — many colors are represented by
-// colorHex alone with no swatch photo.
+// Image is optional on create — many colors are represented by name (+
+// shade hex codes) alone with no swatch photo.
 export async function createColor(req: Request, res: Response) {
   if (!req.auth) {
     throw ApiError.unauthorized();

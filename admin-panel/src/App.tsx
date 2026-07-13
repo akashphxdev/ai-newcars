@@ -24,6 +24,11 @@ import AllFeatures from "./pages/newCars/Features/AllFeatures";
 import AllFaqs from "./pages/newCars/Faqs/AllFaqs";
 import AllOffers from "./pages/newCars/Offers/AllOffers";
 import AllVideos from "./pages/newCars/Videos/AllVideos";
+import AllBodyTypes from "./pages/newCars/BodyTypes/AllBodyTypes";
+import AllAttributeOptions from "./pages/newCars/AttributeOptions/AllAttributeOptions";
+import AllArticleCategories from "./pages/Articles/ArticleCategories/AllArticleCategories";
+import AllArticleComments from "./pages/Articles/ArticleComments/AllArticleComments";
+// import AllArticles from "./pages/Articles/Articles/AllArticles";
 // ── Auth guard — baad mein real auth logic lagao ──────────────────────────────
 function RequireAuth({ children }: { children: React.ReactNode }) {
   const isLoggedIn = !!localStorage.getItem("admin_token"); // apna auth check yahan
@@ -67,6 +72,12 @@ export default function App() {
           <Route path ="/new-cars/offers" element={<AllOffers/>}/>
           <Route path ="/new-cars/faqs" element={<AllFaqs/>}/>
           <Route path ="/new-cars/videos" element={<AllVideos/>}/>
+          <Route path ="/new-cars/body-types" element={<AllBodyTypes/>}/>
+          <Route path ="/new-cars/attribute-options" element={<AllAttributeOptions/>}/>
+
+          <Route path ="/articles/category" element={<AllArticleCategories/>}/>
+          {/* <Route path ="/articles/all-articles" element={<AllArticles/>}/> */}
+          <Route path ="articles/article-comments" element={<AllArticleComments/>}/>
  
 
            

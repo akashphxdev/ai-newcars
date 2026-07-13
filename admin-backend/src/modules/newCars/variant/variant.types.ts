@@ -1,11 +1,17 @@
 // src/modules/newCars/variant/variant.types.ts
 
-import type { TransmissionType } from './variant.validation';
-
 export interface VariantModelSummary {
   id: number;
   name: string;
   brand: { id: number; name: string };
+}
+
+// Minimal shape returned for the linked transmission attribute option —
+// mirrors AttributeOptionItem in attributeOption.types.ts.
+export interface VariantTransmissionSummary {
+  id: number;
+  name: string;
+  slug: string;
 }
 
 export interface VariantRecord {
@@ -16,7 +22,8 @@ export interface VariantRecord {
   // convention as CarModel's priceMin/priceMax.
   price: string;
   seatingCapacity: number;
-  transmission: TransmissionType;
+  transmissionId: number;
+  transmission: VariantTransmissionSummary;
   isTopSeller: boolean;
   createdAt: Date;
   model: VariantModelSummary;

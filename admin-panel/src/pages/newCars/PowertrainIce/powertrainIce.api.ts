@@ -1,9 +1,15 @@
 // src/pages/newCars/PowertrainIce/powertrainIce.api.ts
 import { api } from "../../../store/baseApi";
 
-export type FuelType = "petrol" | "diesel" | "cng" | "lpg" | "hybrid";
-export type IceTransmissionType = "manual" | "automatic" | "amt" | "cvt" | "dct";
-export type Drivetrain = "FWD" | "RWD" | "AWD" | "4WD";
+// Numeric code — see FUEL_TYPE_OPTIONS in lib/lookups.ts for the
+// label mapping. Mirrors FUEL_TYPE_CODES in the backend.
+export type FuelType = 1 | 2 | 3 | 4 | 5;
+
+export interface AttributeOptionSummary {
+  id: number;
+  name: string;
+  slug: string;
+}
 
 export interface PowertrainIceVariantSummary {
   id: number;
@@ -15,8 +21,6 @@ export interface PowertrainIceRecord {
   id: number;
   variantId: number;
   fuelType: FuelType;
-  // Decimal fields come back from Prisma serialized as strings — same
-  // convention as VariantRecord's price.
   fuelTypeSubCategory: string | null;
   fuelTankCapacity: string | null;
   cngTankCapacity: string | null;
@@ -25,12 +29,14 @@ export interface PowertrainIceRecord {
   cubicCapacity: number | null;
   cylinders: number | null;
   cylinderCapacity: string | null;
-  transmissionType: IceTransmissionType | null;
+  transmissionTypeId: number | null;
+  transmissionType: AttributeOptionSummary | null;
   transmissionSubType: string | null;
   transmissionSpeed: number | null;
   numGears: number | null;
   isFourByFour: boolean;
-  drivetrain: Drivetrain | null;
+  drivetrainId: number | null;
+  drivetrain: AttributeOptionSummary | null;
   powerPs: number | null;
   powerMinRpm: number | null;
   powerMaxRpm: number | null;
@@ -57,6 +63,24 @@ export interface PowertrainIceRecord {
   variant: PowertrainIceVariantSummary;
 }
 
+// What GET /new-cars/powertrains/ice (listing) actually returns — just the
+// table-visible fields. Full spec sheet comes from getPowertrainIceById,
+// fetched on demand when a row is expanded.
+export interface PowertrainIceListItem {
+  id: number;
+  variantId: number;
+  fuelType: FuelType;
+  fuelTypeSubCategory: string | null;
+  engineDisplacement: string | null;
+  powerPs: number | null;
+  torqueNm: number | null;
+  transmissionType: AttributeOptionSummary | null;
+  isDefault: boolean;
+  isDeleted: boolean;
+  createdAt: string;
+  variant: PowertrainIceVariantSummary;
+}
+
 export interface Pagination {
   page: number;
   limit: number;
@@ -75,9 +99,6 @@ export interface ListPowertrainIceParams {
   sortOrder?: "asc" | "desc";
 }
 
-// Only variantId + fuelType are mandatory — every other spec field is
-// optional and filled in progressively, unlike Variant's "everything
-// required" form. Update is a partial patch (subset of this shape).
 export interface PowertrainIceFormInput {
   variantId: number;
   fuelType: FuelType;
@@ -89,12 +110,12 @@ export interface PowertrainIceFormInput {
   cubicCapacity?: number | null;
   cylinders?: number | null;
   cylinderCapacity?: number | null;
-  transmissionType?: IceTransmissionType | null;
+  transmissionTypeId?: number | null;
   transmissionSubType?: string | null;
   transmissionSpeed?: number | null;
   numGears?: number | null;
   isFourByFour?: boolean;
-  drivetrain?: Drivetrain | null;
+  drivetrainId?: number | null;
   powerPs?: number | null;
   powerMinRpm?: number | null;
   powerMaxRpm?: number | null;
@@ -117,7 +138,7 @@ export interface PowertrainIceFormInput {
 
 interface PowertrainIceListRawResponse {
   success: true;
-  data: PowertrainIceRecord[];
+  data: PowertrainIceListItem[];
   pagination: Pagination;
 }
 
@@ -127,7 +148,7 @@ interface PowertrainIceSingleRawResponse {
 }
 
 export interface PowertrainIceListResult {
-  data: PowertrainIceRecord[];
+  data: PowertrainIceListItem[];
   pagination: Pagination;
 }
 
@@ -159,15 +180,11 @@ export const powertrainIceApi = api.injectEndpoints({
       invalidatesTags: [POWERTRAIN_ICE_LIST_TAG],
     }),
 
-    // Partial update — only the fields present in `input` are sent.
-    updatePowertrainIce: builder.mutation<
-      PowertrainIceRecord,
-      { id: number; input: Partial<PowertrainIceFormInput> }
-    >({
-      query: ({ id, input }) => ({ url: `/new-cars/powertrains/ice/${id}`, method: "PATCH", data: input }),
-      transformResponse: (res: PowertrainIceSingleRawResponse) => res.data,
-      invalidatesTags: (_result, _error, { id }) => [{ type: "PowertrainIce", id }, POWERTRAIN_ICE_LIST_TAG],
-    }),
+    updatePowertrainIce: builder.mutation<PowertrainIceRecord, { id: number; input: Partial<PowertrainIceFormInput> }>({
+        query: ({ id, input }) => ({ url: `/new-cars/powertrains/ice/${id}`, method: "PATCH", data: input }),
+        transformResponse: (res: PowertrainIceSingleRawResponse) => res.data,
+        invalidatesTags: (_result, _error, { id }) => [{ type: "PowertrainIce", id }, POWERTRAIN_ICE_LIST_TAG],
+      }),
 
     restorePowertrainIce: builder.mutation<void, number>({
       query: (id) => ({ url: `/new-cars/powertrains/ice/${id}/restore`, method: "PATCH" }),

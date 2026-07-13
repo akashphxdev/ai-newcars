@@ -2,14 +2,15 @@
 import { useState } from "react";
 import {
   useGetVideosQuery,
+  useUpdateVideoStatusMutation,
   useDeleteVideoMutation,
-  VIDEO_TYPES,
   type VideoRecord,
-  type VideoTypeValue,
 } from "./video.api";
 import { useGetCarModelsQuery } from "../carModels/carModel.api";
-import { extractApiError } from "../../../lib/apiClient";
+import { VIDEO_TYPE_OPTIONS, getVideoTypeLabel } from "../../../lib/lookups";
+import { extractApiError, getUploadUrl } from "../../../lib/apiClient";
 import VideoModal from "./VideoModal";
+import ConfirmDialog from "../../../components/common/ConfirmDialog";
 import DataTable, { type DataTableColumn } from "../../../components/common/DataTable";
 import Pagination from "../../../components/common/Pagination";
 import { SearchFilterBar, SearchInput, FilterSelect } from "../../../components/common/SearchFilterBar";
@@ -17,20 +18,46 @@ import { SearchFilterBar, SearchInput, FilterSelect } from "../../../components/
 const ACCENT = "#D4300F";
 const PAGE_SIZE = 20;
 
-const VIDEO_TYPE_OPTIONS: { value: VideoTypeValue; label: string }[] = VIDEO_TYPES.map((t) => ({
-  value: t,
-  label: t.charAt(0).toUpperCase() + t.slice(1),
-}));
+const STATUS_OPTIONS: { value: "true" | "false"; label: string }[] = [
+  { value: "true", label: "Active" },
+  { value: "false", label: "Inactive" },
+];
 
-function formatDuration(seconds: number | null): string {
-  if (!seconds) return "—";
+// Small pill-style toggle switch — same pattern as AllBrands.tsx's / AllFaqs.tsx's StatusToggle.
+function StatusToggle({
+  checked,
+  onChange,
+  disabled,
+}: {
+  checked: boolean;
+  onChange: () => void;
+  disabled?: boolean;
+}) {
+  return (
+    <button
+      type="button"
+      role="switch"
+      aria-checked={checked}
+      onClick={onChange}
+      disabled={disabled}
+      className="cursor-pointer relative inline-flex h-5 w-9 items-center rounded-full transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+      style={{ background: checked ? ACCENT : "#e2ddd5" }}
+    >
+      <span
+        className="inline-block h-3.5 w-3.5 transform rounded-full bg-white shadow transition-transform"
+        style={{ transform: checked ? "translateX(18px)" : "translateX(3px)" }}
+      />
+    </button>
+  );
+}
+
+function formatDuration(seconds: number): string {
   const m = Math.floor(seconds / 60);
   const s = seconds % 60;
   return `${m}:${String(s).padStart(2, "0")}`;
 }
 
-function formatDate(value: string | null): string {
-  if (!value) return "—";
+function formatDate(value: string): string {
   return new Date(value).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" });
 }
 
@@ -38,7 +65,8 @@ export default function AllVideos() {
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState("");
   const [filterModelId, setFilterModelId] = useState<number | "">("");
-  const [filterVideoType, setFilterVideoType] = useState<VideoTypeValue | "">("");
+  const [filterVideoType, setFilterVideoType] = useState<number | "">("");
+  const [filterStatus, setFilterStatus] = useState<"true" | "false" | "">("");
 
   // NOTE: same 100-row cap used elsewhere — fine while the car-models
   // table stays under 100 rows.
@@ -56,6 +84,7 @@ export default function AllVideos() {
     search: search || undefined,
     modelId: filterModelId || undefined,
     videoType: filterVideoType || undefined,
+    isActive: filterStatus === "" ? undefined : filterStatus === "true",
   });
 
   const videos = videosData?.data ?? [];
@@ -82,15 +111,33 @@ export default function AllVideos() {
     setEditingVideo(null);
   };
 
+  const [updateVideoStatus] = useUpdateVideoStatusMutation();
   const [deleteVideo] = useDeleteVideoMutation();
+
+  const [togglingId, setTogglingId] = useState<number | null>(null);
   const [deletingId, setDeletingId] = useState<number | null>(null);
+  const [pendingDelete, setPendingDelete] = useState<VideoRecord | null>(null);
   const [actionError, setActionError] = useState("");
 
-  const handleDelete = async (id: number) => {
+  const handleToggleStatus = async (video: VideoRecord) => {
     setActionError("");
-    setDeletingId(id);
+    setTogglingId(video.id);
     try {
-      await deleteVideo(id).unwrap();
+      await updateVideoStatus({ id: video.id, isActive: !video.isActive }).unwrap();
+    } catch (err) {
+      setActionError(extractApiError(err));
+    } finally {
+      setTogglingId(null);
+    }
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!pendingDelete) return;
+    setActionError("");
+    setDeletingId(pendingDelete.id);
+    try {
+      await deleteVideo(pendingDelete.id).unwrap();
+      setPendingDelete(null);
     } catch (err) {
       setActionError(extractApiError(err));
     } finally {
@@ -103,18 +150,20 @@ export default function AllVideos() {
       header: "Video",
       render: (v) => (
         <div className="flex items-center gap-2.5">
-          {v.thumbnailUrl ? (
-            <img src={v.thumbnailUrl} alt="" className="w-14 h-9 rounded-md object-cover bg-[#f7f5f1]" />
+          {getUploadUrl(v.thumbnailUrl) ? (
+            <img
+              src={getUploadUrl(v.thumbnailUrl)!}
+              alt=""
+              className="w-14 h-9 rounded-md object-cover bg-[#f7f5f1]"
+            />
           ) : (
             <div className="w-14 h-9 rounded-md bg-[#f7f5f1]" />
           )}
           <div>
             <p className="font-semibold text-[#1c1a17]">{v.title}</p>
-            {v.videoType && (
-              <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-[#f7f5f1] text-[#4a4640] uppercase">
-                {v.videoType}
-              </span>
-            )}
+            <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-[#f7f5f1] text-[#4a4640] uppercase">
+              {getVideoTypeLabel(v.videoType)}
+            </span>
           </div>
         </div>
       ),
@@ -131,6 +180,21 @@ export default function AllVideos() {
     { header: "Views", render: (v) => <span className="text-[#7a7670]">{v.viewCount.toLocaleString("en-IN")}</span> },
     { header: "Published", render: (v) => <span className="text-[#7a7670] whitespace-nowrap text-xs">{formatDate(v.publishedAt)}</span> },
     {
+      header: "Status",
+      render: (v) => (
+        <div className="flex items-center gap-2">
+          <StatusToggle
+            checked={v.isActive}
+            disabled={togglingId === v.id}
+            onChange={() => handleToggleStatus(v)}
+          />
+          <span className={`text-[10px] font-bold ${v.isActive ? "text-green-600" : "text-[#a39e96]"}`}>
+            {v.isActive ? "Active" : "Inactive"}
+          </span>
+        </div>
+      ),
+    },
+    {
       header: "",
       align: "right",
       render: (v) => (
@@ -142,11 +206,10 @@ export default function AllVideos() {
             Edit
           </button>
           <button
-            onClick={() => handleDelete(v.id)}
-            disabled={deletingId === v.id}
-            className="cursor-pointer text-[10px] font-bold px-2.5 py-1 rounded-lg border border-red-100 text-red-500 hover:bg-red-50 transition-colors disabled:opacity-50"
+            onClick={() => setPendingDelete(v)}
+            className="cursor-pointer text-[10px] font-bold px-2.5 py-1 rounded-lg border border-red-100 text-red-500 hover:bg-red-50 transition-colors"
           >
-            {deletingId === v.id ? "..." : "Delete"}
+            Delete
           </button>
         </div>
       ),
@@ -159,7 +222,7 @@ export default function AllVideos() {
         <div>
           <h1 className="text-[18px] font-black text-[#1c1a17]">Videos</h1>
           <p className="text-[12px] text-[#a39e96] mt-0.5">
-            Manage videos under each car model. Title, URL and model are required.
+            Manage videos under each car model. All fields are required when adding or editing.
           </p>
         </div>
         <button
@@ -207,11 +270,20 @@ export default function AllVideos() {
         <FilterSelect
           value={filterVideoType}
           onChange={(v) => {
-            setFilterVideoType((v as VideoTypeValue) || "");
+            setFilterVideoType(v ? Number(v) : "");
             setPage(1);
           }}
           options={VIDEO_TYPE_OPTIONS}
           placeholder="All types"
+        />
+        <FilterSelect
+          value={filterStatus}
+          onChange={(v) => {
+            setFilterStatus((v as "true" | "false") || "");
+            setPage(1);
+          }}
+          options={STATUS_OPTIONS}
+          placeholder="All statuses"
         />
       </SearchFilterBar>
 
@@ -236,6 +308,15 @@ export default function AllVideos() {
           video={editingVideo}
         />
       )}
+
+      <ConfirmDialog
+        open={!!pendingDelete}
+        title="Delete video?"
+        itemName={pendingDelete?.title}
+        loading={deletingId === pendingDelete?.id}
+        onCancel={() => setPendingDelete(null)}
+        onConfirm={handleConfirmDelete}
+      />
     </div>
   );
 }

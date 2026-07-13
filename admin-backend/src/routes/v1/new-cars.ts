@@ -11,6 +11,8 @@ import featureRoute from '@/modules/newCars/feature/feature.routes'
 import faqRoute from '@/modules/newCars/faq/faq.routes'
 import offerRoute from '@/modules/newCars/offer/offer.routes'
 import videoRoute from '@/modules/newCars/video/video.routes'
+import bodyTypeRoute from '@/modules/newCars/bodyType/bodyType.routes'
+import attributeOptionRoute from '@/modules/newCars/attributeOption/attributeOption.routes'
 
 
 const router = Router();
@@ -18,6 +20,8 @@ const router = Router();
 router.use('/brands', brandRoute);
 router.use('/car-models', carModelRoute);
 router.use('/variants', variantRoute)
+router.use('/body-types', bodyTypeRoute)
+router.use('/attribute-options', attributeOptionRoute)
 router.use('/powertrains/electric', powertrainElectricRoute)
 router.use('/powertrains/ice', powertrainice)
 router.use('/colors', colorRoute)

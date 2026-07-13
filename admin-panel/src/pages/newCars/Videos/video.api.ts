@@ -1,23 +1,17 @@
 // src/pages/newCars/Videos/video.api.ts
 import { api } from "../../../store/baseApi";
 
-// Free-text on the DB (VARCHAR(30), no enum) — this list is just the
-// suggested set shown in the dropdown, not a hard constraint (same
-// convention as offer.api.ts's OFFER_TYPES).
-export const VIDEO_TYPES = ["review", "teaser", "walkaround", "comparison", "launch", "other"] as const;
-
-export type VideoTypeValue = (typeof VIDEO_TYPES)[number];
-
 export interface VideoRecord {
   id: number;
   modelId: number;
   title: string;
-  videoType: string | null;
+  videoType: number;
   videoUrl: string;
-  thumbnailUrl: string | null;
-  durationSeconds: number | null;
+  thumbnailUrl: string;
+  durationSeconds: number;
   viewCount: number;
-  publishedAt: string | null;
+  publishedAt: string;
+  isActive: boolean;
   createdAt: string;
   model: { id: number; name: string; brand: { id: number; name: string } };
 }
@@ -34,23 +28,35 @@ export interface ListVideosParams {
   limit?: number;
   search?: string;
   modelId?: number;
-  videoType?: string;
+  videoType?: number;
+  isActive?: boolean;
   sortBy?: "title" | "id" | "viewCount" | "publishedAt" | "createdAt";
   sortOrder?: "asc" | "desc";
 }
 
-// modelId, title and videoUrl are the only mandatory fields — the rest
-// mirror the schema's own nullability. viewCount is server-managed and
-// intentionally not part of this shape. Full replace on edit too — same
-// convention as FaqFormInput / VariantFormInput / OfferFormInput.
-export interface VideoFormInput {
+// Every field is required — matches faq.api.ts's "all fields mandatory"
+// convention. Thumbnail is required on create (multipart upload) and is
+// replaced via a dedicated endpoint on edit — same split as
+// brand.api.ts's logo.
+export interface CreateVideoInput {
   modelId: number;
   title: string;
-  videoType: string | null;
+  videoType: number;
   videoUrl: string;
-  thumbnailUrl: string | null;
-  durationSeconds: number | null;
-  publishedAt: string | null;
+  durationSeconds: number;
+  publishedAt: string;
+  isActive: boolean;
+  thumbnail: File;
+}
+
+export interface UpdateVideoInput {
+  modelId: number;
+  title: string;
+  videoType: number;
+  videoUrl: string;
+  durationSeconds: number;
+  publishedAt: string;
+  isActive: boolean;
 }
 
 interface VideoListRawResponse {
@@ -91,15 +97,50 @@ export const videoApi = api.injectEndpoints({
       providesTags: (_result, _error, id) => [{ type: "Video", id }],
     }),
 
-    createVideo: builder.mutation<VideoRecord, VideoFormInput>({
-      query: (body) => ({ url: "/new-cars/videos", method: "POST", data: body }),
+    createVideo: builder.mutation<VideoRecord, CreateVideoInput>({
+      query: ({ thumbnail, ...fields }) => {
+        const formData = new FormData();
+        formData.append("modelId", String(fields.modelId));
+        formData.append("title", fields.title);
+        formData.append("videoType", String(fields.videoType));
+        formData.append("videoUrl", fields.videoUrl);
+        formData.append("durationSeconds", String(fields.durationSeconds));
+        formData.append("publishedAt", fields.publishedAt);
+        formData.append("isActive", String(fields.isActive));
+        formData.append("thumbnail", thumbnail);
+        return { url: "/new-cars/videos", method: "POST", data: formData };
+      },
       transformResponse: (res: VideoSingleRawResponse) => res.data,
       invalidatesTags: [VIDEO_LIST_TAG],
     }),
 
-    updateVideo: builder.mutation<VideoRecord, { id: number; input: VideoFormInput }>({
+    updateVideo: builder.mutation<VideoRecord, { id: number; input: UpdateVideoInput }>({
       query: ({ id, input }) => ({ url: `/new-cars/videos/${id}`, method: "PATCH", data: input }),
       transformResponse: (res: VideoSingleRawResponse) => res.data,
+      invalidatesTags: (_result, _error, { id }) => [{ type: "Video", id }, VIDEO_LIST_TAG],
+    }),
+
+    // Lightweight row-level Active/Inactive toggle — separate from the
+    // full edit mutation so flipping the switch doesn't need the whole
+    // edit form's payload.
+    updateVideoStatus: builder.mutation<VideoRecord, { id: number; isActive: boolean }>({
+      query: ({ id, isActive }) => ({
+        url: `/new-cars/videos/${id}/status`,
+        method: "PATCH",
+        data: { isActive },
+      }),
+      transformResponse: (res: VideoSingleRawResponse) => res.data,
+      invalidatesTags: (_result, _error, { id }) => [{ type: "Video", id }, VIDEO_LIST_TAG],
+    }),
+
+    // Thumbnail replace — same pattern as brand.api.ts's uploadBrandLogo.
+    uploadVideoThumbnail: builder.mutation<{ id: number; thumbnailUrl: string }, { id: number; file: File }>({
+      query: ({ id, file }) => {
+        const formData = new FormData();
+        formData.append("thumbnail", file);
+        return { url: `/new-cars/videos/${id}/thumbnail`, method: "PATCH", data: formData };
+      },
+      transformResponse: (res: { success: true; data: { id: number; thumbnailUrl: string } }) => res.data,
       invalidatesTags: (_result, _error, { id }) => [{ type: "Video", id }, VIDEO_LIST_TAG],
     }),
 
@@ -115,5 +156,7 @@ export const {
   useGetVideoByIdQuery,
   useCreateVideoMutation,
   useUpdateVideoMutation,
+  useUpdateVideoStatusMutation,
+  useUploadVideoThumbnailMutation,
   useDeleteVideoMutation,
 } = videoApi;

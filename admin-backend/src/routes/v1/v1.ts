@@ -5,6 +5,7 @@ import authRoutes from '@/modules/auth/auth.routes';
 import adminsRoutes from './admin-users';
 import locationsRoutes from './locations'
 import NewCarsRoutes from './new-cars'
+import ArticlesRoutes from './articles'
 
 const router = Router();
 
@@ -13,5 +14,6 @@ router.use('/auth', authRoutes);
 router.use('/admin-users', adminsRoutes);
 router.use('/locations', locationsRoutes);
 router.use('/new-cars', NewCarsRoutes)
+router.use('/articles', ArticlesRoutes)
 
 export default router;

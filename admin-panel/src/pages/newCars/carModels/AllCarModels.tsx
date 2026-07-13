@@ -44,14 +44,17 @@ function formatPrice(value: string | null): string {
   return `₹${(num / 100000).toFixed(2)}L`;
 }
 
+// yyyy-mm-dd for the <input type="date"> element — mirrors CarModelModal's helper.
+function toDateInputValue(iso: string | null): string {
+  if (!iso) return "";
+  return iso.slice(0, 10);
+}
+
 export default function AllCarModels() {
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState("");
   const [filterBrandId, setFilterBrandId] = useState<number | "">("");
   const [filterLaunchStatus, setFilterLaunchStatus] = useState<LaunchStatus | "">("");
-
-  // NOTE: same 100-row cap as Brand's country dropdown — fine while the
-  // brands table stays under 100 rows.
   const { data: brandsData } = useGetBrandsQuery({ limit: 100, sortBy: "name", sortOrder: "asc" });
   const brands = brandsData?.data ?? [];
 
@@ -102,14 +105,64 @@ export default function AllCarModels() {
   const [pendingDelete, setPendingDelete] = useState<CarModelRecord | null>(null);
   const [actionError, setActionError] = useState("");
 
+  // When the row dropdown is switched to "Upcoming", we can't save right
+  // away — a launch date is required for that status. Instead we hold the
+  // pending change here and show a small inline prompt to collect the date
+  // before actually calling the mutation.
+  const [pendingUpcoming, setPendingUpcoming] = useState<CarModelRecord | null>(null);
+  const [upcomingDate, setUpcomingDate] = useState("");
+  const [upcomingDateError, setUpcomingDateError] = useState("");
+
   const handleLaunchStatusChange = async (carModel: CarModelRecord, launchStatus: LaunchStatus) => {
     if (launchStatus === carModel.launchStatus) return;
+
+    if (launchStatus === "upcoming") {
+      // Required field for this status — collect it before saving instead
+      // of firing the mutation straight away (the select stays showing the
+      // old status until the prompt is confirmed, since we haven't called
+      // the mutation yet).
+      setActionError("");
+      setPendingUpcoming(carModel);
+      setUpcomingDate(toDateInputValue(carModel.expectedLaunchDate));
+      setUpcomingDateError("");
+      return;
+    }
+
     setActionError("");
     setTogglingId(carModel.id);
     try {
       await updateLaunchStatus({ id: carModel.id, launchStatus }).unwrap();
     } catch (err) {
       setActionError(extractApiError(err));
+    } finally {
+      setTogglingId(null);
+    }
+  };
+
+  const handleCancelUpcomingDate = () => {
+    setPendingUpcoming(null);
+    setUpcomingDate("");
+    setUpcomingDateError("");
+  };
+
+  const handleConfirmUpcomingDate = async () => {
+    if (!pendingUpcoming) return;
+    if (!upcomingDate) {
+      setUpcomingDateError("Expected launch date is required.");
+      return;
+    }
+    setActionError("");
+    setTogglingId(pendingUpcoming.id);
+    try {
+      await updateLaunchStatus({
+        id: pendingUpcoming.id,
+        launchStatus: "upcoming",
+        expectedLaunchDate: upcomingDate,
+      }).unwrap();
+      setPendingUpcoming(null);
+      setUpcomingDate("");
+    } catch (err) {
+      setUpcomingDateError(extractApiError(err));
     } finally {
       setTogglingId(null);
     }
@@ -152,7 +205,7 @@ export default function AllCarModels() {
       ),
     },
     { header: "Brand", render: (cm) => <span className="text-[#7a7670]">{cm.brand.name}</span> },
-    { header: "Body type", render: (cm) => <span className="text-[#7a7670] capitalize">{cm.bodyType ?? "—"}</span> },
+    { header: "Body type", render: (cm) => <span className="text-[#7a7670]">{cm.bodyType?.name ?? "—"}</span> },
     {
       header: "Price range",
       render: (cm) => (
@@ -295,6 +348,65 @@ export default function AllCarModels() {
         onCancel={() => setPendingDelete(null)}
         onConfirm={handleConfirmDelete}
       />
+
+      {pendingUpcoming && (
+        <div
+          className="fixed inset-0 z-[60] flex items-center justify-center bg-black/40 px-4"
+          onMouseDown={(e) => {
+            if (e.target === e.currentTarget && togglingId !== pendingUpcoming.id) handleCancelUpcomingDate();
+          }}
+        >
+          <div className="w-full max-w-[380px] bg-white border border-[#e8e4dc] rounded-2xl shadow-xl p-6">
+            <h2 className="text-[#1c1a17] text-base font-black">Set expected launch date</h2>
+            <p className="text-[#7a7670] text-[12.5px] mt-1.5 leading-relaxed">
+              <span className="font-semibold text-[#1c1a17]">{pendingUpcoming.name}</span> is required to have an
+              expected launch date to be marked "Upcoming".
+            </p>
+
+            <div className="mt-4">
+              <label className="block text-[10px] font-bold uppercase tracking-widest text-[#a39e96] mb-1.5">
+                Expected launch date
+              </label>
+              <input
+                type="date"
+                value={upcomingDate}
+                onChange={(e) => {
+                  setUpcomingDate(e.target.value);
+                  setUpcomingDateError("");
+                }}
+                className="w-full text-sm font-medium text-[#1c1a17] bg-[#f7f5f1] border rounded-xl px-3 py-2.5 outline-none transition-all focus:bg-white"
+                style={{
+                  borderColor: upcomingDateError ? "#f0997b" : "#e2ddd5",
+                  boxShadow: upcomingDateError ? "0 0 0 2px rgba(216,90,48,0.1)" : "none",
+                }}
+              />
+              {upcomingDateError && (
+                <p className="text-[11px] font-medium text-[#D4300F] mt-1">{upcomingDateError}</p>
+              )}
+            </div>
+
+            <div className="flex items-center gap-2.5 pt-5">
+              <button
+                type="button"
+                onClick={handleCancelUpcomingDate}
+                disabled={togglingId === pendingUpcoming.id}
+                className="cursor-pointer flex-1 py-2.5 rounded-xl text-sm font-bold text-[#4a4640] border border-[#e2ddd5] hover:bg-[#f7f5f1] transition-colors disabled:opacity-50"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmUpcomingDate}
+                disabled={togglingId === pendingUpcoming.id}
+                className="cursor-pointer flex-1 py-2.5 rounded-xl text-sm font-bold text-white transition-all hover:opacity-90 active:scale-[0.98] disabled:opacity-50 flex items-center justify-center gap-2"
+                style={{ background: ACCENT }}
+              >
+                {togglingId === pendingUpcoming.id ? "Saving..." : "Save"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

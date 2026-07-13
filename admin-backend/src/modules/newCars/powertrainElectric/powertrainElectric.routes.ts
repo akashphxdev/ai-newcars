@@ -17,11 +17,11 @@ const router = Router();
 
 // Every powertrain-management route requires a logged-in admin.
 router.use(requireAuth(['admin']));
-router.get('/', requirePermission('powertraineselectric.view'), asyncHandler(getPowertrainElectricList));
-router.get('/:id', requirePermission('powertraineselectric.view'), asyncHandler(getPowertrainElectricById));
-router.post('/', requirePermission('powertraineselectric.create'), asyncHandler(createPowertrainElectric));
-router.patch('/:id/restore', requirePermission('powertraineselectric.update'), asyncHandler(restorePowertrainElectric));
-router.patch('/:id', requirePermission('powertraineselectric.update'), asyncHandler(updatePowertrainElectric));
-router.delete('/:id', requirePermission('powertraineselectric.delete'), asyncHandler(deletePowertrainElectric));
+router.get('/', requirePermission('powertrainselectric.view'), asyncHandler(getPowertrainElectricList));
+router.get('/:id', requirePermission('powertrainselectric.view'), asyncHandler(getPowertrainElectricById));
+router.post('/', requirePermission('powertrainselectric.create'), asyncHandler(createPowertrainElectric));
+router.patch('/:id/restore', requirePermission('powertrainselectric.update'), asyncHandler(restorePowertrainElectric));
+router.patch('/:id', requirePermission('powertrainselectric.update'), asyncHandler(updatePowertrainElectric));
+router.delete('/:id', requirePermission('powertrainselectric.delete'), asyncHandler(deletePowertrainElectric));
 
 export default router;

@@ -4,6 +4,8 @@ import { useState } from "react";
 import { useGetRolesQuery, useDeleteRoleMutation, type RoleRecord } from "./role.api";
 import { extractApiError } from "../../../lib/apiClient";
 import RoleModal from "./RoleModal";
+import RolePermissionsModal from "./RolePermissionsModal";
+import ConfirmDialog from "../../../components/common/ConfirmDialog";
 import DataTable, { type DataTableColumn } from "../../../components/common/DataTable";
 
 const ACCENT = "#D4300F";
@@ -41,16 +43,22 @@ export default function AllRoles() {
     setEditingRole(null);
   };
 
+  // View-permissions modal — separate from the Add/Edit modal above.
+  const [viewingRole, setViewingRole] = useState<RoleRecord | null>(null);
+
   const [deleteRole] = useDeleteRoleMutation();
 
   const [deletingId, setDeletingId] = useState<number | null>(null);
+  const [pendingDelete, setPendingDelete] = useState<RoleRecord | null>(null);
   const [actionError, setActionError] = useState("");
 
-  const handleDelete = async (id: number) => {
+  const handleConfirmDelete = async () => {
+    if (!pendingDelete) return;
     setActionError("");
-    setDeletingId(id);
+    setDeletingId(pendingDelete.id);
     try {
-      await deleteRole(id).unwrap();
+      await deleteRole(pendingDelete.id).unwrap();
+      setPendingDelete(null);
     } catch (err) {
       setActionError(extractApiError(err));
     } finally {
@@ -68,7 +76,20 @@ export default function AllRoles() {
         </span>
       ),
     },
-    { header: "Permissions", render: (r) => <span className="text-[#7a7670]">{r.permissionIds?.length ?? 0} assigned</span> },
+    {
+      header: "Permissions",
+      render: (r) => (
+        <div className="flex items-center gap-2">
+          <span className="text-[#7a7670]">{r.permissionIds?.length ?? 0} assigned</span>
+          <button
+            onClick={() => setViewingRole(r)}
+            className="cursor-pointer text-[10px] font-bold px-2 py-0.5 rounded-lg border border-[#e8e4dc] text-[#4a4640] hover:bg-[#f7f5f1] transition-colors"
+          >
+            View
+          </button>
+        </div>
+      ),
+    },
     {
       header: "Created",
       render: (r) => (
@@ -89,7 +110,7 @@ export default function AllRoles() {
             Edit
           </button>
           <button
-            onClick={() => handleDelete(r.id)}
+            onClick={() => setPendingDelete(r)}
             disabled={deletingId === r.id}
             className="cursor-pointer text-[10px] font-bold px-2.5 py-1 rounded-lg border border-red-100 text-red-500 hover:bg-red-50 transition-colors disabled:opacity-50"
           >
@@ -145,6 +166,21 @@ export default function AllRoles() {
           role={editingRole}
         />
       )}
+
+      <RolePermissionsModal
+        open={!!viewingRole}
+        onClose={() => setViewingRole(null)}
+        role={viewingRole}
+      />
+
+      <ConfirmDialog
+        open={!!pendingDelete}
+        title="Delete role?"
+        itemName={pendingDelete?.roleName}
+        loading={deletingId === pendingDelete?.id}
+        onCancel={() => setPendingDelete(null)}
+        onConfirm={handleConfirmDelete}
+      />
     </div>
   );
 }

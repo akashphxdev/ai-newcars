@@ -9,6 +9,7 @@ import {
   getImages,
   getImageById,
   createImage,
+  createImagesBulk,
   updateImage,
   setPrimaryImage,
   replaceImageFile,
@@ -23,6 +24,13 @@ router.use(requireAuth(['admin']));
 router.get('/', requirePermission('images.view'), asyncHandler(getImages));
 router.get('/:id', requirePermission('images.view'), asyncHandler(getImageById));
 router.post('/', requirePermission('images.create'), imageUploader('car-images').single('image'), asyncHandler(createImage));
+// Multiple files in one request — same permission as a single upload.
+router.post(
+  '/bulk',
+  requirePermission('images.create'),
+  imageUploader('car-images').array('images', 20),
+  asyncHandler(createImagesBulk),
+);
 router.patch('/:id', requirePermission('images.update'), asyncHandler(updateImage));
 // Dedicated quick "set as cover" toggle for the gallery's row-level action.
 router.patch('/:id/set-primary', requirePermission('images.update'), asyncHandler(setPrimaryImage));

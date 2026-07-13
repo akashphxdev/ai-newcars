@@ -2,15 +2,17 @@
 import { useState } from "react";
 import {
   useGetPowertrainIceListQuery,
+  useGetPowertrainIceByIdQuery,
   useDeletePowertrainIceMutation,
   useRestorePowertrainIceMutation,
-  type PowertrainIceRecord,
+  type PowertrainIceListItem,
   type FuelType,
 } from "./powertrainIce.api";
 import { useGetVariantsQuery } from "../Variants/variant.api";
 import { useGetCarModelsQuery } from "../carModels/carModel.api";
 import { useGetBrandsQuery } from "../Brands/brand.api";
 import { extractApiError } from "../../../lib/apiClient";
+import { FUEL_TYPE_OPTIONS, getFuelTypeLabel } from "../../../lib/lookups";
 import PowertrainIceModal from "./PowertrainIceModal";
 import ConfirmDialog from "../../../components/common/ConfirmDialog";
 import DataTable, { type DataTableColumn } from "../../../components/common/DataTable";
@@ -20,19 +22,82 @@ import { SearchFilterBar, FilterSelect } from "../../../components/common/Search
 const ACCENT = "#D4300F";
 const PAGE_SIZE = 20;
 
-const FUEL_TYPE_OPTIONS: { value: FuelType; label: string }[] = [
-  { value: "petrol", label: "Petrol" },
-  { value: "diesel", label: "Diesel" },
-  { value: "cng", label: "CNG" },
-  { value: "lpg", label: "LPG" },
-  { value: "hybrid", label: "Hybrid" },
-];
-
 function formatDecimal(value: string | null, suffix = ""): string {
   if (value == null) return "—";
   const num = Number(value);
   if (Number.isNaN(num)) return "—";
   return `${num}${suffix}`;
+}
+
+function formatInt(value: number | null, suffix = ""): string {
+  return value != null ? `${value}${suffix}` : "—";
+}
+
+function formatDate(value: string | Date | null): string {
+  if (!value) return "—";
+  return new Date(value).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" });
+}
+
+function SpecItem({ label, value }: { label: string; value: React.ReactNode }) {
+  return (
+    <div>
+      <p className="text-[9px] font-bold uppercase tracking-wider text-[#a39e96]">{label}</p>
+      <p className="text-[12px] font-semibold text-[#1c1a17] mt-0.5">{value}</p>
+    </div>
+  );
+}
+
+function ExpandedIceDetail({ id }: { id: number }) {
+  const { data: p, isFetching, error } = useGetPowertrainIceByIdQuery(id);
+
+  if (isFetching && !p) {
+    return <p className="text-[12px] text-[#a39e96] font-medium">Loading full spec sheet...</p>;
+  }
+  if (error || !p) {
+    return <p className="text-[12px] text-[#D4300F] font-medium">Couldn't load full spec sheet.</p>;
+  }
+
+  return (
+    <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-x-4 gap-y-3">
+      <SpecItem label="Fuel sub-category" value={p.fuelTypeSubCategory ?? "—"} />
+      <SpecItem label="Fuel tank" value={formatDecimal(p.fuelTankCapacity, " L")} />
+      <SpecItem label="CNG tank" value={formatDecimal(p.cngTankCapacity, " kg")} />
+      <SpecItem label="Kerb weight" value={formatInt(p.kerbWeight, " kg")} />
+      <SpecItem label="Cubic capacity" value={formatInt(p.cubicCapacity, " cc")} />
+      <SpecItem label="Cylinders" value={formatInt(p.cylinders)} />
+      <SpecItem label="Cylinder capacity" value={formatDecimal(p.cylinderCapacity, " cc")} />
+      <SpecItem label="Transmission sub-type" value={p.transmissionSubType ?? "—"} />
+      <SpecItem label="Transmission speed" value={formatInt(p.transmissionSpeed)} />
+      <SpecItem label="Number of gears" value={formatInt(p.numGears)} />
+      <SpecItem label="Is 4x4" value={p.isFourByFour ? "Yes" : "No"} />
+      <SpecItem label="Drivetrain" value={p.drivetrain?.name ?? "—"} />
+      <SpecItem label="Power-to-weight" value={formatDecimal(p.powerWeight)} />
+      <SpecItem label="Power min RPM" value={formatInt(p.powerMinRpm)} />
+      <SpecItem label="Power max RPM" value={formatInt(p.powerMaxRpm)} />
+      <SpecItem label="Torque-to-weight" value={formatDecimal(p.torqueWeight)} />
+      <SpecItem label="Torque min RPM" value={formatInt(p.torqueMinRpm)} />
+      <SpecItem label="Torque max RPM" value={formatInt(p.torqueMaxRpm)} />
+      <SpecItem label="Claimed FE" value={formatDecimal(p.claimedFe, " kmpl")} />
+      <SpecItem label="Real world mileage" value={formatDecimal(p.realWorldMileage, " kmpl")} />
+      <SpecItem label="City mileage" value={formatDecimal(p.cityMileage, " kmpl")} />
+      <SpecItem label="Highway mileage" value={formatDecimal(p.highwayMileage, " kmpl")} />
+      <SpecItem label="Top speed" value={formatInt(p.topSpeedKmph, " km/h")} />
+      <SpecItem label="0-100 time" value={formatDecimal(p.topSpeedTimeSec, " sec")} />
+      <SpecItem
+        label="Real-world test"
+        value={p.realWorldUrl ? <a href={p.realWorldUrl} target="_blank" rel="noreferrer" className="text-[#D4300F] hover:underline">Link</a> : "—"}
+      />
+      <SpecItem
+        label="City test"
+        value={p.cityUrl ? <a href={p.cityUrl} target="_blank" rel="noreferrer" className="text-[#D4300F] hover:underline">Link</a> : "—"}
+      />
+      <SpecItem
+        label="Highway test"
+        value={p.highwayUrl ? <a href={p.highwayUrl} target="_blank" rel="noreferrer" className="text-[#D4300F] hover:underline">Link</a> : "—"}
+      />
+      <SpecItem label="Created" value={formatDate(p.createdAt)} />
+    </div>
+  );
 }
 
 export default function AllPowertrainIce() {
@@ -41,21 +106,15 @@ export default function AllPowertrainIce() {
   const [filterModelId, setFilterModelId] = useState<number | "">("");
   const [filterVariantId, setFilterVariantId] = useState<number | "">("");
   const [filterFuelType, setFilterFuelType] = useState<FuelType | "">("");
-  // "Archived" tab — soft-deleted rows are hidden by default (see
-  // includeDeleted in powertrainIce.api.ts / powertrainIce.validation.ts).
   const [showArchived, setShowArchived] = useState(false);
 
   const { data: brandsData } = useGetBrandsQuery({ limit: 100, sortBy: "name", sortOrder: "asc" });
   const brands = brandsData?.data ?? [];
 
-  // NOTE: same 100-row cap used elsewhere — fine while the car-models
-  // table stays under 100 rows.
   const { data: carModelsData } = useGetCarModelsQuery({ limit: 100, sortBy: "name", sortOrder: "asc" });
   const carModels = carModelsData?.data ?? [];
   const modelsForBrand = filterBrandId ? carModels.filter((m) => m.brandId === filterBrandId) : carModels;
 
-  // NOTE: same 100-row cap used elsewhere — fine while the variants
-  // table stays under 100 rows.
   const { data: variantsData } = useGetVariantsQuery({ limit: 100, sortBy: "variantName", sortOrder: "asc" });
   const variants = variantsData?.data ?? [];
   const variantsForModel = filterModelId
@@ -83,27 +142,27 @@ export default function AllPowertrainIce() {
   const error = queryError ? (queryError as { message?: string }).message ?? "Something went wrong." : "";
 
   const [modalOpen, setModalOpen] = useState(false);
-  const [editingPowertrain, setEditingPowertrain] = useState<PowertrainIceRecord | null>(null);
+  const [editingId, setEditingId] = useState<number | null>(null);
 
   const openAddModal = () => {
-    setEditingPowertrain(null);
+    setEditingId(null);
     setModalOpen(true);
   };
 
-  const openEditModal = (p: PowertrainIceRecord) => {
-    setEditingPowertrain(p);
+  const openEditModal = (p: PowertrainIceListItem) => {
+    setEditingId(p.id);
     setModalOpen(true);
   };
 
   const closeModal = () => {
     setModalOpen(false);
-    setEditingPowertrain(null);
+    setEditingId(null);
   };
 
   const [deletePowertrainIce] = useDeletePowertrainIceMutation();
   const [restorePowertrainIce] = useRestorePowertrainIceMutation();
   const [busyId, setBusyId] = useState<number | null>(null);
-  const [pendingDelete, setPendingDelete] = useState<PowertrainIceRecord | null>(null);
+  const [pendingDelete, setPendingDelete] = useState<PowertrainIceListItem | null>(null);
   const [actionError, setActionError] = useState("");
 
   const handleConfirmDelete = async () => {
@@ -132,7 +191,7 @@ export default function AllPowertrainIce() {
     }
   };
 
-  const columns: DataTableColumn<PowertrainIceRecord>[] = [
+  const columns: DataTableColumn<PowertrainIceListItem>[] = [
     {
       header: "Variant",
       render: (p) => (
@@ -159,7 +218,7 @@ export default function AllPowertrainIce() {
       header: "Fuel",
       render: (p) => (
         <span className="text-[10px] font-bold px-2 py-0.5 rounded-full text-[#4a4640] bg-[#f7f5f1] uppercase">
-          {p.fuelType}
+          {getFuelTypeLabel(p.fuelType)}
           {p.fuelTypeSubCategory ? ` · ${p.fuelTypeSubCategory}` : ""}
         </span>
       ),
@@ -167,12 +226,12 @@ export default function AllPowertrainIce() {
     { header: "Displacement", render: (p) => <span className="text-[#7a7670]">{formatDecimal(p.engineDisplacement, "L")}</span> },
     { header: "Power", render: (p) => <span className="text-[#7a7670]">{p.powerPs != null ? `${p.powerPs} PS` : "—"}</span> },
     { header: "Torque", render: (p) => <span className="text-[#7a7670]">{p.torqueNm != null ? `${p.torqueNm} Nm` : "—"}</span> },
-    { header: "Transmission", render: (p) => <span className="text-[#7a7670] uppercase">{p.transmissionType ?? "—"}</span> },
+    { header: "Transmission", render: (p) => <span className="text-[#7a7670]">{p.transmissionType?.name ?? "—"}</span> },
     {
       header: "",
       align: "right",
       render: (p) => (
-        <div className="flex items-center justify-end gap-1.5">
+        <div className="flex items-center justify-end gap-1.5" onClick={(e) => e.stopPropagation()}>
           {p.isDeleted ? (
             <button
               onClick={() => handleRestore(p.id)}
@@ -274,7 +333,7 @@ export default function AllPowertrainIce() {
         <FilterSelect
           value={filterFuelType}
           onChange={(v) => {
-            setFilterFuelType((v as FuelType) || "");
+            setFilterFuelType(v ? (Number(v) as FuelType) : "");
             setPage(1);
           }}
           options={FUEL_TYPE_OPTIONS}
@@ -303,16 +362,18 @@ export default function AllPowertrainIce() {
           error={error}
           loadingMessage="Loading ICE powertrains..."
           emptyMessage="No ICE powertrains found."
+          expandable
+          renderExpanded={(p) => <ExpandedIceDetail id={p.id} />}
         />
         <Pagination pagination={pagination ?? null} onPageChange={setPage} variant="simple" />
       </div>
 
       {modalOpen && (
         <PowertrainIceModal
-          key={editingPowertrain ? `edit-${editingPowertrain.id}` : "add"}
+          key={editingId ? `edit-${editingId}` : "add"}
           open={modalOpen}
           onClose={closeModal}
-          powertrain={editingPowertrain}
+          editId={editingId}
         />
       )}
 

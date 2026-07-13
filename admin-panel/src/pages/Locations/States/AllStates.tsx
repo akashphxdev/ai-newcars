@@ -12,6 +12,7 @@ import StateModal from "./StateModal";
 import DataTable, { type DataTableColumn } from "../../../components/common/DataTable";
 import Pagination from "../../../components/common/Pagination";
 import { SearchFilterBar, SearchInput, FilterSelect } from "../../../components/common/SearchFilterBar";
+import ConfirmDialog from "../../../components/common/ConfirmDialog";
 
 const ACCENT = "#D4300F";
 const PAGE_SIZE = 20;
@@ -62,13 +63,16 @@ export default function AllStates() {
   const [deleteState] = useDeleteStateMutation();
 
   const [deletingId, setDeletingId] = useState<number | null>(null);
+  const [pendingDelete, setPendingDelete] = useState<StateRecord | null>(null);
   const [actionError, setActionError] = useState("");
 
-  const handleDelete = async (id: number) => {
+  const handleConfirmDelete = async () => {
+    if (!pendingDelete) return;
     setActionError("");
-    setDeletingId(id);
+    setDeletingId(pendingDelete.id);
     try {
-      await deleteState(id).unwrap();
+      await deleteState(pendingDelete.id).unwrap();
+      setPendingDelete(null);
     } catch (err) {
       setActionError(extractApiError(err));
     } finally {
@@ -92,7 +96,7 @@ export default function AllStates() {
             Edit
           </button>
           <button
-            onClick={() => handleDelete(s.id)}
+            onClick={() => setPendingDelete(s)}
             disabled={deletingId === s.id}
             className="cursor-pointer text-[10px] font-bold px-2.5 py-1 rounded-lg border border-red-100 text-red-500 hover:bg-red-50 transition-colors disabled:opacity-50"
           >
@@ -175,6 +179,15 @@ export default function AllStates() {
           state={editingState}
         />
       )}
+
+      <ConfirmDialog
+        open={!!pendingDelete}
+        title="Delete state?"
+        itemName={pendingDelete?.name}
+        loading={deletingId === pendingDelete?.id}
+        onCancel={() => setPendingDelete(null)}
+        onConfirm={handleConfirmDelete}
+      />
     </div>
   );
 }
