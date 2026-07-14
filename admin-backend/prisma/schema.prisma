@@ -1,6 +1,6 @@
 // ============================================================
 // TimesAuto — Prisma Schema (PostgreSQL)
-// Run: npx prisma migrate dev --name add_country_currency_city_fields
+// Run: npx prisma migrate dev --name remove_story_and_media_story_tables
 // ============================================================
 
 generator client {
@@ -180,8 +180,6 @@ model AdminUser {
   deletedIcePowertrains CarPowertrainIce[]
   deletedEvPowertrains  CarPowertrainElectric[]
   leadActivities        LeadActivity[]
-  stories               Story[]
-  mediaStories          MediaStory[]
   seoMetaUpdates        SeoMeta[]
   seoRedirectsCreated   SeoRedirect[]
 
@@ -255,9 +253,7 @@ model User {
   priceDropAlertLeads PriceDropAlertLead[]
   reviews             Review[]
   reviewHelpfulVotes  ReviewHelpfulVote[]
-  storyComments       StoryComment[]
   articleComments     ArticleComment[]
-  mediaStoryViews     MediaStoryView[]
   mileageLogs         MileageLog[]
   adImpressions       AdImpression[]
   adClicks            AdClick[]
@@ -304,7 +300,6 @@ model Brand {
   loanLeads           LoanLead[]
   softLeads           SoftLead[]
   priceDropAlertLeads PriceDropAlertLead[]
-  mediaStories        MediaStory[]
   articleBrands       ArticleBrand[]
 
   @@map("brands")
@@ -341,8 +336,6 @@ model CarModel {
   softLeads           SoftLead[]
   priceDropAlertLeads PriceDropAlertLead[]
   reviews             Review[]
-  storyModels         StoryModel[]
-  mediaStories        MediaStory[]
   mileageLogs         MileageLog[]
   articleCarModels    ArticleCarModel[]
 
@@ -939,108 +932,6 @@ model ReviewHelpfulVote {
 
   @@unique([reviewId, userId])
   @@map("review_helpful_votes")
-}
-
-// ============================================================
-// STORIES (editorial)
-// ============================================================
-
-model StoryCategory {
-  id   Int    @id @default(autoincrement())
-  name String @db.VarChar(50)
-  slug String @unique @db.VarChar(50)
-
-  stories Story[]
-
-  @@map("story_categories")
-}
-
-model Story {
-  id              Int           @id @default(autoincrement())
-  authorId        Int           @map("author_id")
-  author          AdminUser     @relation(fields: [authorId], references: [id])
-  categoryId      Int           @map("category_id")
-  category        StoryCategory @relation(fields: [categoryId], references: [id])
-  title           String        @db.VarChar(200)
-  slug            String        @unique @db.VarChar(200)
-  excerpt         String?       @db.VarChar(300)
-  body            String?
-  coverImageUrl   String?       @map("cover_image_url") @db.VarChar(255)
-  readTimeMinutes Int?          @map("read_time_minutes")
-  status          String        @default("draft") @db.VarChar(20)
-  publishedAt     DateTime?     @map("published_at")
-  viewCount       Int           @default(0) @map("view_count")
-  createdAt       DateTime      @default(now()) @map("created_at")
-
-  storyModels   StoryModel[]
-  storyComments StoryComment[]
-
-  @@map("stories")
-}
-
-model StoryModel {
-  id      Int      @id @default(autoincrement())
-  storyId Int      @map("story_id")
-  story   Story    @relation(fields: [storyId], references: [id])
-  modelId Int      @map("model_id")
-  model   CarModel @relation(fields: [modelId], references: [id])
-
-  @@map("story_models")
-}
-
-model StoryComment {
-  id              Int            @id @default(autoincrement())
-  storyId         Int            @map("story_id")
-  story           Story          @relation(fields: [storyId], references: [id])
-  userId          Int            @map("user_id")
-  user            User           @relation(fields: [userId], references: [id])
-  parentCommentId Int?           @map("parent_comment_id")
-  parentComment   StoryComment?  @relation("CommentReplies", fields: [parentCommentId], references: [id])
-  replies         StoryComment[] @relation("CommentReplies")
-  body            String
-  status          String         @default("visible") @db.VarChar(20)
-  createdAt       DateTime       @default(now()) @map("created_at")
-
-  @@map("story_comments")
-}
-
-// ============================================================
-// MEDIA STORIES (Instagram-style)
-// ============================================================
-
-model MediaStory {
-  id           Int       @id @default(autoincrement())
-  adminId      Int       @map("admin_id")
-  admin        AdminUser @relation(fields: [adminId], references: [id])
-  mediaType    String    @map("media_type") @db.VarChar(10)
-  mediaUrl     String    @map("media_url") @db.VarChar(255)
-  thumbnailUrl String?   @map("thumbnail_url") @db.VarChar(255)
-  caption      String?   @db.VarChar(300)
-  category     String?   @db.VarChar(50)
-  brandId      Int?      @map("brand_id")
-  brand        Brand?    @relation(fields: [brandId], references: [id])
-  modelId      Int?      @map("model_id")
-  model        CarModel? @relation(fields: [modelId], references: [id])
-  displayOrder Int       @default(0) @map("display_order")
-  isActive     Boolean   @default(true) @map("is_active")
-  viewCount    Int       @default(0) @map("view_count")
-  createdAt    DateTime  @default(now()) @map("created_at")
-
-  views MediaStoryView[]
-
-  @@map("media_stories")
-}
-
-model MediaStoryView {
-  id        BigInt     @id @default(autoincrement())
-  storyId   Int        @map("story_id")
-  story     MediaStory @relation(fields: [storyId], references: [id])
-  userId    Int?       @map("user_id")
-  user      User?      @relation(fields: [userId], references: [id])
-  ipAddress String?    @map("ip_address") @db.VarChar(45)
-  viewedAt  DateTime   @default(now()) @map("viewed_at")
-
-  @@map("media_story_views")
 }
 
 // ============================================================

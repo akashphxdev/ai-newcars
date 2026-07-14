@@ -72,7 +72,8 @@ export default function ArticleModal({
   const [title, setTitle] = useState("");
   const [slug, setSlug] = useState("");
   const [excerpt, setExcerpt] = useState("");
-  const [body, setBody] = useState("");
+  const [body, setBody] = useState(article?.body ?? "");
+
   const [readTimeMinutes, setReadTimeMinutes] = useState<string>("");
   const [status, setStatus] = useState<ArticleStatus>("draft");
   const [isActive, setIsActive] = useState(true);

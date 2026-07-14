@@ -22,6 +22,11 @@
 //     its own readTimeMinutes field the host form can prefill from it.
 //   - Added a fullscreen/distraction-free toggle.
 //   - Removed debug console.log calls.
+//   - Added a floating (bubble) toolbar on text selection, a "/" quick-
+//     insert menu, smart typography, a live table-of-contents panel,
+//     image captions, YouTube embeds, and a "Smart link" search that
+//     inserts a Brand/Car Model by name (see linkUrlResolver.js for why
+//     it doesn't emit a real URL yet).
 
 import {
   IconAlignCenter,
@@ -32,6 +37,7 @@ import {
   IconArrowForwardUp,
   IconBlockquote,
   IconBold,
+  IconBrandYoutube,
   IconCode,
   IconColumnInsertLeft,
   IconColumnInsertRight,
@@ -93,11 +99,16 @@ import TaskList from "@tiptap/extension-task-list";
 import Text from "@tiptap/extension-text";
 import TextAlign from "@tiptap/extension-text-align";
 import { TextStyle } from "@tiptap/extension-text-style";
+import Typography from "@tiptap/extension-typography";
 import Underline from "@tiptap/extension-underline";
-import { EditorContent, useEditor } from "@tiptap/react";
-import { useCallback, useRef, useState } from "react";
+import Youtube from "@tiptap/extension-youtube";
+import { BubbleMenu, EditorContent, useEditor } from "@tiptap/react";
+import { useCallback, useMemo, useRef, useState } from "react";
 import ImageResize from "tiptap-extension-resize-image";
 import { apiClient, getRelativeUploadPath, getUploadUrl } from "../../../lib/apiClient";
+import { SlashCommand, buildSlashItems } from "./extensions/SlashCommand";
+import SmartLinkModal from "./SmartLinkModal";
+import TableOfContents from "./TableOfContents";
 import "./EditorStyle.css";
 
 const WORDS_PER_MINUTE = 200;
@@ -163,23 +174,46 @@ function countWords(text) {
   return trimmed.split(/\s+/).length;
 }
 
+// Image node, extended to optionally carry a link (href/target) and a
+// caption. When a caption is set, it renders as a <figure>/<figcaption>
+// pair instead of a bare <img> — same "extra attrs on the built-in node"
+// approach as the href/target support below it.
 const LinkedImage = Image.extend({
   addAttributes() {
     return {
       ...this.parent?.(),
       href: { default: null },
       target: { default: "_blank" },
+      caption: { default: null },
     };
   },
 
   renderHTML({ HTMLAttributes }) {
-    const { href, target, ...rest } = HTMLAttributes;
+    const { href, target, caption, ...rest } = HTMLAttributes;
     const img = ["img", rest];
-    return href ? ["a", { href, target }, img] : img;
+    const linked = href ? ["a", { href, target }, img] : img;
+    return caption ? ["figure", { class: "editor-figure" }, linked, ["figcaption", {}, caption]] : linked;
   },
 
   parseHTML() {
     return [
+      {
+        tag: "figure.editor-figure",
+        getAttrs: (node) => {
+          const imgEl = node.querySelector("img");
+          if (!imgEl) return false;
+          const anchor = node.querySelector("a[href]");
+          const figcaption = node.querySelector("figcaption");
+          return {
+            src: imgEl.getAttribute("src"),
+            alt: imgEl.getAttribute("alt"),
+            title: imgEl.getAttribute("title"),
+            href: anchor ? anchor.getAttribute("href") : null,
+            target: anchor ? anchor.getAttribute("target") || "_blank" : "_blank",
+            caption: figcaption ? figcaption.textContent : null,
+          };
+        },
+      },
       {
         tag: "a[href] > img",
         getAttrs: (node) => {
@@ -205,6 +239,8 @@ const LinkedImage = Image.extend({
 function Editor({ content, onChange, onStatsChange }) {
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [stats, setStats] = useState({ words: 0, characters: 0, readTimeMinutes: 0 });
+  const [showOutline, setShowOutline] = useState(false);
+  const [smartLinkOpen, setSmartLinkOpen] = useState(false);
 
   const processingImagesRef = useRef(false);
   const onChangeRef = useRef(onChange);
@@ -216,6 +252,10 @@ function Editor({ content, onChange, onStatsChange }) {
   // Ref for deleteImageFromServer so onUpdate's closure always sees the
   // latest version without needing to be in useEditor's dependency list.
   const deleteImageFromServerRef = useRef(null);
+  // Holds the live editor instance for callbacks (addImage,
+  // addYoutubeVideo) that are built — via buildSlashItems() — *before*
+  // useEditor() returns one. Kept in sync on every render below.
+  const editorRef = useRef(null);
 
   const dataUriToFile = (dataUri, index) => {
     const match = dataUri.match(/^data:(image\/[\w.+-]+);base64,(.+)$/);
@@ -254,6 +294,43 @@ function Editor({ content, onChange, onStatsChange }) {
     }
   }, []);
   deleteImageFromServerRef.current = deleteImageFromServer;
+
+  // File-picker driven image insert — used by both the toolbar button
+  // and the "/" slash-command menu. Uses editorRef (not the `editor`
+  // variable) so it can be built before useEditor() returns one.
+  const addImage = useCallback(() => {
+    const input = document.createElement("input");
+    input.type = "file";
+    input.accept = "image/*";
+    input.click();
+    input.onchange = async (event) => {
+      const file = event.target.files[0];
+      if (!file) return;
+      try {
+        const imageUrl = await uploadImage(file);
+        editorRef.current?.chain().focus().setImage({ src: imageUrl }).run();
+        onChangeRef.current(editorRef.current?.getHTML() ?? "");
+      } catch {
+        alert("Image upload failed. Please try again.");
+      }
+    };
+  }, [uploadImage]);
+
+  const addYoutubeVideo = useCallback(() => {
+    const url = window.prompt("YouTube video URL");
+    if (!url) return;
+    editorRef.current?.chain().focus().setYoutubeVideo({ src: url }).run();
+  }, []);
+
+  const slashItems = useMemo(
+    () =>
+      buildSlashItems({
+        onInsertImage: addImage,
+        onInsertYoutube: addYoutubeVideo,
+        onOpenSmartLink: () => setSmartLinkOpen(true),
+      }),
+    [addImage, addYoutubeVideo],
+  );
 
   // Replaces any data-URI images (pasted as base64, e.g. from some
   // paste sources that don't expose a file object) with the uploaded
@@ -330,7 +407,14 @@ function Editor({ content, onChange, onStatsChange }) {
       LinkedImage,
       ImageResize,
       Subscript, Superscript,
-      Placeholder.configure({ placeholder: "Write your article content..." }),
+      Typography,
+      Youtube.configure({
+        width: 640,
+        height: 360,
+        HTMLAttributes: { class: "editor-youtube-embed" },
+      }),
+      SlashCommand.configure({ items: slashItems }),
+      Placeholder.configure({ placeholder: "Write your article content... (type \"/\" for quick blocks)" }),
       Link.configure({
         openOnClick: false,
         autolink: true,
@@ -464,6 +548,8 @@ function Editor({ content, onChange, onStatsChange }) {
     },
   });
 
+  editorRef.current = editor;
+
   const setLink = () => {
     if (!editor) return;
     const previousUrl = editor.getAttributes("link").href;
@@ -478,24 +564,6 @@ function Editor({ content, onChange, onStatsChange }) {
     } catch (e) {
       alert(e.message);
     }
-  };
-
-  const addImage = () => {
-    const input = document.createElement("input");
-    input.type = "file";
-    input.accept = "image/*";
-    input.click();
-    input.onchange = async (event) => {
-      const file = event.target.files[0];
-      if (!file) return;
-      try {
-        const imageUrl = await uploadImage(file);
-        editor.chain().focus().setImage({ src: imageUrl }).run();
-        onChangeRef.current(editor.getHTML());
-      } catch {
-        alert("Image upload failed. Please try again.");
-      }
-    };
   };
 
   const handleAddLinkToImage = () => {
@@ -518,6 +586,33 @@ function Editor({ content, onChange, onStatsChange }) {
         alert("This image already has a link.");
       }
     }
+  };
+
+  const handleSetImageCaption = () => {
+    if (!editor) return;
+    const { state } = editor;
+    const { selection } = state;
+    const pos = selection.from;
+    const node = state.doc.nodeAt(pos);
+    if (!node || node.type.name !== "image") {
+      alert("Please select an image to add a caption.");
+      return;
+    }
+    const currentCaption = node.attrs.caption || "";
+    const caption = window.prompt("Caption text (leave blank to remove):", currentCaption);
+    if (caption === null) return;
+    editor.chain().focus().setNodeSelection(pos).updateAttributes("image", { caption: caption.trim() || null }).run();
+  };
+
+  const handleSmartLinkInsert = ({ label, url }) => {
+    if (!editor) return;
+    // With a real URL (once linkUrlResolver.js can build one), insert a
+    // proper link. Until then, insert the name highlighted so it's easy
+    // to spot and finish wiring up by hand.
+    const marks = url
+      ? [{ type: "link", attrs: { href: url, target: "_blank" } }]
+      : [{ type: "highlight", attrs: { color: "#fef08a" } }];
+    editor.chain().focus().insertContent({ type: "text", text: label, marks }).insertContent(" ").run();
   };
 
   if (!editor) return null;
@@ -584,6 +679,9 @@ function Editor({ content, onChange, onStatsChange }) {
             <button onClick={(e) => { e.preventDefault(); addImage(); }} title="Insert image">
               <IconPhotoPlus stroke={2} />
             </button>
+            <button onClick={(e) => { e.preventDefault(); addYoutubeVideo(); }} title="Embed YouTube video">
+              <IconBrandYoutube stroke={2} />
+            </button>
           </div>
 
           <div className="btnSection">
@@ -592,6 +690,9 @@ function Editor({ content, onChange, onStatsChange }) {
             </button>
             <button onClick={(e) => { e.preventDefault(); editor.chain().focus().unsetLink().run(); }} disabled={!editor.isActive("link")} title="Remove link">
               <IconLinkMinus stroke={2} />
+            </button>
+            <button onClick={(e) => { e.preventDefault(); setSmartLinkOpen(true); }} title="Link to a brand or car model from your catalog">
+              Smart link
             </button>
           </div>
 
@@ -619,6 +720,9 @@ function Editor({ content, onChange, onStatsChange }) {
             </button>
             <button onClick={(e) => { e.preventDefault(); editor.chain().focus().toggleHeading({ level: 3 }).run(); }} className={editor.isActive("heading", { level: 3 }) ? "is-active" : ""} title="Heading 3">
               <IconH3 stroke={2} />
+            </button>
+            <button onClick={(e) => { e.preventDefault(); setShowOutline((v) => !v); }} className={showOutline ? "is-active" : ""} title="Toggle outline">
+              Outline
             </button>
           </div>
 
@@ -681,6 +785,9 @@ function Editor({ content, onChange, onStatsChange }) {
             <button onClick={(e) => { e.preventDefault(); handleAddLinkToImage(); }} title="Link selected image">
               <IconPhoto stroke={2} />
             </button>
+            <button onClick={(e) => { e.preventDefault(); handleSetImageCaption(); }} title="Add/edit caption for selected image">
+              Caption
+            </button>
             <button
               onClick={(e) => { e.preventDefault(); setIsFullscreen((v) => !v); }}
               title={isFullscreen ? "Exit fullscreen" : "Fullscreen"}
@@ -690,6 +797,31 @@ function Editor({ content, onChange, onStatsChange }) {
           </div>
         </div>
       </div>
+
+      {showOutline && <TableOfContents editor={editor} />}
+
+      {editor && (
+        <BubbleMenu editor={editor} tippyOptions={{ duration: 150 }} className="bubble-menu">
+          <button onClick={(e) => { e.preventDefault(); editor.chain().focus().toggleBold().run(); }} className={editor.isActive("bold") ? "is-active" : ""} title="Bold">
+            <IconBold stroke={2} />
+          </button>
+          <button onClick={(e) => { e.preventDefault(); editor.chain().focus().toggleItalic().run(); }} className={editor.isActive("italic") ? "is-active" : ""} title="Italic">
+            <IconItalic stroke={2} />
+          </button>
+          <button onClick={(e) => { e.preventDefault(); editor.chain().focus().toggleUnderline().run(); }} className={editor.isActive("underline") ? "is-active" : ""} title="Underline">
+            <IconUnderline stroke={2} />
+          </button>
+          <button onClick={(e) => { e.preventDefault(); editor.chain().focus().toggleStrike().run(); }} className={editor.isActive("strike") ? "is-active" : ""} title="Strikethrough">
+            <IconStrikethrough stroke={2} />
+          </button>
+          <button onClick={(e) => { e.preventDefault(); editor.chain().focus().toggleHighlight().run(); }} className={editor.isActive("highlight") ? "is-active" : ""} title="Highlight">
+            <IconHighlight stroke={2} />
+          </button>
+          <button onClick={(e) => { e.preventDefault(); setLink(); }} className={editor.isActive("link") ? "is-active" : ""} title="Add link">
+            <IconLinkPlus stroke={2} />
+          </button>
+        </BubbleMenu>
+      )}
 
       <div className="editor-container">
         <EditorContent editor={editor} />
@@ -702,6 +834,8 @@ function Editor({ content, onChange, onStatsChange }) {
         <span className="editor-stats-sep">·</span>
         <span>~{stats.readTimeMinutes} min read</span>
       </div>
+
+      <SmartLinkModal open={smartLinkOpen} onClose={() => setSmartLinkOpen(false)} onInsert={handleSmartLinkInsert} />
     </div>
   );
 }

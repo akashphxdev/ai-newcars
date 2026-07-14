@@ -219,19 +219,9 @@ const NAV: NavGroup[] = [
           </svg>
         ),
         children: [
-          { label: "All Reviews", href: "/reviews" },
+          { label: "All Reviews", href: "/reviews/all-reviews" },
           { label: "Helpful Votes", href: "/reviews/votes" },
         ],
-      },
-      {
-        label: "Mileage Logs",
-        href: "/mileage-logs",
-        icon: (
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
-            <circle cx="12" cy="12" r="10" />
-            <polyline points="12 6 12 12 16 14" />
-          </svg>
-        ),
       },
     ],
   },
