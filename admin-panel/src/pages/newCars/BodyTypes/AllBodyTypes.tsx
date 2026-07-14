@@ -1,5 +1,5 @@
 // src/pages/newCars/BodyTypes/AllBodyTypes.tsx
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   useGetBodyTypesQuery,
   useDeleteBodyTypeMutation,
@@ -13,11 +13,22 @@ import Pagination from "../../../components/common/Pagination";
 import { SearchFilterBar, SearchInput } from "../../../components/common/SearchFilterBar";
 
 const ACCENT = "#D4300F";
-const PAGE_SIZE = 20;
+// Rows-per-page choices shown in the dropdown — same set as AllAdminLogs.tsx.
+const PAGE_SIZE_OPTIONS = [10, 20, 50, 100];
 
 export default function AllBodyTypes() {
   const [page, setPage] = useState(1);
+  // Rows-per-page, user-controlled via a dropdown next to the filters.
+  const [limit, setLimit] = useState(20);
   const [search, setSearch] = useState("");
+  // Debounced copy of `search` — this is what actually goes into the
+  // query args, so we don't refetch on every keystroke.
+  const [debouncedSearch, setDebouncedSearch] = useState("");
+
+  useEffect(() => {
+    const timer = setTimeout(() => setDebouncedSearch(search), search ? 400 : 0);
+    return () => clearTimeout(timer);
+  }, [search]);
 
   const {
     data: bodyTypesData,
@@ -26,8 +37,8 @@ export default function AllBodyTypes() {
     error: queryError,
   } = useGetBodyTypesQuery({
     page,
-    limit: PAGE_SIZE,
-    search: search || undefined,
+    limit,
+    search: debouncedSearch || undefined,
   });
 
   const bodyTypes = bodyTypesData?.data ?? [];
@@ -74,6 +85,11 @@ export default function AllBodyTypes() {
     } finally {
       setDeletingId(null);
     }
+  };
+
+  const handleLimitChange = (value: number) => {
+    setLimit(value);
+    setPage(1);
   };
 
   const columns: DataTableColumn<BodyTypeRecord>[] = [
@@ -152,11 +168,27 @@ export default function AllBodyTypes() {
 
       <SearchFilterBar
         right={
-          pagination && (
-            <p className="text-[11px] text-[#a39e96] whitespace-nowrap">
-              {pagination.total} body type{pagination.total === 1 ? "" : "s"} total
-            </p>
-          )
+          <div className="flex items-center gap-3">
+            {pagination && (
+              <p className="text-[11px] text-[#a39e96] whitespace-nowrap">
+                {pagination.total} body type{pagination.total === 1 ? "" : "s"} total
+              </p>
+            )}
+            <div className="flex items-center gap-2">
+              <span className="text-[11px] font-semibold text-[#a39e96] whitespace-nowrap">Rows per page</span>
+              <select
+                value={limit}
+                onChange={(e) => handleLimitChange(Number(e.target.value))}
+                className="cursor-pointer text-[12px] text-[#4a4640] bg-[#f7f5f1] border border-[#e8e4dc] rounded-lg px-3 py-2 outline-none"
+              >
+                {PAGE_SIZE_OPTIONS.map((n) => (
+                  <option key={n} value={n}>
+                    {n}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
         }
       >
         <SearchInput
@@ -179,7 +211,13 @@ export default function AllBodyTypes() {
           loadingMessage="Loading body types..."
           emptyMessage="No body types found."
         />
-        <Pagination pagination={pagination ?? null} onPageChange={setPage} variant="simple" />
+        <Pagination
+          pagination={pagination ?? null}
+          onPageChange={setPage}
+          variant="compact"
+          itemLabel="body types"
+          currentCount={bodyTypes.length}
+        />
       </div>
 
       {modalOpen && (

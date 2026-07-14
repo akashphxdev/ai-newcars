@@ -4,7 +4,12 @@ import { Prisma } from '@prisma/client';
 import { prisma } from '@/prisma/client';
 import { ApiError } from '@/core/errors/ApiError';
 import { createLog } from '@/core/utils/createLog';
-import type { StateListQueryParsed, CreateStateParsed, UpdateStateParsed } from './state.validation';
+import type {
+  StateListQueryParsed,
+  StateOptionsQueryParsed,
+  CreateStateParsed,
+  UpdateStateParsed,
+} from './state.validation';
 
 const STATE_SELECT = {
   id: true,
@@ -42,6 +47,24 @@ export async function listStates(query: StateListQueryParsed) {
       totalPages: Math.ceil(total / limit) || 1,
     },
   };
+}
+
+// Dropdown-only source — returns every matching state in one shot (no
+// pagination), optionally scoped to a country. Same "why" as
+// country.service.ts's listCountryOptions — the regular listStates()
+// stays paginated for the States list page.
+export async function listStateOptions(query: StateOptionsQueryParsed) {
+  const { countryId } = query;
+
+  const where: Prisma.StateWhereInput = {
+    ...(countryId ? { countryId } : {}),
+  };
+
+  return prisma.state.findMany({
+    where,
+    select: { id: true, name: true, code: true, countryId: true },
+    orderBy: { name: 'asc' },
+  });
 }
 
 export async function getStateById(id: number) {
@@ -125,7 +148,7 @@ export async function updateState(id: number, input: UpdateStateParsed, actorId:
 
   await createLog({
     adminId: actorId,
-    description: `Updated state "${state.name}" (id ${state.id}) — fields: ${Object.keys(input).join(', ')}`,
+    description: `Updated state "${state.name}" (id ${state.id})`,
   });
 
   return state;

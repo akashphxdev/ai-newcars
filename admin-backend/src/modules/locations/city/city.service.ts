@@ -4,7 +4,6 @@ import { Prisma } from '@prisma/client';
 import { prisma } from '@/prisma/client';
 import { ApiError } from '@/core/errors/ApiError';
 import { createLog } from '@/core/utils/createLog';
-import { slugify } from '@/core/utils/slugify';
 import { buildPublicPath, deleteUploadedFile } from '@/core/utils/fileStorage.util';
 import type { CityListQueryParsed, CreateCityParsed, UpdateCityParsed, UpdateCityFlagsParsed } from './city.validation';
 import type { CityUploadLogoResult } from './city.types';
@@ -72,6 +71,15 @@ export async function listCities(query: CityListQueryParsed) {
   };
 }
 
+// Dropdown-only source — every city in one shot, no pagination. Use
+// this (not listCities) wherever City is just a <select>: Offer forms.
+export async function listCityOptions() {
+  return prisma.city.findMany({
+    select: { id: true, name: true },
+    orderBy: { name: 'asc' },
+  });
+}
+
 export async function getCityById(id: number) {
   const city = await prisma.city.findUnique({
     where: { id },
@@ -102,36 +110,16 @@ async function assertSlugAvailable(slug: string, excludeId?: number) {
   }
 }
 
-async function generateUniqueSlug(name: string): Promise<string> {
-  const base = slugify(name);
-  let candidate = base;
-  let suffix = 2;
-
-  // Bounded loop — 50 attempts is far more than any real name collision
-  // will ever need; guards against an infinite loop if something odd happens.
-  for (let attempts = 0; attempts < 50; attempts++) {
-    const existing = await prisma.city.findFirst({ where: { slug: candidate }, select: { id: true } });
-    if (!existing) return candidate;
-    candidate = `${base}-${suffix}`;
-    suffix += 1;
-  }
-
-  throw ApiError.internal('Could not generate a unique slug — please provide one manually');
-}
-
 export async function createCity(input: CreateCityParsed, logoFilename: string, actorId: number) {
   await assertDistrictExists(input.districtId);
 
-  const slug = input.slug ? input.slug : await generateUniqueSlug(input.name);
-  if (input.slug) {
-    await assertSlugAvailable(slug);
-  }
+  await assertSlugAvailable(input.slug);
 
   const city = await prisma.city.create({
     data: {
       districtId: input.districtId,
       name: input.name,
-      slug,
+      slug: input.slug,
       isMetro: input.isMetro ?? false,
       isTopCity: input.isTopCity ?? false,
       isSellCarEnabled: input.isSellCarEnabled ?? false,
@@ -154,7 +142,7 @@ export async function updateCity(id: number, input: UpdateCityParsed, actorId: n
   if (input.districtId) {
     await assertDistrictExists(input.districtId);
   }
-  if (input.slug && input.slug !== existing.slug) {
+  if (input.slug !== existing.slug) {
     await assertSlugAvailable(input.slug, id);
   }
 
@@ -166,7 +154,7 @@ export async function updateCity(id: number, input: UpdateCityParsed, actorId: n
 
   await createLog({
     adminId: actorId,
-    description: `Updated city "${city.name}" (id ${city.id}) — fields: ${Object.keys(input).join(', ')}`,
+    description: `Updated city "${city.name}" (id ${city.id})`,
   });
 
   return city;

@@ -1,5 +1,5 @@
 // src/pages/newCars/carModels/AllCarModels.tsx
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   useGetCarModelsQuery,
   useUpdateCarModelLaunchStatusMutation,
@@ -7,7 +7,7 @@ import {
   type CarModelRecord,
   type LaunchStatus,
 } from "./carModel.api";
-import { useGetBrandsQuery } from "../Brands/brand.api";
+import { useGetBrandOptionsQuery } from "../Brands/brand.api";
 import { extractApiError, getUploadUrl } from "../../../lib/apiClient";
 import CarModelModal from "./CarModelModal";
 import ConfirmDialog from "../../../components/common/ConfirmDialog";
@@ -16,7 +16,8 @@ import Pagination from "../../../components/common/Pagination";
 import { SearchFilterBar, SearchInput, FilterSelect } from "../../../components/common/SearchFilterBar";
 
 const ACCENT = "#D4300F";
-const PAGE_SIZE = 20;
+// Rows-per-page choices shown in the dropdown — same set as AllAdminLogs.tsx.
+const PAGE_SIZE_OPTIONS = [10, 20, 50, 100];
 
 const LAUNCH_STATUS_OPTIONS: { value: LaunchStatus; label: string }[] = [
   { value: "available", label: "Available" },
@@ -52,11 +53,20 @@ function toDateInputValue(iso: string | null): string {
 
 export default function AllCarModels() {
   const [page, setPage] = useState(1);
+  // Rows-per-page, user-controlled via a dropdown next to the filters.
+  const [limit, setLimit] = useState(20);
   const [search, setSearch] = useState("");
+  // Debounced copy of `search` — this is what actually goes into the
+  // query args, so we don't refetch on every keystroke.
+  const [debouncedSearch, setDebouncedSearch] = useState("");
   const [filterBrandId, setFilterBrandId] = useState<number | "">("");
   const [filterLaunchStatus, setFilterLaunchStatus] = useState<LaunchStatus | "">("");
-  const { data: brandsData } = useGetBrandsQuery({ limit: 100, sortBy: "name", sortOrder: "asc" });
-  const brands = brandsData?.data ?? [];
+  const { data: brands = [] } = useGetBrandOptionsQuery();
+
+  useEffect(() => {
+    const timer = setTimeout(() => setDebouncedSearch(search), search ? 400 : 0);
+    return () => clearTimeout(timer);
+  }, [search]);
 
   const {
     data: carModelsData,
@@ -65,8 +75,8 @@ export default function AllCarModels() {
     error: queryError,
   } = useGetCarModelsQuery({
     page,
-    limit: PAGE_SIZE,
-    search: search || undefined,
+    limit,
+    search: debouncedSearch || undefined,
     brandId: filterBrandId || undefined,
     launchStatus: filterLaunchStatus || undefined,
   });
@@ -182,6 +192,11 @@ export default function AllCarModels() {
     }
   };
 
+  const handleLimitChange = (value: number) => {
+    setLimit(value);
+    setPage(1);
+  };
+
   const columns: DataTableColumn<CarModelRecord>[] = [
     {
       header: "Cover",
@@ -283,11 +298,27 @@ export default function AllCarModels() {
 
       <SearchFilterBar
         right={
-          pagination && (
-            <p className="text-[11px] text-[#a39e96] whitespace-nowrap">
-              {pagination.total} car model{pagination.total === 1 ? "" : "s"} total
-            </p>
-          )
+          <div className="flex items-center gap-3">
+            {pagination && (
+              <p className="text-[11px] text-[#a39e96] whitespace-nowrap">
+                {pagination.total} car model{pagination.total === 1 ? "" : "s"} total
+              </p>
+            )}
+            <div className="flex items-center gap-2">
+              <span className="text-[11px] font-semibold text-[#a39e96] whitespace-nowrap">Rows per page</span>
+              <select
+                value={limit}
+                onChange={(e) => handleLimitChange(Number(e.target.value))}
+                className="cursor-pointer text-[12px] text-[#4a4640] bg-[#f7f5f1] border border-[#e8e4dc] rounded-lg px-3 py-2 outline-none"
+              >
+                {PAGE_SIZE_OPTIONS.map((n) => (
+                  <option key={n} value={n}>
+                    {n}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
         }
       >
         <SearchInput
@@ -328,7 +359,13 @@ export default function AllCarModels() {
           loadingMessage="Loading car models..."
           emptyMessage="No car models found."
         />
-        <Pagination pagination={pagination ?? null} onPageChange={setPage} variant="simple" />
+        <Pagination
+          pagination={pagination ?? null}
+          onPageChange={setPage}
+          variant="compact"
+          itemLabel="car models"
+          currentCount={carModels.length}
+        />
       </div>
 
       {modalOpen && (

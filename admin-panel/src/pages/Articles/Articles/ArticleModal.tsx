@@ -8,10 +8,11 @@ import {
 } from "./article.api";
 import { useGetArticleCategoriesQuery } from "../ArticleCategories/articleCategory.api";
 import { useGetAdminsQuery } from "../../AdminUsers/AllAdmins/admin.api";
-import { useGetBrandsQuery } from "../../newCars/Brands/brand.api";
-import { useGetCarModelsQuery } from "../../newCars/carModels/carModel.api";
+import { useGetBrandOptionsQuery } from "../../newCars/Brands/brand.api";
+import { useGetCarModelOptionsQuery } from "../../newCars/carModels/carModel.api";
 import { useAuth } from "../../../context/useAuth";
 import { extractApiError, getUploadUrl } from "../../../lib/apiClient";
+import { slugify } from "../../../lib/slugify";
 import Editor from "../../../components/common/Editor/Editor";
 
 const ACCENT = "#D4300F";
@@ -20,6 +21,7 @@ interface FieldErrors {
   categoryId?: string;
   authorId?: string;
   title?: string;
+  slug?: string;
   body?: string;
   scheduledAt?: string;
 }
@@ -78,10 +80,16 @@ export default function ArticleModal({
   const [metaTitle, setMetaTitle] = useState("");
   const [metaDescription, setMetaDescription] = useState("");
   const [metaKeywords, setMetaKeywords] = useState("");
+  const [ogImageUrl, setOgImageUrl] = useState("");
   const [brandIds, setBrandIds] = useState<number[]>([]);
   const [modelIds, setModelIds] = useState<number[]>([]);
   const [coverImage, setCoverImage] = useState<File | null>(null);
   const [coverPreview, setCoverPreview] = useState<string | null>(null);
+  // Tracks whether the admin has hand-edited the slug — while false, the
+  // slug keeps auto-deriving from the title live (visible auto-generate).
+  // Once they type directly into the slug field, it locks and stops
+  // following the title.
+  const [slugTouched, setSlugTouched] = useState(false);
 
   const [errors, setErrors] = useState<FieldErrors>({});
   const [serverError, setServerError] = useState("");
@@ -89,13 +97,11 @@ export default function ArticleModal({
 
   const { data: categoriesData } = useGetArticleCategoriesQuery({ page: 1, limit: 100, isActive: true });
   const { data: adminsData } = useGetAdminsQuery({ page: 1, limit: 100 });
-  const { data: brandsData } = useGetBrandsQuery({ page: 1, limit: 200 });
-  const { data: modelsData } = useGetCarModelsQuery({ page: 1, limit: 500 });
+  const { data: brands = [] } = useGetBrandOptionsQuery();
+  const { data: models = [] } = useGetCarModelOptionsQuery();
 
   const categories = categoriesData?.data ?? [];
   const admins = adminsData?.data ?? [];
-  const brands = brandsData?.data ?? [];
-  const models = modelsData?.data ?? [];
 
   const [createArticle, { isLoading: creating }] = useCreateArticleMutation();
   const [updateArticle, { isLoading: updating }] = useUpdateArticleMutation();
@@ -117,10 +123,12 @@ export default function ArticleModal({
     setMetaTitle("");
     setMetaDescription("");
     setMetaKeywords("");
+    setOgImageUrl("");
     setBrandIds([]);
     setModelIds([]);
     setCoverImage(null);
     setCoverPreview(null);
+    setSlugTouched(false);
     setErrors({});
     setServerError("");
   };
@@ -142,10 +150,12 @@ export default function ArticleModal({
       setMetaTitle(article.metaTitle ?? "");
       setMetaDescription(article.metaDescription ?? "");
       setMetaKeywords(article.metaKeywords ?? "");
+      setOgImageUrl(article.ogImageUrl ?? "");
       setBrandIds(article.brands.map((b) => b.id));
       setModelIds(article.models.map((m) => m.id));
       setCoverImage(null);
       setCoverPreview(getUploadUrl(article.coverImageUrl));
+      setSlugTouched(false);
     } else {
       resetForm();
     }
@@ -171,6 +181,15 @@ export default function ArticleModal({
     setModelIds((prev) => (prev.includes(id) ? prev.filter((m) => m !== id) : [...prev, id]));
   };
 
+  const handleTitleChange = (value: string) => {
+    setTitle(value);
+    if (!slugTouched) setSlug(slugify(value));
+  };
+  const handleSlugChange = (value: string) => {
+    setSlugTouched(true);
+    setSlug(value);
+  };
+
   const handleCoverChange = (file: File | null) => {
     setCoverImage(file);
     if (file) setCoverPreview(URL.createObjectURL(file));
@@ -181,6 +200,11 @@ export default function ArticleModal({
     if (!categoryId) next.categoryId = "Category is required.";
     if (!authorId) next.authorId = "Author is required.";
     if (title.trim().length < 3) next.title = "Title must be at least 3 characters.";
+    if (!slug.trim()) {
+      next.slug = "Slug is required.";
+    } else if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(slug.trim())) {
+      next.slug = "Slug must be lowercase letters/numbers separated by hyphens.";
+    }
     if (!body.trim() || body.trim() === "<p></p>") next.body = "Article content is required.";
     if (status === "scheduled") {
       if (!scheduledAt) {
@@ -202,7 +226,10 @@ export default function ArticleModal({
       categoryId: Number(categoryId),
       authorId: Number(authorId),
       title: title.trim(),
-      slug: slug.trim() || undefined,
+      // Always the literal value shown on screen — whether it came from
+      // auto-sync or a manual edit — so what's displayed is exactly what
+      // gets saved.
+      slug: slug.trim(),
       excerpt: excerpt.trim() || null,
       body,
       readTimeMinutes: readTimeMinutes.trim() ? Number(readTimeMinutes) : null,
@@ -212,6 +239,7 @@ export default function ArticleModal({
       metaTitle: metaTitle.trim() || null,
       metaDescription: metaDescription.trim() || null,
       metaKeywords: metaKeywords.trim() || null,
+      ogImageUrl: ogImageUrl.trim() || null,
       brandIds,
       modelIds,
       coverImage: coverImage ?? undefined,
@@ -299,7 +327,7 @@ export default function ArticleModal({
               ref={titleRef}
               type="text"
               value={title}
-              onChange={(e) => setTitle(e.target.value)}
+              onChange={(e) => handleTitleChange(e.target.value)}
               placeholder="e.g. 5 things to check before buying a used SUV"
               className={inputClass}
               style={{ borderColor: errors.title ? "#f0997b" : "#e2ddd5" }}
@@ -308,16 +336,25 @@ export default function ArticleModal({
             {errors.title && <p className="text-[11px] font-medium text-[#D4300F] mt-1">{errors.title}</p>}
           </Field>
 
-          <Field label="Slug">
+          <Field label="Slug" required>
             <input
               type="text"
               value={slug}
-              onChange={(e) => setSlug(e.target.value)}
-              placeholder="Auto-generated from title if left blank"
+              onChange={(e) => handleSlugChange(e.target.value)}
+              placeholder="Auto-generated from title — edit to customize"
               className={inputClass}
-              style={{ borderColor: "#e2ddd5" }}
+              style={{ borderColor: errors.slug ? "#f0997b" : "#e2ddd5" }}
               maxLength={200}
             />
+            {errors.slug ? (
+              <p className="text-[11px] font-medium text-[#D4300F] mt-1">{errors.slug}</p>
+            ) : (
+              <p className="text-[10px] text-[#a39e96] mt-1">
+                {slugTouched
+                  ? "Custom slug — won't change if you edit the title again."
+                  : "Auto-generated from the title. Start typing here to set your own."}
+              </p>
+            )}
           </Field>
 
           <Field label="Excerpt">
@@ -485,6 +522,32 @@ export default function ArticleModal({
                 className={inputClass}
                 style={{ borderColor: "#e2ddd5" }}
               />
+            </Field>
+            <Field label="Social share image (OG image URL)">
+              <div className="flex items-center gap-3">
+                {ogImageUrl && (
+                  <img
+                    src={ogImageUrl}
+                    alt=""
+                    className="w-14 h-14 rounded-lg object-cover border border-[#e8e4dc]"
+                    onError={(e) => (e.currentTarget.style.display = "none")}
+                    onLoad={(e) => (e.currentTarget.style.display = "block")}
+                  />
+                )}
+                <input
+                  type="url"
+                  value={ogImageUrl}
+                  onChange={(e) => setOgImageUrl(e.target.value)}
+                  placeholder="https://example.com/image.jpg"
+                  maxLength={255}
+                  className={`${inputClass} flex-1`}
+                  style={{ borderColor: "#e2ddd5" }}
+                />
+              </div>
+              <p className="text-[10px] text-[#a39e96] mt-1">
+                Shown as the preview image when this article is shared on social media. Leave blank to fall back to
+                the cover image.
+              </p>
             </Field>
           </div>
 

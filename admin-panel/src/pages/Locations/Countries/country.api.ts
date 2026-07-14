@@ -69,6 +69,21 @@ interface CountrySingleRawResponse {
   data: CountryRecord;
 }
 
+export interface CountryOption {
+  id: number;
+  name: string;
+  code: string;
+}
+
+export interface ListCountryOptionsParams {
+  isActive?: boolean;
+}
+
+interface CountryOptionsRawResponse {
+  success: true;
+  data: CountryOption[];
+}
+
 export interface CountryListResult {
   data: CountryRecord[];
   pagination: Pagination;
@@ -91,6 +106,15 @@ export const countryApi = api.injectEndpoints({
               COUNTRY_LIST_TAG,
             ]
           : [COUNTRY_LIST_TAG],
+    }),
+
+    // Dropdown-only source — every country in one shot, no pagination.
+    // Use this (not getCountries) wherever Country is just a <select>:
+    // State/District/City/Brand forms & filters.
+    getCountryOptions: builder.query<CountryOption[], ListCountryOptionsParams | void>({
+      query: (params) => ({ url: "/locations/countries/options", method: "GET", params: params ?? {} }),
+      transformResponse: (res: CountryOptionsRawResponse) => res.data,
+      providesTags: [COUNTRY_LIST_TAG],
     }),
 
     getCountryById: builder.query<CountryRecord, number>({
@@ -130,6 +154,7 @@ export const countryApi = api.injectEndpoints({
 
 export const {
   useGetCountriesQuery,
+  useGetCountryOptionsQuery,
   useGetCountryByIdQuery,
   useCreateCountryMutation,
   useUpdateCountryMutation,

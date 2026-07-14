@@ -59,6 +59,14 @@ async function assertVariantExists(variantId: number) {
   }
 }
 
+// Feature sheets have no name of their own — every log line identifies
+// one by the "Brand Model — Variant" it's attached to instead.
+function describeFeatureSubject(feature: {
+  variant: { variantName: string; model: { name: string; brand: { name: string } } };
+}): string {
+  return `${feature.variant.model.brand.name} ${feature.variant.model.name} — ${feature.variant.variantName}`;
+}
+
 // A variant is expected to carry a single feature sheet — same "one
 // spec-row per variant" idea enforced elsewhere via isDefault, except
 // here there's nothing to default between, so we simply block a second
@@ -126,14 +134,15 @@ export async function createFeature(input: CreateFeatureParsed, actorId: number)
 
   await createLog({
     adminId: actorId,
-    description: `Created feature sheet (id ${feature.id}) for variant id ${feature.variantId}`,
+    description: `Created feature sheet for "${describeFeatureSubject(feature)}" (id ${feature.id})`,
   });
 
   return feature;
 }
 
 export async function updateFeature(id: number, input: UpdateFeatureParsed, actorId: number) {
-  const existing = await getFeatureById(id);
+  // Existence check only — id 404s here before the update runs.
+  await getFeatureById(id);
 
   if (typeof input.variantId === 'number') {
     await assertVariantExists(input.variantId);
@@ -148,7 +157,7 @@ export async function updateFeature(id: number, input: UpdateFeatureParsed, acto
 
   await createLog({
     adminId: actorId,
-    description: `Updated feature sheet (id ${id}) for variant id ${existing.variantId} — fields: ${Object.keys(input).join(', ')}`,
+    description: `Updated feature sheet for "${describeFeatureSubject(feature)}" (id ${id})`,
   });
 
   return feature;
@@ -161,7 +170,7 @@ export async function deleteFeature(id: number, actorId: number) {
 
   await createLog({
     adminId: actorId,
-    description: `Deleted feature sheet (id ${id}) for variant id ${feature.variantId}`,
+    description: `Deleted feature sheet for "${describeFeatureSubject(feature)}" (id ${id})`,
   });
 
   return { message: 'Feature sheet deleted successfully' };

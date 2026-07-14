@@ -80,6 +80,23 @@ interface CarModelSingleRawResponse {
   data: CarModelRecord;
 }
 
+export interface CarModelOption {
+  id: number;
+  name: string;
+  brandId: number;
+  // Needed because most dropdowns render this as "Brand — Model".
+  brand: { name: string };
+}
+
+export interface ListCarModelOptionsParams {
+  brandId?: number;
+}
+
+interface CarModelOptionsRawResponse {
+  success: true;
+  data: CarModelOption[];
+}
+
 export interface CarModelListResult {
   data: CarModelRecord[];
   pagination: Pagination;
@@ -99,6 +116,15 @@ export const carModelApi = api.injectEndpoints({
         result
           ? [...result.data.map((m) => ({ type: "CarModel" as const, id: m.id })), CAR_MODEL_LIST_TAG]
           : [CAR_MODEL_LIST_TAG],
+    }),
+
+    // Dropdown-only source — every matching car model in one shot, no
+    // pagination. Use this (not getCarModels) wherever CarModel is just
+    // a <select>: Variant/Powertrain/Offer/Faq/Video/Article forms & filters.
+    getCarModelOptions: builder.query<CarModelOption[], ListCarModelOptionsParams | void>({
+      query: (params) => ({ url: "/new-cars/car-models/options", method: "GET", params: params ?? {} }),
+      transformResponse: (res: CarModelOptionsRawResponse) => res.data,
+      providesTags: [CAR_MODEL_LIST_TAG],
     }),
 
     getCarModelById: builder.query<CarModelRecord, number>({
@@ -163,6 +189,7 @@ export const carModelApi = api.injectEndpoints({
 
 export const {
   useGetCarModelsQuery,
+  useGetCarModelOptionsQuery,
   useGetCarModelByIdQuery,
   useCreateCarModelMutation,
   useUpdateCarModelMutation,

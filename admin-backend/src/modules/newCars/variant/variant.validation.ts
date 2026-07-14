@@ -17,6 +17,13 @@ export const variantIdParamSchema = z.object({
   id: z.coerce.number().int().positive(),
 });
 
+// Lightweight query for the /options endpoint — no page/limit/search,
+// this always returns the full unpaginated set for dropdown use,
+// optionally scoped to one model (for cascading Model → Variant pickers).
+export const variantOptionsQuerySchema = z.object({
+  modelId: z.coerce.number().int().positive().optional(),
+});
+
 // Every field below is mandatory on BOTH create and update — this module
 // intentionally does NOT follow Brand/CarModel's "partial patch" pattern.
 // The frontend always sends the complete form on Add and on Edit, so
@@ -44,5 +51,6 @@ export const createVariantSchema = z.object(variantShape);
 export const updateVariantSchema = z.object(variantShape);
 
 export type VariantListQueryParsed = z.infer<typeof variantListQuerySchema>;
+export type VariantOptionsQueryParsed = z.infer<typeof variantOptionsQuerySchema>;
 export type CreateVariantParsed = z.infer<typeof createVariantSchema>;
 export type UpdateVariantParsed = z.infer<typeof updateVariantSchema>;

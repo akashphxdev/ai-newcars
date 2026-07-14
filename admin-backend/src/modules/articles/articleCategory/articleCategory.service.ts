@@ -4,7 +4,6 @@ import { Prisma } from '@prisma/client';
 import { prisma } from '@/prisma/client';
 import { ApiError } from '@/core/errors/ApiError';
 import { createLog } from '@/core/utils/createLog';
-import { slugify } from '@/core/utils/slugify';
 import type {
   ArticleCategoryListQueryParsed,
   CreateArticleCategoryParsed,
@@ -36,24 +35,6 @@ async function assertSlugAvailable(slug: string, excludeId?: number) {
   if (conflict) {
     throw ApiError.conflict(`An article category with the slug "${slug}" already exists`);
   }
-}
-
-async function generateUniqueSlug(name: string, excludeId?: number): Promise<string> {
-  const base = slugify(name);
-  let candidate = base;
-  let suffix = 2;
-
-  for (let attempts = 0; attempts < 50; attempts++) {
-    const existing = await prisma.articleCategory.findFirst({
-      where: { slug: candidate, id: excludeId ? { not: excludeId } : undefined },
-      select: { id: true },
-    });
-    if (!existing) return candidate;
-    candidate = `${base}-${suffix}`;
-    suffix += 1;
-  }
-
-  throw ApiError.internal('Could not generate a unique slug — please provide one manually');
 }
 
 export async function listArticleCategories(query: ArticleCategoryListQueryParsed) {
@@ -107,15 +88,12 @@ export async function getArticleCategoryById(id: number) {
 }
 
 export async function createArticleCategory(input: CreateArticleCategoryParsed, actorId: number) {
-  const slug = input.slug ? input.slug : await generateUniqueSlug(input.name);
-  if (input.slug) {
-    await assertSlugAvailable(slug);
-  }
+  await assertSlugAvailable(input.slug);
 
   const category = await prisma.articleCategory.create({
     data: {
       name: input.name,
-      slug,
+      slug: input.slug,
       isActive: input.isActive,
       createdBy: actorId,
       updatedBy: actorId,
@@ -138,21 +116,15 @@ export async function updateArticleCategory(
 ) {
   const existing = await getArticleCategoryById(id);
 
-  let slug = existing.slug;
-  if (input.slug) {
-    slug = input.slug;
-    if (slug !== existing.slug) {
-      await assertSlugAvailable(slug, id);
-    }
-  } else if (input.name !== existing.name) {
-    slug = await generateUniqueSlug(input.name, id);
+  if (input.slug !== existing.slug) {
+    await assertSlugAvailable(input.slug, id);
   }
 
   const category = await prisma.articleCategory.update({
     where: { id },
     data: {
       name: input.name,
-      slug,
+      slug: input.slug,
       isActive: input.isActive,
       updatedBy: actorId,
     },

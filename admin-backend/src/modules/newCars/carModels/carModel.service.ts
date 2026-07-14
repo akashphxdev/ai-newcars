@@ -4,10 +4,10 @@ import { Prisma } from '@prisma/client';
 import { prisma } from '@/prisma/client';
 import { ApiError } from '@/core/errors/ApiError';
 import { createLog } from '@/core/utils/createLog';
-import { slugify } from '@/core/utils/slugify';
 import { buildPublicPath, deleteUploadedFile } from '@/core/utils/fileStorage.util';
 import type {
   CarModelListQueryParsed,
+  CarModelOptionsQueryParsed,
   CreateCarModelParsed,
   UpdateCarModelParsed,
 } from './carModel.validation';
@@ -73,6 +73,29 @@ export async function listCarModels(query: CarModelListQueryParsed) {
   };
 }
 
+// Dropdown-only source — every matching car model in one shot, no
+// pagination, optionally scoped to a brand. Same "why" as
+// brand.service.ts's listBrandOptions — the regular listCarModels()
+// stays paginated for the Car Models list page. `brandId` is included
+// in the response so cascading Brand → Model pickers can also filter
+// client-side if a consumer already fetched the unscoped set.
+export async function listCarModelOptions(query: CarModelOptionsQueryParsed) {
+  const { brandId } = query;
+
+  const where: Prisma.CarModelWhereInput = {
+    ...(brandId ? { brandId } : {}),
+  };
+
+  return prisma.carModel.findMany({
+    where,
+    // brand.name is included because nearly every consumer renders this
+    // dropdown as "Brand — Model" (Variant/Powertrain/Offer/Faq/Video
+    // forms & filters) — without it those labels can't be built.
+    select: { id: true, name: true, brandId: true, brand: { select: { name: true } } },
+    orderBy: { name: 'asc' },
+  });
+}
+
 export async function getCarModelById(id: number) {
   const carModel = await prisma.carModel.findUnique({
     where: { id },
@@ -115,28 +138,6 @@ async function assertSlugAvailable(slug: string, excludeId?: number) {
   }
 }
 
-// Auto-generates a unique slug from `name` when the caller doesn't
-// supply one explicitly — e.g. "Creta" -> "creta", and if that's taken,
-// "creta-2", "creta-3", etc. Same bounded-loop guard as
-// brand.service.ts's generateUniqueSlug.
-async function generateUniqueSlug(name: string, excludeId?: number): Promise<string> {
-  const base = slugify(name);
-  let candidate = base;
-  let suffix = 2;
-
-  for (let attempts = 0; attempts < 50; attempts++) {
-    const existing = await prisma.carModel.findFirst({
-      where: { slug: candidate, id: excludeId ? { not: excludeId } : undefined },
-      select: { id: true },
-    });
-    if (!existing) return candidate;
-    candidate = `${base}-${suffix}`;
-    suffix += 1;
-  }
-
-  throw ApiError.internal('Could not generate a unique slug — please provide one manually');
-}
-
 export async function createCarModel(
   input: CreateCarModelParsed,
   actorId: number,
@@ -145,16 +146,13 @@ export async function createCarModel(
   await assertBrandExists(input.brandId);
   await assertBodyTypeExists(input.bodyTypeId);
 
-  const slug = input.slug ? input.slug : await generateUniqueSlug(input.name);
-  if (input.slug) {
-    await assertSlugAvailable(slug);
-  }
+  await assertSlugAvailable(input.slug);
 
   const carModel = await prisma.carModel.create({
     data: {
       brandId: input.brandId,
       name: input.name,
-      slug,
+      slug: input.slug,
       bodyTypeId: input.bodyTypeId,
       launchStatus: input.launchStatus,
       expectedLaunchDate: input.expectedLaunchDate,
@@ -184,17 +182,8 @@ export async function updateCarModel(id: number, input: UpdateCarModelParsed, ac
     await assertBodyTypeExists(input.bodyTypeId);
   }
 
-  // Slug is optional in the payload — if the caller gave one explicitly,
-  // honor it (after checking it's free). Otherwise, auto-derive it from
-  // the (possibly changed) name, same behavior as create.
-  let slug = existing.slug;
-  if (input.slug) {
-    slug = input.slug;
-    if (slug !== existing.slug) {
-      await assertSlugAvailable(slug, id);
-    }
-  } else if (input.name && input.name !== existing.name) {
-    slug = await generateUniqueSlug(input.name, id);
+  if (input.slug !== existing.slug) {
+    await assertSlugAvailable(input.slug, id);
   }
 
   // Figure out the *effective* launch status/date this update would result
@@ -221,7 +210,6 @@ export async function updateCarModel(id: number, input: UpdateCarModelParsed, ac
     where: { id },
     data: {
       ...input,
-      slug,
       // bodyTypeId / priceMin / priceMax are required fields now (schema
       // no longer allows null) — passing them through as-is is fine and
       // matches Prisma's "omit the key to leave unchanged" semantics.
@@ -235,7 +223,7 @@ export async function updateCarModel(id: number, input: UpdateCarModelParsed, ac
 
   await createLog({
     adminId: actorId,
-    description: `Updated car model "${carModel.name}" (id ${carModel.id}) — fields: ${Object.keys(input).join(', ')}`,
+    description: `Updated car model "${carModel.name}" (id ${carModel.id})`,
   });
 
   return carModel;

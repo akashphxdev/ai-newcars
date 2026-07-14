@@ -122,7 +122,7 @@ export default function AllRoles() {
   ];
 
   return (
-    <div className="space-y-5 max-w-[1000px]">
+    <div className="space-y-5 max-w-[1100px]">
       <div className="flex items-center justify-between gap-3 flex-wrap">
         <div>
           <h1 className="text-[18px] font-black text-[#1c1a17]">Roles</h1>

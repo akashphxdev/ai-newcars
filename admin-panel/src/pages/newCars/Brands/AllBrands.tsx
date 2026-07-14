@@ -1,13 +1,13 @@
 // src/pages/Brands/AllBrands.tsx
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   useGetBrandsQuery,
   useUpdateBrandStatusMutation,
   useDeleteBrandMutation,
   type BrandRecord,
 } from "./brand.api";
-import { useGetCountriesQuery } from "../../Locations/Countries/country.api";
+import { useGetCountryOptionsQuery } from "../../Locations/Countries/country.api";
 import { extractApiError, getUploadUrl } from "../../../lib/apiClient";
 import BrandModal from "./BrandModal";
 import ConfirmDialog from "../../../components/common/ConfirmDialog";
@@ -16,7 +16,8 @@ import Pagination from "../../../components/common/Pagination";
 import { SearchFilterBar, SearchInput, FilterSelect } from "../../../components/common/SearchFilterBar";
 
 const ACCENT = "#D4300F";
-const PAGE_SIZE = 20;
+// Rows-per-page choices shown in the dropdown — same set as AllAdminLogs.tsx.
+const PAGE_SIZE_OPTIONS = [10, 20, 50, 100];
 
 // Small pill-style toggle switch — same pattern as AllCountries.tsx's
 // StatusToggle / AllCities.tsx's FlagToggle.
@@ -49,12 +50,20 @@ function StatusToggle({
 
 export default function AllBrands() {
   const [page, setPage] = useState(1);
+  // Rows-per-page, user-controlled via a dropdown next to the filters.
+  const [limit, setLimit] = useState(20);
   const [search, setSearch] = useState("");
+  // Debounced copy of `search` — this is what actually goes into the
+  // query args, so we don't refetch on every keystroke.
+  const [debouncedSearch, setDebouncedSearch] = useState("");
   const [filterCountryId, setFilterCountryId] = useState<number | "">("");
 
-  // NOTE: same 100-row cap as elsewhere (Locations pages).
-  const { data: countriesData } = useGetCountriesQuery({ limit: 100, sortBy: "name", sortOrder: "asc" });
-  const countries = countriesData?.data ?? [];
+  const { data: countries = [] } = useGetCountryOptionsQuery();
+
+  useEffect(() => {
+    const timer = setTimeout(() => setDebouncedSearch(search), search ? 400 : 0);
+    return () => clearTimeout(timer);
+  }, [search]);
 
   const {
     data: brandsData,
@@ -63,8 +72,8 @@ export default function AllBrands() {
     error: queryError,
   } = useGetBrandsQuery({
     page,
-    limit: PAGE_SIZE,
-    search: search || undefined,
+    limit,
+    search: debouncedSearch || undefined,
     countryOriginId: filterCountryId || undefined,
   });
 
@@ -124,6 +133,11 @@ export default function AllBrands() {
     } finally {
       setDeletingId(null);
     }
+  };
+
+  const handleLimitChange = (value: number) => {
+    setLimit(value);
+    setPage(1);
   };
 
   const columns: DataTableColumn<BrandRecord>[] = [
@@ -207,11 +221,27 @@ export default function AllBrands() {
 
       <SearchFilterBar
         right={
-          pagination && (
-            <p className="text-[11px] text-[#a39e96] whitespace-nowrap">
-              {pagination.total} brand{pagination.total === 1 ? "" : "s"} total
-            </p>
-          )
+          <div className="flex items-center gap-3">
+            {pagination && (
+              <p className="text-[11px] text-[#a39e96] whitespace-nowrap">
+                {pagination.total} brand{pagination.total === 1 ? "" : "s"} total
+              </p>
+            )}
+            <div className="flex items-center gap-2">
+              <span className="text-[11px] font-semibold text-[#a39e96] whitespace-nowrap">Rows per page</span>
+              <select
+                value={limit}
+                onChange={(e) => handleLimitChange(Number(e.target.value))}
+                className="cursor-pointer text-[12px] text-[#4a4640] bg-[#f7f5f1] border border-[#e8e4dc] rounded-lg px-3 py-2 outline-none"
+              >
+                {PAGE_SIZE_OPTIONS.map((n) => (
+                  <option key={n} value={n}>
+                    {n}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
         }
       >
         <SearchInput
@@ -243,7 +273,13 @@ export default function AllBrands() {
           loadingMessage="Loading brands..."
           emptyMessage="No brands found."
         />
-        <Pagination pagination={pagination ?? null} onPageChange={setPage} variant="simple" />
+        <Pagination
+          pagination={pagination ?? null}
+          onPageChange={setPage}
+          variant="compact"
+          itemLabel="brands"
+          currentCount={brands.length}
+        />
       </div>
 
       {modalOpen && (

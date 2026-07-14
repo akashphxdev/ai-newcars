@@ -8,7 +8,7 @@ import {
   type CarImageRecord,
   type CarImageAngle,
 } from "./image.api";
-import { useGetVariantsQuery } from "../Variants/variant.api";
+import { useGetVariantOptionsQuery } from "../Variants/variant.api";
 import { useGetColorsQuery } from "./color.api";
 import { extractApiError, getUploadUrl } from "../../../lib/apiClient";
 
@@ -59,8 +59,7 @@ export default function ImageModal({
 
   // Variants belonging to this model — lets the admin optionally pin a
   // gallery photo to one specific variant instead of the model at large.
-  const { data: variantsData } = useGetVariantsQuery({ modelId, limit: 100, sortBy: "variantName", sortOrder: "asc" });
-  const variants = variantsData?.data ?? [];
+  const { data: variants = [] } = useGetVariantOptionsQuery({ modelId });
 
   // Colors belonging to this model — lets the admin optionally tag a
   // gallery photo as belonging to one specific color option.

@@ -1,6 +1,6 @@
 // src/pages/Locations/AllCities.tsx
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   useGetCitiesQuery,
   useDeleteCityMutation,
@@ -8,9 +8,9 @@ import {
   type CityRecord,
   type UpdateCityFlagsInput,
 } from "./city.api";
-import { useGetStatesQuery } from "../States/state.api";
-import { useGetDistrictsQuery } from "../Districts/district.api";
-import { useGetCountriesQuery } from "../Countries/country.api";
+import { useGetStateOptionsQuery } from "../States/state.api";
+import { useGetDistrictOptionsQuery } from "../Districts/district.api";
+import { useGetCountryOptionsQuery } from "../Countries/country.api";
 import { extractApiError, getUploadUrl } from "../../../lib/apiClient";
 import CityModal from "./CityModal";
 import DataTable, { type DataTableColumn } from "../../../components/common/DataTable";
@@ -19,7 +19,8 @@ import { SearchFilterBar, SearchInput, FilterSelect } from "../../../components/
 import ConfirmDialog from "../../../components/common/ConfirmDialog";
 
 const ACCENT = "#D4300F";
-const PAGE_SIZE = 20;
+// Rows-per-page choices shown in the dropdown — same set as AllAdminLogs.tsx.
+const PAGE_SIZE_OPTIONS = [10, 20, 50, 100];
 
 function FlagToggle({
   checked,
@@ -50,30 +51,26 @@ function FlagToggle({
 
 export default function AllCities() {
   const [page, setPage] = useState(1);
+  // Rows-per-page, user-controlled via a dropdown next to the filters.
+  const [limit, setLimit] = useState(20);
   const [search, setSearch] = useState("");
+  // Debounced copy of `search` — this is what actually goes into the
+  // query args, so we don't refetch on every keystroke.
+  const [debouncedSearch, setDebouncedSearch] = useState("");
   const [filterCountryId, setFilterCountryId] = useState<number | "">("");
   const [filterStateId, setFilterStateId] = useState<number | "">("");
   const [filterDistrictId, setFilterDistrictId] = useState<number | "">("");
 
-  // NOTE: same 100-row cap discussed in AllStates.tsx / AllDistricts.tsx.
-  const { data: countriesData } = useGetCountriesQuery({ limit: 100, sortBy: "name", sortOrder: "asc" });
-  const countries = countriesData?.data ?? [];
+  useEffect(() => {
+    const timer = setTimeout(() => setDebouncedSearch(search), search ? 400 : 0);
+    return () => clearTimeout(timer);
+  }, [search]);
 
-  const { data: filterStatesData } = useGetStatesQuery({
-    limit: 100,
-    countryId: filterCountryId || undefined,
-    sortBy: "name",
-    sortOrder: "asc",
-  });
-  const filterStates = filterStatesData?.data ?? [];
+  const { data: countries = [] } = useGetCountryOptionsQuery();
 
-  const { data: filterDistrictsData } = useGetDistrictsQuery({
-    limit: 100,
-    stateId: filterStateId || undefined,
-    sortBy: "name",
-    sortOrder: "asc",
-  });
-  const filterDistricts = filterDistrictsData?.data ?? [];
+  const { data: filterStates = [] } = useGetStateOptionsQuery({ countryId: filterCountryId || undefined });
+
+  const { data: filterDistricts = [] } = useGetDistrictOptionsQuery({ stateId: filterStateId || undefined });
 
   const {
     data: citiesData,
@@ -82,8 +79,8 @@ export default function AllCities() {
     error: queryError,
   } = useGetCitiesQuery({
     page,
-    limit: PAGE_SIZE,
-    search: search || undefined,
+    limit,
+    search: debouncedSearch || undefined,
     districtId: filterDistrictId || undefined,
     stateId: !filterDistrictId ? filterStateId || undefined : undefined,
   });
@@ -146,6 +143,11 @@ export default function AllCities() {
     } finally {
       setTogglingKey(null);
     }
+  };
+
+  const handleLimitChange = (value: number) => {
+    setLimit(value);
+    setPage(1);
   };
 
   const columns: DataTableColumn<CityRecord>[] = [
@@ -246,11 +248,27 @@ export default function AllCities() {
 
       <SearchFilterBar
         right={
-          pagination && (
-            <p className="text-[11px] text-[#a39e96] whitespace-nowrap">
-              {pagination.total} cit{pagination.total === 1 ? "y" : "ies"} total
-            </p>
-          )
+          <div className="flex items-center gap-3">
+            {pagination && (
+              <p className="text-[11px] text-[#a39e96] whitespace-nowrap">
+                {pagination.total} cit{pagination.total === 1 ? "y" : "ies"} total
+              </p>
+            )}
+            <div className="flex items-center gap-2">
+              <span className="text-[11px] font-semibold text-[#a39e96] whitespace-nowrap">Rows per page</span>
+              <select
+                value={limit}
+                onChange={(e) => handleLimitChange(Number(e.target.value))}
+                className="cursor-pointer text-[12px] text-[#4a4640] bg-[#f7f5f1] border border-[#e8e4dc] rounded-lg px-3 py-2 outline-none"
+              >
+                {PAGE_SIZE_OPTIONS.map((n) => (
+                  <option key={n} value={n}>
+                    {n}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
         }
       >
         <SearchInput
@@ -305,7 +323,13 @@ export default function AllCities() {
           loadingMessage="Loading cities..."
           emptyMessage="No cities found."
         />
-        <Pagination pagination={pagination ?? null} onPageChange={setPage} variant="simple" />
+        <Pagination
+          pagination={pagination ?? null}
+          onPageChange={setPage}
+          variant="compact"
+          itemLabel="cities"
+          currentCount={cities.length}
+        />
       </div>
 
       {modalOpen && (

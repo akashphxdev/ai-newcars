@@ -51,6 +51,22 @@ interface StateSingleRawResponse {
   data: StateRecord;
 }
 
+export interface StateOption {
+  id: number;
+  name: string;
+  code: string | null;
+  countryId: number;
+}
+
+export interface ListStateOptionsParams {
+  countryId?: number;
+}
+
+interface StateOptionsRawResponse {
+  success: true;
+  data: StateOption[];
+}
+
 export interface StateListResult {
   data: StateRecord[];
   pagination: Pagination;
@@ -70,6 +86,15 @@ export const stateApi = api.injectEndpoints({
         result
           ? [...result.data.map((s) => ({ type: "State" as const, id: s.id })), STATE_LIST_TAG]
           : [STATE_LIST_TAG],
+    }),
+
+    // Dropdown-only source — every matching state in one shot, no
+    // pagination. Use this (not getStates) wherever State is just a
+    // <select>: District/City forms & filters.
+    getStateOptions: builder.query<StateOption[], ListStateOptionsParams | void>({
+      query: (params) => ({ url: "/locations/states/options", method: "GET", params: params ?? {} }),
+      transformResponse: (res: StateOptionsRawResponse) => res.data,
+      providesTags: [STATE_LIST_TAG],
     }),
 
     getStateById: builder.query<StateRecord, number>({
@@ -99,6 +124,7 @@ export const stateApi = api.injectEndpoints({
 
 export const {
   useGetStatesQuery,
+  useGetStateOptionsQuery,
   useGetStateByIdQuery,
   useCreateStateMutation,
   useUpdateStateMutation,

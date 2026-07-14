@@ -1,7 +1,9 @@
 // src/pages/newCars/Features/AllFeatures.tsx
 import { useState } from "react";
 import { useGetFeaturesQuery, useDeleteFeatureMutation, type FeatureRecord } from "./feature.api";
-import { useGetVariantsQuery } from "../Variants/variant.api";
+import { useGetVariantOptionsQuery } from "../Variants/variant.api";
+import { useGetCarModelOptionsQuery } from "../carModels/carModel.api";
+import { useGetBrandOptionsQuery } from "../Brands/brand.api";
 import { extractApiError } from "../../../lib/apiClient";
 import FeatureModal from "./FeatureModal";
 import ConfirmDialog from "../../../components/common/ConfirmDialog";
@@ -10,7 +12,8 @@ import Pagination from "../../../components/common/Pagination";
 import { SearchFilterBar, FilterSelect } from "../../../components/common/SearchFilterBar";
 
 const ACCENT = "#D4300F";
-const PAGE_SIZE = 20;
+// Rows-per-page choices shown in the dropdown — same set as AllAdminLogs.tsx.
+const PAGE_SIZE_OPTIONS = [10, 20, 50, 100];
 
 function countEnabled(f: FeatureRecord): number {
   const flags: boolean[] = [
@@ -147,12 +150,23 @@ function ExpandedFeatureDetail({ f }: { f: FeatureRecord }) {
 
 export default function AllFeatures() {
   const [page, setPage] = useState(1);
+  // Rows-per-page, user-controlled via a dropdown next to the filters.
+  const [limit, setLimit] = useState(20);
+  const [filterBrandId, setFilterBrandId] = useState<number | "">("");
+  const [filterModelId, setFilterModelId] = useState<number | "">("");
   const [filterVariantId, setFilterVariantId] = useState<number | "">("");
 
-  // NOTE: same 100-row cap used elsewhere (Brand dropdown, PowertrainIce
-  // filter) — fine while the variants table stays under 100 rows.
-  const { data: variantsData } = useGetVariantsQuery({ limit: 100, sortBy: "variantName", sortOrder: "asc" });
-  const variants = variantsData?.data ?? [];
+  const { data: brands = [] } = useGetBrandOptionsQuery();
+
+  // Scoped server-side to the chosen brand/model — options-endpoint, no row cap.
+  const { data: modelsForBrand = [] } = useGetCarModelOptionsQuery(
+    filterBrandId ? { brandId: Number(filterBrandId) } : undefined,
+    { skip: !filterBrandId },
+  );
+  const { data: variantsForModel = [] } = useGetVariantOptionsQuery(
+    filterModelId ? { modelId: Number(filterModelId) } : undefined,
+    { skip: !filterModelId },
+  );
 
   const {
     data: featureData,
@@ -161,7 +175,7 @@ export default function AllFeatures() {
     error: queryError,
   } = useGetFeaturesQuery({
     page,
-    limit: PAGE_SIZE,
+    limit,
     variantId: filterVariantId || undefined,
   });
 
@@ -209,6 +223,11 @@ export default function AllFeatures() {
     } finally {
       setBusyId(null);
     }
+  };
+
+  const handleLimitChange = (value: number) => {
+    setLimit(value);
+    setPage(1);
   };
 
   const columns: DataTableColumn<FeatureRecord>[] = [
@@ -294,24 +313,62 @@ export default function AllFeatures() {
 
       <SearchFilterBar
         right={
-          pagination && (
-            <p className="text-[11px] text-[#a39e96] whitespace-nowrap">
-              {pagination.total} feature sheet{pagination.total === 1 ? "" : "s"} total
-            </p>
-          )
+          <div className="flex items-center gap-3">
+            {pagination && (
+              <p className="text-[11px] text-[#a39e96] whitespace-nowrap">
+                {pagination.total} feature sheet{pagination.total === 1 ? "" : "s"} total
+              </p>
+            )}
+            <div className="flex items-center gap-2">
+              <span className="text-[11px] font-semibold text-[#a39e96] whitespace-nowrap">Rows per page</span>
+              <select
+                value={limit}
+                onChange={(e) => handleLimitChange(Number(e.target.value))}
+                className="cursor-pointer text-[12px] text-[#4a4640] bg-[#f7f5f1] border border-[#e8e4dc] rounded-lg px-3 py-2 outline-none"
+              >
+                {PAGE_SIZE_OPTIONS.map((n) => (
+                  <option key={n} value={n}>
+                    {n}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
         }
       >
+        <FilterSelect
+          value={filterBrandId}
+          onChange={(v) => {
+            const next = v ? Number(v) : "";
+            setFilterBrandId(next);
+            setFilterModelId("");
+            setFilterVariantId("");
+            setPage(1);
+          }}
+          options={brands.map((b) => ({ value: b.id, label: b.name }))}
+          placeholder="All brands"
+        />
+        <FilterSelect
+          value={filterModelId}
+          onChange={(v) => {
+            const next = v ? Number(v) : "";
+            setFilterModelId(next);
+            setFilterVariantId("");
+            setPage(1);
+          }}
+          options={modelsForBrand.map((m) => ({ value: m.id, label: m.name }))}
+          placeholder="All models"
+          disabled={!filterBrandId}
+        />
         <FilterSelect
           value={filterVariantId}
           onChange={(v) => {
             setFilterVariantId(v ? Number(v) : "");
             setPage(1);
           }}
-          options={variants.map((v) => ({
-            value: v.id,
-            label: `${v.model.brand.name} — ${v.model.name} — ${v.variantName}`,
-          }))}
+          options={variantsForModel.map((v) => ({ value: v.id, label: v.variantName }))}
           placeholder="All variants"
+          disabled={!filterModelId}
         />
       </SearchFilterBar>
 
@@ -327,7 +384,13 @@ export default function AllFeatures() {
           expandable
           renderExpanded={(f) => <ExpandedFeatureDetail f={f} />}
         />
-        <Pagination pagination={pagination ?? null} onPageChange={setPage} variant="simple" />
+        <Pagination
+          pagination={pagination ?? null}
+          onPageChange={setPage}
+          variant="compact"
+          itemLabel="feature sheets"
+          currentCount={features.length}
+        />
       </div>
 
       {modalOpen && (

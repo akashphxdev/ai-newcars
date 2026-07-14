@@ -1,9 +1,10 @@
 // src/pages/newCars/AttributeOptions/AllAttributeOptions.tsx
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   useGetAttributeOptionsQuery,
   useDeleteAttributeOptionMutation,
   type AttributeOptionRecord,
+  type AttributeOptionCategory,
 } from "./attributeOption.api";
 import { extractApiError } from "../../../lib/apiClient";
 import AttributeOptionModal from "./AttributeOptionModal";
@@ -13,7 +14,8 @@ import Pagination from "../../../components/common/Pagination";
 import { SearchFilterBar, SearchInput, FilterSelect } from "../../../components/common/SearchFilterBar";
 
 const ACCENT = "#D4300F";
-const PAGE_SIZE = 20;
+// Rows-per-page choices shown in the dropdown — same set as AllAdminLogs.tsx.
+const PAGE_SIZE_OPTIONS = [10, 20, 50, 100];
 
 // Known categories shown as quick filter options — the underlying field
 // is free text, so a brand-new category typed in the modal will simply
@@ -22,8 +24,18 @@ const KNOWN_CATEGORIES = ["transmission", "drivetrain"];
 
 export default function AllAttributeOptions() {
   const [page, setPage] = useState(1);
+  // Rows-per-page, user-controlled via a dropdown next to the filters.
+  const [limit, setLimit] = useState(20);
   const [search, setSearch] = useState("");
+  // Debounced copy of `search` — this is what actually goes into the
+  // query args, so we don't refetch on every keystroke.
+  const [debouncedSearch, setDebouncedSearch] = useState("");
   const [filterCategory, setFilterCategory] = useState("");
+
+  useEffect(() => {
+    const timer = setTimeout(() => setDebouncedSearch(search), search ? 400 : 0);
+    return () => clearTimeout(timer);
+  }, [search]);
 
   const {
     data: optionsData,
@@ -32,9 +44,9 @@ export default function AllAttributeOptions() {
     error: queryError,
   } = useGetAttributeOptionsQuery({
     page,
-    limit: PAGE_SIZE,
-    search: search || undefined,
-    category: filterCategory || undefined,
+    limit,
+    search: debouncedSearch || undefined,
+    category: (filterCategory || undefined) as AttributeOptionCategory | undefined,
   });
 
   const options = optionsData?.data ?? [];
@@ -81,6 +93,11 @@ export default function AllAttributeOptions() {
     } finally {
       setDeletingId(null);
     }
+  };
+
+  const handleLimitChange = (value: number) => {
+    setLimit(value);
+    setPage(1);
   };
 
   const columns: DataTableColumn<AttributeOptionRecord>[] = [
@@ -151,11 +168,27 @@ export default function AllAttributeOptions() {
 
       <SearchFilterBar
         right={
-          pagination && (
-            <p className="text-[11px] text-[#a39e96] whitespace-nowrap">
-              {pagination.total} option{pagination.total === 1 ? "" : "s"} total
-            </p>
-          )
+          <div className="flex items-center gap-3">
+            {pagination && (
+              <p className="text-[11px] text-[#a39e96] whitespace-nowrap">
+                {pagination.total} option{pagination.total === 1 ? "" : "s"} total
+              </p>
+            )}
+            <div className="flex items-center gap-2">
+              <span className="text-[11px] font-semibold text-[#a39e96] whitespace-nowrap">Rows per page</span>
+              <select
+                value={limit}
+                onChange={(e) => handleLimitChange(Number(e.target.value))}
+                className="cursor-pointer text-[12px] text-[#4a4640] bg-[#f7f5f1] border border-[#e8e4dc] rounded-lg px-3 py-2 outline-none"
+              >
+                {PAGE_SIZE_OPTIONS.map((n) => (
+                  <option key={n} value={n}>
+                    {n}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
         }
       >
         <SearchInput
@@ -187,7 +220,13 @@ export default function AllAttributeOptions() {
           loadingMessage="Loading attribute options..."
           emptyMessage="No attribute options found."
         />
-        <Pagination pagination={pagination ?? null} onPageChange={setPage} variant="simple" />
+        <Pagination
+          pagination={pagination ?? null}
+          onPageChange={setPage}
+          variant="compact"
+          itemLabel="options"
+          currentCount={options.length}
+        />
       </div>
 
       {modalOpen && (
@@ -195,7 +234,7 @@ export default function AllAttributeOptions() {
           key={editingOption ? `edit-${editingOption.id}` : "add"}
           open={modalOpen}
           onClose={closeModal}
-          defaultCategory={filterCategory || undefined}
+          defaultCategory={(filterCategory || undefined) as AttributeOptionCategory | undefined}
           option={editingOption}
         />
       )}

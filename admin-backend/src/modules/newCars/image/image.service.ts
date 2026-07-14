@@ -143,7 +143,7 @@ export async function createImage(input: CreateImageParsed, actorId: number, ima
 
   await createLog({
     adminId: actorId,
-    description: `Uploaded image (id ${image.id}) for car model id ${image.modelId}`,
+    description: `Uploaded image (id ${image.id}) for "${image.model.name}"`,
   });
 
   return image;
@@ -190,7 +190,7 @@ export async function createImagesBulk(
 
   await createLog({
     adminId: actorId,
-    description: `Bulk-uploaded ${images.length} image(s) for car model id ${input.modelId}`,
+    description: `Bulk-uploaded ${images.length} image(s) for "${images[0]?.model.name ?? input.modelId}"`,
   });
 
   return images;
@@ -242,7 +242,7 @@ export async function updateImage(id: number, input: UpdateImageParsed, actorId:
 
   await createLog({
     adminId: actorId,
-    description: `Updated image (id ${id}) — fields: ${Object.keys(input).join(', ')}`,
+    description: `Updated image (id ${id}) for "${image.model.name}"`,
   });
 
   return image;
@@ -266,7 +266,7 @@ export async function setPrimaryImage(id: number, isPrimary: boolean, actorId: n
 
   await createLog({
     adminId: actorId,
-    description: `${isPrimary ? 'Set' : 'Unset'} image (id ${id}) as primary for model id ${existing.modelId}`,
+    description: `${isPrimary ? 'Set' : 'Unset'} image (id ${id}) as primary for "${existing.model.name}"`,
   });
 
   return image;
@@ -293,7 +293,7 @@ export async function deleteImage(id: number, actorId: number) {
 
   await createLog({
     adminId: actorId,
-    description: `Deleted image (id ${id}) for car model id ${image.modelId}`,
+    description: `Deleted image (id ${id}) for "${image.model.name}"`,
   });
 
   return { message: 'Image deleted successfully' };
@@ -319,7 +319,7 @@ export async function replaceImageFile(
 
   await createLog({
     adminId: actorId,
-    description: `Replaced file for image (id ${id})`,
+    description: `Replaced file for image (id ${id}) on "${existing.model.name}"`,
   });
 
   return image as ImageReplaceFileResult;

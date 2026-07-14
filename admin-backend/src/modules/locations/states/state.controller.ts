@@ -6,6 +6,7 @@ import { sendSuccess, sendPaginated } from '@/core/utils/sendResponse';
 import * as stateService from './state.service';
 import {
   stateListQuerySchema,
+  stateOptionsQuerySchema,
   stateIdParamSchema,
   createStateSchema,
   updateStateSchema,
@@ -16,6 +17,14 @@ export async function getStates(req: Request, res: Response) {
   const query = stateListQuerySchema.parse(req.query);
   const result = await stateService.listStates(query);
   return sendPaginated(res, result.items, result.pagination, 'States fetched successfully');
+}
+
+// GET /states/options — lightweight, unpaginated {id, name, code,
+// countryId} list for dropdowns, optionally filtered by countryId.
+export async function getStateOptions(req: Request, res: Response) {
+  const query = stateOptionsQuerySchema.parse(req.query);
+  const options = await stateService.listStateOptions(query);
+  return sendSuccess(res, options, 'State options fetched successfully');
 }
 
 // GET /states/:id

@@ -110,7 +110,7 @@ export async function createFaq(input: CreateFaqParsed, actorId: number) {
 
   await createLog({
     adminId: actorId,
-    description: `Created FAQ "${faq.question}" (id ${faq.id}) under model id ${faq.modelId}`,
+    description: `Created FAQ "${faq.question}" (id ${faq.id}) for "${faq.model.brand.name} ${faq.model.name}"`,
   });
 
   return faq;

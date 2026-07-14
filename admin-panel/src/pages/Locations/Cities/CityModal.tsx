@@ -7,23 +7,13 @@ import {
   useUploadCityLogoMutation,
   type CityRecord,
 } from "./city.api";
-import { useGetDistrictsQuery } from "../Districts/district.api";
-import { useGetStatesQuery } from "../States/state.api";
-import { useGetCountriesQuery } from "../Countries/country.api";
+import { useGetDistrictOptionsQuery } from "../Districts/district.api";
+import { useGetStateOptionsQuery } from "../States/state.api";
+import { useGetCountryOptionsQuery } from "../Countries/country.api";
 import { extractApiError, getUploadUrl } from "../../../lib/apiClient";
+import { slugify } from "../../../lib/slugify";
 
 const ACCENT = "#D4300F";
-
-// Mirrors src/core/utils/slugify.ts on the backend exactly, so the
-// live preview in the form matches what the server would generate.
-function slugify(input: string): string {
-  return input
-    .toString()
-    .trim()
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "");
-}
 
 interface FieldErrors {
   districtId?: string;
@@ -55,9 +45,7 @@ export default function CityModal({
 }) {
   const isEditMode = !!city;
 
-  // NOTE: same 100-row cap as elsewhere in Locations.
-  const { data: countriesData } = useGetCountriesQuery({ limit: 100, sortBy: "name", sortOrder: "asc" });
-  const countries = countriesData?.data ?? [];
+  const { data: countries = [] } = useGetCountryOptionsQuery();
 
   const [countryId, setCountryId] = useState<number | "">(
     city?.district?.state?.country?.id ?? ""
@@ -77,21 +65,9 @@ export default function CityModal({
   const [serverError, setServerError] = useState("");
   const nameRef = useRef<HTMLInputElement>(null);
 
-  const { data: statesData } = useGetStatesQuery({
-    limit: 100,
-    countryId: countryId || undefined,
-    sortBy: "name",
-    sortOrder: "asc",
-  });
-  const states = statesData?.data ?? [];
+  const { data: states = [] } = useGetStateOptionsQuery({ countryId: countryId || undefined });
 
-  const { data: districtsData } = useGetDistrictsQuery({
-    limit: 100,
-    stateId: stateId || undefined,
-    sortBy: "name",
-    sortOrder: "asc",
-  });
-  const districts = districtsData?.data ?? [];
+  const { data: districts = [] } = useGetDistrictOptionsQuery({ stateId: stateId || undefined });
 
   const [createCity, { isLoading: creating }] = useCreateCityMutation();
   const [updateCity, { isLoading: updating }] = useUpdateCityMutation();
@@ -175,7 +151,9 @@ export default function CityModal({
     const next: FieldErrors = {};
     if (!districtId) next.districtId = "Please select a district.";
     if (name.trim().length < 2) next.name = "Name must be at least 2 characters.";
-    if (slug.trim() && !/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(slug.trim())) {
+    if (!slug.trim()) {
+      next.slug = "Slug is required.";
+    } else if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(slug.trim())) {
       next.slug = "Slug must be lowercase letters/numbers separated by hyphens (e.g. \"new-delhi\").";
     }
     // Logo is required on create. In edit mode a logo already exists
@@ -195,7 +173,10 @@ export default function CityModal({
     const payload = {
       districtId: Number(districtId),
       name: name.trim(),
-      slug: slug.trim() || undefined, // leave empty to let the backend auto-generate
+      // Always the literal value shown on screen — whether it came from
+      // auto-sync or a manual edit — so what's displayed is exactly what
+      // gets saved.
+      slug: slug.trim(),
       isMetro,
       isTopCity,
       isSellCarEnabled,

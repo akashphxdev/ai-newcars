@@ -11,6 +11,13 @@ export const stateListQuerySchema = z.object({
   sortOrder: z.enum(['asc', 'desc']).default('asc'),
 });
 
+// Lightweight query for the /options endpoint — no page/limit/search,
+// this always returns the full unpaginated set for dropdown use,
+// optionally scoped to one country (for cascading Country → State pickers).
+export const stateOptionsQuerySchema = z.object({
+  countryId: z.coerce.number().int().positive().optional(),
+});
+
 export const stateIdParamSchema = z.object({
   id: z.coerce.number().int().positive(),
 });
@@ -28,5 +35,6 @@ export const updateStateSchema = z.object({
 });
 
 export type StateListQueryParsed = z.infer<typeof stateListQuerySchema>;
+export type StateOptionsQueryParsed = z.infer<typeof stateOptionsQuerySchema>;
 export type CreateStateParsed = z.infer<typeof createStateSchema>;
 export type UpdateStateParsed = z.infer<typeof updateStateSchema>;

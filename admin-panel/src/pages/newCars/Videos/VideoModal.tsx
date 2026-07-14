@@ -6,7 +6,7 @@ import {
   useUploadVideoThumbnailMutation,
   type VideoRecord,
 } from "./video.api";
-import { useGetCarModelsQuery } from "../carModels/carModel.api";
+import { useGetCarModelOptionsQuery } from "../carModels/carModel.api";
 import { VIDEO_TYPE_OPTIONS } from "../../../lib/lookups";
 import { extractApiError, getUploadUrl } from "../../../lib/apiClient";
 
@@ -70,10 +70,7 @@ export default function VideoModal({
 }) {
   const isEditMode = !!video;
 
-  // NOTE: same 100-row cap used elsewhere (Brand dropdown, Country
-  // dropdown, Variant/Offer/Faq modals).
-  const { data: carModelsData } = useGetCarModelsQuery({ limit: 100, sortBy: "name", sortOrder: "asc" });
-  const carModels = carModelsData?.data ?? [];
+  const { data: carModels = [] } = useGetCarModelOptionsQuery();
 
   const [modelId, setModelId] = useState<number | "">(video?.modelId ?? "");
   const [title, setTitle] = useState(video ? video.title : "");

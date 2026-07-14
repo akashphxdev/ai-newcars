@@ -171,7 +171,7 @@ export async function updateAdmin(id: number, input: UpdateAdminParsed, actorId:
 
   await createLog({
     adminId: actorId,
-    description: `Updated admin "${admin.name}" (id ${admin.id}) — fields: ${Object.keys(input).join(', ')}`,
+    description: `Updated admin "${admin.name}" (id ${admin.id})`,
   });
 
   return admin;

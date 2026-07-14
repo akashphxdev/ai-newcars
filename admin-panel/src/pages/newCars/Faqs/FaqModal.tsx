@@ -5,7 +5,7 @@ import {
   useUpdateFaqMutation,
   type FaqRecord,
 } from "./faq.api";
-import { useGetCarModelsQuery } from "../carModels/carModel.api";
+import { useGetCarModelOptionsQuery } from "../carModels/carModel.api";
 import { extractApiError } from "../../../lib/apiClient";
 
 const ACCENT = "#D4300F";
@@ -45,11 +45,7 @@ export default function FaqModal({
 }) {
   const isEditMode = !!faq;
 
-  // NOTE: same 100-row cap used elsewhere (Brand dropdown, Country
-  // dropdown, Variant modal) — fine while the car-models table stays
-  // under 100 rows.
-  const { data: carModelsData } = useGetCarModelsQuery({ limit: 100, sortBy: "name", sortOrder: "asc" });
-  const carModels = carModelsData?.data ?? [];
+  const { data: carModels = [] } = useGetCarModelOptionsQuery();
 
   const [modelId, setModelId] = useState<number | "">(faq?.modelId ?? "");
   const [question, setQuestion] = useState(faq ? faq.question : "");

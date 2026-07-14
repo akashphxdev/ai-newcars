@@ -5,7 +5,7 @@ import { requireAuth } from '@/core/middleware/auth';
 import { requirePermission } from '@/core/middleware/requirePermission';
 import { imageUploader } from '@/core/middleware/upload.middleware';
 import { asyncHandler } from '@/core/utils/asyncHandler';
-import { getCities, getCityById, createCity, updateCity, updateCityFlags, uploadCityLogo, deleteCity } from './city.controller';
+import { getCities, getCityOptions, getCityById, createCity, updateCity, updateCityFlags, uploadCityLogo, deleteCity } from './city.controller';
 
 const router = Router();
 
@@ -13,6 +13,9 @@ const router = Router();
 router.use(requireAuth(['admin']));
 
 router.get('/', requirePermission('cities.view'), asyncHandler(getCities));
+// Registered before /:id — otherwise Express would match "options" as
+// the :id param and this route would never be reached.
+router.get('/options', requirePermission('cities.view'), asyncHandler(getCityOptions));
 router.get('/:id', requirePermission('cities.view'), asyncHandler(getCityById));
 
 router.post(

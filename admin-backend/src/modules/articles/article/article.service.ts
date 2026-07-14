@@ -4,7 +4,6 @@ import { Prisma } from '@prisma/client';
 import { prisma } from '@/prisma/client';
 import { ApiError } from '@/core/errors/ApiError';
 import { createLog } from '@/core/utils/createLog';
-import { slugify } from '@/core/utils/slugify';
 import { buildPublicPath, deleteUploadedFile } from '@/core/utils/fileStorage.util';
 import type {
   ArticleListQueryParsed,
@@ -20,6 +19,10 @@ const ARTICLE_SELECT = {
   category: { select: { id: true, name: true, slug: true } },
   authorId: true,
   author: { select: { id: true, name: true } },
+  createdBy: true,
+  createdByAdmin: { select: { id: true, name: true } },
+  updatedBy: true,
+  updatedByAdmin: { select: { id: true, name: true } },
   title: true,
   slug: true,
   excerpt: true,
@@ -63,24 +66,6 @@ async function assertSlugAvailable(slug: string, excludeId?: number) {
   if (conflict) {
     throw ApiError.conflict(`An article with the slug "${slug}" already exists`);
   }
-}
-
-async function generateUniqueSlug(title: string, excludeId?: number): Promise<string> {
-  const base = slugify(title);
-  let candidate = base;
-  let suffix = 2;
-
-  for (let attempts = 0; attempts < 50; attempts++) {
-    const existing = await prisma.article.findFirst({
-      where: { slug: candidate, id: excludeId ? { not: excludeId } : undefined },
-      select: { id: true },
-    });
-    if (!existing) return candidate;
-    candidate = `${base}-${suffix}`;
-    suffix += 1;
-  }
-
-  throw ApiError.internal('Could not generate a unique slug — please provide one manually');
 }
 
 async function assertCategoryExists(categoryId: number) {
@@ -175,10 +160,7 @@ export async function createArticle(
   await assertBrandsExist(input.brandIds);
   await assertModelsExist(input.modelIds);
 
-  const slug = input.slug ? input.slug : await generateUniqueSlug(input.title);
-  if (input.slug) {
-    await assertSlugAvailable(slug);
-  }
+  await assertSlugAvailable(input.slug);
 
   const publishedAt = resolvePublishedAt(input.status, null);
 
@@ -190,7 +172,7 @@ export async function createArticle(
         createdBy: actorId,
         updatedBy: actorId,
         title: input.title,
-        slug,
+        slug: input.slug,
         excerpt: input.excerpt ?? null,
         body: input.body,
         coverImageUrl: coverImageFilename ? buildPublicPath('articles', coverImageFilename) : null,
@@ -202,6 +184,7 @@ export async function createArticle(
         metaTitle: input.metaTitle ?? null,
         metaDescription: input.metaDescription ?? null,
         metaKeywords: input.metaKeywords ?? null,
+        ogImageUrl: input.ogImageUrl ?? null,
       },
       select: { id: true },
     });
@@ -236,14 +219,8 @@ export async function updateArticle(id: number, input: UpdateArticleParsed, acto
   await assertBrandsExist(input.brandIds);
   await assertModelsExist(input.modelIds);
 
-  let slug = existing.slug;
-  if (input.slug) {
-    slug = input.slug;
-    if (slug !== existing.slug) {
-      await assertSlugAvailable(slug, id);
-    }
-  } else if (input.title !== existing.title) {
-    slug = await generateUniqueSlug(input.title, id);
+  if (input.slug !== existing.slug) {
+    await assertSlugAvailable(input.slug, id);
   }
 
   const publishedAt = resolvePublishedAt(input.status, existing.publishedAt);
@@ -256,7 +233,7 @@ export async function updateArticle(id: number, input: UpdateArticleParsed, acto
         authorId: input.authorId,
         updatedBy: actorId,
         title: input.title,
-        slug,
+        slug: input.slug,
         excerpt: input.excerpt ?? null,
         body: input.body,
         readTimeMinutes: input.readTimeMinutes ?? null,
@@ -267,6 +244,7 @@ export async function updateArticle(id: number, input: UpdateArticleParsed, acto
         metaTitle: input.metaTitle ?? null,
         metaDescription: input.metaDescription ?? null,
         metaKeywords: input.metaKeywords ?? null,
+        ogImageUrl: input.ogImageUrl ?? null,
       },
     });
 
@@ -324,7 +302,15 @@ export async function updateArticleStatus(id: number, input: UpdateArticleStatus
 export async function deleteArticle(id: number, actorId: number) {
   const article = await getArticleById(id);
 
-  await prisma.article.delete({ where: { id } });
+  // Article's FKs from article_brands/article_car_models/article_comments
+  // are ON DELETE RESTRICT, so those rows must be cleared first or the
+  // delete fails with a P2003 constraint error.
+  await prisma.$transaction([
+    prisma.articleBrand.deleteMany({ where: { articleId: id } }),
+    prisma.articleCarModel.deleteMany({ where: { articleId: id } }),
+    prisma.articleComment.deleteMany({ where: { articleId: id } }),
+    prisma.article.delete({ where: { id } }),
+  ]);
 
   if (article.coverImageUrl) {
     await deleteUploadedFile(article.coverImageUrl);

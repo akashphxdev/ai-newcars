@@ -80,6 +80,16 @@ interface CitySingleRawResponse {
   data: CityRecord;
 }
 
+export interface CityOption {
+  id: number;
+  name: string;
+}
+
+interface CityOptionsRawResponse {
+  success: true;
+  data: CityOption[];
+}
+
 export interface CityListResult {
   data: CityRecord[];
   pagination: Pagination;
@@ -99,6 +109,14 @@ export const cityApi = api.injectEndpoints({
         result
           ? [...result.data.map((c) => ({ type: "City" as const, id: c.id })), CITY_LIST_TAG]
           : [CITY_LIST_TAG],
+    }),
+
+    // Dropdown-only source — every city in one shot, no pagination. Use
+    // this (not getCities) wherever City is just a <select>: Offer forms.
+    getCityOptions: builder.query<CityOption[], void>({
+      query: () => ({ url: "/locations/cities/options", method: "GET" }),
+      transformResponse: (res: CityOptionsRawResponse) => res.data,
+      providesTags: [CITY_LIST_TAG],
     }),
 
     getCityById: builder.query<CityRecord, number>({
@@ -155,6 +173,7 @@ export const cityApi = api.injectEndpoints({
 
 export const {
   useGetCitiesQuery,
+  useGetCityOptionsQuery,
   useGetCityByIdQuery,
   useCreateCityMutation,
   useUpdateCityMutation,

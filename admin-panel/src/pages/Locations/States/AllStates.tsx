@@ -1,12 +1,12 @@
 // src/pages/Locations/AllStates.tsx
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   useGetStatesQuery,
   useDeleteStateMutation,
   type StateRecord,
 } from "./state.api";
-import { useGetCountriesQuery } from "../Countries/country.api";
+import { useGetCountryOptionsQuery } from "../Countries/country.api";
 import { extractApiError } from "../../../lib/apiClient";
 import StateModal from "./StateModal";
 import DataTable, { type DataTableColumn } from "../../../components/common/DataTable";
@@ -15,14 +15,24 @@ import { SearchFilterBar, SearchInput, FilterSelect } from "../../../components/
 import ConfirmDialog from "../../../components/common/ConfirmDialog";
 
 const ACCENT = "#D4300F";
-const PAGE_SIZE = 20;
+// Rows-per-page choices shown in the dropdown — same set as AllAdminLogs.tsx.
+const PAGE_SIZE_OPTIONS = [10, 20, 50, 100];
 
 export default function AllStates() {
   const [page, setPage] = useState(1);
+  // Rows-per-page, user-controlled via a dropdown next to the filters.
+  const [limit, setLimit] = useState(20);
   const [search, setSearch] = useState("");
+  // Debounced copy of `search` — this is what actually goes into the
+  // query args, so we don't refetch on every keystroke.
+  const [debouncedSearch, setDebouncedSearch] = useState("");
   const [filterCountryId, setFilterCountryId] = useState<number | "">("");
-  const { data: countriesData } = useGetCountriesQuery({ limit: 100, sortBy: "name", sortOrder: "asc" });
-  const countries = countriesData?.data ?? [];
+  const { data: countries = [] } = useGetCountryOptionsQuery();
+
+  useEffect(() => {
+    const timer = setTimeout(() => setDebouncedSearch(search), search ? 400 : 0);
+    return () => clearTimeout(timer);
+  }, [search]);
 
   const {
     data: statesData,
@@ -31,8 +41,8 @@ export default function AllStates() {
     error: queryError,
   } = useGetStatesQuery({
     page,
-    limit: PAGE_SIZE,
-    search: search || undefined,
+    limit,
+    search: debouncedSearch || undefined,
     countryId: filterCountryId || undefined,
   });
 
@@ -80,6 +90,11 @@ export default function AllStates() {
     }
   };
 
+  const handleLimitChange = (value: number) => {
+    setLimit(value);
+    setPage(1);
+  };
+
   const columns: DataTableColumn<StateRecord>[] = [
     { header: "Name", render: (s) => <span className="font-semibold text-[#1c1a17]">{s.name}</span> },
     { header: "Code", render: (s) => <span className="text-[#7a7670]">{s.code ?? <span className="text-[#c0bab0]">—</span>}</span> },
@@ -108,7 +123,7 @@ export default function AllStates() {
   ];
 
   return (
-    <div className="space-y-5 max-w-[1000px]">
+    <div className="space-y-5 max-w-[1100px]">
       <div className="flex items-center justify-between gap-3 flex-wrap">
         <div>
           <h1 className="text-[18px] font-black text-[#1c1a17]">States</h1>
@@ -132,11 +147,27 @@ export default function AllStates() {
 
       <SearchFilterBar
         right={
-          pagination && (
-            <p className="text-[11px] text-[#a39e96]">
-              {pagination.total} state{pagination.total === 1 ? "" : "s"} total
-            </p>
-          )
+          <div className="flex items-center gap-3">
+            {pagination && (
+              <p className="text-[11px] text-[#a39e96] whitespace-nowrap">
+                {pagination.total} state{pagination.total === 1 ? "" : "s"} total
+              </p>
+            )}
+            <div className="flex items-center gap-2">
+              <span className="text-[11px] font-semibold text-[#a39e96] whitespace-nowrap">Rows per page</span>
+              <select
+                value={limit}
+                onChange={(e) => handleLimitChange(Number(e.target.value))}
+                className="cursor-pointer text-[12px] text-[#4a4640] bg-[#f7f5f1] border border-[#e8e4dc] rounded-lg px-3 py-2 outline-none"
+              >
+                {PAGE_SIZE_OPTIONS.map((n) => (
+                  <option key={n} value={n}>
+                    {n}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
         }
       >
         <SearchInput
@@ -168,7 +199,13 @@ export default function AllStates() {
           loadingMessage="Loading states..."
           emptyMessage="No states found."
         />
-        <Pagination pagination={pagination ?? null} onPageChange={setPage} variant="simple" />
+        <Pagination
+          pagination={pagination ?? null}
+          onPageChange={setPage}
+          variant="compact"
+          itemLabel="states"
+          currentCount={states.length}
+        />
       </div>
 
       {modalOpen && (

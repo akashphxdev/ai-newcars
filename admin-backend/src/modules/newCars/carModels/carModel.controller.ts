@@ -8,6 +8,7 @@ import { buildPublicPath, deleteUploadedFile } from '@/core/utils/fileStorage.ut
 import * as carModelService from './carModel.service';
 import {
   carModelListQuerySchema,
+  carModelOptionsQuerySchema,
   carModelIdParamSchema,
   createCarModelSchema,
   updateCarModelSchema,
@@ -19,6 +20,14 @@ export async function getCarModels(req: Request, res: Response) {
   const query = carModelListQuerySchema.parse(req.query);
   const result = await carModelService.listCarModels(query);
   return sendPaginated(res, result.items, result.pagination, 'Car models fetched successfully');
+}
+
+// GET /car-models/options — lightweight, unpaginated {id, name,
+// brandId} list for dropdowns, optionally filtered by brandId.
+export async function getCarModelOptions(req: Request, res: Response) {
+  const query = carModelOptionsQuerySchema.parse(req.query);
+  const options = await carModelService.listCarModelOptions(query);
+  return sendSuccess(res, options, 'Car model options fetched successfully');
 }
 
 // GET /car-models/:id

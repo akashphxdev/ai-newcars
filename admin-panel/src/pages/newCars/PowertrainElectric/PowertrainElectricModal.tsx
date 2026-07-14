@@ -7,9 +7,9 @@ import {
   type PowertrainElectricRecord,
   type TestCycleType,
 } from "./powertrainElectric.api";
-import { useGetVariantsQuery } from "../Variants/variant.api";
-import { useGetCarModelsQuery } from "../carModels/carModel.api";
-import { useGetBrandsQuery } from "../Brands/brand.api";
+import { useGetVariantOptionsQuery } from "../Variants/variant.api";
+import { useGetCarModelOptionsQuery } from "../carModels/carModel.api";
+import { useGetBrandOptionsQuery } from "../Brands/brand.api";
 import { useGetAttributeOptionsGroupedQuery } from "../AttributeOptions/attributeOption.api";
 import { extractApiError } from "../../../lib/apiClient";
 import { TEST_CYCLE_TYPE_OPTIONS } from "../../../lib/lookups";
@@ -162,22 +162,22 @@ export default function PowertrainElectricModal({
     skip: editId == null,
   });
 
-  const { data: variantsData } = useGetVariantsQuery({ limit: 100, sortBy: "variantName", sortOrder: "asc" });
-  const variants = variantsData?.data ?? [];
-
-  const { data: brandsData } = useGetBrandsQuery({ limit: 100, sortBy: "name", sortOrder: "asc" });
-  const brands = brandsData?.data ?? [];
-
-  const { data: carModelsData } = useGetCarModelsQuery({ limit: 100, sortBy: "name", sortOrder: "asc" });
-  const carModels = carModelsData?.data ?? [];
+  const { data: brands = [] } = useGetBrandOptionsQuery();
 
   const { data: attributeOptionsGrouped } = useGetAttributeOptionsGroupedQuery();
   const drivetrains = attributeOptionsGrouped?.drivetrain ?? [];
 
   const [brandId, setBrandId] = useState<number | "">("");
   const [modelId, setModelId] = useState<number | "">("");
-  const modelsForBrand = brandId ? carModels.filter((m) => m.brandId === brandId) : [];
-  const variantsForModel = modelId ? variants.filter((v) => v.modelId === modelId) : [];
+  // Scoped server-side to the chosen brand/model — options-endpoint, no row cap.
+  const { data: modelsForBrand = [] } = useGetCarModelOptionsQuery(
+    brandId ? { brandId: Number(brandId) } : undefined,
+    { skip: !brandId },
+  );
+  const { data: variantsForModel = [] } = useGetVariantOptionsQuery(
+    modelId ? { modelId: Number(modelId) } : undefined,
+    { skip: !modelId },
+  );
 
   const [form, setForm] = useState<FormState>(buildInitialState(null));
   const [errors, setErrors] = useState<FieldErrors>({});

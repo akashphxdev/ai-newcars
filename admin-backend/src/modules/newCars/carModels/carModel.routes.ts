@@ -7,6 +7,7 @@ import { imageUploader } from '@/core/middleware/upload.middleware';
 import { asyncHandler } from '@/core/utils/asyncHandler';
 import {
   getCarModels,
+  getCarModelOptions,
   getCarModelById,
   createCarModel,
   updateCarModel,
@@ -21,6 +22,9 @@ const router = Router();
 router.use(requireAuth(['admin']));
 
 router.get('/', requirePermission('carmodels.view'), asyncHandler(getCarModels));
+// Registered before /:id — otherwise Express would match "options" as
+// the :id param and this route would never be reached.
+router.get('/options', requirePermission('carmodels.view'), asyncHandler(getCarModelOptions));
 router.get('/:id', requirePermission('carmodels.view'), asyncHandler(getCarModelById));
 // Cover image is required at create time — multipart field name "coverImage".
 // Same uploader/validation (jpg/png/webp, 2MB) as the gallery images.

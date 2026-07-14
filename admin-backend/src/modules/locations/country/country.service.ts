@@ -4,7 +4,12 @@ import { Prisma } from '@prisma/client';
 import { prisma } from '@/prisma/client';
 import { ApiError } from '@/core/errors/ApiError';
 import { createLog } from '@/core/utils/createLog';
-import type { CountryListQueryParsed, CreateCountryParsed, UpdateCountryParsed } from './country.validation';
+import type {
+  CountryListQueryParsed,
+  CountryOptionsQueryParsed,
+  CreateCountryParsed,
+  UpdateCountryParsed,
+} from './country.validation';
 
 export async function listCountries(query: CountryListQueryParsed) {
   const { page, limit, search, isActive, sortBy, sortOrder } = query;
@@ -40,6 +45,25 @@ export async function listCountries(query: CountryListQueryParsed) {
       totalPages: Math.ceil(total / limit) || 1,
     },
   };
+}
+
+// Dropdown-only source — returns every matching country in one shot
+// (no pagination) with just the fields a <select> needs. The regular
+// listCountries() above stays paginated for the Countries list page;
+// this is for every other screen that just needs "all countries" to
+// populate a dropdown (State/District/City/Brand forms & filters).
+export async function listCountryOptions(query: CountryOptionsQueryParsed) {
+  const { isActive } = query;
+
+  const where: Prisma.CountryWhereInput = {
+    ...(typeof isActive === 'boolean' ? { isActive } : {}),
+  };
+
+  return prisma.country.findMany({
+    where,
+    select: { id: true, name: true, code: true },
+    orderBy: { name: 'asc' },
+  });
 }
 
 export async function getCountryById(id: number) {
@@ -110,7 +134,7 @@ export async function updateCountry(id: number, input: UpdateCountryParsed, acto
 
   await createLog({
     adminId: actorId,
-    description: `Updated country "${country.name}" (id ${country.id}) — fields: ${Object.keys(input).join(', ')}`,
+    description: `Updated country "${country.name}" (id ${country.id})`,
   });
 
   return country;

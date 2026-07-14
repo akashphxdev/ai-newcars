@@ -3,7 +3,6 @@ import { Prisma } from '@prisma/client';
 import { prisma } from '@/prisma/client';
 import { ApiError } from '@/core/errors/ApiError';
 import { createLog } from '@/core/utils/createLog';
-import { slugify } from '@/core/utils/slugify';
 import type {
   AttributeOptionListQueryParsed,
   CreateAttributeOptionParsed,
@@ -134,7 +133,7 @@ export async function updateAttributeOption(
 
   await createLog({
     adminId: actorId,
-    description: `Updated attribute option "${option.name}" (id ${option.id}) — fields: ${Object.keys(input).join(', ')}`,
+    description: `Updated attribute option "${option.name}" (id ${option.id})`,
   });
 
   return option;

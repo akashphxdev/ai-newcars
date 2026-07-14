@@ -7,6 +7,7 @@ import { imageUploader } from '@/core/middleware/upload.middleware';
 import { asyncHandler } from '@/core/utils/asyncHandler';
 import {
   getBodyTypes,
+  getBodyTypeOptions,
   getBodyTypeById,
   createBodyType,
   updateBodyType,
@@ -20,6 +21,9 @@ const router = Router();
 router.use(requireAuth(['admin']));
 
 router.get('/', requirePermission('bodytypes.view'), asyncHandler(getBodyTypes));
+// Registered before /:id — otherwise Express would match "options" as
+// the :id param and this route would never be reached.
+router.get('/options', requirePermission('bodytypes.view'), asyncHandler(getBodyTypeOptions));
 router.get('/:id', requirePermission('bodytypes.view'), asyncHandler(getBodyTypeById));
 router.post(
   '/',

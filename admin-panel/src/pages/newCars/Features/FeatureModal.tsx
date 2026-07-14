@@ -1,7 +1,9 @@
 // src/pages/newCars/Features/FeatureModal.tsx
 import { useState } from "react";
 import { useCreateFeatureMutation, useUpdateFeatureMutation, type FeatureRecord } from "./feature.api";
-import { useGetVariantsQuery } from "../Variants/variant.api";
+import { useGetVariantOptionsQuery } from "../Variants/variant.api";
+import { useGetCarModelOptionsQuery } from "../carModels/carModel.api";
+import { useGetBrandOptionsQuery } from "../Brands/brand.api";
 import { extractApiError } from "../../../lib/apiClient";
 
 const ACCENT = "#D4300F";
@@ -172,10 +174,23 @@ export default function FeatureModal({
 }) {
   const isEditMode = !!feature;
 
-  // NOTE: same 100-row cap used elsewhere (Brand dropdown, PowertrainIce
-  // variant select) — fine while the variants table stays under 100 rows.
-  const { data: variantsData } = useGetVariantsQuery({ limit: 100, sortBy: "variantName", sortOrder: "asc" });
-  const variants = variantsData?.data ?? [];
+  const { data: brands = [] } = useGetBrandOptionsQuery();
+
+  const [brandId, setBrandId] = useState<number | "">(feature?.variant.model.brand.id ?? "");
+  const [modelId, setModelId] = useState<number | "">(feature?.variant.model.id ?? "");
+
+  // Cascading, server-side scoped — Model options wait for a Brand,
+  // Variant options wait for a Model. Same pattern as VariantModal /
+  // PowertrainIceModal, so the Variant label never needs to repeat
+  // Brand/Model (they're already picked, right above it).
+  const { data: modelsForBrand = [] } = useGetCarModelOptionsQuery(
+    brandId ? { brandId: Number(brandId) } : undefined,
+    { skip: !brandId },
+  );
+  const { data: variantsForModel = [] } = useGetVariantOptionsQuery(
+    modelId ? { modelId: Number(modelId) } : undefined,
+    { skip: !modelId },
+  );
 
   const [form, setForm] = useState<FormState>(buildInitialState(feature));
   const [errors, setErrors] = useState<FieldErrors>({});
@@ -192,6 +207,8 @@ export default function FeatureModal({
 
   const handleClose = () => {
     setForm(buildInitialState(null));
+    setBrandId("");
+    setModelId("");
     setErrors({});
     setServerError("");
     onClose();
@@ -292,16 +309,55 @@ export default function FeatureModal({
 
         <form onSubmit={handleSubmit} className="px-6 pb-6 pt-5 space-y-5" noValidate>
           <Section title="Basics">
+            <Field label="Brand">
+              <select
+                value={brandId}
+                onChange={(e) => {
+                  const next = e.target.value ? Number(e.target.value) : "";
+                  setBrandId(next);
+                  setModelId("");
+                  set("variantId", "");
+                }}
+                className={selectClass}
+              >
+                <option value="">Select a brand</option>
+                {brands.map((b) => (
+                  <option key={b.id} value={b.id}>
+                    {b.name}
+                  </option>
+                ))}
+              </select>
+            </Field>
+            <Field label="Car model">
+              <select
+                value={modelId}
+                onChange={(e) => {
+                  const next = e.target.value ? Number(e.target.value) : "";
+                  setModelId(next);
+                  set("variantId", "");
+                }}
+                disabled={!brandId}
+                className={selectClass + " disabled:opacity-50 disabled:cursor-not-allowed"}
+              >
+                <option value="">{brandId ? "Select a car model" : "Select a brand first"}</option>
+                {modelsForBrand.map((m) => (
+                  <option key={m.id} value={m.id}>
+                    {m.name}
+                  </option>
+                ))}
+              </select>
+            </Field>
             <Field label="Variant" error={errors.variantId}>
               <select
                 value={form.variantId}
                 onChange={(e) => set("variantId", e.target.value ? Number(e.target.value) : "")}
-                className={selectClass}
+                disabled={!modelId}
+                className={selectClass + " disabled:opacity-50 disabled:cursor-not-allowed"}
               >
-                <option value="">Select a variant</option>
-                {variants.map((v) => (
+                <option value="">{modelId ? "Select a variant" : "Select a car model first"}</option>
+                {variantsForModel.map((v) => (
                   <option key={v.id} value={v.id}>
-                    {v.model.brand.name} — {v.model.name} — {v.variantName}
+                    {v.variantName}
                   </option>
                 ))}
               </select>

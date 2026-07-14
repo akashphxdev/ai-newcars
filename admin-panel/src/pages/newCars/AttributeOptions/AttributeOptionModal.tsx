@@ -7,6 +7,7 @@ import {
   type AttributeOptionCategory,
 } from "./attributeOption.api";
 import { extractApiError } from "../../../lib/apiClient";
+import { slugify } from "../../../lib/slugify";
 
 const ACCENT = "#D4300F";
 const slugRegex = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
@@ -15,15 +16,6 @@ const CATEGORY_OPTIONS: { value: AttributeOptionCategory; label: string }[] = [
   { value: "transmission", label: "Transmission" },
   { value: "drivetrain", label: "Drivetrain" },
 ];
-
-function slugify(input: string): string {
-  return input
-    .toString()
-    .trim()
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "");
-}
 
 interface FieldErrors {
   category?: string;

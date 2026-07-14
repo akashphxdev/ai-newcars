@@ -1,6 +1,6 @@
 // src/pages/newCars/ColorsImages/AllColorsImages.tsx
 import { useState } from "react";
-import { useGetCarModelsQuery } from "../carModels/carModel.api";
+import { useGetCarModelOptionsQuery } from "../carModels/carModel.api";
 import ColorsTab from "./ColorsTab";
 import ImagesTab from "./ImagesTab";
 
@@ -9,15 +9,7 @@ const ACCENT = "#D4300F";
 type TabKey = "colors" | "images";
 
 export default function AllColorsImages() {
-  // NOTE: same 100-row cap as elsewhere (Brands' country dropdown,
-  // Locations pages) — fine while the car-models table stays under 100
-  // rows. Swap for a searchable/paginated combobox once it grows past that.
-  const { data: modelsData, isLoading: modelsLoading } = useGetCarModelsQuery({
-    limit: 100,
-    sortBy: "name",
-    sortOrder: "asc",
-  });
-  const models = modelsData?.data ?? [];
+  const { data: models = [], isLoading: modelsLoading } = useGetCarModelOptionsQuery();
 
   const [modelId, setModelId] = useState<number | "">("");
   const [tab, setTab] = useState<TabKey>("colors");

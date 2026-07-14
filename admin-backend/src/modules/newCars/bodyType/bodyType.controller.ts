@@ -17,6 +17,13 @@ export async function getBodyTypes(req: Request, res: Response) {
   return sendPaginated(res, result.items, result.pagination, 'Body types fetched successfully');
 }
 
+// GET /body-types/options — lightweight, unpaginated {id, name} list
+// for dropdowns.
+export async function getBodyTypeOptions(_req: Request, res: Response) {
+  const options = await bodyTypeService.listBodyTypeOptions();
+  return sendSuccess(res, options, 'Body type options fetched successfully');
+}
+
 export async function getBodyTypeById(req: Request, res: Response) {
   const { id } = bodyTypeIdParamSchema.parse(req.params);
   const bodyType = await bodyTypeService.getBodyTypeById(id);

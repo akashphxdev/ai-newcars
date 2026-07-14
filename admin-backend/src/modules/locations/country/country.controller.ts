@@ -6,6 +6,7 @@ import { sendSuccess, sendPaginated } from '@/core/utils/sendResponse';
 import * as countryService from './country.service';
 import {
   countryListQuerySchema,
+  countryOptionsQuerySchema,
   countryIdParamSchema,
   createCountrySchema,
   updateCountrySchema,
@@ -17,6 +18,15 @@ export async function getCountries(req: Request, res: Response) {
   const query = countryListQuerySchema.parse(req.query);
   const result = await countryService.listCountries(query);
   return sendPaginated(res, result.items, result.pagination, 'Countries fetched successfully');
+}
+
+// GET /countries/options — lightweight, unpaginated {id, name, code}
+// list for dropdowns. Kept separate from getCountries so dropdown
+// consumers never depend on page/limit semantics.
+export async function getCountryOptions(req: Request, res: Response) {
+  const query = countryOptionsQuerySchema.parse(req.query);
+  const options = await countryService.listCountryOptions(query);
+  return sendSuccess(res, options, 'Country options fetched successfully');
 }
 
 // GET /countries/:id

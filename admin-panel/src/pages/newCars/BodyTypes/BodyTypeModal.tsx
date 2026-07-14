@@ -7,18 +7,10 @@ import {
   type BodyTypeRecord,
 } from "./bodyType.api";
 import { extractApiError, getUploadUrl } from "../../../lib/apiClient";
+import { slugify } from "../../../lib/slugify";
 
 const ACCENT = "#D4300F";
 const slugRegex = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
-
-function slugify(input: string): string {
-  return input
-    .toString()
-    .trim()
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "");
-}
 
 interface FieldErrors {
   name?: string;
@@ -155,8 +147,10 @@ export default function BodyTypeModal({
           id: bodyType.id,
           input: {
             name: name.trim(),
-            // Leave blank to let the backend auto-generate from the name.
-            slug: slugTouched ? slug.trim() || undefined : undefined,
+            // Always the literal value shown on screen — whether it came
+            // from auto-sync or a manual edit — so what's displayed is
+            // exactly what gets saved.
+            slug: slug.trim(),
             description: description.trim(),
           },
         }).unwrap();

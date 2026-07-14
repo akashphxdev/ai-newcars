@@ -4,9 +4,11 @@ import { Request, Response } from 'express';
 import { ApiError } from '@/core/errors/ApiError';
 import { sendSuccess, sendPaginated } from '@/core/utils/sendResponse';
 import { buildPublicPath, deleteUploadedFile } from '@/core/utils/fileStorage.util';
+import { createLog } from '@/core/utils/createLog';
 import * as brandService from './brand.service';
 import {
   brandListQuerySchema,
+  brandOptionsQuerySchema,
   brandIdParamSchema,
   createBrandSchema,
   updateBrandSchema,
@@ -20,10 +22,26 @@ export async function getBrands(req: Request, res: Response) {
   return sendPaginated(res, result.items, result.pagination, 'Brands fetched successfully');
 }
 
+// GET /brands/options — lightweight, unpaginated {id, name} list for
+// dropdowns.
+export async function getBrandOptions(req: Request, res: Response) {
+  const query = brandOptionsQuerySchema.parse(req.query);
+  const options = await brandService.listBrandOptions(query);
+  return sendSuccess(res, options, 'Brand options fetched successfully');
+}
+
 // GET /brands/:id
 export async function getBrandById(req: Request, res: Response) {
   const { id } = brandIdParamSchema.parse(req.params);
   const brand = await brandService.getBrandById(id);
+
+  if (req.auth) {
+    await createLog({
+      adminId: req.auth.id,
+      description: `Viewed brand "${brand.name}" (id ${id})`,
+    });
+  }
+
   return sendSuccess(res, brand, 'Brand fetched successfully');
 }
 

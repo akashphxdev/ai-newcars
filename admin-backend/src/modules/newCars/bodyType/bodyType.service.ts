@@ -3,7 +3,6 @@ import { Prisma } from '@prisma/client';
 import { prisma } from '@/prisma/client';
 import { ApiError } from '@/core/errors/ApiError';
 import { createLog } from '@/core/utils/createLog';
-import { slugify } from '@/core/utils/slugify';
 import { buildPublicPath, deleteUploadedFile } from '@/core/utils/fileStorage.util';
 import type {
   BodyTypeListQueryParsed,
@@ -29,24 +28,6 @@ async function assertSlugAvailable(slug: string, excludeId?: number) {
   if (conflict) {
     throw ApiError.conflict(`A body type with the slug "${slug}" already exists`);
   }
-}
-
-async function generateUniqueSlug(name: string, excludeId?: number): Promise<string> {
-  const base = slugify(name);
-  let candidate = base;
-  let suffix = 2;
-
-  for (let attempts = 0; attempts < 50; attempts++) {
-    const existing = await prisma.bodyType.findFirst({
-      where: { slug: candidate, id: excludeId ? { not: excludeId } : undefined },
-      select: { id: true },
-    });
-    if (!existing) return candidate;
-    candidate = `${base}-${suffix}`;
-    suffix += 1;
-  }
-
-  throw ApiError.internal('Could not generate a unique slug — please provide one manually');
 }
 
 export async function listBodyTypes(query: BodyTypeListQueryParsed) {
@@ -85,6 +66,16 @@ export async function listBodyTypes(query: BodyTypeListQueryParsed) {
   };
 }
 
+// Dropdown-only source — every body type in one shot, no pagination.
+// Use this (not listBodyTypes) wherever BodyType is just a <select>:
+// CarModel forms.
+export async function listBodyTypeOptions() {
+  return prisma.bodyType.findMany({
+    select: { id: true, name: true },
+    orderBy: { name: 'asc' },
+  });
+}
+
 export async function getBodyTypeById(id: number) {
   const bodyType = await prisma.bodyType.findUnique({
     where: { id },
@@ -103,15 +94,12 @@ export async function createBodyType(
   actorId: number,
   iconFilename: string,
 ) {
-  const slug = input.slug ? input.slug : await generateUniqueSlug(input.name);
-  if (input.slug) {
-    await assertSlugAvailable(slug);
-  }
+  await assertSlugAvailable(input.slug);
 
   const bodyType = await prisma.bodyType.create({
     data: {
       name: input.name,
-      slug,
+      slug: input.slug,
       description: input.description,
       iconUrl: buildPublicPath('bodytypes', iconFilename),
     },
@@ -129,28 +117,19 @@ export async function createBodyType(
 export async function updateBodyType(id: number, input: UpdateBodyTypeParsed, actorId: number) {
   const existing = await getBodyTypeById(id);
 
-  // Slug is optional in the payload — if the caller gave one explicitly,
-  // honor it (after checking it's free). Otherwise, auto-derive it from
-  // the (possibly changed) name, same behavior as create.
-  let slug = existing.slug;
-  if (input.slug) {
-    slug = input.slug;
-    if (slug !== existing.slug) {
-      await assertSlugAvailable(slug, id);
-    }
-  } else if (input.name !== existing.name) {
-    slug = await generateUniqueSlug(input.name, id);
+  if (input.slug !== existing.slug) {
+    await assertSlugAvailable(input.slug, id);
   }
 
   const bodyType = await prisma.bodyType.update({
     where: { id },
-    data: { ...input, slug },
+    data: { ...input },
     select: BODY_TYPE_SELECT,
   });
 
   await createLog({
     adminId: actorId,
-    description: `Updated body type "${bodyType.name}" (id ${bodyType.id}) — fields: ${Object.keys(input).join(', ')}`,
+    description: `Updated body type "${bodyType.name}" (id ${bodyType.id})`,
   });
 
   return bodyType;

@@ -45,14 +45,15 @@ const articleShape = {
   categoryId: z.coerce.number().int().positive('Category is required'),
   authorId: z.coerce.number().int().positive('Author is required'),
   title: z.string().trim().min(3, 'Title must be at least 3 characters').max(200),
+  // Required — the frontend always generates/edits this and sends the
+  // literal value; the backend no longer auto-generates slugs.
   slug: z
     .string()
     .trim()
     .toLowerCase()
-    .min(3)
+    .min(3, 'Slug is required')
     .max(200)
-    .regex(slugRegex, 'Slug must be lowercase letters/numbers separated by hyphens')
-    .optional(),
+    .regex(slugRegex, 'Slug must be lowercase letters/numbers separated by hyphens'),
   excerpt: z.string().trim().max(300).nullable().optional(),
   body: z.string().trim().min(1, 'Article content is required'),
   readTimeMinutes: z.coerce.number().int().nonnegative().nullable().optional(),
@@ -62,6 +63,13 @@ const articleShape = {
   metaTitle: z.string().trim().max(160).nullable().optional(),
   metaDescription: z.string().trim().max(300).nullable().optional(),
   metaKeywords: z.string().trim().max(255).nullable().optional(),
+  // Open Graph image shown when the article link is shared on social
+  // platforms — a plain URL field (unlike coverImageUrl, which is an
+  // uploaded file), since it commonly points at an already-hosted asset.
+  ogImageUrl: z.preprocess(
+    (val) => (val === '' ? null : val),
+    z.string().trim().url('Must be a valid URL').max(255).nullable().optional(),
+  ),
   // Multi-select — an article can cover more than one brand/model
   // (comparison/roundup pieces), hence arrays instead of single ids.
   brandIds: idArray.default([]),

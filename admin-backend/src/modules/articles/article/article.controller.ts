@@ -5,6 +5,7 @@ import { z } from 'zod';
 import { ApiError } from '@/core/errors/ApiError';
 import { sendSuccess, sendPaginated } from '@/core/utils/sendResponse';
 import { buildPublicPath, deleteUploadedFile } from '@/core/utils/fileStorage.util';
+import { createLog } from '@/core/utils/createLog';
 import * as articleService from './article.service';
 import {
   articleListQuerySchema,
@@ -23,6 +24,14 @@ export async function getArticles(req: Request, res: Response) {
 export async function getArticleById(req: Request, res: Response) {
   const { id } = articleIdParamSchema.parse(req.params);
   const article = await articleService.getArticleById(id);
+
+  if (req.auth) {
+    await createLog({
+      adminId: req.auth.id,
+      description: `Viewed article "${article.title}" (id ${id})`,
+    });
+  }
+
   return sendSuccess(res, article, 'Article fetched successfully');
 }
 

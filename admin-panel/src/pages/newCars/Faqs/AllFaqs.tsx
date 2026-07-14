@@ -1,12 +1,12 @@
 // src/pages/newCars/Faqs/AllFaqs.tsx
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   useGetFaqsQuery,
   useUpdateFaqStatusMutation,
   useDeleteFaqMutation,
   type FaqRecord,
 } from "./faq.api";
-import { useGetCarModelsQuery } from "../carModels/carModel.api";
+import { useGetCarModelOptionsQuery } from "../carModels/carModel.api";
 import { extractApiError } from "../../../lib/apiClient";
 import FaqModal from "./FaqModal";
 import ConfirmDialog from "../../../components/common/ConfirmDialog";
@@ -15,7 +15,8 @@ import Pagination from "../../../components/common/Pagination";
 import { SearchFilterBar, SearchInput, FilterSelect } from "../../../components/common/SearchFilterBar";
 
 const ACCENT = "#D4300F";
-const PAGE_SIZE = 20;
+// Rows-per-page choices shown in the dropdown — same set as AllAdminLogs.tsx.
+const PAGE_SIZE_OPTIONS = [10, 20, 50, 100];
 
 const STATUS_OPTIONS: { value: "true" | "false"; label: string }[] = [
   { value: "true", label: "Active" },
@@ -57,14 +58,21 @@ function truncate(text: string, max = 80): string {
 
 export default function AllFaqs() {
   const [page, setPage] = useState(1);
+  // Rows-per-page, user-controlled via a dropdown next to the filters.
+  const [limit, setLimit] = useState(20);
   const [search, setSearch] = useState("");
+  // Debounced copy of `search` — this is what actually goes into the
+  // query args, so we don't refetch on every keystroke.
+  const [debouncedSearch, setDebouncedSearch] = useState("");
   const [filterModelId, setFilterModelId] = useState<number | "">("");
   const [filterStatus, setFilterStatus] = useState<"true" | "false" | "">("");
 
-  // NOTE: same 100-row cap used elsewhere — fine while the car-models
-  // table stays under 100 rows.
-  const { data: carModelsData } = useGetCarModelsQuery({ limit: 100, sortBy: "name", sortOrder: "asc" });
-  const carModels = carModelsData?.data ?? [];
+  const { data: carModels = [] } = useGetCarModelOptionsQuery();
+
+  useEffect(() => {
+    const timer = setTimeout(() => setDebouncedSearch(search), search ? 400 : 0);
+    return () => clearTimeout(timer);
+  }, [search]);
 
   const {
     data: faqsData,
@@ -73,8 +81,8 @@ export default function AllFaqs() {
     error: queryError,
   } = useGetFaqsQuery({
     page,
-    limit: PAGE_SIZE,
-    search: search || undefined,
+    limit,
+    search: debouncedSearch || undefined,
     modelId: filterModelId || undefined,
     isActive: filterStatus === "" ? undefined : filterStatus === "true",
   });
@@ -135,6 +143,11 @@ export default function AllFaqs() {
     } finally {
       setDeletingId(null);
     }
+  };
+
+  const handleLimitChange = (value: number) => {
+    setLimit(value);
+    setPage(1);
   };
 
   const columns: DataTableColumn<FaqRecord>[] = [
@@ -219,11 +232,27 @@ export default function AllFaqs() {
 
       <SearchFilterBar
         right={
-          pagination && (
-            <p className="text-[11px] text-[#a39e96] whitespace-nowrap">
-              {pagination.total} FAQ{pagination.total === 1 ? "" : "s"} total
-            </p>
-          )
+          <div className="flex items-center gap-3">
+            {pagination && (
+              <p className="text-[11px] text-[#a39e96] whitespace-nowrap">
+                {pagination.total} FAQ{pagination.total === 1 ? "" : "s"} total
+              </p>
+            )}
+            <div className="flex items-center gap-2">
+              <span className="text-[11px] font-semibold text-[#a39e96] whitespace-nowrap">Rows per page</span>
+              <select
+                value={limit}
+                onChange={(e) => handleLimitChange(Number(e.target.value))}
+                className="cursor-pointer text-[12px] text-[#4a4640] bg-[#f7f5f1] border border-[#e8e4dc] rounded-lg px-3 py-2 outline-none"
+              >
+                {PAGE_SIZE_OPTIONS.map((n) => (
+                  <option key={n} value={n}>
+                    {n}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
         }
       >
         <SearchInput
@@ -264,7 +293,13 @@ export default function AllFaqs() {
           loadingMessage="Loading FAQs..."
           emptyMessage="No FAQs found."
         />
-        <Pagination pagination={pagination ?? null} onPageChange={setPage} variant="simple" />
+        <Pagination
+          pagination={pagination ?? null}
+          onPageChange={setPage}
+          variant="compact"
+          itemLabel="FAQs"
+          currentCount={faqs.length}
+        />
       </div>
 
       {modalOpen && (

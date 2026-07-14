@@ -1,12 +1,12 @@
 // src/pages/newCars/Videos/AllVideos.tsx
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   useGetVideosQuery,
   useUpdateVideoStatusMutation,
   useDeleteVideoMutation,
   type VideoRecord,
 } from "./video.api";
-import { useGetCarModelsQuery } from "../carModels/carModel.api";
+import { useGetCarModelOptionsQuery } from "../carModels/carModel.api";
 import { VIDEO_TYPE_OPTIONS, getVideoTypeLabel } from "../../../lib/lookups";
 import { extractApiError, getUploadUrl } from "../../../lib/apiClient";
 import VideoModal from "./VideoModal";
@@ -16,7 +16,8 @@ import Pagination from "../../../components/common/Pagination";
 import { SearchFilterBar, SearchInput, FilterSelect } from "../../../components/common/SearchFilterBar";
 
 const ACCENT = "#D4300F";
-const PAGE_SIZE = 20;
+// Rows-per-page choices shown in the dropdown — same set as AllAdminLogs.tsx.
+const PAGE_SIZE_OPTIONS = [10, 20, 50, 100];
 
 const STATUS_OPTIONS: { value: "true" | "false"; label: string }[] = [
   { value: "true", label: "Active" },
@@ -63,15 +64,22 @@ function formatDate(value: string): string {
 
 export default function AllVideos() {
   const [page, setPage] = useState(1);
+  // Rows-per-page, user-controlled via a dropdown next to the filters.
+  const [limit, setLimit] = useState(20);
   const [search, setSearch] = useState("");
+  // Debounced copy of `search` — this is what actually goes into the
+  // query args, so we don't refetch on every keystroke.
+  const [debouncedSearch, setDebouncedSearch] = useState("");
   const [filterModelId, setFilterModelId] = useState<number | "">("");
   const [filterVideoType, setFilterVideoType] = useState<number | "">("");
   const [filterStatus, setFilterStatus] = useState<"true" | "false" | "">("");
 
-  // NOTE: same 100-row cap used elsewhere — fine while the car-models
-  // table stays under 100 rows.
-  const { data: carModelsData } = useGetCarModelsQuery({ limit: 100, sortBy: "name", sortOrder: "asc" });
-  const carModels = carModelsData?.data ?? [];
+  const { data: carModels = [] } = useGetCarModelOptionsQuery();
+
+  useEffect(() => {
+    const timer = setTimeout(() => setDebouncedSearch(search), search ? 400 : 0);
+    return () => clearTimeout(timer);
+  }, [search]);
 
   const {
     data: videosData,
@@ -80,8 +88,8 @@ export default function AllVideos() {
     error: queryError,
   } = useGetVideosQuery({
     page,
-    limit: PAGE_SIZE,
-    search: search || undefined,
+    limit,
+    search: debouncedSearch || undefined,
     modelId: filterModelId || undefined,
     videoType: filterVideoType || undefined,
     isActive: filterStatus === "" ? undefined : filterStatus === "true",
@@ -143,6 +151,11 @@ export default function AllVideos() {
     } finally {
       setDeletingId(null);
     }
+  };
+
+  const handleLimitChange = (value: number) => {
+    setLimit(value);
+    setPage(1);
   };
 
   const columns: DataTableColumn<VideoRecord>[] = [
@@ -243,11 +256,27 @@ export default function AllVideos() {
 
       <SearchFilterBar
         right={
-          pagination && (
-            <p className="text-[11px] text-[#a39e96] whitespace-nowrap">
-              {pagination.total} video{pagination.total === 1 ? "" : "s"} total
-            </p>
-          )
+          <div className="flex items-center gap-3">
+            {pagination && (
+              <p className="text-[11px] text-[#a39e96] whitespace-nowrap">
+                {pagination.total} video{pagination.total === 1 ? "" : "s"} total
+              </p>
+            )}
+            <div className="flex items-center gap-2">
+              <span className="text-[11px] font-semibold text-[#a39e96] whitespace-nowrap">Rows per page</span>
+              <select
+                value={limit}
+                onChange={(e) => handleLimitChange(Number(e.target.value))}
+                className="cursor-pointer text-[12px] text-[#4a4640] bg-[#f7f5f1] border border-[#e8e4dc] rounded-lg px-3 py-2 outline-none"
+              >
+                {PAGE_SIZE_OPTIONS.map((n) => (
+                  <option key={n} value={n}>
+                    {n}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
         }
       >
         <SearchInput
@@ -297,7 +326,13 @@ export default function AllVideos() {
           loadingMessage="Loading videos..."
           emptyMessage="No videos found."
         />
-        <Pagination pagination={pagination ?? null} onPageChange={setPage} variant="simple" />
+        <Pagination
+          pagination={pagination ?? null}
+          onPageChange={setPage}
+          variant="compact"
+          itemLabel="videos"
+          currentCount={videos.length}
+        />
       </div>
 
       {modalOpen && (

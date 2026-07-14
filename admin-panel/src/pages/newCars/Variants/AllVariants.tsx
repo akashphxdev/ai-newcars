@@ -1,12 +1,12 @@
 // src/pages/newCars/Variants/AllVariants.tsx
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   useGetVariantsQuery,
   useDeleteVariantMutation,
   type VariantRecord,
 } from "./variant.api";
-import { useGetCarModelsQuery } from "../carModels/carModel.api";
-import { useGetAttributeOptionsQuery } from "../AttributeOptions/attributeOption.api";
+import { useGetCarModelOptionsQuery } from "../carModels/carModel.api";
+import { useGetAttributeOptionsGroupedQuery } from "../AttributeOptions/attributeOption.api";
 import { extractApiError } from "../../../lib/apiClient";
 import VariantModal from "./VariantModal";
 import ConfirmDialog from "../../../components/common/ConfirmDialog";
@@ -15,7 +15,8 @@ import Pagination from "../../../components/common/Pagination";
 import { SearchFilterBar, SearchInput, FilterSelect } from "../../../components/common/SearchFilterBar";
 
 const ACCENT = "#D4300F";
-const PAGE_SIZE = 20;
+// Rows-per-page choices shown in the dropdown — same set as AllAdminLogs.tsx.
+const PAGE_SIZE_OPTIONS = [10, 20, 50, 100];
 
 function formatPrice(value: string): string {
   const num = Number(value);
@@ -25,24 +26,26 @@ function formatPrice(value: string): string {
 
 export default function AllVariants() {
   const [page, setPage] = useState(1);
+  // Rows-per-page, user-controlled via a dropdown next to the filters.
+  const [limit, setLimit] = useState(20);
   const [search, setSearch] = useState("");
+  // Debounced copy of `search` — this is what actually goes into the
+  // query args, so we don't refetch on every keystroke.
+  const [debouncedSearch, setDebouncedSearch] = useState("");
   const [filterModelId, setFilterModelId] = useState<number | "">("");
   const [filterTransmissionId, setFilterTransmissionId] = useState<number | "">("");
 
-  // Raised from 100 to 500 — see VariantModal.tsx for why: past 100 rows,
-  // options silently disappear from these dropdowns/filters.
-  const { data: carModelsData } = useGetCarModelsQuery({ limit: 500, sortBy: "name", sortOrder: "asc" });
-  const carModels = carModelsData?.data ?? [];
+  const { data: carModels = [] } = useGetCarModelOptionsQuery();
 
   // Transmission filter options now come from the dynamic attribute
   // options lookup instead of a hardcoded enum.
-  const { data: transmissionsData } = useGetAttributeOptionsQuery({
-    category: "transmission",
-    limit: 500,
-    sortBy: "name",
-    sortOrder: "asc",
-  });
-  const transmissions = transmissionsData?.data ?? [];
+  const { data: attributeOptionsGrouped } = useGetAttributeOptionsGroupedQuery();
+  const transmissions = attributeOptionsGrouped?.transmission ?? [];
+
+  useEffect(() => {
+    const timer = setTimeout(() => setDebouncedSearch(search), search ? 400 : 0);
+    return () => clearTimeout(timer);
+  }, [search]);
 
   const {
     data: variantsData,
@@ -51,8 +54,8 @@ export default function AllVariants() {
     error: queryError,
   } = useGetVariantsQuery({
     page,
-    limit: PAGE_SIZE,
-    search: search || undefined,
+    limit,
+    search: debouncedSearch || undefined,
     modelId: filterModelId || undefined,
     transmissionId: filterTransmissionId || undefined,
   });
@@ -98,6 +101,11 @@ export default function AllVariants() {
     } finally {
       setDeletingId(null);
     }
+  };
+
+  const handleLimitChange = (value: number) => {
+    setLimit(value);
+    setPage(1);
   };
 
   const columns: DataTableColumn<VariantRecord>[] = [
@@ -181,11 +189,27 @@ export default function AllVariants() {
 
       <SearchFilterBar
         right={
-          pagination && (
-            <p className="text-[11px] text-[#a39e96] whitespace-nowrap">
-              {pagination.total} variant{pagination.total === 1 ? "" : "s"} total
-            </p>
-          )
+          <div className="flex items-center gap-3">
+            {pagination && (
+              <p className="text-[11px] text-[#a39e96] whitespace-nowrap">
+                {pagination.total} variant{pagination.total === 1 ? "" : "s"} total
+              </p>
+            )}
+            <div className="flex items-center gap-2">
+              <span className="text-[11px] font-semibold text-[#a39e96] whitespace-nowrap">Rows per page</span>
+              <select
+                value={limit}
+                onChange={(e) => handleLimitChange(Number(e.target.value))}
+                className="cursor-pointer text-[12px] text-[#4a4640] bg-[#f7f5f1] border border-[#e8e4dc] rounded-lg px-3 py-2 outline-none"
+              >
+                {PAGE_SIZE_OPTIONS.map((n) => (
+                  <option key={n} value={n}>
+                    {n}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
         }
       >
         <SearchInput
@@ -226,7 +250,13 @@ export default function AllVariants() {
           loadingMessage="Loading variants..."
           emptyMessage="No variants found."
         />
-        <Pagination pagination={pagination ?? null} onPageChange={setPage} variant="simple" />
+        <Pagination
+          pagination={pagination ?? null}
+          onPageChange={setPage}
+          variant="compact"
+          itemLabel="variants"
+          currentCount={variants.length}
+        />
       </div>
 
       {modalOpen && (

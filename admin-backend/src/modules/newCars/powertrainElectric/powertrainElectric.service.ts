@@ -159,6 +159,14 @@ async function assertDrivetrainExists(drivetrainId: number) {
   }
 }
 
+// Electric powertrains have no name of their own — every log line
+// identifies one by the "Brand Model — Variant" it's attached to instead.
+function describePowertrainSubject(powertrain: {
+  variant: { variantName: string; model: { name: string; brand: { name: string } } };
+}): string {
+  return `${powertrain.variant.model.brand.name} ${powertrain.variant.model.name} — ${powertrain.variant.variantName}`;
+}
+
 async function unsetOtherDefaults(
   tx: Prisma.TransactionClient,
   variantId: number,
@@ -231,7 +239,7 @@ export async function createPowertrainElectric(
 
   await createLog({
     adminId: actorId,
-    description: `Created Electric powertrain (id ${powertrain.id}) under variant id ${powertrain.variantId}`,
+    description: `Created Electric powertrain for "${describePowertrainSubject(powertrain)}" (id ${powertrain.id})`,
   });
 
   return powertrain;
@@ -300,7 +308,7 @@ export async function updatePowertrainElectric(
 
   await createLog({
     adminId: actorId,
-    description: `Updated Electric powertrain (id ${id}) — fields: ${Object.keys(input).join(', ')}`,
+    description: `Updated Electric powertrain for "${describePowertrainSubject(powertrain)}" (id ${id})`,
   });
 
   return powertrain;
@@ -325,7 +333,7 @@ export async function deletePowertrainElectric(id: number, actorId: number) {
 
   await createLog({
     adminId: actorId,
-    description: `Deleted Electric powertrain (id ${id}) under variant id ${powertrain.variantId}`,
+    description: `Deleted Electric powertrain for "${describePowertrainSubject(powertrain)}" (id ${id})`,
   });
 
   return { message: 'Electric powertrain deleted successfully' };
@@ -349,7 +357,7 @@ export async function restorePowertrainElectric(id: number, actorId: number) {
 
   await createLog({
     adminId: actorId,
-    description: `Restored Electric powertrain (id ${id}) under variant id ${powertrain.variantId}`,
+    description: `Restored Electric powertrain for "${describePowertrainSubject(powertrain)}" (id ${id})`,
   });
 
   return { message: 'Electric powertrain restored successfully' };

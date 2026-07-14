@@ -65,6 +65,21 @@ interface VariantSingleRawResponse {
   data: VariantRecord;
 }
 
+export interface VariantOption {
+  id: number;
+  variantName: string;
+  modelId: number;
+}
+
+export interface ListVariantOptionsParams {
+  modelId?: number;
+}
+
+interface VariantOptionsRawResponse {
+  success: true;
+  data: VariantOption[];
+}
+
 export interface VariantListResult {
   data: VariantRecord[];
   pagination: Pagination;
@@ -84,6 +99,15 @@ export const variantApi = api.injectEndpoints({
         result
           ? [...result.data.map((v) => ({ type: "Variant" as const, id: v.id })), VARIANT_LIST_TAG]
           : [VARIANT_LIST_TAG],
+    }),
+
+    // Dropdown-only source — every matching variant in one shot, no
+    // pagination. Use this (not getVariants) wherever Variant is just a
+    // <select>: Powertrain/Offer/Feature/Image forms & filters.
+    getVariantOptions: builder.query<VariantOption[], ListVariantOptionsParams | void>({
+      query: (params) => ({ url: "/new-cars/variants/options", method: "GET", params: params ?? {} }),
+      transformResponse: (res: VariantOptionsRawResponse) => res.data,
+      providesTags: [VARIANT_LIST_TAG],
     }),
 
     getVariantById: builder.query<VariantRecord, number>({
@@ -115,6 +139,7 @@ export const variantApi = api.injectEndpoints({
 
 export const {
   useGetVariantsQuery,
+  useGetVariantOptionsQuery,
   useGetVariantByIdQuery,
   useCreateVariantMutation,
   useUpdateVariantMutation,

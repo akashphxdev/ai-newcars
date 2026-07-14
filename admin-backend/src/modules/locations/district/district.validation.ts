@@ -11,6 +11,13 @@ export const districtListQuerySchema = z.object({
   sortOrder: z.enum(['asc', 'desc']).default('asc'),
 });
 
+// Lightweight query for the /options endpoint — no page/limit/search,
+// this always returns the full unpaginated set for dropdown use,
+// optionally scoped to one state (for cascading State → District pickers).
+export const districtOptionsQuerySchema = z.object({
+  stateId: z.coerce.number().int().positive().optional(),
+});
+
 export const districtIdParamSchema = z.object({
   id: z.coerce.number().int().positive(),
 });
@@ -26,5 +33,6 @@ export const updateDistrictSchema = z.object({
 });
 
 export type DistrictListQueryParsed = z.infer<typeof districtListQuerySchema>;
+export type DistrictOptionsQueryParsed = z.infer<typeof districtOptionsQuerySchema>;
 export type CreateDistrictParsed = z.infer<typeof createDistrictSchema>;
 export type UpdateDistrictParsed = z.infer<typeof updateDistrictSchema>;

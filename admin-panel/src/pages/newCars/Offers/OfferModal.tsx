@@ -6,9 +6,9 @@ import {
   useUploadOfferImageMutation,
   type OfferRecord,
 } from "./offer.api";
-import { useGetCarModelsQuery } from "../carModels/carModel.api";
-import { useGetVariantsQuery } from "../Variants/variant.api";
-import { useGetCitiesQuery } from "../../Locations/Cities/city.api";
+import { useGetCarModelOptionsQuery } from "../carModels/carModel.api";
+import { useGetVariantOptionsQuery } from "../Variants/variant.api";
+import { useGetCityOptionsQuery } from "../../Locations/Cities/city.api";
 import { OFFER_TYPE_OPTIONS } from "../../../lib/lookups";
 import { extractApiError, getUploadUrl } from "../../../lib/apiClient";
 
@@ -59,21 +59,16 @@ export default function OfferModal({
 }) {
   const isEditMode = !!offer;
 
-  // NOTE: same 100-row cap used elsewhere (Brand dropdown, Country
-  // dropdown, Variant modal).
-  const { data: carModelsData } = useGetCarModelsQuery({ limit: 100, sortBy: "name", sortOrder: "asc" });
-  const carModels = carModelsData?.data ?? [];
-  const { data: citiesData } = useGetCitiesQuery({ limit: 100, sortBy: "name", sortOrder: "asc" });
-  const cities = citiesData?.data ?? [];
+  const { data: carModels = [] } = useGetCarModelOptionsQuery();
+  const { data: cities = [] } = useGetCityOptionsQuery();
 
   const [modelId, setModelId] = useState<number | "">(offer?.modelId ?? "");
   // Variant list is scoped to the chosen model — skip the query until a
   // model is picked, and re-fetch whenever modelId changes.
-  const { data: variantsData } = useGetVariantsQuery(
-    modelId ? { modelId: Number(modelId), limit: 100, sortBy: "variantName", sortOrder: "asc" } : undefined,
+  const { data: variants = [] } = useGetVariantOptionsQuery(
+    modelId ? { modelId: Number(modelId) } : undefined,
     { skip: !modelId },
   );
-  const variants = variantsData?.data ?? [];
 
   const [variantId, setVariantId] = useState<number | "">(offer?.variantId ?? "");
   const [cityId, setCityId] = useState<number | "">(offer?.cityId ?? "");

@@ -4,10 +4,10 @@ import { Prisma } from '@prisma/client';
 import { prisma } from '@/prisma/client';
 import { ApiError } from '@/core/errors/ApiError';
 import { createLog } from '@/core/utils/createLog';
-import { slugify } from '@/core/utils/slugify';
 import { buildPublicPath, deleteUploadedFile } from '@/core/utils/fileStorage.util';
 import type {
   BrandListQueryParsed,
+  BrandOptionsQueryParsed,
   CreateBrandParsed,
   UpdateBrandParsed,
   UpdateBrandStatusParsed,
@@ -65,6 +65,23 @@ export async function listBrands(query: BrandListQueryParsed) {
   };
 }
 
+// Dropdown-only source — every matching brand in one shot, no
+// pagination. Use this (not listBrands) wherever Brand is just a
+// <select>: CarModel/Variant/Powertrain/Article forms & filters.
+export async function listBrandOptions(query: BrandOptionsQueryParsed) {
+  const { isActive } = query;
+
+  const where: Prisma.BrandWhereInput = {
+    ...(typeof isActive === 'boolean' ? { isActive } : {}),
+  };
+
+  return prisma.brand.findMany({
+    where,
+    select: { id: true, name: true },
+    orderBy: { name: 'asc' },
+  });
+}
+
 export async function getBrandById(id: number) {
   const brand = await prisma.brand.findUnique({
     where: { id },
@@ -96,39 +113,17 @@ async function assertSlugAvailable(slug: string, excludeId?: number) {
     throw ApiError.conflict(`A brand with the slug "${slug}" already exists`);
   }
 }
-async function generateUniqueSlug(name: string, excludeId?: number): Promise<string> {
-  const base = slugify(name);
-  let candidate = base;
-  let suffix = 2;
-
-  // Bounded loop — same guard as city.service.ts's generateUniqueSlug.
-  for (let attempts = 0; attempts < 50; attempts++) {
-    const existing = await prisma.brand.findFirst({
-      where: { slug: candidate, id: excludeId ? { not: excludeId } : undefined },
-      select: { id: true },
-    });
-    if (!existing) return candidate;
-    candidate = `${base}-${suffix}`;
-    suffix += 1;
-  }
-
-  throw ApiError.internal('Could not generate a unique slug — please provide one manually');
-}
-
 export async function createBrand(input: CreateBrandParsed, actorId: number, logoFilename: string) {
   if (input.countryOriginId) {
     await assertCountryExists(input.countryOriginId);
   }
 
-  const slug = input.slug ? input.slug : await generateUniqueSlug(input.name);
-  if (input.slug) {
-    await assertSlugAvailable(slug);
-  }
+  await assertSlugAvailable(input.slug);
 
   const brand = await prisma.brand.create({
     data: {
       name: input.name,
-      slug,
+      slug: input.slug,
       countryOriginId: input.countryOriginId,
       isActive: input.isActive ?? true,
       // Logo is required on create — controller already rejects the
@@ -153,24 +148,16 @@ export async function updateBrand(id: number, input: UpdateBrandParsed, actorId:
     await assertCountryExists(input.countryOriginId);
   }
 
-  // Slug is optional in the payload — if the caller gave one explicitly,
-  // honor it (after checking it's free). Otherwise, auto-derive it from
-  // the (possibly changed) name, same behavior as create.
-  let slug = existing.slug;
-  if (input.slug) {
-    slug = input.slug;
-    if (slug !== existing.slug) {
-      await assertSlugAvailable(slug, id);
-    }
-  } else if (input.name && input.name !== existing.name) {
-    slug = await generateUniqueSlug(input.name, id);
+  // Slug is required in the payload now — the frontend always sends the
+  // literal value it's showing the admin, so just validate it's free.
+  if (input.slug !== existing.slug) {
+    await assertSlugAvailable(input.slug, id);
   }
 
   const brand = await prisma.brand.update({
     where: { id },
     data: {
       ...input,
-      slug,
       countryOriginId: input.countryOriginId,
     },
     select: BRAND_SELECT,
@@ -178,7 +165,7 @@ export async function updateBrand(id: number, input: UpdateBrandParsed, actorId:
 
   await createLog({
     adminId: actorId,
-    description: `Updated brand "${brand.name}" (id ${brand.id}) — fields: ${Object.keys(input).join(', ')}`,
+    description: `Updated brand "${brand.name}" (id ${brand.id})`,
   });
 
   return brand;

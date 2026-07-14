@@ -5,9 +5,9 @@ import {
   useUpdateVariantMutation,
   type VariantRecord,
 } from "./variant.api";
-import { useGetCarModelsQuery } from "../carModels/carModel.api";
-import { useGetBrandsQuery } from "../Brands/brand.api";
-import { useGetAttributeOptionsQuery } from "../AttributeOptions/attributeOption.api";
+import { useGetCarModelOptionsQuery } from "../carModels/carModel.api";
+import { useGetBrandOptionsQuery } from "../Brands/brand.api";
+import { useGetAttributeOptionsGroupedQuery } from "../AttributeOptions/attributeOption.api";
 import { extractApiError } from "../../../lib/apiClient";
 
 const ACCENT = "#D4300F";
@@ -49,29 +49,19 @@ export default function VariantModal({
 }) {
   const isEditMode = !!variant;
 
-  // Raised from 100 to 1000: at 100, once car-models/brands/transmissions
-  // pass 100 rows, options past the cap silently vanish from these
-  // dropdowns — most visibly in Edit mode, where the variant's own
-  // model/brand could fall outside the fetched page and show up as a
-  // blank select even though the correct id is still held in state.
-  const { data: carModelsData } = useGetCarModelsQuery({ limit: 500, sortBy: "name", sortOrder: "asc" });
-  const carModels = carModelsData?.data ?? [];
-
-  const { data: brandsData } = useGetBrandsQuery({ limit: 500, sortBy: "name", sortOrder: "asc" });
-  const brands = brandsData?.data ?? [];
+  const { data: brands = [] } = useGetBrandOptionsQuery();
 
   // Transmission is now a dynamic lookup (category "transmission" in
   // attribute_options) instead of a hardcoded enum.
-  const { data: transmissionsData } = useGetAttributeOptionsQuery({
-    category: "transmission",
-    limit: 500,
-    sortBy: "name",
-    sortOrder: "asc",
-  });
-  const transmissions = transmissionsData?.data ?? [];
+  const { data: attributeOptionsGrouped } = useGetAttributeOptionsGroupedQuery();
+  const transmissions = attributeOptionsGrouped?.transmission ?? [];
 
   const [brandId, setBrandId] = useState<number | "">(variant?.model.brand.id ?? "");
-  const modelsForBrand = brandId ? carModels.filter((m) => m.brandId === brandId) : [];
+  // Scoped server-side to the chosen brand — options-endpoint, no row cap.
+  const { data: modelsForBrand = [] } = useGetCarModelOptionsQuery(
+    brandId ? { brandId: Number(brandId) } : undefined,
+    { skip: !brandId },
+  );
 
   const [modelId, setModelId] = useState<number | "">(variant?.modelId ?? "");
   const [variantName, setVariantName] = useState(variant ? variant.variantName : "");

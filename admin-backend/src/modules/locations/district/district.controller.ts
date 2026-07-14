@@ -6,6 +6,7 @@ import { sendSuccess, sendPaginated } from '@/core/utils/sendResponse';
 import * as districtService from './district.service';
 import {
   districtListQuerySchema,
+  districtOptionsQuerySchema,
   districtIdParamSchema,
   createDistrictSchema,
   updateDistrictSchema,
@@ -16,6 +17,14 @@ export async function getDistricts(req: Request, res: Response) {
   const query = districtListQuerySchema.parse(req.query);
   const result = await districtService.listDistricts(query);
   return sendPaginated(res, result.items, result.pagination, 'Districts fetched successfully');
+}
+
+// GET /districts/options — lightweight, unpaginated {id, name,
+// stateId} list for dropdowns, optionally filtered by stateId.
+export async function getDistrictOptions(req: Request, res: Response) {
+  const query = districtOptionsQuerySchema.parse(req.query);
+  const options = await districtService.listDistrictOptions(query);
+  return sendSuccess(res, options, 'District options fetched successfully');
 }
 
 // GET /districts/:id

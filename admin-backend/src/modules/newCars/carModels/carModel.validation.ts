@@ -21,6 +21,13 @@ export const carModelIdParamSchema = z.object({
   id: z.coerce.number().int().positive(),
 });
 
+// Lightweight query for the /options endpoint — no page/limit/search,
+// this always returns the full unpaginated set for dropdown use,
+// optionally scoped to one brand (for cascading Brand → Model pickers).
+export const carModelOptionsQuerySchema = z.object({
+  brandId: z.coerce.number().int().positive().optional(),
+});
+
 function refinePriceRange<T extends { priceMin?: number; priceMax?: number }>(data: T) {
   if (typeof data.priceMin === 'number' && typeof data.priceMax === 'number') {
     return data.priceMax >= data.priceMin;
@@ -33,17 +40,15 @@ export const createCarModelSchema = z
     brandId: z.coerce.number().int().positive('brandId is required'),
     name: z.string().trim().min(2, 'Name must be at least 2 characters').max(100),
 
-    // Slug stays optional by design — it's auto-generated from `name` when
-    // omitted (see generateUniqueSlug in the service). Forcing it here would
-    // just make callers retype something we can derive safely.
+    // Required — the frontend always generates/edits this and sends the
+    // literal value; the backend no longer auto-generates slugs.
     slug: z
       .string()
       .trim()
       .toLowerCase()
-      .min(2)
+      .min(2, 'Slug is required')
       .max(100)
-      .regex(slugRegex, 'Slug must be lowercase letters/numbers separated by hyphens (e.g. "creta-2026")')
-      .optional(),
+      .regex(slugRegex, 'Slug must be lowercase letters/numbers separated by hyphens (e.g. "creta-2026")'),
     // Required going forward — every car model needs a body type and a
     // price range for the public site's filters/cards to work correctly.
     // Now an FK into the body_types table rather than a hardcoded enum.
@@ -68,7 +73,7 @@ export const updateCarModelSchema = z
   .object({
     brandId: z.coerce.number().int().positive().optional(),
     name: z.string().trim().min(2).max(100).optional(),
-    slug: z.string().trim().toLowerCase().min(2).max(100).regex(slugRegex).optional(),
+    slug: z.string().trim().toLowerCase().min(2, 'Slug is required').max(100).regex(slugRegex),
     // No longer nullable — bodyType is a required business field (same as
     // create). Omit the key to leave it unchanged; you can no longer send
     // `null` to silently clear it out.
@@ -116,6 +121,7 @@ export const updateCarModelLaunchStatusSchema = z
   });
 
 export type CarModelListQueryParsed = z.infer<typeof carModelListQuerySchema>;
+export type CarModelOptionsQueryParsed = z.infer<typeof carModelOptionsQuerySchema>;
 export type CreateCarModelParsed = z.infer<typeof createCarModelSchema>;
 export type UpdateCarModelParsed = z.infer<typeof updateCarModelSchema>;
 export type UpdateCarModelLaunchStatusParsed = z.infer<typeof updateCarModelLaunchStatusSchema>;

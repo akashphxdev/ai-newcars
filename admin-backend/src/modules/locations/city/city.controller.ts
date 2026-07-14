@@ -14,6 +14,13 @@ export async function getCities(req: Request, res: Response) {
   return sendPaginated(res, result.items, result.pagination, 'Cities fetched successfully');
 }
 
+// GET /cities/options — lightweight, unpaginated {id, name} list for
+// dropdowns.
+export async function getCityOptions(_req: Request, res: Response) {
+  const options = await cityService.listCityOptions();
+  return sendSuccess(res, options, 'City options fetched successfully');
+}
+
 // GET /cities/:id
 export async function getCityById(req: Request, res: Response) {
   const { id } = cityIdParamSchema.parse(req.params);

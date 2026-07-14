@@ -163,6 +163,14 @@ async function assertAttributeOptionExists(id: number, category: string, label: 
   }
 }
 
+// ICE powertrains have no name of their own — every log line identifies
+// one by the "Brand Model — Variant" it's attached to instead.
+function describePowertrainSubject(powertrain: {
+  variant: { variantName: string; model: { name: string; brand: { name: string } } };
+}): string {
+  return `${powertrain.variant.model.brand.name} ${powertrain.variant.model.name} — ${powertrain.variant.variantName}`;
+}
+
 async function unsetOtherDefaults(
   tx: Prisma.TransactionClient,
   variantId: number,
@@ -236,7 +244,7 @@ export async function createPowertrainIce(input: CreatePowertrainIceParsed, acto
 
   await createLog({
     adminId: actorId,
-    description: `Created ICE powertrain (id ${powertrain.id}, fuel "${powertrain.fuelType}") under variant id ${powertrain.variantId}`,
+    description: `Created ICE powertrain for "${describePowertrainSubject(powertrain)}" (id ${powertrain.id})`,
   });
 
   return powertrain;
@@ -307,7 +315,7 @@ export async function updatePowertrainIce(
 
   await createLog({
     adminId: actorId,
-    description: `Updated ICE powertrain (id ${id}) — fields: ${Object.keys(input).join(', ')}`,
+    description: `Updated ICE powertrain for "${describePowertrainSubject(powertrain)}" (id ${id})`,
   });
 
   return powertrain;
@@ -332,7 +340,7 @@ export async function deletePowertrainIce(id: number, actorId: number) {
 
   await createLog({
     adminId: actorId,
-    description: `Deleted ICE powertrain (id ${id}) under variant id ${powertrain.variantId}`,
+    description: `Deleted ICE powertrain for "${describePowertrainSubject(powertrain)}" (id ${id})`,
   });
 
   return { message: 'ICE powertrain deleted successfully' };
@@ -356,7 +364,7 @@ export async function restorePowertrainIce(id: number, actorId: number) {
 
   await createLog({
     adminId: actorId,
-    description: `Restored ICE powertrain (id ${id}) under variant id ${powertrain.variantId}`,
+    description: `Restored ICE powertrain for "${describePowertrainSubject(powertrain)}" (id ${id})`,
   });
 
   return { message: 'ICE powertrain restored successfully' };

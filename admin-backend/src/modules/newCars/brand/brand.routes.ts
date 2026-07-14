@@ -7,6 +7,7 @@ import { imageUploader } from '@/core/middleware/upload.middleware';
 import { asyncHandler } from '@/core/utils/asyncHandler';
 import {
   getBrands,
+  getBrandOptions,
   getBrandById,
   createBrand,
   updateBrand,
@@ -21,6 +22,9 @@ router.use(requireAuth(['admin']));
 
 
 router.get('/', requirePermission('brands.view'), asyncHandler(getBrands));
+// Registered before /:id — otherwise Express would match "options" as
+// the :id param and this route would never be reached.
+router.get('/options', requirePermission('brands.view'), asyncHandler(getBrandOptions));
 router.get('/:id', requirePermission('brands.view'), asyncHandler(getBrandById));
 router.post(
   '/',

@@ -103,7 +103,7 @@ export async function createColor(
 
   await createLog({
     adminId: actorId,
-    description: `Created color "${color.colorName}" (id ${color.id}) for car model id ${color.modelId}`,
+    description: `Created color "${color.colorName}" (id ${color.id}) for "${color.model.name}"`,
   });
 
   return color;
@@ -138,7 +138,7 @@ export async function updateColor(id: number, input: UpdateColorParsed, actorId:
 
   await createLog({
     adminId: actorId,
-    description: `Updated color "${color.colorName}" (id ${color.id}) — fields: ${Object.keys(input).join(', ')}`,
+    description: `Updated color "${color.colorName}" (id ${color.id}) for "${color.model.name}"`,
   });
 
   return color;
@@ -158,7 +158,7 @@ export async function deleteColor(id: number, actorId: number) {
 
   await createLog({
     adminId: actorId,
-    description: `Deleted color "${color.colorName}" (id ${id})`,
+    description: `Deleted color "${color.colorName}" (id ${id}) from "${color.model.name}"`,
   });
 
   return { message: 'Color deleted successfully' };
@@ -184,7 +184,7 @@ export async function uploadColorImage(
 
   await createLog({
     adminId: actorId,
-    description: `Updated image for color "${existing.colorName}" (id ${id})`,
+    description: `Updated image for color "${existing.colorName}" (id ${id}) on "${existing.model.name}"`,
   });
 
   return color as ColorUploadImageResult;

@@ -8,9 +8,9 @@ import {
   type PowertrainIceListItem,
   type FuelType,
 } from "./powertrainIce.api";
-import { useGetVariantsQuery } from "../Variants/variant.api";
-import { useGetCarModelsQuery } from "../carModels/carModel.api";
-import { useGetBrandsQuery } from "../Brands/brand.api";
+import { useGetVariantOptionsQuery } from "../Variants/variant.api";
+import { useGetCarModelOptionsQuery } from "../carModels/carModel.api";
+import { useGetBrandOptionsQuery } from "../Brands/brand.api";
 import { extractApiError } from "../../../lib/apiClient";
 import { FUEL_TYPE_OPTIONS, getFuelTypeLabel } from "../../../lib/lookups";
 import PowertrainIceModal from "./PowertrainIceModal";
@@ -20,7 +20,8 @@ import Pagination from "../../../components/common/Pagination";
 import { SearchFilterBar, FilterSelect } from "../../../components/common/SearchFilterBar";
 
 const ACCENT = "#D4300F";
-const PAGE_SIZE = 20;
+// Rows-per-page choices shown in the dropdown — same set as AllAdminLogs.tsx.
+const PAGE_SIZE_OPTIONS = [10, 20, 50, 100];
 
 function formatDecimal(value: string | null, suffix = ""): string {
   if (value == null) return "—";
@@ -102,26 +103,29 @@ function ExpandedIceDetail({ id }: { id: number }) {
 
 export default function AllPowertrainIce() {
   const [page, setPage] = useState(1);
+  // Rows-per-page, user-controlled via a dropdown next to the filters.
+  const [limit, setLimit] = useState(20);
   const [filterBrandId, setFilterBrandId] = useState<number | "">("");
   const [filterModelId, setFilterModelId] = useState<number | "">("");
   const [filterVariantId, setFilterVariantId] = useState<number | "">("");
   const [filterFuelType, setFilterFuelType] = useState<FuelType | "">("");
   const [showArchived, setShowArchived] = useState(false);
 
-  const { data: brandsData } = useGetBrandsQuery({ limit: 100, sortBy: "name", sortOrder: "asc" });
-  const brands = brandsData?.data ?? [];
+  const { data: brands = [] } = useGetBrandOptionsQuery();
 
-  const { data: carModelsData } = useGetCarModelsQuery({ limit: 100, sortBy: "name", sortOrder: "asc" });
-  const carModels = carModelsData?.data ?? [];
-  const modelsForBrand = filterBrandId ? carModels.filter((m) => m.brandId === filterBrandId) : carModels;
+  // Scoped server-side to the chosen brand — options-endpoint, no row cap.
+  const { data: modelsForBrand = [] } = useGetCarModelOptionsQuery(
+    filterBrandId ? { brandId: Number(filterBrandId) } : undefined,
+  );
 
-  const { data: variantsData } = useGetVariantsQuery({ limit: 100, sortBy: "variantName", sortOrder: "asc" });
-  const variants = variantsData?.data ?? [];
-  const variantsForModel = filterModelId
-    ? variants.filter((v) => v.modelId === filterModelId)
-    : filterBrandId
-      ? variants.filter((v) => v.model.brand.id === filterBrandId)
-      : variants;
+  // Scoped server-side to the chosen model. NOTE: unlike the old
+  // client-side filter, this no longer narrows by brand alone (before a
+  // model is picked) — the lightweight variant-options response doesn't
+  // carry the nested model.brand.id needed for that. Picking a model
+  // first is the same requirement the modal already has.
+  const { data: variantsForModel = [] } = useGetVariantOptionsQuery(
+    filterModelId ? { modelId: Number(filterModelId) } : undefined,
+  );
 
   const {
     data: powertrainData,
@@ -130,7 +134,7 @@ export default function AllPowertrainIce() {
     error: queryError,
   } = useGetPowertrainIceListQuery({
     page,
-    limit: PAGE_SIZE,
+    limit,
     variantId: filterVariantId || undefined,
     fuelType: filterFuelType || undefined,
     includeDeleted: showArchived,
@@ -177,6 +181,11 @@ export default function AllPowertrainIce() {
     } finally {
       setBusyId(null);
     }
+  };
+
+  const handleLimitChange = (value: number) => {
+    setLimit(value);
+    setPage(1);
   };
 
   const handleRestore = async (id: number) => {
@@ -288,11 +297,27 @@ export default function AllPowertrainIce() {
 
       <SearchFilterBar
         right={
-          pagination && (
-            <p className="text-[11px] text-[#a39e96] whitespace-nowrap">
-              {pagination.total} powertrain{pagination.total === 1 ? "" : "s"} total
-            </p>
-          )
+          <div className="flex items-center gap-3">
+            {pagination && (
+              <p className="text-[11px] text-[#a39e96] whitespace-nowrap">
+                {pagination.total} powertrain{pagination.total === 1 ? "" : "s"} total
+              </p>
+            )}
+            <div className="flex items-center gap-2">
+              <span className="text-[11px] font-semibold text-[#a39e96] whitespace-nowrap">Rows per page</span>
+              <select
+                value={limit}
+                onChange={(e) => handleLimitChange(Number(e.target.value))}
+                className="cursor-pointer text-[12px] text-[#4a4640] bg-[#f7f5f1] border border-[#e8e4dc] rounded-lg px-3 py-2 outline-none"
+              >
+                {PAGE_SIZE_OPTIONS.map((n) => (
+                  <option key={n} value={n}>
+                    {n}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
         }
       >
         <FilterSelect
@@ -326,7 +351,9 @@ export default function AllPowertrainIce() {
           }}
           options={variantsForModel.map((v) => ({
             value: v.id,
-            label: `${v.model.brand.name} — ${v.model.name} — ${v.variantName}`,
+            // Brand — Model context is already implied by the model
+            // filter above (variant options are model-scoped now).
+            label: v.variantName,
           }))}
           placeholder="All variants"
         />
@@ -365,7 +392,13 @@ export default function AllPowertrainIce() {
           expandable
           renderExpanded={(p) => <ExpandedIceDetail id={p.id} />}
         />
-        <Pagination pagination={pagination ?? null} onPageChange={setPage} variant="simple" />
+        <Pagination
+          pagination={pagination ?? null}
+          onPageChange={setPage}
+          variant="compact"
+          itemLabel="powertrains"
+          currentCount={powertrains.length}
+        />
       </div>
 
       {modalOpen && (

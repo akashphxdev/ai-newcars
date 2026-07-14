@@ -11,6 +11,12 @@ export const countryListQuerySchema = z.object({
   sortOrder: z.enum(['asc', 'desc']).default('asc'),
 });
 
+// Lightweight query for the /options endpoint — no page/limit/search,
+// this always returns the full unpaginated set for dropdown use.
+export const countryOptionsQuerySchema = z.object({
+  isActive: z.coerce.boolean().optional(),
+});
+
 export const countryIdParamSchema = z.object({
   id: z.coerce.number().int().positive(),
 });
@@ -63,6 +69,7 @@ export const updateCountryStatusSchema = z.object({
 });
 
 export type CountryListQueryParsed = z.infer<typeof countryListQuerySchema>;
+export type CountryOptionsQueryParsed = z.infer<typeof countryOptionsQuerySchema>;
 export type CreateCountryParsed = z.infer<typeof createCountrySchema>;
 export type UpdateCountryParsed = z.infer<typeof updateCountrySchema>;
 export type UpdateCountryStatusParsed = z.infer<typeof updateCountryStatusSchema>;

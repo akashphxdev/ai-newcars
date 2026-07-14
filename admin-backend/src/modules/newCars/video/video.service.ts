@@ -104,7 +104,7 @@ export async function createVideo(input: CreateVideoParsed, actorId: number, thu
 
   await createLog({
     adminId: actorId,
-    description: `Created video "${video.title}" (id ${video.id}) under model id ${video.modelId}`,
+    description: `Created video "${video.title}" (id ${video.id}) for "${video.model.brand.name} ${video.model.name}"`,
   });
 
   return video;

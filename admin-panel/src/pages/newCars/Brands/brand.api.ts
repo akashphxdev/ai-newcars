@@ -61,6 +61,20 @@ interface BrandSingleRawResponse {
   data: BrandRecord;
 }
 
+export interface BrandOption {
+  id: number;
+  name: string;
+}
+
+export interface ListBrandOptionsParams {
+  isActive?: boolean;
+}
+
+interface BrandOptionsRawResponse {
+  success: true;
+  data: BrandOption[];
+}
+
 export interface BrandListResult {
   data: BrandRecord[];
   pagination: Pagination;
@@ -80,6 +94,15 @@ export const brandApi = api.injectEndpoints({
         result
           ? [...result.data.map((b) => ({ type: "Brand" as const, id: b.id })), BRAND_LIST_TAG]
           : [BRAND_LIST_TAG],
+    }),
+
+    // Dropdown-only source — every brand in one shot, no pagination. Use
+    // this (not getBrands) wherever Brand is just a <select>:
+    // CarModel/Variant/Powertrain/Article forms & filters.
+    getBrandOptions: builder.query<BrandOption[], ListBrandOptionsParams | void>({
+      query: (params) => ({ url: "/new-cars/brands/options", method: "GET", params: params ?? {} }),
+      transformResponse: (res: BrandOptionsRawResponse) => res.data,
+      providesTags: [BRAND_LIST_TAG],
     }),
 
     getBrandById: builder.query<BrandRecord, number>({
@@ -140,6 +163,7 @@ export const brandApi = api.injectEndpoints({
 
 export const {
   useGetBrandsQuery,
+  useGetBrandOptionsQuery,
   useGetBrandByIdQuery,
   useCreateBrandMutation,
   useUpdateBrandMutation,

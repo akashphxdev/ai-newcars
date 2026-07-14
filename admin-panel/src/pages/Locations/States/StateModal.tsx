@@ -6,7 +6,7 @@ import {
   useUpdateStateMutation,
   type StateRecord,
 } from "./state.api";
-import { useGetCountriesQuery } from "../Countries/country.api";
+import { useGetCountryOptionsQuery } from "../Countries/country.api";
 import { extractApiError } from "../../../lib/apiClient";
 
 const ACCENT = "#D4300F";
@@ -91,10 +91,7 @@ export default function StateModal({
 }) {
   const isEditMode = !!state;
 
-  // NOTE: backend caps `limit` at 100 (see country.validation.ts). Same
-  // caveat as the filter dropdown on AllStates.tsx.
-  const { data: countriesData } = useGetCountriesQuery({ limit: 100, sortBy: "name", sortOrder: "asc" });
-  const countries = countriesData?.data ?? [];
+  const { data: countries = [] } = useGetCountryOptionsQuery();
 
   const [countryId, setCountryId] = useState<number | "">(state ? state.countryId : "");
   const [name, setName] = useState(state ? state.name : "");

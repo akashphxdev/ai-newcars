@@ -6,8 +6,8 @@ import {
   useUpdateDistrictMutation,
   type DistrictRecord,
 } from "./district.api";
-import { useGetStatesQuery } from "../States/state.api";
-import { useGetCountriesQuery } from "../Countries/country.api";
+import { useGetStateOptionsQuery } from "../States/state.api";
+import { useGetCountryOptionsQuery } from "../Countries/country.api";
 import { extractApiError } from "../../../lib/apiClient";
 
 const ACCENT = "#D4300F";
@@ -85,10 +85,7 @@ export default function DistrictModal({
 }) {
   const isEditMode = !!district;
 
-  // NOTE: same 100-row cap as elsewhere in Locations — fine while the
-  // countries/states tables stay under 100 rows.
-  const { data: countriesData } = useGetCountriesQuery({ limit: 100, sortBy: "name", sortOrder: "asc" });
-  const countries = countriesData?.data ?? [];
+  const { data: countries = [] } = useGetCountryOptionsQuery();
 
   const [countryId, setCountryId] = useState<number | "">(
     district?.state?.country?.id ?? ""
@@ -101,13 +98,7 @@ export default function DistrictModal({
   const nameRef = useRef<HTMLInputElement>(null);
 
   // State dropdown scoped to the chosen country.
-  const { data: statesData } = useGetStatesQuery({
-    limit: 100,
-    countryId: countryId || undefined,
-    sortBy: "name",
-    sortOrder: "asc",
-  });
-  const states = statesData?.data ?? [];
+  const { data: states = [] } = useGetStateOptionsQuery({ countryId: countryId || undefined });
 
   const [createDistrict, { isLoading: creating }] = useCreateDistrictMutation();
   const [updateDistrict, { isLoading: updating }] = useUpdateDistrictMutation();

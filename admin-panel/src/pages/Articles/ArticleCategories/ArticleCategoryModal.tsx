@@ -6,20 +6,9 @@ import {
   type ArticleCategoryRecord,
 } from "./articleCategory.api";
 import { extractApiError } from "../../../lib/apiClient";
+import { slugify } from "../../../lib/slugify";
 
 const ACCENT = "#D4300F";
-
-// Mirrors src/core/utils/slugify.ts on the backend exactly, so the
-// live preview in the form matches what the server would generate.
-// Same copy used in BrandModal.tsx / CityModal.tsx / BodyTypeModal.tsx.
-function slugify(input: string): string {
-  return input
-    .toString()
-    .trim()
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "");
-}
 
 interface FieldErrors {
   name?: string;
@@ -143,7 +132,9 @@ export default function ArticleCategoryModal({
   const validate = (): boolean => {
     const next: FieldErrors = {};
     if (name.trim().length < 2) next.name = "Name must be at least 2 characters.";
-    if (slug.trim() && !/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(slug.trim())) {
+    if (!slug.trim()) {
+      next.slug = "Slug is required.";
+    } else if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(slug.trim())) {
       next.slug = 'Slug must be lowercase letters/numbers separated by hyphens (e.g. "reviews").';
     }
     setErrors(next);
@@ -161,16 +152,17 @@ export default function ArticleCategoryModal({
           id: category.id,
           input: {
             name: name.trim(),
-            // Untouched -> send undefined so the backend regenerates the
-            // slug from the (possibly changed) name, same as create.
-            slug: slugTouched ? slug.trim() || undefined : undefined,
+            // Always the literal value shown on screen — whether it came
+            // from auto-sync or a manual edit — so what's displayed is
+            // exactly what gets saved.
+            slug: slug.trim(),
             isActive,
           },
         }).unwrap();
       } else {
         await createArticleCategory({
           name: name.trim(),
-          slug: slug.trim() || undefined,
+          slug: slug.trim(),
           isActive,
         }).unwrap();
       }
@@ -216,7 +208,7 @@ export default function ArticleCategoryModal({
             <TextField value={name} onChange={handleNameChange} placeholder="e.g. Reviews" error={errors.name} inputRef={nameRef} maxLength={50} />
           </Field>
 
-          <Field label="Slug">
+          <Field label="Slug" required>
             <TextField
               value={slug}
               onChange={handleSlugChange}

@@ -3,9 +3,11 @@
 import { Request, Response } from 'express';
 import { ApiError } from '@/core/errors/ApiError';
 import { sendSuccess, sendPaginated } from '@/core/utils/sendResponse';
+import { createLog } from '@/core/utils/createLog';
 import * as variantService from './variant.service';
 import {
   variantListQuerySchema,
+  variantOptionsQuerySchema,
   variantIdParamSchema,
   createVariantSchema,
   updateVariantSchema,
@@ -18,10 +20,26 @@ export async function getVariants(req: Request, res: Response) {
   return sendPaginated(res, result.items, result.pagination, 'Variants fetched successfully');
 }
 
+// GET /variants/options — lightweight, unpaginated {id, variantName,
+// modelId} list for dropdowns, optionally filtered by modelId.
+export async function getVariantOptions(req: Request, res: Response) {
+  const query = variantOptionsQuerySchema.parse(req.query);
+  const options = await variantService.listVariantOptions(query);
+  return sendSuccess(res, options, 'Variant options fetched successfully');
+}
+
 // GET /variants/:id
 export async function getVariantById(req: Request, res: Response) {
   const { id } = variantIdParamSchema.parse(req.params);
   const variant = await variantService.getVariantById(id);
+
+  if (req.auth) {
+    await createLog({
+      adminId: req.auth.id,
+      description: `Viewed variant "${variant.model.brand.name} ${variant.model.name} — ${variant.variantName}" (id ${id})`,
+    });
+  }
+
   return sendSuccess(res, variant, 'Variant fetched successfully');
 }
 

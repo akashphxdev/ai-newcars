@@ -6,21 +6,11 @@ import {
   useUploadBrandLogoMutation,
   type BrandRecord,
 } from "./brand.api";
-import { useGetCountriesQuery } from "../../Locations/Countries/country.api";
+import { useGetCountryOptionsQuery } from "../../Locations/Countries/country.api";
 import { extractApiError, getUploadUrl } from "../../../lib/apiClient";
+import { slugify } from "../../../lib/slugify";
 
 const ACCENT = "#D4300F";
-
-// Mirrors src/core/utils/slugify.ts on the backend exactly, so the
-// live preview in the form matches what the server would generate.
-function slugify(input: string): string {
-  return input
-    .toString()
-    .trim()
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "");
-}
 
 interface FieldErrors {
   name?: string;
@@ -52,10 +42,7 @@ export default function BrandModal({
 }) {
   const isEditMode = !!brand;
 
-  // NOTE: same 100-row cap as elsewhere (Locations pages) — fine while
-  // the countries table stays under 100 rows.
-  const { data: countriesData } = useGetCountriesQuery({ limit: 100, sortBy: "name", sortOrder: "asc" });
-  const countries = countriesData?.data ?? [];
+  const { data: countries = [] } = useGetCountryOptionsQuery();
 
   const [countryOriginId, setCountryOriginId] = useState<number | "">(brand?.countryOriginId ?? "");
   const [name, setName] = useState(brand ? brand.name : "");
@@ -145,7 +132,9 @@ export default function BrandModal({
   const validate = (): boolean => {
     const next: FieldErrors = {};
     if (name.trim().length < 2) next.name = "Name must be at least 2 characters.";
-    if (slug.trim() && !/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(slug.trim())) {
+    if (!slug.trim()) {
+      next.slug = "Slug is required.";
+    } else if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(slug.trim())) {
       next.slug = "Slug must be lowercase letters/numbers separated by hyphens (e.g. \"toyota\").";
     }
     // Logo is required on create. In edit mode a logo already exists
@@ -171,7 +160,10 @@ export default function BrandModal({
           id: brand.id,
           input: {
             name: name.trim(),
-            slug: slugTouched ? slug.trim() || undefined : undefined, // leave empty to let the backend auto-generate
+            // Always the literal value shown on screen — whether it came
+            // from auto-sync or a manual edit — so what's displayed is
+            // exactly what gets saved.
+            slug: slug.trim(),
             // Explicit null clears an existing country-of-origin.
             countryOriginId: Number(countryOriginId),
             isActive,
@@ -182,7 +174,7 @@ export default function BrandModal({
         // already blocked submission without one in create mode.
         await createBrand({
           name: name.trim(),
-          slug: slug.trim() || undefined,
+          slug: slug.trim(),
           countryOriginId: Number(countryOriginId),
           isActive,
           logo: pendingLogoFile as File,

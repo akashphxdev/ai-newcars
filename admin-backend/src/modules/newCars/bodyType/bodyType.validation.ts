@@ -17,29 +17,27 @@ export const bodyTypeIdParamSchema = z.object({
 
 export const createBodyTypeSchema = z.object({
   name: z.string().trim().min(2, 'Name must be at least 2 characters').max(50),
+  // Required — the frontend always generates/edits this and sends the
+  // literal value; the backend no longer auto-generates slugs.
   slug: z
     .string()
     .trim()
     .toLowerCase()
-    .min(2)
+    .min(2, 'Slug is required')
     .max(50)
-    .regex(slugRegex, 'Slug must be lowercase letters/numbers separated by hyphens (e.g. "suv")')
-    .optional(),
+    .regex(slugRegex, 'Slug must be lowercase letters/numbers separated by hyphens (e.g. "suv")'),
   description: z.string().trim().min(1, 'Description is required').max(255),
 });
 
 export const updateBodyTypeSchema = z.object({
   name: z.string().trim().min(2, 'Name must be at least 2 characters').max(50),
-  // Optional on purpose — if omitted (or left blank), the service
-  // regenerates it from the (possibly new) `name`, same as on create.
   slug: z
     .string()
     .trim()
     .toLowerCase()
-    .min(2)
+    .min(2, 'Slug is required')
     .max(50)
-    .regex(slugRegex, 'Slug must be lowercase letters/numbers separated by hyphens (e.g. "suv")')
-    .optional(),
+    .regex(slugRegex, 'Slug must be lowercase letters/numbers separated by hyphens (e.g. "suv")'),
   description: z.string().trim().min(1, 'Description is required').max(255),
 });
 

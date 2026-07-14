@@ -6,6 +6,7 @@ import { requirePermission } from '@/core/middleware/requirePermission';
 import { asyncHandler } from '@/core/utils/asyncHandler';
 import {
   getDistricts,
+  getDistrictOptions,
   getDistrictById,
   createDistrict,
   updateDistrict,
@@ -18,6 +19,9 @@ const router = Router();
 router.use(requireAuth(['admin']));
 
 router.get('/', requirePermission('districts.view'), asyncHandler(getDistricts));
+// Registered before /:id — otherwise Express would match "options" as
+// the :id param and this route would never be reached.
+router.get('/options', requirePermission('districts.view'), asyncHandler(getDistrictOptions));
 router.get('/:id', requirePermission('districts.view'), asyncHandler(getDistrictById));
 router.post('/', requirePermission('districts.create'), asyncHandler(createDistrict));
 router.patch('/:id', requirePermission('districts.update'), asyncHandler(updateDistrict));

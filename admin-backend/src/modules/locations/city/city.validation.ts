@@ -26,16 +26,15 @@ export const cityIdParamSchema = z.object({
 export const createCitySchema = z.object({
   districtId: z.coerce.number().int().positive('districtId is required'),
   name: z.string().trim().min(2, 'Name must be at least 2 characters').max(100),
-  // Optional on purpose — if omitted, the service auto-generates one
-  // from `name` (see slugify() in city.service.ts) and de-dupes it.
+  // Required — the frontend always generates/edits this and sends the
+  // literal value; the backend no longer auto-generates slugs.
   slug: z
     .string()
     .trim()
     .toLowerCase()
-    .min(2)
+    .min(2, 'Slug is required')
     .max(100)
-    .regex(slugRegex, 'Slug must be lowercase letters/numbers separated by hyphens (e.g. "new-delhi")')
-    .optional(),
+    .regex(slugRegex, 'Slug must be lowercase letters/numbers separated by hyphens (e.g. "new-delhi")'),
   isMetro: booleanish.optional(),
   isTopCity: booleanish.optional(),
   isSellCarEnabled: booleanish.optional(),
@@ -45,7 +44,7 @@ export const updateCitySchema = z
   .object({
     districtId: z.coerce.number().int().positive().optional(),
     name: z.string().trim().min(2).max(100).optional(),
-    slug: z.string().trim().toLowerCase().min(2).max(100).regex(slugRegex).optional(),
+    slug: z.string().trim().toLowerCase().min(2, 'Slug is required').max(100).regex(slugRegex),
     isMetro: booleanish.optional(),
     isTopCity: booleanish.optional(),
     isSellCarEnabled: booleanish.optional(),

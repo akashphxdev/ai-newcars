@@ -6,6 +6,7 @@ import { ApiError } from '@/core/errors/ApiError';
 import { createLog } from '@/core/utils/createLog';
 import type {
   DistrictListQueryParsed,
+  DistrictOptionsQueryParsed,
   CreateDistrictParsed,
   UpdateDistrictParsed,
 } from './district.validation';
@@ -51,6 +52,24 @@ export async function listDistricts(query: DistrictListQueryParsed) {
       totalPages: Math.ceil(total / limit) || 1,
     },
   };
+}
+
+// Dropdown-only source — returns every matching district in one shot
+// (no pagination), optionally scoped to a state. Same "why" as
+// country.service.ts's listCountryOptions — the regular listDistricts()
+// stays paginated for the Districts list page.
+export async function listDistrictOptions(query: DistrictOptionsQueryParsed) {
+  const { stateId } = query;
+
+  const where: Prisma.DistrictWhereInput = {
+    ...(stateId ? { stateId } : {}),
+  };
+
+  return prisma.district.findMany({
+    where,
+    select: { id: true, name: true, stateId: true },
+    orderBy: { name: 'asc' },
+  });
 }
 
 export async function getDistrictById(id: number) {
@@ -131,7 +150,7 @@ export async function updateDistrict(id: number, input: UpdateDistrictParsed, ac
 
   await createLog({
     adminId: actorId,
-    description: `Updated district "${district.name}" (id ${district.id}) — fields: ${Object.keys(input).join(', ')}`,
+    description: `Updated district "${district.name}" (id ${district.id})`,
   });
 
   return district;

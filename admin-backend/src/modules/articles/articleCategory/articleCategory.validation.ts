@@ -23,14 +23,15 @@ export const articleCategoryIdParamSchema = z.object({
 
 export const createArticleCategorySchema = z.object({
   name: z.string().trim().min(2, 'Name must be at least 2 characters').max(50),
+  // Required — the frontend always generates/edits this and sends the
+  // literal value; the backend no longer auto-generates slugs.
   slug: z
     .string()
     .trim()
     .toLowerCase()
-    .min(2)
+    .min(2, 'Slug is required')
     .max(50)
-    .regex(slugRegex, 'Slug must be lowercase letters/numbers separated by hyphens (e.g. "reviews")')
-    .optional(),
+    .regex(slugRegex, 'Slug must be lowercase letters/numbers separated by hyphens (e.g. "reviews")'),
   isActive: z.boolean().default(true),
 });
 export const updateArticleCategorySchema = z.object({
@@ -39,10 +40,9 @@ export const updateArticleCategorySchema = z.object({
     .string()
     .trim()
     .toLowerCase()
-    .min(2)
+    .min(2, 'Slug is required')
     .max(50)
-    .regex(slugRegex, 'Slug must be lowercase letters/numbers separated by hyphens (e.g. "reviews")')
-    .optional(),
+    .regex(slugRegex, 'Slug must be lowercase letters/numbers separated by hyphens (e.g. "reviews")'),
   isActive: z.boolean(),
 });
 

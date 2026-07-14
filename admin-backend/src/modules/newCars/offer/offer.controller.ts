@@ -4,6 +4,7 @@ import { Request, Response } from 'express';
 import { ApiError } from '@/core/errors/ApiError';
 import { sendSuccess, sendPaginated } from '@/core/utils/sendResponse';
 import { buildPublicPath, deleteUploadedFile } from '@/core/utils/fileStorage.util';
+import { createLog } from '@/core/utils/createLog';
 import * as offerService from './offer.service';
 import {
   offerListQuerySchema,
@@ -24,6 +25,17 @@ export async function getOffers(req: Request, res: Response) {
 export async function getOfferById(req: Request, res: Response) {
   const { id } = offerIdParamSchema.parse(req.params);
   const offer = await offerService.getOfferById(id);
+
+  if (req.auth) {
+    const subject = offer.variant
+      ? `${offer.model.brand.name} ${offer.model.name} — ${offer.variant.variantName}`
+      : `${offer.model.brand.name} ${offer.model.name}`;
+    await createLog({
+      adminId: req.auth.id,
+      description: `Viewed offer for "${subject}" (id ${id})`,
+    });
+  }
+
   return sendSuccess(res, offer, 'Offer fetched successfully');
 }
 

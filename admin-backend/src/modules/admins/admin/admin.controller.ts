@@ -4,6 +4,7 @@ import { Request, Response } from 'express';
 import { ApiError } from '@/core/errors/ApiError';
 import { getClientIp } from '@/core/utils/getClientIp';
 import { sendSuccess, sendPaginated } from '@/core/utils/sendResponse';
+import { createLog } from '@/core/utils/createLog';
 import * as adminService from './admin.service';
 import {
   adminListQuerySchema,
@@ -26,6 +27,14 @@ export async function getAdmins(req: Request, res: Response) {
 export async function getAdminById(req: Request, res: Response) {
   const { id } = adminIdParamSchema.parse(req.params);
   const admin = await adminService.getAdminById(id);
+
+  if (req.auth) {
+    await createLog({
+      adminId: req.auth.id,
+      description: `Viewed admin "${admin.name}" (id ${id})`,
+    });
+  }
+
   return sendSuccess(res, admin, 'Admin fetched successfully');
 }
 

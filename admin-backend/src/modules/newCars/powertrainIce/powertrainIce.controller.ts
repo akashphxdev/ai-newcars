@@ -3,6 +3,7 @@
 import { Request, Response } from 'express';
 import { ApiError } from '@/core/errors/ApiError';
 import { sendSuccess, sendPaginated } from '@/core/utils/sendResponse';
+import { createLog } from '@/core/utils/createLog';
 import * as powertrainIceService from './powertrainIce.service';
 import {
   powertrainIceListQuerySchema,
@@ -22,6 +23,15 @@ export async function getPowertrainIceList(req: Request, res: Response) {
 export async function getPowertrainIceById(req: Request, res: Response) {
   const { id } = powertrainIceIdParamSchema.parse(req.params);
   const powertrain = await powertrainIceService.getPowertrainIceById(id);
+
+  if (req.auth) {
+    const v = powertrain.variant;
+    await createLog({
+      adminId: req.auth.id,
+      description: `Viewed ICE powertrain for "${v.model.brand.name} ${v.model.name} — ${v.variantName}" (id ${id})`,
+    });
+  }
+
   return sendSuccess(res, powertrain, 'ICE powertrain fetched successfully');
 }
 

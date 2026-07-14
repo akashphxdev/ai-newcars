@@ -28,7 +28,7 @@ import AllBodyTypes from "./pages/newCars/BodyTypes/AllBodyTypes";
 import AllAttributeOptions from "./pages/newCars/AttributeOptions/AllAttributeOptions";
 import AllArticleCategories from "./pages/Articles/ArticleCategories/AllArticleCategories";
 import AllArticleComments from "./pages/Articles/ArticleComments/AllArticleComments";
-// import AllArticles from "./pages/Articles/Articles/AllArticles";
+import AllArticles from "./pages/Articles/Articles/AllArticles";
 // ── Auth guard — baad mein real auth logic lagao ──────────────────────────────
 function RequireAuth({ children }: { children: React.ReactNode }) {
   const isLoggedIn = !!localStorage.getItem("admin_token"); // apna auth check yahan
@@ -54,14 +54,17 @@ export default function App() {
         >
           <Route index element={<Navigate to="/dashboard" replace />} />
           <Route path="dashboard" element={<Dashboard />} />
+
           <Route path="admins" element={<AllAdmins />} />
           <Route path="roles" element={<AllRoles />} />
           <Route path="permissions" element={<AllPermissions />} />
           <Route path="adminlogs" element={<AllAdminLogs />} />
+          
           <Route path="countries" element={<AllCountries />} />
           <Route path="states" element={<AllStates />} />
           <Route path="districts" element={<AllDistricts />} />
           <Route path="cities" element={<AllCities />} />
+
           <Route path ="/new-cars/brands" element={<AllBrands/>}/>
           <Route path ="/new-cars/models" element={<AllCarModels/>}/>
           <Route path ="/new-cars/variants" element={<AllVariants/>}/>
@@ -76,8 +79,8 @@ export default function App() {
           <Route path ="/new-cars/attribute-options" element={<AllAttributeOptions/>}/>
 
           <Route path ="/articles/category" element={<AllArticleCategories/>}/>
-          {/* <Route path ="/articles/all-articles" element={<AllArticles/>}/> */}
-          <Route path ="articles/article-comments" element={<AllArticleComments/>}/>
+          <Route path ="/articles/all-articles" element={<AllArticles/>}/>
+          <Route path ="/articles/article-comments" element={<AllArticleComments/>}/>
  
 
            

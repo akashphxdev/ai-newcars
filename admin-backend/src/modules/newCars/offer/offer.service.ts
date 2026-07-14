@@ -109,6 +109,16 @@ async function assertCityExists(cityId: number) {
   }
 }
 
+// Offers have no name/title of their own — every log line identifies
+// one by the car (and variant, if set) it's attached to instead.
+function describeOfferSubject(offer: {
+  model: { name: string; brand: { name: string } };
+  variant: { variantName: string } | null;
+}): string {
+  const base = `${offer.model.brand.name} ${offer.model.name}`;
+  return offer.variant ? `${base} — ${offer.variant.variantName}` : base;
+}
+
 export async function createOffer(input: CreateOfferParsed, actorId: number, imageFilename: string) {
   await assertModelExists(input.modelId);
   if (input.variantId) await assertVariantExists(input.variantId, input.modelId);
@@ -134,7 +144,7 @@ export async function createOffer(input: CreateOfferParsed, actorId: number, ima
 
   await createLog({
     adminId: actorId,
-    description: `Created offer (id ${offer.id}) under model id ${offer.modelId}`,
+    description: `Created offer for "${describeOfferSubject(offer)}" (id ${offer.id})`,
   });
 
   return offer;
@@ -168,7 +178,7 @@ export async function updateOffer(id: number, input: UpdateOfferParsed, actorId:
 
   await createLog({
     adminId: actorId,
-    description: `Updated offer (id ${id})`,
+    description: `Updated offer for "${describeOfferSubject(offer)}" (id ${id})`,
   });
 
   return offer;
@@ -188,7 +198,7 @@ export async function updateOfferStatus(id: number, isActive: boolean, actorId: 
 
   await createLog({
     adminId: actorId,
-    description: `${isActive ? 'Activated' : 'Deactivated'} offer (id ${id})`,
+    description: `${isActive ? 'Activated' : 'Deactivated'} offer for "${describeOfferSubject(offer)}" (id ${id})`,
   });
 
   return offer;
@@ -218,7 +228,7 @@ export async function uploadOfferImage(
 
   await createLog({
     adminId: actorId,
-    description: `Updated image for offer (id ${id})`,
+    description: `Updated image for offer on "${describeOfferSubject(existing)}" (id ${id})`,
   });
 
   return offer;
@@ -235,7 +245,7 @@ export async function deleteOffer(id: number, actorId: number) {
 
   await createLog({
     adminId: actorId,
-    description: `Deleted offer (id ${id})`,
+    description: `Deleted offer for "${describeOfferSubject(offer)}" (id ${id})`,
   });
 
   return { message: 'Offer deleted successfully' };

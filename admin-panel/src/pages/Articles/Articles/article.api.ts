@@ -18,6 +18,10 @@ export interface ArticleRecord {
   category: { id: number; name: string; slug: string };
   authorId: number;
   author: { id: number; name: string };
+  createdBy: number | null;
+  createdByAdmin: { id: number; name: string } | null;
+  updatedBy: number | null;
+  updatedByAdmin: { id: number; name: string } | null;
   title: string;
   slug: string;
   excerpt: string | null;
@@ -75,6 +79,9 @@ export interface ArticleFormInput {
   metaTitle?: string | null;
   metaDescription?: string | null;
   metaKeywords?: string | null;
+  // Open Graph image URL (social-share preview) — plain URL, not an
+  // upload, separate from coverImage below.
+  ogImageUrl?: string | null;
   brandIds: number[];
   modelIds: number[];
   // Optional — a draft can be saved without a cover image and have one
@@ -115,6 +122,7 @@ function buildFormData(input: ArticleFormInput): FormData {
   if (input.metaTitle) formData.append("metaTitle", input.metaTitle);
   if (input.metaDescription) formData.append("metaDescription", input.metaDescription);
   if (input.metaKeywords) formData.append("metaKeywords", input.metaKeywords);
+  if (input.ogImageUrl) formData.append("ogImageUrl", input.ogImageUrl);
   formData.append("brandIds", JSON.stringify(input.brandIds));
   formData.append("modelIds", JSON.stringify(input.modelIds));
   if (input.coverImage) formData.append("coverImage", input.coverImage);

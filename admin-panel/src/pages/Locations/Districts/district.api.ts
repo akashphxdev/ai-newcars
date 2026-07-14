@@ -52,6 +52,21 @@ interface DistrictSingleRawResponse {
   data: DistrictRecord;
 }
 
+export interface DistrictOption {
+  id: number;
+  name: string;
+  stateId: number;
+}
+
+export interface ListDistrictOptionsParams {
+  stateId?: number;
+}
+
+interface DistrictOptionsRawResponse {
+  success: true;
+  data: DistrictOption[];
+}
+
 export interface DistrictListResult {
   data: DistrictRecord[];
   pagination: Pagination;
@@ -71,6 +86,15 @@ export const districtApi = api.injectEndpoints({
         result
           ? [...result.data.map((d) => ({ type: "District" as const, id: d.id })), DISTRICT_LIST_TAG]
           : [DISTRICT_LIST_TAG],
+    }),
+
+    // Dropdown-only source — every matching district in one shot, no
+    // pagination. Use this (not getDistricts) wherever District is
+    // just a <select>: City forms & filters.
+    getDistrictOptions: builder.query<DistrictOption[], ListDistrictOptionsParams | void>({
+      query: (params) => ({ url: "/locations/districts/options", method: "GET", params: params ?? {} }),
+      transformResponse: (res: DistrictOptionsRawResponse) => res.data,
+      providesTags: [DISTRICT_LIST_TAG],
     }),
 
     getDistrictById: builder.query<DistrictRecord, number>({
@@ -100,6 +124,7 @@ export const districtApi = api.injectEndpoints({
 
 export const {
   useGetDistrictsQuery,
+  useGetDistrictOptionsQuery,
   useGetDistrictByIdQuery,
   useCreateDistrictMutation,
   useUpdateDistrictMutation,

@@ -1,8 +1,9 @@
 // src/pages/Articles/Articles/AllArticles.tsx
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   useGetArticlesQuery,
   useDeleteArticleMutation,
+  useUpdateArticleStatusMutation,
   type ArticleRecord,
   type ArticleStatus,
 } from "./article.api";
@@ -15,7 +16,8 @@ import Pagination from "../../../components/common/Pagination";
 import { SearchFilterBar, SearchInput, FilterSelect } from "../../../components/common/SearchFilterBar";
 
 const ACCENT = "#D4300F";
-const PAGE_SIZE = 20;
+// Rows-per-page choices shown in the dropdown — same set as AllAdminLogs.tsx.
+const PAGE_SIZE_OPTIONS = [10, 20, 50, 100];
 
 const STATUS_STYLES: Record<ArticleStatus, string> = {
   draft: "bg-[#f7f5f1] text-[#a39e96]",
@@ -23,14 +25,113 @@ const STATUS_STYLES: Record<ArticleStatus, string> = {
   published: "bg-green-50 text-green-600",
 };
 
+// Local-datetime <-> ISO helper for the inline schedule picker, same
+// convention as ArticleModal's toLocalInputValue.
+function toLocalInputValue(iso: string | null): string {
+  if (!iso) return "";
+  const d = new Date(iso);
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+
+// Row-level status control. Draft/Published apply immediately; picking
+// "Scheduled" opens an inline date/time prompt first since the backend
+// requires a future scheduledAt whenever status is "scheduled".
+function StatusCell({ article }: { article: ArticleRecord }) {
+  const [updateStatus, { isLoading }] = useUpdateArticleStatusMutation();
+  const [pickingSchedule, setPickingSchedule] = useState(false);
+  const [scheduleValue, setScheduleValue] = useState("");
+  const [error, setError] = useState("");
+
+  const applyStatus = async (status: ArticleStatus, scheduledAtIso?: string | null) => {
+    setError("");
+    try {
+      await updateStatus({ id: article.id, status, scheduledAt: scheduledAtIso ?? null }).unwrap();
+      setPickingSchedule(false);
+      setScheduleValue("");
+    } catch (err) {
+      setError(extractApiError(err));
+    }
+  };
+
+  const handleChange = (value: ArticleStatus) => {
+    if (value === "scheduled") {
+      setPickingSchedule(true);
+      setScheduleValue(toLocalInputValue(article.scheduledAt) || toLocalInputValue(new Date().toISOString()));
+      return;
+    }
+    applyStatus(value);
+  };
+
+  return (
+    <div className="space-y-1 min-w-[150px]">
+      <select
+        value={article.status}
+        onChange={(e) => handleChange(e.target.value as ArticleStatus)}
+        disabled={isLoading}
+        className={`text-[10px] font-bold px-2 py-1 rounded-full uppercase border-0 cursor-pointer outline-none ${STATUS_STYLES[article.status]}`}
+      >
+        <option value="draft">Draft</option>
+        <option value="scheduled">Scheduled</option>
+        <option value="published">Published</option>
+      </select>
+
+      {!pickingSchedule && article.status === "scheduled" && article.scheduledAt && (
+        <p className="text-[10px] text-[#a39e96]">{new Date(article.scheduledAt).toLocaleString()}</p>
+      )}
+
+      {pickingSchedule && (
+        <div className="flex items-center gap-1 bg-[#f7f5f1] border border-[#e2ddd5] rounded-lg p-1.5">
+          <input
+            type="datetime-local"
+            value={scheduleValue}
+            onChange={(e) => setScheduleValue(e.target.value)}
+            className="text-[10px] bg-white border border-[#e2ddd5] rounded px-1.5 py-1 outline-none w-[130px]"
+          />
+          <button
+            type="button"
+            disabled={isLoading || !scheduleValue}
+            onClick={() => applyStatus("scheduled", new Date(scheduleValue).toISOString())}
+            className="cursor-pointer text-[10px] font-bold px-2 py-1 rounded bg-[#D4300F] text-white disabled:opacity-50"
+          >
+            Set
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              setPickingSchedule(false);
+              setScheduleValue("");
+            }}
+            className="cursor-pointer text-[10px] font-bold px-1.5 text-[#a39e96]"
+          >
+            ✕
+          </button>
+        </div>
+      )}
+
+      {error && <p className="text-[9px] font-medium text-[#D4300F] max-w-[150px]">{error}</p>}
+    </div>
+  );
+}
+
 export default function AllArticles() {
   const [page, setPage] = useState(1);
+  // Rows-per-page, user-controlled via a dropdown next to the filters.
+  const [limit, setLimit] = useState(20);
   const [search, setSearch] = useState("");
+  // Debounced copy of `search` — this is what actually goes into the
+  // query args, so we don't refetch on every keystroke.
+  const [debouncedSearch, setDebouncedSearch] = useState("");
   const [filterCategoryId, setFilterCategoryId] = useState<number | "">("");
   const [filterStatus, setFilterStatus] = useState<ArticleStatus | "">("");
 
   const { data: categoriesData } = useGetArticleCategoriesQuery({ page: 1, limit: 100 });
   const categories = categoriesData?.data ?? [];
+
+  useEffect(() => {
+    const timer = setTimeout(() => setDebouncedSearch(search), search ? 400 : 0);
+    return () => clearTimeout(timer);
+  }, [search]);
 
   const {
     data: articlesData,
@@ -39,8 +140,8 @@ export default function AllArticles() {
     error: queryError,
   } = useGetArticlesQuery({
     page,
-    limit: PAGE_SIZE,
-    search: search || undefined,
+    limit,
+    search: debouncedSearch || undefined,
     categoryId: filterCategoryId || undefined,
     status: filterStatus || undefined,
   });
@@ -88,6 +189,11 @@ export default function AllArticles() {
     }
   };
 
+  const handleLimitChange = (value: number) => {
+    setLimit(value);
+    setPage(1);
+  };
+
   const columns: DataTableColumn<ArticleRecord>[] = [
     {
       header: "Cover",
@@ -128,14 +234,24 @@ export default function AllArticles() {
     },
     {
       header: "Status",
+      render: (a) => <StatusCell article={a} />,
+    },
+    {
+      header: "Activity",
       render: (a) => (
-        <div className="space-y-0.5">
-          <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full uppercase ${STATUS_STYLES[a.status]}`}>
-            {a.status}
-          </span>
-          {a.status === "scheduled" && a.scheduledAt && (
-            <p className="text-[10px] text-[#a39e96]">{new Date(a.scheduledAt).toLocaleString()}</p>
-          )}
+        <div className="space-y-1 text-[10px] leading-snug">
+          <p className="text-[#7a7670]">
+            <span className="font-semibold text-[#4a4640]">Created</span>{" "}
+            {a.createdByAdmin?.name ?? "—"}
+            <br />
+            <span className="text-[#a39e96]">{new Date(a.createdAt).toLocaleString()}</span>
+          </p>
+          <p className="text-[#7a7670]">
+            <span className="font-semibold text-[#4a4640]">Updated</span>{" "}
+            {a.updatedByAdmin?.name ?? "—"}
+            <br />
+            <span className="text-[#a39e96]">{new Date(a.updatedAt).toLocaleString()}</span>
+          </p>
         </div>
       ),
     },
@@ -190,11 +306,27 @@ export default function AllArticles() {
 
       <SearchFilterBar
         right={
-          pagination && (
-            <p className="text-[11px] text-[#a39e96] whitespace-nowrap">
-              {pagination.total} article{pagination.total === 1 ? "" : "s"} total
-            </p>
-          )
+          <div className="flex items-center gap-3">
+            {pagination && (
+              <p className="text-[11px] text-[#a39e96] whitespace-nowrap">
+                {pagination.total} article{pagination.total === 1 ? "" : "s"} total
+              </p>
+            )}
+            <div className="flex items-center gap-2">
+              <span className="text-[11px] font-semibold text-[#a39e96] whitespace-nowrap">Rows per page</span>
+              <select
+                value={limit}
+                onChange={(e) => handleLimitChange(Number(e.target.value))}
+                className="cursor-pointer text-[12px] text-[#4a4640] bg-[#f7f5f1] border border-[#e8e4dc] rounded-lg px-3 py-2 outline-none"
+              >
+                {PAGE_SIZE_OPTIONS.map((n) => (
+                  <option key={n} value={n}>
+                    {n}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
         }
       >
         <SearchInput
@@ -239,7 +371,13 @@ export default function AllArticles() {
           loadingMessage="Loading articles..."
           emptyMessage="No articles found."
         />
-        <Pagination pagination={pagination ?? null} onPageChange={setPage} variant="simple" />
+        <Pagination
+          pagination={pagination ?? null}
+          onPageChange={setPage}
+          variant="compact"
+          itemLabel="articles"
+          currentCount={articles.length}
+        />
       </div>
 
       {modalOpen && (

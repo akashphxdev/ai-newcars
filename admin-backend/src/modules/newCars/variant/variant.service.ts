@@ -6,6 +6,7 @@ import { ApiError } from '@/core/errors/ApiError';
 import { createLog } from '@/core/utils/createLog';
 import type {
   VariantListQueryParsed,
+  VariantOptionsQueryParsed,
   CreateVariantParsed,
   UpdateVariantParsed,
 } from './variant.validation';
@@ -62,6 +63,24 @@ export async function listVariants(query: VariantListQueryParsed) {
       totalPages: Math.ceil(total / limit) || 1,
     },
   };
+}
+
+// Dropdown-only source — every matching variant in one shot, no
+// pagination, optionally scoped to a model. Same "why" as
+// carModel.service.ts's listCarModelOptions — the regular listVariants()
+// stays paginated for the Variants list page.
+export async function listVariantOptions(query: VariantOptionsQueryParsed) {
+  const { modelId } = query;
+
+  const where: Prisma.CarVariantWhereInput = {
+    ...(modelId ? { modelId } : {}),
+  };
+
+  return prisma.carVariant.findMany({
+    where,
+    select: { id: true, variantName: true, modelId: true },
+    orderBy: { variantName: 'asc' },
+  });
 }
 
 export async function getVariantById(id: number): Promise<VariantRecord> {

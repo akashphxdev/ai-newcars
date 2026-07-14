@@ -1,6 +1,6 @@
 // src/pages/Locations/AllCountries.tsx
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   useGetCountriesQuery,
   useUpdateCountryStatusMutation,
@@ -15,7 +15,8 @@ import { SearchFilterBar, SearchInput } from "../../../components/common/SearchF
 import ConfirmDialog from "../../../components/common/ConfirmDialog";
 
 const ACCENT = "#D4300F";
-const PAGE_SIZE = 20;
+// Rows-per-page choices shown in the dropdown — same set as AllAdminLogs.tsx.
+const PAGE_SIZE_OPTIONS = [10, 20, 50, 100];
 
 // Small pill-style toggle switch — self-contained so it can be reused
 // on other listing pages (City, etc.) later if needed.
@@ -48,14 +49,24 @@ function StatusToggle({
 
 export default function AllCountries() {
   const [page, setPage] = useState(1);
+  // Rows-per-page, user-controlled via a dropdown next to the filters.
+  const [limit, setLimit] = useState(20);
   const [search, setSearch] = useState("");
+  // Debounced copy of `search` — this is what actually goes into the
+  // query args, so we don't refetch on every keystroke.
+  const [debouncedSearch, setDebouncedSearch] = useState("");
+
+  useEffect(() => {
+    const timer = setTimeout(() => setDebouncedSearch(search), search ? 400 : 0);
+    return () => clearTimeout(timer);
+  }, [search]);
 
   const {
     data: countriesData,
     isLoading,
     isFetching,
     error: queryError,
-  } = useGetCountriesQuery({ page, limit: PAGE_SIZE, search: search || undefined });
+  } = useGetCountriesQuery({ page, limit, search: debouncedSearch || undefined });
 
   const countries = countriesData?.data ?? [];
   const pagination = countriesData?.pagination;
@@ -113,6 +124,11 @@ export default function AllCountries() {
     } finally {
       setDeletingId(null);
     }
+  };
+
+  const handleLimitChange = (value: number) => {
+    setLimit(value);
+    setPage(1);
   };
 
   const columns: DataTableColumn<CountryRecord>[] = [
@@ -208,11 +224,27 @@ export default function AllCountries() {
 
       <SearchFilterBar
         right={
-          pagination && (
-            <p className="text-[11px] text-[#a39e96]">
-              {pagination.total} countr{pagination.total === 1 ? "y" : "ies"} total
-            </p>
-          )
+          <div className="flex items-center gap-3">
+            {pagination && (
+              <p className="text-[11px] text-[#a39e96] whitespace-nowrap">
+                {pagination.total} countr{pagination.total === 1 ? "y" : "ies"} total
+              </p>
+            )}
+            <div className="flex items-center gap-2">
+              <span className="text-[11px] font-semibold text-[#a39e96] whitespace-nowrap">Rows per page</span>
+              <select
+                value={limit}
+                onChange={(e) => handleLimitChange(Number(e.target.value))}
+                className="cursor-pointer text-[12px] text-[#4a4640] bg-[#f7f5f1] border border-[#e8e4dc] rounded-lg px-3 py-2 outline-none"
+              >
+                {PAGE_SIZE_OPTIONS.map((n) => (
+                  <option key={n} value={n}>
+                    {n}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
         }
       >
         <SearchInput
@@ -236,7 +268,13 @@ export default function AllCountries() {
           loadingMessage="Loading countries..."
           emptyMessage="No countries found."
         />
-        <Pagination pagination={pagination ?? null} onPageChange={setPage} variant="simple" />
+        <Pagination
+          pagination={pagination ?? null}
+          onPageChange={setPage}
+          variant="compact"
+          itemLabel="countries"
+          currentCount={countries.length}
+        />
       </div>
 
       <CountryModal open={modalOpen} onClose={closeModal} country={editingCountry} />

@@ -86,7 +86,7 @@ export async function updateArticleCommentStatus(
 
   await createLog({
     adminId: actorId,
-    description: `Set comment id ${id} status to "${input.status}"`,
+    description: `Set comment by "${comment.user.name}" on "${comment.article.title}" to "${input.status}" (id ${id})`,
   });
 
   return shapeComment(comment);
@@ -99,7 +99,9 @@ export async function deleteArticleComment(id: number, actorId: number) {
 
   await createLog({
     adminId: actorId,
-    description: `Deleted comment id ${id} (and ${comment.replyCount} repl${comment.replyCount === 1 ? 'y' : 'ies'}) on article id ${comment.articleId}`,
+    description: `Deleted comment by "${comment.user.name}" on "${comment.article.title}" (id ${id})${
+      comment.replyCount > 0 ? ` — also removed ${comment.replyCount} repl${comment.replyCount === 1 ? 'y' : 'ies'}` : ''
+    }`,
   });
 
   return { message: 'Comment deleted successfully' };

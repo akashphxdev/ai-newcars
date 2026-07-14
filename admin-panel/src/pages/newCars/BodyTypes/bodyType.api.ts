@@ -50,6 +50,16 @@ interface BodyTypeSingleRawResponse {
   data: BodyTypeRecord;
 }
 
+export interface BodyTypeOption {
+  id: number;
+  name: string;
+}
+
+interface BodyTypeOptionsRawResponse {
+  success: true;
+  data: BodyTypeOption[];
+}
+
 export interface BodyTypeListResult {
   data: BodyTypeRecord[];
   pagination: Pagination;
@@ -69,6 +79,15 @@ export const bodyTypeApi = api.injectEndpoints({
         result
           ? [...result.data.map((b) => ({ type: "BodyType" as const, id: b.id })), BODY_TYPE_LIST_TAG]
           : [BODY_TYPE_LIST_TAG],
+    }),
+
+    // Dropdown-only source — every body type in one shot, no pagination.
+    // Use this (not getBodyTypes) wherever BodyType is just a <select>:
+    // CarModel forms.
+    getBodyTypeOptions: builder.query<BodyTypeOption[], void>({
+      query: () => ({ url: "/new-cars/body-types/options", method: "GET" }),
+      transformResponse: (res: BodyTypeOptionsRawResponse) => res.data,
+      providesTags: [BODY_TYPE_LIST_TAG],
     }),
 
     getBodyTypeById: builder.query<BodyTypeRecord, number>({
@@ -115,6 +134,7 @@ export const bodyTypeApi = api.injectEndpoints({
 
 export const {
   useGetBodyTypesQuery,
+  useGetBodyTypeOptionsQuery,
   useGetBodyTypeByIdQuery,
   useCreateBodyTypeMutation,
   useUpdateBodyTypeMutation,

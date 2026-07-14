@@ -3,6 +3,7 @@
 import { Request, Response } from 'express';
 import { ApiError } from '@/core/errors/ApiError';
 import { sendSuccess, sendPaginated } from '@/core/utils/sendResponse';
+import { createLog } from '@/core/utils/createLog';
 import * as powertrainElectricService from './powertrainElectric.service';
 import {
   powertrainElectricListQuerySchema,
@@ -22,6 +23,15 @@ export async function getPowertrainElectricList(req: Request, res: Response) {
 export async function getPowertrainElectricById(req: Request, res: Response) {
   const { id } = powertrainElectricIdParamSchema.parse(req.params);
   const powertrain = await powertrainElectricService.getPowertrainElectricById(id);
+
+  if (req.auth) {
+    const v = powertrain.variant;
+    await createLog({
+      adminId: req.auth.id,
+      description: `Viewed Electric powertrain for "${v.model.brand.name} ${v.model.name} — ${v.variantName}" (id ${id})`,
+    });
+  }
+
   return sendSuccess(res, powertrain, 'Electric powertrain fetched successfully');
 }
 
