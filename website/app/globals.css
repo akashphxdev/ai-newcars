@@ -1,0 +1,68 @@
+@import "tailwindcss";
+
+:root {
+  --red: #DC2626;
+  --red-hover: #991B1B;
+  --red-light: #FEE2E2;
+}
+
+.dark {
+  --red-light: #7F1D1D;
+}
+
+body {
+  font-family: var(--font-body), system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+@layer base {
+  ::-webkit-scrollbar {
+    @apply w-2 h-2;
+  }
+
+  ::-webkit-scrollbar-track {
+    @apply bg-gray-100 dark:bg-zinc-900;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    @apply bg-gray-400 dark:bg-zinc-700 rounded-full;
+  }
+
+  input:focus,
+  textarea:focus {
+    @apply outline-none;
+  }
+}
+
+@layer components {
+  .btn-primary {
+    @apply px-4 py-2 bg-red-600 hover:bg-red-700 text-white font-semibold rounded-lg transition-all shadow-md hover:shadow-lg active:scale-95;
+  }
+
+  .btn-secondary {
+    @apply px-4 py-2 border border-gray-300 dark:border-zinc-700 text-gray-800 dark:text-gray-200 font-semibold rounded-lg hover:bg-gray-100 dark:hover:bg-zinc-800 transition-all;
+  }
+
+  .nav-link {
+    @apply text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white font-medium transition-colors;
+  }
+
+  .nav-link-active {
+    @apply text-gray-900 dark:text-white;
+  }
+}
+
+@media (max-width: 640px) {
+  body {
+    @apply text-sm;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    @apply !transition-none !animate-none;
+  }
+}
