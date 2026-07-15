@@ -31,6 +31,8 @@ import AllArticleComments from "./pages/Articles/ArticleComments/AllArticleComme
 import AllArticles from "./pages/Articles/Articles/AllArticles";
 import AllReviews from "./pages/Reviews/AllReviews/AllReviews";
 import AllHelpfulVotes from "./pages/Reviews/HelpfulVotes/AllHelpfulVotes";
+import AllStoryGroups from "./pages/Stories/StoryGroups/AllStoryGroups";
+import AllStoryItems from "./pages/Stories/StoryItems/AllStoryItems";
 // ── Auth guard — baad mein real auth logic lagao ──────────────────────────────
 function RequireAuth({ children }: { children: React.ReactNode }) {
   const isLoggedIn = !!localStorage.getItem("admin_token"); // apna auth check yahan
@@ -83,6 +85,9 @@ export default function App() {
           <Route path ="/articles/category" element={<AllArticleCategories/>}/>
           <Route path ="/articles/all-articles" element={<AllArticles/>}/>
           <Route path ="/articles/article-comments" element={<AllArticleComments/>}/>
+
+          <Route path ="/stories/story-groups" element={<AllStoryGroups/>}/>
+          <Route path ="/stories/story-items" element={<AllStoryItems/>}/>
 
           <Route path ="/reviews/all-reviews" element={<AllReviews/>}/>
           <Route path ="/reviews/votes" element={<AllHelpfulVotes/>}/>

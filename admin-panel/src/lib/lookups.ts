@@ -1,18 +1,4 @@
 // src/lib/lookups.ts
-//
-// Central place for "numeric code -> label" lookups shared across
-// modules. The DB only stores the code (e.g. offerType = 2); this file
-// is the single source of truth for what each code means on screen.
-//
-// To add a new option to an existing lookup: add one line to its
-// OPTIONS array below — nothing else needs to change.
-// To add a brand-new lookup (e.g. fuel type): copy the pattern of an
-// existing one (OPTIONS array + getXLabel function) into its own
-// section in this same file.
-
-// ===== Offer types =====
-// Mirrors OFFER_TYPE_CODES in backend/src/modules/newCars/offer/offer.validation.ts —
-// keep both in sync if a code is ever added/removed.
 export interface LookupOption {
   value: number;
   label: string;

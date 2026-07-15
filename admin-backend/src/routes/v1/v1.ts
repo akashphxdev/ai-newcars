@@ -6,6 +6,7 @@ import adminsRoutes from './admin-users';
 import locationsRoutes from './locations'
 import NewCarsRoutes from './new-cars'
 import ArticlesRoutes from './articles'
+import StoriesRoute from './stories'
 
 const router = Router();
 
@@ -15,5 +16,6 @@ router.use('/admin-users', adminsRoutes);
 router.use('/locations', locationsRoutes);
 router.use('/new-cars', NewCarsRoutes)
 router.use('/articles', ArticlesRoutes)
+router.use('/stories', StoriesRoute)
 
 export default router;

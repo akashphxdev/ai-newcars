@@ -702,86 +702,6 @@ CREATE TABLE "review_helpful_votes" (
 );
 
 -- CreateTable
-CREATE TABLE "story_categories" (
-    "id" SERIAL NOT NULL,
-    "name" VARCHAR(50) NOT NULL,
-    "slug" VARCHAR(50) NOT NULL,
-
-    CONSTRAINT "story_categories_pkey" PRIMARY KEY ("id")
-);
-
--- CreateTable
-CREATE TABLE "stories" (
-    "id" SERIAL NOT NULL,
-    "author_id" INTEGER NOT NULL,
-    "category_id" INTEGER NOT NULL,
-    "title" VARCHAR(200) NOT NULL,
-    "slug" VARCHAR(200) NOT NULL,
-    "excerpt" VARCHAR(300),
-    "body" TEXT,
-    "cover_image_url" VARCHAR(255),
-    "read_time_minutes" INTEGER,
-    "status" VARCHAR(20) NOT NULL DEFAULT 'draft',
-    "published_at" TIMESTAMP(3),
-    "view_count" INTEGER NOT NULL DEFAULT 0,
-    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-
-    CONSTRAINT "stories_pkey" PRIMARY KEY ("id")
-);
-
--- CreateTable
-CREATE TABLE "story_models" (
-    "id" SERIAL NOT NULL,
-    "story_id" INTEGER NOT NULL,
-    "model_id" INTEGER NOT NULL,
-
-    CONSTRAINT "story_models_pkey" PRIMARY KEY ("id")
-);
-
--- CreateTable
-CREATE TABLE "story_comments" (
-    "id" SERIAL NOT NULL,
-    "story_id" INTEGER NOT NULL,
-    "user_id" INTEGER NOT NULL,
-    "parent_comment_id" INTEGER,
-    "body" TEXT NOT NULL,
-    "status" VARCHAR(20) NOT NULL DEFAULT 'visible',
-    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-
-    CONSTRAINT "story_comments_pkey" PRIMARY KEY ("id")
-);
-
--- CreateTable
-CREATE TABLE "media_stories" (
-    "id" SERIAL NOT NULL,
-    "admin_id" INTEGER NOT NULL,
-    "media_type" VARCHAR(10) NOT NULL,
-    "media_url" VARCHAR(255) NOT NULL,
-    "thumbnail_url" VARCHAR(255),
-    "caption" VARCHAR(300),
-    "category" VARCHAR(50),
-    "brand_id" INTEGER,
-    "model_id" INTEGER,
-    "display_order" INTEGER NOT NULL DEFAULT 0,
-    "is_active" BOOLEAN NOT NULL DEFAULT true,
-    "view_count" INTEGER NOT NULL DEFAULT 0,
-    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-
-    CONSTRAINT "media_stories_pkey" PRIMARY KEY ("id")
-);
-
--- CreateTable
-CREATE TABLE "media_story_views" (
-    "id" BIGSERIAL NOT NULL,
-    "story_id" INTEGER NOT NULL,
-    "user_id" INTEGER,
-    "ip_address" VARCHAR(45),
-    "viewed_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-
-    CONSTRAINT "media_story_views_pkey" PRIMARY KEY ("id")
-);
-
--- CreateTable
 CREATE TABLE "mileage_logs" (
     "id" SERIAL NOT NULL,
     "user_id" INTEGER NOT NULL,
@@ -1044,6 +964,42 @@ CREATE TABLE "article_comments" (
     CONSTRAINT "article_comments_pkey" PRIMARY KEY ("id")
 );
 
+-- CreateTable
+CREATE TABLE "story_groups" (
+    "id" SERIAL NOT NULL,
+    "title" VARCHAR(100) NOT NULL,
+    "cover_media_type" VARCHAR(10) NOT NULL,
+    "cover_media_url" VARCHAR(255) NOT NULL,
+    "view_count" INTEGER NOT NULL DEFAULT 0,
+    "is_active" BOOLEAN NOT NULL DEFAULT true,
+    "display_order" INTEGER NOT NULL DEFAULT 0,
+    "created_by" INTEGER,
+    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updated_by" INTEGER,
+    "updated_at" TIMESTAMP(3),
+
+    CONSTRAINT "story_groups_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "story_items" (
+    "id" SERIAL NOT NULL,
+    "group_id" INTEGER NOT NULL,
+    "media_type" VARCHAR(10) NOT NULL,
+    "media_url" VARCHAR(255) NOT NULL,
+    "description" VARCHAR(300),
+    "link" VARCHAR(255),
+    "view_count" INTEGER NOT NULL DEFAULT 0,
+    "is_active" BOOLEAN NOT NULL DEFAULT true,
+    "display_order" INTEGER NOT NULL DEFAULT 0,
+    "created_by" INTEGER,
+    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updated_by" INTEGER,
+    "updated_at" TIMESTAMP(3),
+
+    CONSTRAINT "story_items_pkey" PRIMARY KEY ("id")
+);
+
 -- CreateIndex
 CREATE UNIQUE INDEX "cities_slug_key" ON "cities"("slug");
 
@@ -1082,12 +1038,6 @@ CREATE UNIQUE INDEX "car_faqs_model_id_display_order_key" ON "car_faqs"("model_i
 
 -- CreateIndex
 CREATE UNIQUE INDEX "review_helpful_votes_review_id_user_id_key" ON "review_helpful_votes"("review_id", "user_id");
-
--- CreateIndex
-CREATE UNIQUE INDEX "story_categories_slug_key" ON "story_categories"("slug");
-
--- CreateIndex
-CREATE UNIQUE INDEX "stories_slug_key" ON "stories"("slug");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "ad_placements_slug_key" ON "ad_placements"("slug");
@@ -1327,42 +1277,6 @@ ALTER TABLE "review_helpful_votes" ADD CONSTRAINT "review_helpful_votes_review_i
 ALTER TABLE "review_helpful_votes" ADD CONSTRAINT "review_helpful_votes_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "stories" ADD CONSTRAINT "stories_author_id_fkey" FOREIGN KEY ("author_id") REFERENCES "admin_users"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE "stories" ADD CONSTRAINT "stories_category_id_fkey" FOREIGN KEY ("category_id") REFERENCES "story_categories"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE "story_models" ADD CONSTRAINT "story_models_story_id_fkey" FOREIGN KEY ("story_id") REFERENCES "stories"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE "story_models" ADD CONSTRAINT "story_models_model_id_fkey" FOREIGN KEY ("model_id") REFERENCES "car_models"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE "story_comments" ADD CONSTRAINT "story_comments_story_id_fkey" FOREIGN KEY ("story_id") REFERENCES "stories"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE "story_comments" ADD CONSTRAINT "story_comments_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE "story_comments" ADD CONSTRAINT "story_comments_parent_comment_id_fkey" FOREIGN KEY ("parent_comment_id") REFERENCES "story_comments"("id") ON DELETE SET NULL ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE "media_stories" ADD CONSTRAINT "media_stories_admin_id_fkey" FOREIGN KEY ("admin_id") REFERENCES "admin_users"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE "media_stories" ADD CONSTRAINT "media_stories_brand_id_fkey" FOREIGN KEY ("brand_id") REFERENCES "brands"("id") ON DELETE SET NULL ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE "media_stories" ADD CONSTRAINT "media_stories_model_id_fkey" FOREIGN KEY ("model_id") REFERENCES "car_models"("id") ON DELETE SET NULL ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE "media_story_views" ADD CONSTRAINT "media_story_views_story_id_fkey" FOREIGN KEY ("story_id") REFERENCES "media_stories"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE "media_story_views" ADD CONSTRAINT "media_story_views_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE SET NULL ON UPDATE CASCADE;
-
--- AddForeignKey
 ALTER TABLE "mileage_logs" ADD CONSTRAINT "mileage_logs_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
@@ -1446,3 +1360,17 @@ ALTER TABLE "article_comments" ADD CONSTRAINT "article_comments_user_id_fkey" FO
 -- AddForeignKey
 ALTER TABLE "article_comments" ADD CONSTRAINT "article_comments_parent_comment_id_fkey" FOREIGN KEY ("parent_comment_id") REFERENCES "article_comments"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
+-- AddForeignKey
+ALTER TABLE "story_groups" ADD CONSTRAINT "story_groups_created_by_fkey" FOREIGN KEY ("created_by") REFERENCES "admin_users"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "story_groups" ADD CONSTRAINT "story_groups_updated_by_fkey" FOREIGN KEY ("updated_by") REFERENCES "admin_users"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "story_items" ADD CONSTRAINT "story_items_group_id_fkey" FOREIGN KEY ("group_id") REFERENCES "story_groups"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "story_items" ADD CONSTRAINT "story_items_created_by_fkey" FOREIGN KEY ("created_by") REFERENCES "admin_users"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "story_items" ADD CONSTRAINT "story_items_updated_by_fkey" FOREIGN KEY ("updated_by") REFERENCES "admin_users"("id") ON DELETE SET NULL ON UPDATE CASCADE;

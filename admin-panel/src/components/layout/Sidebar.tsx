@@ -206,9 +206,8 @@ const NAV: NavGroup[] = [
           </svg>
         ),
         children: [
-          { label: "All Stories", href: "/stories" },
-          { label: "Media Stories", href: "/stories/media" },
-          { label: "Comments", href: "/stories/comments" },
+          { label: "Story Groups", href: "/stories/story-groups" },
+          { label: "Story Items", href: "/stories/story-items" },
         ],
       },
       {

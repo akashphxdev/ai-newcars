@@ -321,7 +321,6 @@ export async function deleteCarModel(id: number, actorId: number) {
     offerCount,
     usedListingCount,
     reviewCount,
-    storyModelCount,
   ] = await Promise.all([
     prisma.carVariant.count({ where: { modelId: id } }),
     prisma.carImage.count({ where: { modelId: id } }),
@@ -331,7 +330,6 @@ export async function deleteCarModel(id: number, actorId: number) {
     prisma.newCarOffer.count({ where: { modelId: id } }),
     prisma.usedCarListing.count({ where: { modelId: id } }),
     prisma.review.count({ where: { modelId: id } }),
-    prisma.storyModel.count({ where: { modelId: id } }),
   ]);
 
   const linkedParts: string[] = [];
@@ -343,7 +341,6 @@ export async function deleteCarModel(id: number, actorId: number) {
   if (offerCount > 0) linkedParts.push(`${offerCount} offer(s)`);
   if (usedListingCount > 0) linkedParts.push(`${usedListingCount} used-car listing(s)`);
   if (reviewCount > 0) linkedParts.push(`${reviewCount} review(s)`);
-  if (storyModelCount > 0) linkedParts.push(`${storyModelCount} story link(s)`);
 
   if (linkedParts.length > 0) {
     throw ApiError.badRequest(

@@ -1,6 +1,5 @@
 // ============================================================
 // TimesAuto — Prisma Schema (PostgreSQL)
-// Run: npx prisma migrate dev --name remove_story_and_media_story_tables
 // ============================================================
 
 generator client {
@@ -191,6 +190,13 @@ model AdminUser {
   articlesUpdated          Article[]         @relation("ArticleUpdatedBy")
   articleCategoriesCreated ArticleCategory[] @relation("ArticleCategoryCreatedBy")
   articleCategoriesUpdated ArticleCategory[] @relation("ArticleCategoryUpdatedBy")
+
+  // Stories — created/updated split into their own relation names,
+  // same convention as ArticleCreatedBy/ArticleUpdatedBy above.
+  storyGroupsCreated StoryGroup[] @relation("StoryGroupCreatedBy")
+  storyGroupsUpdated StoryGroup[] @relation("StoryGroupUpdatedBy")
+  storyItemsCreated  StoryItem[]  @relation("StoryItemCreatedBy")
+  storyItemsUpdated  StoryItem[]  @relation("StoryItemUpdatedBy")
 
   @@map("admin_users")
 }
@@ -1277,4 +1283,61 @@ model ArticleComment {
   createdAt DateTime @default(now()) @map("created_at")
 
   @@map("article_comments")
+}
+
+// ============================================================
+// STORIES
+// ============================================================
+
+model StoryGroup {
+  id        Int    @id @default(autoincrement())
+  title     String @db.VarChar(100)
+
+  coverMediaType String @map("cover_media_type") @db.VarChar(10)
+  coverMediaUrl  String @map("cover_media_url") @db.VarChar(255)
+
+  viewCount    Int     @default(0) @map("view_count")
+  isActive     Boolean @default(true) @map("is_active")
+  displayOrder Int     @map("display_order")
+
+  createdBy Int?       @map("created_by")
+  createdByAdmin AdminUser? @relation("StoryGroupCreatedBy", fields: [createdBy], references: [id])
+  createdAt DateTime   @default(now()) @map("created_at")
+  updatedBy Int?       @map("updated_by")
+  updatedByAdmin AdminUser? @relation("StoryGroupUpdatedBy", fields: [updatedBy], references: [id])
+  updatedAt DateTime?  @updatedAt @map("updated_at")
+
+  items StoryItem[]
+  @@unique([displayOrder])
+  @@map("story_groups")
+}
+
+
+model StoryItem {
+  id      Int        @id @default(autoincrement())
+  groupId Int        @map("group_id")
+  group   StoryGroup @relation(fields: [groupId], references: [id], onDelete: Cascade)
+
+  mediaType String @map("media_type") @db.VarChar(10)
+  mediaUrl  String @map("media_url") @db.VarChar(255)
+
+  description String? @db.VarChar(300)
+
+  link        String? @db.VarChar(255)
+
+  viewCount    Int     @default(0) @map("view_count")
+  status  String    @default("draft") @db.VarChar(10) @map("status")
+  startAt DateTime? @map("start_at")
+  endAt   DateTime? @map("end_at")
+  displayOrder Int     @map("display_order")
+
+  createdBy Int?       @map("created_by")
+  createdByAdmin AdminUser? @relation("StoryItemCreatedBy", fields: [createdBy], references: [id])
+  createdAt DateTime   @default(now()) @map("created_at")
+  updatedBy Int?       @map("updated_by")
+  updatedByAdmin AdminUser? @relation("StoryItemUpdatedBy", fields: [updatedBy], references: [id])
+  updatedAt DateTime?  @updatedAt @map("updated_at")
+  @@unique([groupId, displayOrder])
+  @@map("story_items")
+
 }
