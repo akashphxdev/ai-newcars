@@ -7,3 +7,4 @@ dist
 # (kept via .gitkeep files) is tracked, not the actual images.
 uploads/**/*
 !uploads/**/.gitkeep
+*.zip
