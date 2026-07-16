@@ -9,6 +9,7 @@ import type {
   StoryGroupListQueryParsed,
   CreateStoryGroupParsed,
   UpdateStoryGroupParsed,
+  MediaType,
 } from './storyGroup.validation';
 import type {
   StoryGroupRecord,
@@ -78,13 +79,9 @@ export async function getStoryGroupById(id: number): Promise<StoryGroupRecord> {
 export async function createStoryGroup(
   input: CreateStoryGroupParsed,
   actorId: number,
-  coverFilename?: string,
+  coverFilename: string,
 ): Promise<StoryGroupRecord> {
-
-  const coverMediaUrl =
-    input.coverMediaType === 'image'
-      ? buildPublicPath('story-groups', coverFilename as string)
-      : (input.coverMediaUrl as string);
+  const coverMediaUrl = buildPublicPath('story-groups', coverFilename);
 
   let group;
   try {
@@ -123,22 +120,21 @@ export async function updateStoryGroup(
 ): Promise<StoryGroupRecord> {
   const existing = await getStoryGroupById(id);
 
+  // Cover itself is never editable here — switching type or replacing
+  // the file always goes through the dedicated cover-upload endpoint,
+  // same as image already required before.
+  if (input.coverMediaType !== existing.coverMediaType) {
+    throw ApiError.badRequest(
+      'Changing the cover type requires uploading a new file — use the cover upload endpoint',
+    );
+  }
+
   const data: Prisma.StoryGroupUncheckedUpdateInput = {
     title: input.title,
     displayOrder: input.displayOrder,
     isActive: input.isActive,
     updatedBy: actorId,
   };
-
-  if (input.coverMediaType === 'video') {
-    data.coverMediaType = 'video';
-    data.coverMediaUrl = input.coverMediaUrl;
-  } else if (existing.coverMediaType !== 'image') {
-
-    throw ApiError.badRequest(
-      'Switching the cover to an image requires uploading a file — use the cover upload endpoint',
-    );
-  }
 
   const group = await prisma.storyGroup
     .update({
@@ -188,6 +184,7 @@ export async function updateStoryGroupStatus(
 
 export async function uploadStoryGroupCover(
   id: number,
+  coverMediaType: MediaType,
   savedFilename: string,
   actorId: number,
 ): Promise<StoryGroupUploadCoverResult> {
@@ -196,7 +193,7 @@ export async function uploadStoryGroupCover(
   const newCoverMediaUrl = buildPublicPath('story-groups', savedFilename);
 
   const coverData: Prisma.StoryGroupUncheckedUpdateInput = {
-    coverMediaType: 'image',
+    coverMediaType,
     coverMediaUrl: newCoverMediaUrl,
     updatedBy: actorId,
   };
@@ -207,9 +204,10 @@ export async function uploadStoryGroupCover(
     select: { id: true, coverMediaUrl: true },
   });
 
-  if (existing.coverMediaType === 'image') {
-    await deleteUploadedFile(existing.coverMediaUrl);
-  }
+  // Both image and video files live under uploads/ now — deleteUploadedFile
+  // already no-ops on any URL outside that root, so this is safe
+  // regardless of what the previous cover type was.
+  await deleteUploadedFile(existing.coverMediaUrl);
 
   await createLog({
     adminId: actorId,
@@ -222,23 +220,23 @@ export async function uploadStoryGroupCover(
 export async function deleteStoryGroup(id: number, actorId: number) {
   const existing = await getStoryGroupById(id);
 
-  const items = await prisma.storyItem.findMany({
-    where: { groupId: id },
-    select: { mediaType: true, mediaUrl: true },
-  });
+  // Same relation-guard convention as brand.service.ts's deleteBrand —
+  // block the delete instead of silently cascading, so an admin doesn't
+  // accidentally wipe out story items by deleting their group.
+  const itemCount = await prisma.storyItem.count({ where: { groupId: id } });
+  if (itemCount > 0) {
+    throw ApiError.badRequest(
+      `Cannot delete this story group — ${itemCount} story item(s) are linked to it. Delete or reassign them first.`,
+    );
+  }
 
   await prisma.storyGroup.delete({ where: { id } });
 
-  if (existing.coverMediaType === 'image') {
-    await deleteUploadedFile(existing.coverMediaUrl);
-  }
-  await Promise.all(
-    items.filter((item) => item.mediaType === 'image').map((item) => deleteUploadedFile(item.mediaUrl)),
-  );
+  await deleteUploadedFile(existing.coverMediaUrl);
 
   await createLog({
     adminId: actorId,
-    description: `Deleted story group "${existing.title}" (id ${id}) and its ${items.length} item(s)`,
+    description: `Deleted story group "${existing.title}" (id ${id})`,
   });
 
   return { message: 'Story group deleted successfully' };

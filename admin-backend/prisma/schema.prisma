@@ -552,7 +552,7 @@ model CarFaq {
   isActive     Boolean  @default(true) @map("is_active")
   createdAt    DateTime @default(now()) @map("created_at")
 
-  @@unique([modelId, displayOrder], name: "car_faqs_model_display_order_unique")   // 👈 line 537 pe ye add karna
+  @@unique([modelId, displayOrder], name: "car_faqs_model_display_order_unique")
   @@map("car_faqs")
 }
 

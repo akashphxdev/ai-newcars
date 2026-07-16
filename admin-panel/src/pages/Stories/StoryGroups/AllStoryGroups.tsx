@@ -12,6 +12,7 @@ import ConfirmDialog from "../../../components/common/ConfirmDialog";
 import DataTable, { type DataTableColumn } from "../../../components/common/DataTable";
 import Pagination from "../../../components/common/Pagination";
 import { SearchFilterBar, SearchInput } from "../../../components/common/SearchFilterBar";
+import MediaThumbnail from "../../../components/common/MediaThumbnail";
 
 const ACCENT = "#D4300F";
 const PAGE_SIZE_OPTIONS = [10, 20, 50, 100];
@@ -51,26 +52,6 @@ function StatusToggle({
         style={{ transform: checked ? "translateX(18px)" : "translateX(3px)" }}
       />
     </button>
-  );
-}
-
-function CoverThumb({ group }: { group: StoryGroupRecord }) {
-  if (group.coverMediaType === "image") {
-    return (
-      <img
-        src={getUploadUrl(group.coverMediaUrl) ?? undefined}
-        alt=""
-        className="w-9 h-9 rounded-lg object-cover border border-[#e8e4dc]"
-      />
-    );
-  }
-  return (
-    <div className="w-9 h-9 rounded-lg bg-[#f7f5f1] border border-[#e8e4dc] flex items-center justify-center">
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#a39e96" strokeWidth="2">
-        <polygon points="23 7 16 12 23 17 23 7" />
-        <rect x="1" y="5" width="15" height="14" rx="2" ry="2" />
-      </svg>
-    </div>
   );
 }
 
@@ -161,16 +142,16 @@ export default function AllStoryGroups() {
   };
 
   const columns: DataTableColumn<StoryGroupRecord>[] = [
-    { header: "Cover", render: (g) => <CoverThumb group={g} /> },
+    {
+      header: "Cover",
+      render: (g) => <MediaThumbnail url={getUploadUrl(g.coverMediaUrl) ?? undefined} mediaType={g.coverMediaType} />,
+    },
     {
       header: "Title",
       render: (g) => (
-        <>
-          <p className="font-semibold text-[#1c1a17]">{g.title}</p>
-          <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-[#f7f5f1] text-[#4a4640] uppercase">
-            {g.coverMediaType}
-          </span>
-        </>
+        <span className="font-semibold text-[#1c1a17] block max-w-[180px] truncate" title={g.title}>
+          {g.title}
+        </span>
       ),
     },
     { header: "Order", render: (g) => <span className="text-[#7a7670]">{g.displayOrder}</span> },
@@ -194,20 +175,22 @@ export default function AllStoryGroups() {
       ),
     },
     {
-      header: "Created by",
-      render: (g) => <span className="text-[#7a7670]">{g.createdByAdmin?.name ?? "—"}</span>,
+      header: "Created",
+      render: (g) => (
+        <div className="whitespace-nowrap">
+          <p className="text-[#1c1a17] font-semibold">{g.createdByAdmin?.name ?? "—"}</p>
+          <p className="text-[10px] text-[#a39e96] mt-0.5">{fmtDate(g.createdAt)}</p>
+        </div>
+      ),
     },
     {
-      header: "Created At",
-      render: (g) => <span className="text-[#7a7670] whitespace-nowrap">{fmtDate(g.createdAt)}</span>,
-    },
-    {
-      header: "Updated by",
-      render: (g) => <span className="text-[#7a7670]">{g.updatedByAdmin?.name ?? "—"}</span>,
-    },
-    {
-      header: "Updated At",
-      render: (g) => <span className="text-[#7a7670] whitespace-nowrap">{fmtDate(g.updatedAt)}</span>,
+      header: "Updated",
+      render: (g) => (
+        <div className="whitespace-nowrap">
+          <p className="text-[#1c1a17] font-semibold">{g.updatedByAdmin?.name ?? "—"}</p>
+          <p className="text-[10px] text-[#a39e96] mt-0.5">{fmtDate(g.updatedAt)}</p>
+        </div>
+      ),
     },
     {
       header: "",
@@ -327,7 +310,7 @@ export default function AllStoryGroups() {
         itemName={pendingDelete?.title}
         message={
           pendingDelete
-            ? "This will also delete all story items inside this group and their media files."
+            ? "Groups that still have story items inside them can't be deleted — remove or reassign those items first."
             : undefined
         }
         loading={deletingId === pendingDelete?.id}

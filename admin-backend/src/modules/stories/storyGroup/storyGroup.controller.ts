@@ -11,6 +11,7 @@ import {
   createStoryGroupSchema,
   updateStoryGroupSchema,
   updateStoryGroupStatusSchema,
+  uploadStoryGroupCoverSchema,
 } from './storyGroup.validation';
 
 // GET /story-groups
@@ -34,12 +35,12 @@ export async function createStoryGroup(req: Request, res: Response) {
 
   const input = createStoryGroupSchema.parse(req.body);
 
-  if (input.coverMediaType === 'image' && !req.file) {
-    throw ApiError.badRequest('Cover image file is required (expected field name "cover")');
+  if (!req.file) {
+    throw ApiError.badRequest('Cover file is required (expected field name "cover")');
   }
 
   try {
-    const group = await storyGroupService.createStoryGroup(input, req.auth.id, req.file?.filename);
+    const group = await storyGroupService.createStoryGroup(input, req.auth.id, req.file.filename);
     return sendSuccess(res, group, 'Story group created successfully', 201);
   } catch (err) {
     if (req.file) {
@@ -76,6 +77,7 @@ export async function updateStoryGroupStatus(req: Request, res: Response) {
 
 export async function uploadStoryGroupCover(req: Request, res: Response) {
   const { id } = storyGroupIdParamSchema.parse(req.params);
+  const { coverMediaType } = uploadStoryGroupCoverSchema.parse(req.body);
 
   if (!req.auth) {
     throw ApiError.unauthorized();
@@ -84,7 +86,7 @@ export async function uploadStoryGroupCover(req: Request, res: Response) {
     throw ApiError.badRequest('No cover file received (expected field name "cover")');
   }
 
-  const group = await storyGroupService.uploadStoryGroupCover(id, req.file.filename, req.auth.id);
+  const group = await storyGroupService.uploadStoryGroupCover(id, coverMediaType, req.file.filename, req.auth.id);
   return sendSuccess(res, group, 'Story group cover updated successfully');
 }
 

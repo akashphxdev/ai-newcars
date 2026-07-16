@@ -1,5 +1,5 @@
 // frontend/src/pages/Stories/StoryItems/StoryItemModal.tsx
-import { useRef, useState } from "react";
+import { useState } from "react";
 import {
   useCreateStoryItemMutation,
   useUpdateStoryItemMutation,
@@ -10,14 +10,26 @@ import {
 } from "./storyItem.api";
 import { useGetStoryGroupsQuery } from "../StoryGroups/storyGroup.api";
 import { extractApiError, getUploadUrl } from "../../../lib/apiClient";
+import MediaUploadField from "../../../components/common/MediaUploadField";
 
 const ACCENT = "#D4300F";
 const MEDIA_TYPES: MediaType[] = ["image", "video"];
 const STATUS_OPTIONS: StoryItemStatus[] = ["draft", "published", "scheduled"];
 
+// Accept/size hints per media type — the actual size/mime enforcement
+// lives server-side in upload.middleware.ts's mediaUploader; these just
+// keep the file picker and helper text in sync with it.
+const MEDIA_ACCEPT: Record<MediaType, string> = {
+  image: "image/jpeg,image/png,image/webp",
+  video: "video/mp4,video/webm,video/quicktime",
+};
+const MEDIA_HINT: Record<MediaType, string> = {
+  image: "JPG, PNG or WEBP, up to 2MB.",
+  video: "MP4, WEBM or MOV, up to 100MB.",
+};
+
 interface FieldErrors {
   groupId?: string;
-  mediaUrl?: string;
   media?: string;
   link?: string;
   displayOrder?: string;
@@ -86,7 +98,6 @@ export default function StoryItemModal({
 
   const [groupId, setGroupId] = useState<number | "">(item?.groupId ?? "");
   const [mediaType, setMediaType] = useState<MediaType>(item?.mediaType ?? "image");
-  const [mediaUrl, setMediaUrl] = useState(item?.mediaType === "video" ? item.mediaUrl : "");
   const [description, setDescription] = useState(item?.description ?? "");
   const [link, setLink] = useState(item?.link ?? "");
   const [status, setStatus] = useState<StoryItemStatus>(item?.status ?? "draft");
@@ -102,19 +113,25 @@ export default function StoryItemModal({
   const saving = creating || updating;
 
   const [uploadStoryItemMedia, { isLoading: uploadingMedia }] = useUploadStoryItemMediaMutation();
-  const [mediaFileUrl, setMediaFileUrl] = useState<string | null>(
-    item?.mediaType === "image" ? item.mediaUrl : null,
-  );
+  const [mediaFileUrl, setMediaFileUrl] = useState<string | null>(item?.mediaUrl ?? null);
   const [pendingMediaFile, setPendingMediaFile] = useState<File | null>(null);
   const [mediaPreview, setMediaPreview] = useState<string | null>(null);
   const [mediaError, setMediaError] = useState("");
-  const mediaInputRef = useRef<HTMLInputElement>(null);
 
-  const handleMediaSelect = async (file: File | undefined) => {
-    if (!file) return;
+  const handleMediaTypeChange = (type: MediaType) => {
+    setMediaType(type);
+    if (mediaPreview) URL.revokeObjectURL(mediaPreview);
+    setPendingMediaFile(null);
+    setMediaPreview(null);
+    setMediaError("");
+    setMediaFileUrl(item?.mediaType === type ? item.mediaUrl : null);
+  };
+
+  const handleMediaSelect = async (file: File) => {
     setMediaError("");
 
     if (!isEditMode) {
+      if (mediaPreview) URL.revokeObjectURL(mediaPreview);
       setPendingMediaFile(file);
       setMediaPreview(URL.createObjectURL(file));
       return;
@@ -126,15 +143,13 @@ export default function StoryItemModal({
     setMediaPreview(objectUrl);
 
     try {
-      const result = await uploadStoryItemMedia({ id: item.id, file }).unwrap();
+      const result = await uploadStoryItemMedia({ id: item.id, file, mediaType }).unwrap();
       setMediaFileUrl(result.mediaUrl);
-      setMediaType("image");
     } catch (err) {
       setMediaError(extractApiError(err));
     } finally {
       URL.revokeObjectURL(objectUrl);
       setMediaPreview(null);
-      if (mediaInputRef.current) mediaInputRef.current.value = "";
     }
   };
 
@@ -142,7 +157,6 @@ export default function StoryItemModal({
     if (mediaPreview) URL.revokeObjectURL(mediaPreview);
     setGroupId("");
     setMediaType("image");
-    setMediaUrl("");
     setDescription("");
     setLink("");
     setStatus("draft");
@@ -151,6 +165,7 @@ export default function StoryItemModal({
     setDisplayOrder("");
     setErrors({});
     setServerError("");
+    setMediaFileUrl(null);
     setPendingMediaFile(null);
     setMediaPreview(null);
     setMediaError("");
@@ -167,14 +182,10 @@ export default function StoryItemModal({
     const next: FieldErrors = {};
     if (!groupId) next.groupId = "Story group is required.";
 
-    if (mediaType === "video") {
-      if (!mediaUrl.trim() || !isValidUrl(mediaUrl.trim())) {
-        next.mediaUrl = "A valid video URL is required.";
-      }
-    } else if (!isEditMode && !pendingMediaFile) {
-      next.media = "Media image is required.";
+    if (!isEditMode && !pendingMediaFile) {
+      next.media = `Media ${mediaType} is required.`;
     } else if (isEditMode && !mediaFileUrl) {
-      next.media = "Upload a media image first (use the button above).";
+      next.media = "Upload the media first (use the button above).";
     }
 
     if (link.trim() && !isValidUrl(link.trim())) {
@@ -207,7 +218,6 @@ export default function StoryItemModal({
     const commonInput = {
       groupId: Number(groupId),
       mediaType,
-      mediaUrl: mediaType === "video" ? mediaUrl.trim() : undefined,
       description: description.trim() || null,
       link: link.trim() || null,
       status,
@@ -222,7 +232,7 @@ export default function StoryItemModal({
       } else {
         await createStoryItem({
           ...commonInput,
-          media: mediaType === "image" ? (pendingMediaFile as File) : undefined,
+          media: pendingMediaFile as File,
         }).unwrap();
       }
       resetForm();
@@ -288,7 +298,7 @@ export default function StoryItemModal({
                 <button
                   key={type}
                   type="button"
-                  onClick={() => setMediaType(type)}
+                  onClick={() => handleMediaTypeChange(type)}
                   className="cursor-pointer flex-1 text-[12px] font-bold px-3 py-2 rounded-xl border capitalize transition-colors"
                   style={
                     mediaType === type
@@ -302,69 +312,17 @@ export default function StoryItemModal({
             </div>
           </Field>
 
-          {mediaType === "image" ? (
-            <div className="flex items-center gap-3 pb-1">
-              <div
-                className="w-20 h-14 rounded-xl border bg-[#f7f5f1] overflow-hidden flex items-center justify-center shrink-0"
-                style={{ borderColor: errors.media ? "#f0997b" : "#e2ddd5" }}
-              >
-                {mediaPreview || getUploadUrl(mediaFileUrl) ? (
-                  <img
-                    src={mediaPreview ?? getUploadUrl(mediaFileUrl) ?? undefined}
-                    alt="Media preview"
-                    className="w-full h-full object-cover"
-                  />
-                ) : (
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#c0bab0" strokeWidth="2">
-                    <rect x="3" y="3" width="18" height="18" rx="2" />
-                    <circle cx="9" cy="9" r="2" />
-                    <path d="m21 15-5-5L5 21" />
-                  </svg>
-                )}
-              </div>
-              <div>
-                <button
-                  type="button"
-                  onClick={() => mediaInputRef.current?.click()}
-                  disabled={uploadingMedia}
-                  className="cursor-pointer text-[11px] font-bold px-3 py-1.5 rounded-lg border border-[#e2ddd5] text-[#4a4640] hover:bg-[#f7f5f1] transition-colors disabled:opacity-50"
-                >
-                  {uploadingMedia
-                    ? "Uploading..."
-                    : mediaFileUrl || pendingMediaFile
-                    ? "Change media"
-                    : "Upload media"}
-                </button>
-                <input
-                  ref={mediaInputRef}
-                  type="file"
-                  accept="image/jpeg,image/png,image/webp"
-                  onChange={(e) => handleMediaSelect(e.target.files?.[0])}
-                  className="hidden"
-                />
-                <p className="text-[10px] text-[#a39e96] mt-1">JPG, PNG or WEBP, up to 2MB.</p>
-                {(errors.media || mediaError) && (
-                  <p className="text-[11px] font-medium text-[#D4300F] mt-1">{errors.media || mediaError}</p>
-                )}
-              </div>
-            </div>
-          ) : (
-            <Field label="Media video URL">
-              <input
-                type="text"
-                value={mediaUrl}
-                onChange={(e) => setMediaUrl(e.target.value)}
-                placeholder="https://..."
-                maxLength={255}
-                className={inputClass}
-                style={{
-                  borderColor: errors.mediaUrl ? "#f0997b" : "#e2ddd5",
-                  boxShadow: errors.mediaUrl ? "0 0 0 2px rgba(216,90,48,0.1)" : "none",
-                }}
-              />
-              {errors.mediaUrl && <p className="text-[11px] font-medium text-[#D4300F] mt-1">{errors.mediaUrl}</p>}
-            </Field>
-          )}
+          <MediaUploadField
+            label="media"
+            accept={MEDIA_ACCEPT[mediaType]}
+            hint={MEDIA_HINT[mediaType]}
+            previewUrl={mediaPreview ?? getUploadUrl(mediaFileUrl)}
+            isVideo={mediaType === "video"}
+            onSelect={handleMediaSelect}
+            uploading={uploadingMedia}
+            hasValue={!!(mediaFileUrl || pendingMediaFile)}
+            error={errors.media || mediaError}
+          />
 
           <Field label="Description" optional>
             <textarea

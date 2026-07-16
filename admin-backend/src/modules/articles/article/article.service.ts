@@ -211,7 +211,12 @@ export async function createArticle(
   return shapeArticle(article);
 }
 
-export async function updateArticle(id: number, input: UpdateArticleParsed, actorId: number) {
+export async function updateArticle(
+  id: number,
+  input: UpdateArticleParsed,
+  actorId: number,
+  coverImageFilename?: string,
+) {
   const existing = await getArticleById(id);
 
   await assertCategoryExists(input.categoryId);
@@ -224,6 +229,11 @@ export async function updateArticle(id: number, input: UpdateArticleParsed, acto
   }
 
   const publishedAt = resolvePublishedAt(input.status, existing.publishedAt);
+  // Computed up front, applied inside the same transaction as the rest
+  // of the fields below — a new cover image (if one rode along) is no
+  // longer a separate, non-atomic DB write that could succeed/fail
+  // independently of the article's other edits.
+  const newCoverImageUrl = coverImageFilename ? buildPublicPath('articles', coverImageFilename) : undefined;
 
   const article = await prisma.$transaction(async (tx) => {
     await tx.article.update({
@@ -245,6 +255,7 @@ export async function updateArticle(id: number, input: UpdateArticleParsed, acto
         metaDescription: input.metaDescription ?? null,
         metaKeywords: input.metaKeywords ?? null,
         ogImageUrl: input.ogImageUrl ?? null,
+        ...(newCoverImageUrl ? { coverImageUrl: newCoverImageUrl } : {}),
       },
     });
 
@@ -267,6 +278,13 @@ export async function updateArticle(id: number, input: UpdateArticleParsed, acto
 
     return tx.article.findUniqueOrThrow({ where: { id }, select: ARTICLE_SELECT });
   });
+
+  // Old cover file is orphaned only once the transaction above has
+  // committed successfully with the new one — clean it up after, same
+  // order-of-operations as uploadArticleCoverImage below.
+  if (newCoverImageUrl && existing.coverImageUrl) {
+    await deleteUploadedFile(existing.coverImageUrl);
+  }
 
   await createLog({
     adminId: actorId,

@@ -40,21 +40,18 @@ export interface ListStoryGroupsParams {
 
 // Shared shape for create/update — full-replace on edit too (mirrors the
 // backend's createStoryGroupSchema / updateStoryGroupSchema, which are
-// identical). coverMediaUrl is only meaningful (and required) when
-// coverMediaType is "video" — for "image" the file rides along
-// separately (create's `cover` field / the dedicated cover-upload route).
+// identical). Cover media itself is never part of this JSON shape —
+// image and video both always ride along as a file (create's `cover`
+// field / the dedicated cover-upload route).
 export interface StoryGroupFormInput {
   title: string;
   coverMediaType: MediaType;
-  coverMediaUrl?: string;
   displayOrder: number;
   isActive: boolean;
 }
 
 export interface CreateStoryGroupInput extends StoryGroupFormInput {
-  // Required when coverMediaType is "image" — controller rejects the
-  // request without one.
-  cover?: File;
+  cover: File;
 }
 
 interface StoryGroupListRawResponse {
@@ -79,10 +76,9 @@ function buildStoryGroupFormData(input: CreateStoryGroupInput): FormData {
   const formData = new FormData();
   formData.append("title", input.title);
   formData.append("coverMediaType", input.coverMediaType);
-  if (input.coverMediaUrl) formData.append("coverMediaUrl", input.coverMediaUrl);
   formData.append("displayOrder", String(input.displayOrder));
   formData.append("isActive", String(input.isActive));
-  if (input.cover) formData.append("cover", input.cover);
+  formData.append("cover", input.cover);
   return formData;
 }
 
@@ -130,10 +126,17 @@ export const storyGroupApi = api.injectEndpoints({
       invalidatesTags: (_result, _error, { id }) => [{ type: "StoryGroup", id }, STORY_GROUP_LIST_TAG],
     }),
 
-    uploadStoryGroupCover: builder.mutation<{ id: number; coverMediaUrl: string }, { id: number; file: File }>({
-      query: ({ id, file }) => {
+    // coverMediaType rides along so the backend knows whether the
+    // uploaded file is an image or a video — one field/route now serves
+    // both.
+    uploadStoryGroupCover: builder.mutation<
+      { id: number; coverMediaUrl: string },
+      { id: number; file: File; coverMediaType: MediaType }
+    >({
+      query: ({ id, file, coverMediaType }) => {
         const formData = new FormData();
         formData.append("cover", file);
+        formData.append("coverMediaType", coverMediaType);
         return { url: `/stories/story-groups/${id}/cover`, method: "PATCH", data: formData };
       },
       transformResponse: (res: { success: true; data: { id: number; coverMediaUrl: string } }) => res.data,

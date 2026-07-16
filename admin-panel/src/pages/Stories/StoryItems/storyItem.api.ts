@@ -47,16 +47,15 @@ export interface ListStoryItemsParams {
 
 // Shared shape for create/update — full-replace on edit too (mirrors the
 // backend's createStoryItemSchema / updateStoryItemSchema, which are
-// identical). mediaUrl is only meaningful (and required) when mediaType
-// is "video" — for "image" the file rides along separately (create's
-// `media` field / the dedicated media-upload route). displayOrder has no
-// default on the backend anymore — it's unique per group (see
-// @@unique([groupId, displayOrder]) on StoryItem in schema.prisma), so
-// every create/update must supply an explicit value.
+// identical). Media itself is never part of this JSON shape — image and
+// video both always ride along as a file (create's `media` field / the
+// dedicated media-upload route), same as storyGroup.api.ts's cover.
+// displayOrder has no default on the backend — it's unique per group
+// (see @@unique([groupId, displayOrder]) on StoryItem in schema.prisma),
+// so every create/update must supply an explicit value.
 export interface StoryItemFormInput {
   groupId: number;
   mediaType: MediaType;
-  mediaUrl?: string;
   description: string | null;
   link: string | null;
   status: StoryItemStatus;
@@ -66,9 +65,7 @@ export interface StoryItemFormInput {
 }
 
 export interface CreateStoryItemInput extends StoryItemFormInput {
-  // Required when mediaType is "image" — controller rejects the request
-  // without one.
-  media?: File;
+  media: File;
 }
 
 interface StoryItemListRawResponse {
@@ -93,14 +90,13 @@ function buildStoryItemFormData(input: CreateStoryItemInput): FormData {
   const formData = new FormData();
   formData.append("groupId", String(input.groupId));
   formData.append("mediaType", input.mediaType);
-  if (input.mediaUrl) formData.append("mediaUrl", input.mediaUrl);
   if (input.description) formData.append("description", input.description);
   if (input.link) formData.append("link", input.link);
   formData.append("status", input.status);
   if (input.startAt) formData.append("startAt", input.startAt);
   if (input.endAt) formData.append("endAt", input.endAt);
   formData.append("displayOrder", String(input.displayOrder));
-  if (input.media) formData.append("media", input.media);
+  formData.append("media", input.media);
   return formData;
 }
 
@@ -152,10 +148,16 @@ export const storyItemApi = api.injectEndpoints({
       invalidatesTags: (_result, _error, { id }) => [{ type: "StoryItem", id }, STORY_ITEM_LIST_TAG],
     }),
 
-    uploadStoryItemMedia: builder.mutation<{ id: number; mediaUrl: string }, { id: number; file: File }>({
-      query: ({ id, file }) => {
+    // mediaType rides along so the backend knows whether the uploaded
+    // file is an image or a video — one field/route now serves both.
+    uploadStoryItemMedia: builder.mutation<
+      { id: number; mediaUrl: string },
+      { id: number; file: File; mediaType: MediaType }
+    >({
+      query: ({ id, file, mediaType }) => {
         const formData = new FormData();
         formData.append("media", file);
+        formData.append("mediaType", mediaType);
         return { url: `/stories/story-items/${id}/media`, method: "PATCH", data: formData };
       },
       transformResponse: (res: { success: true; data: { id: number; mediaUrl: string } }) => res.data,

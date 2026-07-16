@@ -14,6 +14,7 @@ import ConfirmDialog from "../../../components/common/ConfirmDialog";
 import DataTable, { type DataTableColumn } from "../../../components/common/DataTable";
 import Pagination from "../../../components/common/Pagination";
 import { SearchFilterBar, SearchInput, FilterSelect } from "../../../components/common/SearchFilterBar";
+import MediaThumbnail from "../../../components/common/MediaThumbnail";
 
 const ACCENT = "#D4300F";
 const PAGE_SIZE_OPTIONS = [10, 20, 50, 100];
@@ -152,38 +153,36 @@ function ScheduleDialog({
   );
 }
 
-function formatSchedule(item: StoryItemRecord): string {
-  const fmt = (iso: string) =>
-    new Date(iso).toLocaleDateString("en-IN", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" });
-  if (!item.startAt && !item.endAt) return "—";
-  if (item.startAt && item.endAt) return `${fmt(item.startAt)} → ${fmt(item.endAt)}`;
-  if (item.startAt) return `From ${fmt(item.startAt)}`;
-  return `Until ${fmt(item.endAt as string)}`;
+// No year — same compact format as ScheduleCell's date, keeps the
+// Created/Updated columns narrow enough to avoid horizontal scroll.
+function formatDateTime(iso: string | null): string {
+  if (!iso) return "—";
+  return new Date(iso).toLocaleDateString("en-IN", {
+    day: "2-digit",
+    month: "short",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
 }
 
-function MediaThumb({ item }: { item: StoryItemRecord }) {
-  if (item.mediaType === "image") {
-    return (
-      <img
-        src={getUploadUrl(item.mediaUrl) ?? undefined}
-        alt=""
-        className="w-9 h-9 rounded-lg object-cover border border-[#e8e4dc]"
-      />
-    );
+// Start on top, end below — stacked instead of "start → end" on one
+// line so the column stays narrow enough to avoid horizontal scroll.
+function ScheduleCell({ item }: { item: StoryItemRecord }) {
+  const fmt = (iso: string) =>
+    new Date(iso).toLocaleDateString("en-IN", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" });
+
+  if (!item.startAt && !item.endAt) {
+    return <span className="text-[#a39e96]">—</span>;
   }
+
   return (
-    <div className="w-9 h-9 rounded-lg bg-[#f7f5f1] border border-[#e8e4dc] flex items-center justify-center">
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#a39e96" strokeWidth="2">
-        <polygon points="23 7 16 12 23 17 23 7" />
-        <rect x="1" y="5" width="15" height="14" rx="2" ry="2" />
-      </svg>
+    <div className="whitespace-nowrap">
+      <p className="text-[#7a7670]">{item.startAt ? fmt(item.startAt) : "No start"}</p>
+      <p className="text-[10px] text-[#a39e96] mt-0.5">{item.endAt ? `→ ${fmt(item.endAt)}` : "No end"}</p>
     </div>
   );
 }
 
-function truncate(text: string, max = 60): string {
-  return text.length > max ? `${text.slice(0, max)}…` : text;
-}
 
 export default function AllStoryItems() {
   const [page, setPage] = useState(1);
@@ -327,23 +326,45 @@ export default function AllStoryItems() {
     setPage(1);
   };
 
-  const columns: DataTableColumn<StoryItemRecord>[] = [
-    { header: "Media", render: (i) => <MediaThumb item={i} /> },
-    { header: "Group", render: (i) => <span className="font-semibold text-[#1c1a17]">{i.group.title}</span> },
-    {
-      header: "Description",
-      render: (i) => <span className="text-[#7a7670]">{i.description ? truncate(i.description) : "—"}</span>,
-    },
-    {
-      header: "Link",
-      render: (i) =>
-        i.link ? (
-          <a href={i.link} target="_blank" rel="noreferrer" className="text-[#D4300F] hover:underline">
-            Link
+  // Row click expands to show just description/link — everything else
+  // (including created/updated) stays in the main row. Same click-to-expand
+  // pattern as AllAdmins.tsx's renderExpandedAdmin.
+  const renderExpandedItem = (i: StoryItemRecord) => (
+    <div className="grid grid-cols-4 gap-x-6 gap-y-3">
+      <div className="col-span-2">
+        <p className="text-[10px] font-semibold text-[#a39e96] mb-1">Description</p>
+        <p className="text-[12.5px] text-[#1c1a17]">{i.description || "—"}</p>
+      </div>
+      <div className="col-span-2">
+        <p className="text-[10px] font-semibold text-[#a39e96] mb-1">Link</p>
+        {i.link ? (
+          <a
+            href={i.link}
+            target="_blank"
+            rel="noreferrer"
+            className="text-[12.5px] text-[#D4300F] hover:underline break-all"
+          >
+            {i.link}
           </a>
         ) : (
-          <span className="text-[#a39e96]">—</span>
-        ),
+          <p className="text-[12.5px] text-[#1c1a17]">—</p>
+        )}
+      </div>
+    </div>
+  );
+
+  const columns: DataTableColumn<StoryItemRecord>[] = [
+    {
+      header: "Media",
+      render: (i) => <MediaThumbnail url={getUploadUrl(i.mediaUrl) ?? undefined} mediaType={i.mediaType} />,
+    },
+    {
+      header: "Group",
+      render: (i) => (
+        <span className="font-semibold text-[#1c1a17] block max-w-[110px] truncate" title={i.group.title}>
+          {i.group.title}
+        </span>
+      ),
     },
     { header: "Order", render: (i) => <span className="text-[#7a7670]">{i.displayOrder}</span> },
     {
@@ -362,15 +383,29 @@ export default function AllStoryItems() {
     },
     {
       header: "Schedule",
-      render: (i) => <span className="text-[#7a7670] whitespace-nowrap">{formatSchedule(i)}</span>,
+      render: (i) => <ScheduleCell item={i} />,
     },
     {
-      header: "Created by",
-      render: (i) => <span className="text-[#7a7670]">{i.createdByAdmin?.name ?? "—"}</span>,
+      header: "Created",
+      render: (i) => (
+        <div className="whitespace-nowrap max-w-[110px]">
+          <p className="text-[#1c1a17] font-semibold truncate" title={i.createdByAdmin?.name ?? undefined}>
+            {i.createdByAdmin?.name ?? "—"}
+          </p>
+          <p className="text-[10px] text-[#a39e96] mt-0.5">{formatDateTime(i.createdAt)}</p>
+        </div>
+      ),
     },
     {
-      header: "Updated by",
-      render: (i) => <span className="text-[#7a7670]">{i.updatedByAdmin?.name ?? "—"}</span>,
+      header: "Updated",
+      render: (i) => (
+        <div className="whitespace-nowrap max-w-[110px]">
+          <p className="text-[#1c1a17] font-semibold truncate" title={i.updatedByAdmin?.name ?? undefined}>
+            {i.updatedByAdmin?.name ?? "—"}
+          </p>
+          <p className="text-[10px] text-[#a39e96] mt-0.5">{formatDateTime(i.updatedAt)}</p>
+        </div>
+      ),
     },
     {
       header: "",
@@ -473,6 +508,8 @@ export default function AllStoryItems() {
           error={error}
           loadingMessage="Loading story items..."
           emptyMessage="No story items found."
+          expandable
+          renderExpanded={renderExpandedItem}
         />
         <Pagination
           pagination={pagination ?? null}

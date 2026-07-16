@@ -1,5 +1,5 @@
 // frontend/src/pages/Stories/StoryGroups/StoryGroupModal.tsx
-import { useRef, useState } from "react";
+import { useState } from "react";
 import {
   useCreateStoryGroupMutation,
   useUpdateStoryGroupMutation,
@@ -8,13 +8,25 @@ import {
   type MediaType,
 } from "./storyGroup.api";
 import { extractApiError, getUploadUrl } from "../../../lib/apiClient";
+import MediaUploadField from "../../../components/common/MediaUploadField";
 
 const ACCENT = "#D4300F";
 const MEDIA_TYPES: MediaType[] = ["image", "video"];
 
+// Accept/size hints per media type — the actual size/mime enforcement
+// lives server-side in upload.middleware.ts's mediaUploader; these just
+// keep the file picker and helper text in sync with it.
+const COVER_ACCEPT: Record<MediaType, string> = {
+  image: "image/jpeg,image/png,image/webp",
+  video: "video/mp4,video/webm,video/quicktime",
+};
+const COVER_HINT: Record<MediaType, string> = {
+  image: "JPG, PNG or WEBP, up to 2MB.",
+  video: "MP4, WEBM or MOV, up to 100MB.",
+};
+
 interface FieldErrors {
   title?: string;
-  coverMediaUrl?: string;
   cover?: string;
   displayOrder?: string;
 }
@@ -28,15 +40,6 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
       {children}
     </div>
   );
-}
-
-function isValidUrl(value: string): boolean {
-  try {
-    new URL(value);
-    return true;
-  } catch {
-    return false;
-  }
 }
 
 const inputClass =
@@ -55,9 +58,6 @@ export default function StoryGroupModal({
 
   const [title, setTitle] = useState(group ? group.title : "");
   const [coverMediaType, setCoverMediaType] = useState<MediaType>(group?.coverMediaType ?? "image");
-  const [coverMediaUrl, setCoverMediaUrl] = useState(
-    group?.coverMediaType === "video" ? group.coverMediaUrl : "",
-  );
   const [displayOrder, setDisplayOrder] = useState(group ? String(group.displayOrder) : "");
   const [isActive, setIsActive] = useState<boolean>(group?.isActive ?? true);
 
@@ -69,19 +69,25 @@ export default function StoryGroupModal({
   const saving = creating || updating;
 
   const [uploadStoryGroupCover, { isLoading: uploadingCover }] = useUploadStoryGroupCoverMutation();
-  const [coverUrl, setCoverUrl] = useState<string | null>(
-    group?.coverMediaType === "image" ? group.coverMediaUrl : null,
-  );
+  const [coverUrl, setCoverUrl] = useState<string | null>(group?.coverMediaUrl ?? null);
   const [pendingCoverFile, setPendingCoverFile] = useState<File | null>(null);
   const [coverPreview, setCoverPreview] = useState<string | null>(null);
   const [coverError, setCoverError] = useState("");
-  const coverInputRef = useRef<HTMLInputElement>(null);
 
-  const handleCoverSelect = async (file: File | undefined) => {
-    if (!file) return;
+  const handleCoverTypeChange = (type: MediaType) => {
+    setCoverMediaType(type);
+    if (coverPreview) URL.revokeObjectURL(coverPreview);
+    setPendingCoverFile(null);
+    setCoverPreview(null);
+    setCoverError("");
+    setCoverUrl(group?.coverMediaType === type ? group.coverMediaUrl : null);
+  };
+
+  const handleCoverSelect = async (file: File) => {
     setCoverError("");
 
     if (!isEditMode) {
+      if (coverPreview) URL.revokeObjectURL(coverPreview);
       setPendingCoverFile(file);
       setCoverPreview(URL.createObjectURL(file));
       return;
@@ -93,15 +99,13 @@ export default function StoryGroupModal({
     setCoverPreview(objectUrl);
 
     try {
-      const result = await uploadStoryGroupCover({ id: group.id, file }).unwrap();
+      const result = await uploadStoryGroupCover({ id: group.id, file, coverMediaType }).unwrap();
       setCoverUrl(result.coverMediaUrl);
-      setCoverMediaType("image");
     } catch (err) {
       setCoverError(extractApiError(err));
     } finally {
       URL.revokeObjectURL(objectUrl);
       setCoverPreview(null);
-      if (coverInputRef.current) coverInputRef.current.value = "";
     }
   };
 
@@ -109,11 +113,11 @@ export default function StoryGroupModal({
     if (coverPreview) URL.revokeObjectURL(coverPreview);
     setTitle("");
     setCoverMediaType("image");
-    setCoverMediaUrl("");
     setDisplayOrder("");
     setIsActive(true);
     setErrors({});
     setServerError("");
+    setCoverUrl(null);
     setPendingCoverFile(null);
     setCoverPreview(null);
     setCoverError("");
@@ -141,18 +145,10 @@ export default function StoryGroupModal({
       next.displayOrder = "Must be a whole number, 0 or greater.";
     }
 
-    if (coverMediaType === "video") {
-      if (!coverMediaUrl.trim()) {
-        next.coverMediaUrl = "Video URL is required.";
-      } else if (!isValidUrl(coverMediaUrl.trim())) {
-        next.coverMediaUrl = "Must be a valid URL.";
-      } else if (coverMediaUrl.trim().length > 255) {
-        next.coverMediaUrl = "Must be 255 characters or fewer.";
-      }
-    } else if (!isEditMode && !pendingCoverFile) {
-      next.cover = "Cover image is required.";
+    if (!isEditMode && !pendingCoverFile) {
+      next.cover = `Cover ${coverMediaType} is required.`;
     } else if (isEditMode && !coverUrl) {
-      next.cover = "Upload a cover image first (use the button above).";
+      next.cover = "Upload a cover first (use the button above).";
     }
 
     setErrors(next);
@@ -171,7 +167,6 @@ export default function StoryGroupModal({
           input: {
             title: title.trim(),
             coverMediaType,
-            coverMediaUrl: coverMediaType === "video" ? coverMediaUrl.trim() : undefined,
             displayOrder: Number(displayOrder),
             isActive,
           },
@@ -180,10 +175,9 @@ export default function StoryGroupModal({
         await createStoryGroup({
           title: title.trim(),
           coverMediaType,
-          coverMediaUrl: coverMediaType === "video" ? coverMediaUrl.trim() : undefined,
           displayOrder: Number(displayOrder),
           isActive,
-          cover: coverMediaType === "image" ? (pendingCoverFile as File) : undefined,
+          cover: pendingCoverFile as File,
         }).unwrap();
       }
       resetForm();
@@ -246,7 +240,7 @@ export default function StoryGroupModal({
                 <button
                   key={type}
                   type="button"
-                  onClick={() => setCoverMediaType(type)}
+                  onClick={() => handleCoverTypeChange(type)}
                   className="cursor-pointer flex-1 text-[12px] font-bold px-3 py-2 rounded-xl border capitalize transition-colors"
                   style={
                     coverMediaType === type
@@ -260,71 +254,17 @@ export default function StoryGroupModal({
             </div>
           </Field>
 
-          {coverMediaType === "image" ? (
-            <div className="flex items-center gap-3 pb-1">
-              <div
-                className="w-14 h-14 rounded-xl border bg-[#f7f5f1] overflow-hidden flex items-center justify-center shrink-0"
-                style={{ borderColor: errors.cover ? "#f0997b" : "#e2ddd5" }}
-              >
-                {coverPreview || getUploadUrl(coverUrl) ? (
-                  <img
-                    src={coverPreview ?? getUploadUrl(coverUrl) ?? undefined}
-                    alt="Cover preview"
-                    className="w-full h-full object-cover"
-                  />
-                ) : (
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#c0bab0" strokeWidth="2">
-                    <rect x="3" y="3" width="18" height="18" rx="2" />
-                    <circle cx="9" cy="9" r="2" />
-                    <path d="m21 15-5-5L5 21" />
-                  </svg>
-                )}
-              </div>
-              <div>
-                <button
-                  type="button"
-                  onClick={() => coverInputRef.current?.click()}
-                  disabled={uploadingCover}
-                  className="cursor-pointer text-[11px] font-bold px-3 py-1.5 rounded-lg border border-[#e2ddd5] text-[#4a4640] hover:bg-[#f7f5f1] transition-colors disabled:opacity-50"
-                >
-                  {uploadingCover
-                    ? "Uploading..."
-                    : coverUrl || pendingCoverFile
-                    ? "Change cover image"
-                    : "Upload cover image"}
-                </button>
-                <input
-                  ref={coverInputRef}
-                  type="file"
-                  accept="image/jpeg,image/png,image/webp"
-                  onChange={(e) => handleCoverSelect(e.target.files?.[0])}
-                  className="hidden"
-                />
-                <p className="text-[10px] text-[#a39e96] mt-1">JPG, PNG or WEBP, up to 2MB.</p>
-                {(errors.cover || coverError) && (
-                  <p className="text-[11px] font-medium text-[#D4300F] mt-1">{errors.cover || coverError}</p>
-                )}
-              </div>
-            </div>
-          ) : (
-            <Field label="Cover video URL">
-              <input
-                type="text"
-                value={coverMediaUrl}
-                onChange={(e) => setCoverMediaUrl(e.target.value)}
-                placeholder="https://..."
-                maxLength={255}
-                className={inputClass}
-                style={{
-                  borderColor: errors.coverMediaUrl ? "#f0997b" : "#e2ddd5",
-                  boxShadow: errors.coverMediaUrl ? "0 0 0 2px rgba(216,90,48,0.1)" : "none",
-                }}
-              />
-              {errors.coverMediaUrl && (
-                <p className="text-[11px] font-medium text-[#D4300F] mt-1">{errors.coverMediaUrl}</p>
-              )}
-            </Field>
-          )}
+          <MediaUploadField
+            label="cover"
+            accept={COVER_ACCEPT[coverMediaType]}
+            hint={COVER_HINT[coverMediaType]}
+            previewUrl={coverPreview ?? getUploadUrl(coverUrl)}
+            isVideo={coverMediaType === "video"}
+            onSelect={handleCoverSelect}
+            uploading={uploadingCover}
+            hasValue={!!(coverUrl || pendingCoverFile)}
+            error={errors.cover || coverError}
+          />
 
           <Field label="Display order">
             <input

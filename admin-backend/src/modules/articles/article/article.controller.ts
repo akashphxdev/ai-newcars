@@ -63,15 +63,10 @@ export async function updateArticle(req: Request, res: Response) {
 
   try {
     const input = updateArticleSchema.parse(req.body);
-    const article = await articleService.updateArticle(id, input, req.auth.id);
-
-    // If a new cover image rode along with this update, apply it after
-    // the main fields save successfully.
-    if (req.file) {
-      const updated = await articleService.uploadArticleCoverImage(id, req.file.filename, req.auth.id);
-      return sendSuccess(res, { ...article, coverImageUrl: updated.coverImageUrl }, 'Article updated successfully');
-    }
-
+    // Cover image (if any) rides along in the same call now — it's
+    // saved inside the same transaction as the rest of the fields, not
+    // as a separate follow-up write.
+    const article = await articleService.updateArticle(id, input, req.auth.id, req.file?.filename);
     return sendSuccess(res, article, 'Article updated successfully');
   } catch (err) {
     if (req.file) {

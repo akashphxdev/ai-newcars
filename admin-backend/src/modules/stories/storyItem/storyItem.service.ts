@@ -10,6 +10,7 @@ import type {
   CreateStoryItemParsed,
   UpdateStoryItemParsed,
   StoryItemStatus,
+  MediaType,
 } from './storyItem.validation';
 import type {
   StoryItemRecord,
@@ -101,14 +102,11 @@ export async function getStoryItemById(id: number): Promise<StoryItemRecord> {
 export async function createStoryItem(
   input: CreateStoryItemParsed,
   actorId: number,
-  mediaFilename?: string,
+  mediaFilename: string,
 ): Promise<StoryItemRecord> {
   await assertGroupExists(input.groupId);
 
-  const mediaUrl =
-    input.mediaType === 'image'
-      ? buildPublicPath('story-items', mediaFilename as string)
-      : (input.mediaUrl as string);
+  const mediaUrl = buildPublicPath('story-items', mediaFilename);
 
   let item;
   try {
@@ -147,6 +145,15 @@ export async function updateStoryItem(
   const existing = await getStoryItemById(id);
   await assertGroupExists(input.groupId);
 
+  // Media itself is never editable here — switching type or replacing
+  // the file always goes through the dedicated media-upload endpoint,
+  // same as image already required before.
+  if (input.mediaType !== existing.mediaType) {
+    throw ApiError.badRequest(
+      'Changing the media type requires uploading a new file — use the media upload endpoint',
+    );
+  }
+
   const data: Prisma.StoryItemUncheckedUpdateInput = {
     groupId: input.groupId,
     description: input.description ?? null,
@@ -157,15 +164,6 @@ export async function updateStoryItem(
     displayOrder: input.displayOrder,
     updatedBy: actorId,
   };
-
-  if (input.mediaType === 'video') {
-    data.mediaType = 'video';
-    data.mediaUrl = input.mediaUrl;
-  } else if (existing.mediaType !== 'image') {
-    throw ApiError.badRequest(
-      'Switching the media to an image requires uploading a file — use the media upload endpoint',
-    );
-  }
 
   let item;
   try {
@@ -218,6 +216,7 @@ export async function updateStoryItemStatus(
 
 export async function uploadStoryItemMedia(
   id: number,
+  mediaType: MediaType,
   savedFilename: string,
   actorId: number,
 ): Promise<StoryItemUploadMediaResult> {
@@ -226,7 +225,7 @@ export async function uploadStoryItemMedia(
   const newMediaUrl = buildPublicPath('story-items', savedFilename);
 
   const mediaData: Prisma.StoryItemUncheckedUpdateInput = {
-    mediaType: 'image',
+    mediaType,
     mediaUrl: newMediaUrl,
     updatedBy: actorId,
   };
@@ -237,9 +236,10 @@ export async function uploadStoryItemMedia(
     select: { id: true, mediaUrl: true },
   });
 
-  if (existing.mediaType === 'image') {
-    await deleteUploadedFile(existing.mediaUrl);
-  }
+  // Both image and video files live under uploads/ now — deleteUploadedFile
+  // already no-ops on any URL outside that root, so this is safe
+  // regardless of what the previous media type was.
+  await deleteUploadedFile(existing.mediaUrl);
 
   await createLog({
     adminId: actorId,
@@ -254,9 +254,7 @@ export async function deleteStoryItem(id: number, actorId: number) {
 
   await prisma.storyItem.delete({ where: { id } });
 
-  if (existing.mediaType === 'image') {
-    await deleteUploadedFile(existing.mediaUrl);
-  }
+  await deleteUploadedFile(existing.mediaUrl);
 
   await createLog({
     adminId: actorId,

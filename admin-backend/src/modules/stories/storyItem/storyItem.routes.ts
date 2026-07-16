@@ -3,7 +3,7 @@
 import { Router } from 'express';
 import { requireAuth } from '@/core/middleware/auth';
 import { requirePermission } from '@/core/middleware/requirePermission';
-import { imageUploader } from '@/core/middleware/upload.middleware';
+import { mediaUploader } from '@/core/middleware/upload.middleware';
 import { asyncHandler } from '@/core/utils/asyncHandler';
 import {
   getStoryItems,
@@ -31,17 +31,18 @@ router.get('/:id', requirePermission('story-items.view'), asyncHandler(getStoryI
 router.post(
   '/',
   requirePermission('story-items.create'),
-  imageUploader('story-items').single('media'),
+  mediaUploader('story-items').single('media'),
   asyncHandler(createStoryItem),
 );
 router.patch('/:id', requirePermission('story-items.update'), asyncHandler(updateStoryItem));
 // Dedicated quick status-toggle route (Active/Inactive) for the row-level switch.
 router.patch('/:id/status', requirePermission('story-items.update'), asyncHandler(updateStoryItemStatus));
-// Dedicated media-replace route — main PATCH /:id above stays JSON-only for video links.
+// Dedicated media-replace route — main PATCH /:id above stays JSON-only;
+// swapping the file (image or video) always goes through here.
 router.patch(
   '/:id/media',
   requirePermission('story-items.update'),
-  imageUploader('story-items').single('media'),
+  mediaUploader('story-items').single('media'),
   asyncHandler(uploadStoryItemMedia),
 );
 router.delete('/:id', requirePermission('story-items.delete'), asyncHandler(deleteStoryItem));

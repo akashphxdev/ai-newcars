@@ -11,6 +11,7 @@ import {
   createStoryItemSchema,
   updateStoryItemSchema,
   updateStoryItemStatusSchema,
+  uploadStoryItemMediaSchema,
 } from './storyItem.validation';
 
 export async function getStoryItems(req: Request, res: Response) {
@@ -32,12 +33,12 @@ export async function createStoryItem(req: Request, res: Response) {
 
   const input = createStoryItemSchema.parse(req.body);
 
-  if (input.mediaType === 'image' && !req.file) {
+  if (!req.file) {
     throw ApiError.badRequest('Media file is required (expected field name "media")');
   }
 
   try {
-    const item = await storyItemService.createStoryItem(input, req.auth.id, req.file?.filename);
+    const item = await storyItemService.createStoryItem(input, req.auth.id, req.file.filename);
     return sendSuccess(res, item, 'Story item created successfully', 201);
   } catch (err) {
     if (req.file) {
@@ -73,6 +74,7 @@ export async function updateStoryItemStatus(req: Request, res: Response) {
 
 export async function uploadStoryItemMedia(req: Request, res: Response) {
   const { id } = storyItemIdParamSchema.parse(req.params);
+  const { mediaType } = uploadStoryItemMediaSchema.parse(req.body);
 
   if (!req.auth) {
     throw ApiError.unauthorized();
@@ -81,7 +83,7 @@ export async function uploadStoryItemMedia(req: Request, res: Response) {
     throw ApiError.badRequest('No media file received (expected field name "media")');
   }
 
-  const item = await storyItemService.uploadStoryItemMedia(id, req.file.filename, req.auth.id);
+  const item = await storyItemService.uploadStoryItemMedia(id, mediaType, req.file.filename, req.auth.id);
   return sendSuccess(res, item, 'Story item media updated successfully');
 }
 

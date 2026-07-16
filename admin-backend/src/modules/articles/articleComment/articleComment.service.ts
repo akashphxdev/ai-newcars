@@ -92,15 +92,42 @@ export async function updateArticleCommentStatus(
   return shapeComment(comment);
 }
 
+// parent_comment_id is ON DELETE SET NULL at the DB level (see
+// migration.sql), not CASCADE — deleting just the one row would orphan
+// its replies as standalone top-level comments instead of removing
+// them. Walk the reply tree (arbitrary depth — a reply can itself have
+// replies) and delete every descendant explicitly so "delete this
+// comment" really does remove the whole thread.
+async function collectDescendantCommentIds(rootId: number): Promise<number[]> {
+  const allIds: number[] = [];
+  let currentLevelIds = [rootId];
+
+  while (currentLevelIds.length > 0) {
+    const children = await prisma.articleComment.findMany({
+      where: { parentCommentId: { in: currentLevelIds } },
+      select: { id: true },
+    });
+    const childIds = children.map((c) => c.id);
+    allIds.push(...childIds);
+    currentLevelIds = childIds;
+  }
+
+  return allIds;
+}
+
 export async function deleteArticleComment(id: number, actorId: number) {
   const comment = await getArticleCommentById(id);
 
-  await prisma.articleComment.delete({ where: { id } });
+  const descendantIds = await collectDescendantCommentIds(id);
+
+  await prisma.articleComment.deleteMany({ where: { id: { in: [id, ...descendantIds] } } });
 
   await createLog({
     adminId: actorId,
     description: `Deleted comment by "${comment.user.name}" on "${comment.article.title}" (id ${id})${
-      comment.replyCount > 0 ? ` — also removed ${comment.replyCount} repl${comment.replyCount === 1 ? 'y' : 'ies'}` : ''
+      descendantIds.length > 0
+        ? ` — also deleted ${descendantIds.length} repl${descendantIds.length === 1 ? 'y' : 'ies'}`
+        : ''
     }`,
   });
 
