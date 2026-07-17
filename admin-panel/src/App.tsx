@@ -33,6 +33,15 @@ import AllReviews from "./pages/Reviews/AllReviews/AllReviews";
 import AllHelpfulVotes from "./pages/Reviews/HelpfulVotes/AllHelpfulVotes";
 import AllStoryGroups from "./pages/Stories/StoryGroups/AllStoryGroups";
 import AllStoryItems from "./pages/Stories/StoryItems/AllStoryItems";
+import AllPlacements from "./pages/Ads/Placements/AllPlacements";
+import AllAdvertisers from "./pages/Ads/Advertisers/AllAdvertisers";
+import AllCampaigns from "./pages/Ads/Campaigns/AllCampaigns";
+import AllImpressions from "./pages/Ads/Impressions/AllImpressions";
+import AllClicks from "./pages/Ads/Clicks/AllClicks";
+import AISettings from "./pages/Ai/Settings/Settings";
+import AIDashboard from "./pages/Ai/Dashboard/Dashboard";
+import AllAiFaqs from "./pages/Ai/Faqs/AllAiFaqs";
+import AllAiLogs from "./pages/Ai/Logs/AllAiLogs";
 // ── Auth guard — baad mein real auth logic lagao ──────────────────────────────
 function RequireAuth({ children }: { children: React.ReactNode }) {
   const isLoggedIn = !!localStorage.getItem("admin_token"); // apna auth check yahan
@@ -91,6 +100,18 @@ export default function App() {
 
           <Route path ="/reviews/all-reviews" element={<AllReviews/>}/>
           <Route path ="/reviews/votes" element={<AllHelpfulVotes/>}/>
+
+          <Route path ="/ads/placements" element={<AllPlacements/>}/>
+          <Route path ="/ads/advertisers" element={<AllAdvertisers/>}/>
+          <Route path ="/ads/campaigns" element={<AllCampaigns/>}/>
+          <Route path ="/ads/impressions" element={<AllImpressions/>}/>
+          <Route path ="/ads/clicks" element={<AllClicks/>}/>
+
+          <Route path="/ai/dashboard" element={<AIDashboard />} />
+          <Route path="/ai/car-faqs/review" element={<AllAiFaqs />} />
+          <Route path ="/ai/settings" element={<AISettings/>}/>
+           <Route path ="/ai/logs" element={<AllAiLogs/>}/>
+
  
 
            

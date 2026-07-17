@@ -50,6 +50,6 @@ export const api = createApi({
   tagTypes: ["Auth", "Admin", "Role", "Permission", "AdminLog", "Country", "State", "District", "City", "Brand",
              "CarModel", "Variant", "PowertrainIce", "PowertrainElectric", "CarColor", "CarImage", "Feature", "Faq",
              "Offer", "Video", "BodyType", "AttributeOption", "Article", "ArticleCategory", "ArticleComment",
-             "StoryGroup", "StoryItem"],
+             "StoryGroup", "StoryItem", "Advertiser", "AdPlacement", "AdCampaign", "AiFaq", "AiSetting", "AiAutomationRule", "AiLog"],
   endpoints: () => ({}),
 });

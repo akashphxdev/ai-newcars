@@ -14,6 +14,7 @@ import { useAuth } from "../../../context/useAuth";
 import { extractApiError, getUploadUrl } from "../../../lib/apiClient";
 import { slugify } from "../../../lib/slugify";
 import Editor from "../../../components/common/Editor/Editor";
+import SearchSelect from "../../../components/common/SearchSelect";
 
 const ACCENT = "#D4300F";
 
@@ -84,8 +85,18 @@ export default function ArticleModal({
   const [ogImageUrl, setOgImageUrl] = useState("");
   const [brandIds, setBrandIds] = useState<number[]>([]);
   const [modelIds, setModelIds] = useState<number[]>([]);
+  // Which tagged brand the "Related car models" search is currently
+  // scoped to — picking a brand sets it active; the model dropdown only
+  // ever shows that one brand's models, per the cascading-filter request.
+  const [activeBrandId, setActiveBrandId] = useState<number | "">("");
+  // Model search results only ever cover the currently active brand, but
+  // chips for models tagged under a *different* brand still need a name
+  // to display — this accumulates every id->name pair ever seen so chip
+  // labels stay correct no matter which brand is active right now.
+  const [modelNameCache, setModelNameCache] = useState<Record<number, string>>({});
   const [coverImage, setCoverImage] = useState<File | null>(null);
   const [coverPreview, setCoverPreview] = useState<string | null>(null);
+  const coverInputRef = useRef<HTMLInputElement>(null);
   // Tracks whether the admin has hand-edited the slug — while false, the
   // slug keeps auto-deriving from the title live (visible auto-generate).
   // Once they type directly into the slug field, it locks and stops
@@ -99,7 +110,22 @@ export default function ArticleModal({
   const { data: categoriesData } = useGetArticleCategoriesQuery({ page: 1, limit: 100, isActive: true });
   const { data: adminsData } = useGetAdminsQuery({ page: 1, limit: 100 });
   const { data: brands = [] } = useGetBrandOptionsQuery();
-  const { data: models = [] } = useGetCarModelOptionsQuery();
+  // Scoped to the active brand only — a plain useGetCarModelOptionsQuery()
+  // would list every model across every brand, which is what made the
+  // old checkbox list unusable.
+  const { data: models = [] } = useGetCarModelOptionsQuery(
+    activeBrandId ? { brandId: Number(activeBrandId) } : undefined,
+    { skip: !activeBrandId },
+  );
+
+  useEffect(() => {
+    if (models.length === 0) return;
+    setModelNameCache((prev) => {
+      const next = { ...prev };
+      for (const m of models) next[m.id] = m.name;
+      return next;
+    });
+  }, [models]);
 
   const categories = categoriesData?.data ?? [];
   const admins = adminsData?.data ?? [];
@@ -127,6 +153,8 @@ export default function ArticleModal({
     setOgImageUrl("");
     setBrandIds([]);
     setModelIds([]);
+    setActiveBrandId("");
+    setModelNameCache({});
     setCoverImage(null);
     setCoverPreview(null);
     setSlugTouched(false);
@@ -154,6 +182,8 @@ export default function ArticleModal({
       setOgImageUrl(article.ogImageUrl ?? "");
       setBrandIds(article.brands.map((b) => b.id));
       setModelIds(article.models.map((m) => m.id));
+      setActiveBrandId(article.brands[0]?.id ?? "");
+      setModelNameCache(Object.fromEntries(article.models.map((m) => [m.id, m.name])));
       setCoverImage(null);
       setCoverPreview(getUploadUrl(article.coverImageUrl));
       setSlugTouched(false);
@@ -175,11 +205,20 @@ export default function ArticleModal({
     onClose();
   };
 
-  const toggleBrand = (id: number) => {
-    setBrandIds((prev) => (prev.includes(id) ? prev.filter((b) => b !== id) : [...prev, id]));
+  const addBrand = (id: number) => {
+    setBrandIds((prev) => (prev.includes(id) ? prev : [...prev, id]));
+    // Newly picked brand becomes the one the model search is scoped to.
+    setActiveBrandId(id);
   };
-  const toggleModel = (id: number) => {
-    setModelIds((prev) => (prev.includes(id) ? prev.filter((m) => m !== id) : [...prev, id]));
+  const removeBrand = (id: number) => {
+    setBrandIds((prev) => prev.filter((b) => b !== id));
+    setActiveBrandId((prev) => (prev === id ? "" : prev));
+  };
+  const addModel = (id: number) => {
+    setModelIds((prev) => (prev.includes(id) ? prev : [...prev, id]));
+  };
+  const removeModel = (id: number) => {
+    setModelIds((prev) => prev.filter((m) => m !== id));
   };
 
   const handleTitleChange = (value: string) => {
@@ -387,15 +426,34 @@ export default function ArticleModal({
           <div className="grid grid-cols-2 gap-3">
             <Field label="Cover image">
               <div className="flex items-center gap-3">
-                {coverPreview && (
-                  <img src={coverPreview} alt="" className="w-14 h-14 rounded-lg object-cover border border-[#e8e4dc]" />
-                )}
-                <input
-                  type="file"
-                  accept="image/jpeg,image/png,image/webp"
-                  onChange={(e) => handleCoverChange(e.target.files?.[0] ?? null)}
-                  className="text-xs"
-                />
+                <div className="w-14 h-14 rounded-xl border bg-[#f7f5f1] overflow-hidden flex items-center justify-center shrink-0 border-[#e2ddd5]">
+                  {coverPreview ? (
+                    <img src={coverPreview} alt="" className="w-full h-full object-cover" />
+                  ) : (
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#c0bab0" strokeWidth="2">
+                      <rect x="3" y="3" width="18" height="18" rx="2" />
+                      <circle cx="8.5" cy="8.5" r="1.5" />
+                      <path d="M21 15l-5-5L5 21" />
+                    </svg>
+                  )}
+                </div>
+                <div>
+                  <button
+                    type="button"
+                    onClick={() => coverInputRef.current?.click()}
+                    className="cursor-pointer text-[11px] font-bold px-3 py-1.5 rounded-lg border border-[#e2ddd5] text-[#4a4640] hover:bg-[#f7f5f1] transition-colors"
+                  >
+                    {coverPreview ? "Change image" : "Upload image"}
+                  </button>
+                  <input
+                    ref={coverInputRef}
+                    type="file"
+                    accept="image/jpeg,image/png,image/webp"
+                    onChange={(e) => handleCoverChange(e.target.files?.[0] ?? null)}
+                    className="hidden"
+                  />
+                  <p className="text-[10px] text-[#a39e96] mt-1">JPG, PNG or WEBP.</p>
+                </div>
               </div>
             </Field>
 
@@ -452,40 +510,94 @@ export default function ArticleModal({
           </label>
 
           {/* Brand / model tagging — multi-select for comparison/roundup
-              pieces that cover more than one brand or model. */}
+              pieces that cover more than one brand or model. Picking a
+              brand scopes the model search to that brand only; clicking
+              an existing brand chip re-scopes it without re-adding. */}
           <div className="grid grid-cols-2 gap-3">
             <Field label="Related brands">
-              <div className="max-h-32 overflow-y-auto border border-[#e2ddd5] rounded-xl p-2 space-y-1 bg-[#f7f5f1]">
-                {brands.length === 0 && <p className="text-[11px] text-[#a39e96] px-1">No brands found.</p>}
-                {brands.map((b) => (
-                  <label key={b.id} className="flex items-center gap-1.5 cursor-pointer text-[12px] text-[#4a4640] px-1 py-0.5">
-                    <input
-                      type="checkbox"
-                      checked={brandIds.includes(b.id)}
-                      onChange={() => toggleBrand(b.id)}
-                      className="cursor-pointer accent-[#D4300F]"
-                    />
-                    {b.name}
-                  </label>
-                ))}
-              </div>
+              <SearchSelect
+                options={brands.map((b) => ({ id: b.id, label: b.name }))}
+                onSelect={addBrand}
+                placeholder="Search brands..."
+                emptyMessage="No brands found."
+              />
+              {brandIds.length > 0 && (
+                <div className="flex flex-wrap gap-1.5 mt-2">
+                  {brandIds.map((id) => {
+                    const brand = brands.find((b) => b.id === id);
+                    const active = id === activeBrandId;
+                    return (
+                      <span
+                        key={id}
+                        onClick={() => setActiveBrandId(id)}
+                        title="Click to search this brand's models"
+                        className="cursor-pointer inline-flex items-center gap-1 text-[11px] font-semibold rounded-full pl-2.5 pr-1.5 py-1 transition-colors"
+                        style={
+                          active
+                            ? { background: "#fef2f0", color: ACCENT, border: `1px solid ${ACCENT}` }
+                            : { background: "#f7f5f1", color: "#4a4640", border: "1px solid #e2ddd5" }
+                        }
+                      >
+                        {brand?.name ?? `#${id}`}
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            removeBrand(id);
+                          }}
+                          aria-label={`Remove ${brand?.name ?? "brand"}`}
+                          className="cursor-pointer hover:opacity-70"
+                        >
+                          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
+                            <line x1="18" y1="6" x2="6" y2="18" />
+                            <line x1="6" y1="6" x2="18" y2="18" />
+                          </svg>
+                        </button>
+                      </span>
+                    );
+                  })}
+                </div>
+              )}
             </Field>
 
             <Field label="Related car models">
-              <div className="max-h-32 overflow-y-auto border border-[#e2ddd5] rounded-xl p-2 space-y-1 bg-[#f7f5f1]">
-                {models.length === 0 && <p className="text-[11px] text-[#a39e96] px-1">No car models found.</p>}
-                {models.map((m) => (
-                  <label key={m.id} className="flex items-center gap-1.5 cursor-pointer text-[12px] text-[#4a4640] px-1 py-0.5">
-                    <input
-                      type="checkbox"
-                      checked={modelIds.includes(m.id)}
-                      onChange={() => toggleModel(m.id)}
-                      className="cursor-pointer accent-[#D4300F]"
-                    />
-                    {m.name}
-                  </label>
-                ))}
-              </div>
+              {brandIds.length === 0 ? (
+                <p className="text-[11px] text-[#a39e96] bg-[#f7f5f1] border border-[#e2ddd5] rounded-xl px-3 py-2.5">
+                  Pick a brand first to search its models.
+                </p>
+              ) : (
+                <>
+                  <SearchSelect
+                    options={models.filter((m) => !modelIds.includes(m.id)).map((m) => ({ id: m.id, label: m.name }))}
+                    onSelect={addModel}
+                    placeholder={`Search ${brands.find((b) => b.id === activeBrandId)?.name ?? ""} models...`}
+                    emptyMessage="No models found for this brand."
+                  />
+                  {modelIds.length > 0 && (
+                    <div className="flex flex-wrap gap-1.5 mt-2">
+                      {modelIds.map((id) => (
+                        <span
+                          key={id}
+                          className="inline-flex items-center gap-1 text-[11px] font-semibold rounded-full pl-2.5 pr-1.5 py-1 bg-[#f7f5f1] text-[#4a4640] border border-[#e2ddd5]"
+                        >
+                          {modelNameCache[id] ?? `#${id}`}
+                          <button
+                            type="button"
+                            onClick={() => removeModel(id)}
+                            aria-label="Remove model"
+                            className="cursor-pointer hover:opacity-70"
+                          >
+                            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
+                              <line x1="18" y1="6" x2="6" y2="18" />
+                              <line x1="6" y1="6" x2="18" y2="18" />
+                            </svg>
+                          </button>
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                </>
+              )}
             </Field>
           </div>
 

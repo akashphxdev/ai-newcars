@@ -51,6 +51,9 @@ export const env = {
   databaseUrl: required('DATABASE_URL'),
   jwtSecret,
   jwtExpiresIn: process.env.JWT_EXPIRES_IN || '7d',
+  // 64-char hex string (32 bytes) for AES-256-GCM — used only to
+  // encrypt/decrypt AiSetting.apiKey at rest, see core/utils/crypto.ts.
+  aiSettingsEncryptionKey: required('AI_SETTINGS_ENCRYPTION_KEY'),
   corsOrigin: (rawCorsOrigin || '*')
     .split(',')
     .map((url) => url.trim())

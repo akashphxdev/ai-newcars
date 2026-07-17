@@ -41,3 +41,14 @@
 - Before any change, give a one-line reason: "why this change is needed."
 - Break large changes into smaller steps, and check in after each step if there's any uncertainty.
 - Ask before installing any new dependency/package too.
+
+## 8. Bug Fixing & Better-Approach Discipline
+- **While I'm writing/asking for code:** if the approach I'm using could cause bugs down the line (missed edge cases, performance issues, race conditions, security gaps, etc.), tell me clearly BEFORE any change is made — what the risk is and why (per Rule #6). Don't just silently code it and let the bug surface later.
+- **If a better way already exists** (either as an existing pattern already used elsewhere in this project, or a generally better practice), tell me about it and explain why it's better. Do not switch to it yourself — only after I say "yes, do it" (Rule #2 & #5).
+- **When fixing a bug:**
+  - Do NOT just patch the symptom and call it fixed.
+  - Find the root cause first, and explain it to me.
+  - Propose a proper fix that follows the existing project's conventions/patterns (Rule #1) — not a random one-off hack.
+  - Avoid quick "band-aid" fixes. If a temporary fix is genuinely the only option for some reason, say so explicitly: "this is temporary, the proper fix should be ___."
+  - Give the one-line reason for the fix (Rule #7) and wait for my explicit "yes" before editing any file (Rule #2).
+- **Database-related bugs:** Rule #3 still applies without exception — diagnose and explain the issue and the fix needed, but never execute the actual database change yourself.

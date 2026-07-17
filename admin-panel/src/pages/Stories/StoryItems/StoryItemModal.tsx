@@ -355,7 +355,17 @@ export default function StoryItemModal({
           <Field label="Status">
             <select
               value={status}
-              onChange={(e) => setStatus(e.target.value as StoryItemStatus)}
+              onChange={(e) => {
+                const next = e.target.value as StoryItemStatus;
+                setStatus(next);
+                // Clear stale start/end values when moving away from
+                // "scheduled" so they don't silently save alongside an
+                // unrelated status.
+                if (next !== "scheduled") {
+                  setStartAt("");
+                  setEndAt("");
+                }
+              }}
               className={selectClass}
               style={{ borderColor: "#e2ddd5" }}
             >
@@ -367,35 +377,37 @@ export default function StoryItemModal({
             </select>
           </Field>
 
-          <div className="grid grid-cols-2 gap-3">
-            <Field label={status === "scheduled" ? "Start" : "Start"} optional={status !== "scheduled"}>
-              <input
-                type="datetime-local"
-                value={startAt}
-                onChange={(e) => setStartAt(e.target.value)}
-                className={inputClass}
-                style={{
-                  borderColor: errors.startAt ? "#f0997b" : "#e2ddd5",
-                  boxShadow: errors.startAt ? "0 0 0 2px rgba(216,90,48,0.1)" : "none",
-                }}
-              />
-              {errors.startAt && <p className="text-[11px] font-medium text-[#D4300F] mt-1">{errors.startAt}</p>}
-            </Field>
+          {status === "scheduled" && (
+            <div className="grid grid-cols-2 gap-3">
+              <Field label="Start" required>
+                <input
+                  type="datetime-local"
+                  value={startAt}
+                  onChange={(e) => setStartAt(e.target.value)}
+                  className={inputClass}
+                  style={{
+                    borderColor: errors.startAt ? "#f0997b" : "#e2ddd5",
+                    boxShadow: errors.startAt ? "0 0 0 2px rgba(216,90,48,0.1)" : "none",
+                  }}
+                />
+                {errors.startAt && <p className="text-[11px] font-medium text-[#D4300F] mt-1">{errors.startAt}</p>}
+              </Field>
 
-            <Field label="End" optional>
-              <input
-                type="datetime-local"
-                value={endAt}
-                onChange={(e) => setEndAt(e.target.value)}
-                className={inputClass}
-                style={{
-                  borderColor: errors.endAt ? "#f0997b" : "#e2ddd5",
-                  boxShadow: errors.endAt ? "0 0 0 2px rgba(216,90,48,0.1)" : "none",
-                }}
-              />
-              {errors.endAt && <p className="text-[11px] font-medium text-[#D4300F] mt-1">{errors.endAt}</p>}
-            </Field>
-          </div>
+              <Field label="End" optional>
+                <input
+                  type="datetime-local"
+                  value={endAt}
+                  onChange={(e) => setEndAt(e.target.value)}
+                  className={inputClass}
+                  style={{
+                    borderColor: errors.endAt ? "#f0997b" : "#e2ddd5",
+                    boxShadow: errors.endAt ? "0 0 0 2px rgba(216,90,48,0.1)" : "none",
+                  }}
+                />
+                {errors.endAt && <p className="text-[11px] font-medium text-[#D4300F] mt-1">{errors.endAt}</p>}
+              </Field>
+            </div>
+          )}
 
           <Field label="Display order">
             <input

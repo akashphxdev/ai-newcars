@@ -191,12 +191,28 @@ model AdminUser {
   articleCategoriesCreated ArticleCategory[] @relation("ArticleCategoryCreatedBy")
   articleCategoriesUpdated ArticleCategory[] @relation("ArticleCategoryUpdatedBy")
 
+  adPlacementsCreated AdPlacement[] @relation("AdPlacementCreatedBy")
+  adPlacementsUpdated AdPlacement[] @relation("AdPlacementUpdatedBy")
+  advertisersCreated  Advertiser[]  @relation("AdvertiserCreatedBy")
+  advertisersUpdated  Advertiser[]  @relation("AdvertiserUpdatedBy")  
+
+  adCampaignsCreated  AdCampaign[]  @relation("AdCampaignCreatedBy")
+  adCampaignsUpdated  AdCampaign[]  @relation("AdCampaignUpdatedBy")
+
   // Stories — created/updated split into their own relation names,
   // same convention as ArticleCreatedBy/ArticleUpdatedBy above.
   storyGroupsCreated StoryGroup[] @relation("StoryGroupCreatedBy")
   storyGroupsUpdated StoryGroup[] @relation("StoryGroupUpdatedBy")
   storyItemsCreated  StoryItem[]  @relation("StoryItemCreatedBy")
   storyItemsUpdated  StoryItem[]  @relation("StoryItemUpdatedBy")
+
+  aiSettingsCreated        AiSetting[]         @relation("AiSettingCreatedBy")
+  aiSettingsUpdated        AiSetting[]         @relation("AiSettingUpdatedBy")
+  aiAutomationRulesCreated AiAutomationRule[]  @relation("AiAutomationRuleCreatedBy")
+  aiAutomationRulesUpdated AiAutomationRule[]  @relation("AiAutomationRuleUpdatedBy")
+  aiFaqsCreated            AiFaq[]             @relation("AiFaqCreatedBy")
+  aiFaqsReviewed           AiFaq[]             @relation("AiFaqReviewedBy")
+  aiLogsCreated            AiLog[]             @relation("AiLogCreatedBy")
 
   @@map("admin_users")
 }
@@ -344,6 +360,7 @@ model CarModel {
   reviews             Review[]
   mileageLogs         MileageLog[]
   articleCarModels    ArticleCarModel[]
+  aiFaqs              AiFaq[]
 
   @@map("car_models")
 }
@@ -353,29 +370,22 @@ model CarVariant {
   modelId         Int      @map("model_id")
   model           CarModel @relation(fields: [modelId], references: [id])
   variantName     String   @map("variant_name") @db.VarChar(100)
-  // Required end-to-end: DB, validation schema, and TS types all agree —
-  // no more silent NULLs slipping in from outside the API.
   price           Decimal  @db.Decimal(12, 2)
   seatingCapacity Int      @map("seating_capacity")
   transmissionId  Int             @map("transmission_id")
-  // onDelete is explicit Restrict now that the column is NOT NULL —
-  // attributeOption.service.ts already pre-checks usage before allowing
-  // a transmission option to be deleted, this is a DB-level backstop.
   transmission    AttributeOption @relation("VariantTransmission", fields: [transmissionId], references: [id], onDelete: Restrict)
   isTopSeller     Boolean  @default(false) @map("is_top_seller")
   createdAt       DateTime @default(now()) @map("created_at")
 
   icePowertrains      CarPowertrainIce[]
   electricPowertrains CarPowertrainElectric[]
+  aiFaqs              AiFaq[]
   images              CarImage[]
   features            CarFeature[]
   newCarOffers        NewCarOffer[]
   usedCarListings     UsedCarListing[]
   reviews             Review[]
 
-  // Prevents two identical variants ("SX(O) Turbo DCT" + "SX(O) Turbo DCT")
-  // under the same car model. App layer also checks this first for a
-  // friendly error message — see assertVariantNameUnique in variant.service.ts.
   @@unique([modelId, variantName])
   @@map("car_variants")
 }
@@ -384,9 +394,6 @@ model CarPowertrainIce {
   id                  Int        @id @default(autoincrement())
   variantId           Int        @map("variant_id")
   variant             CarVariant @relation(fields: [variantId], references: [id])
-  // Numeric code, not a string — see FUEL_TYPE_CODES in
-  // powertrainIce.validation.ts. Frontend resolves it to a label via
-  // lib/lookups.ts, same pattern as NewCarOffer.offerType.
   fuelType            Int        @map("fuel_type")
   fuelTypeSubCategory String?    @map("fuel_type_sub_category") @db.VarChar(30)
   fuelTankCapacity    Decimal?   @map("fuel_tank_capacity") @db.Decimal(5, 2)
@@ -447,9 +454,6 @@ model CarPowertrainElectric {
   torqueNm                Int?       @map("torque_nm")
   claimedRange            Int?       @map("claimed_range")
   realWorldRange          Int?       @map("real_world_range")
-  // Numeric code, not a string — see TEST_CYCLE_TYPE_CODES in
-  // powertrainElectric.validation.ts. Frontend resolves it to a label
-  // via lib/lookups.ts, same pattern as NewCarOffer.offerType.
   testCycleType           Int?       @map("test_cycle_type")
   topSpeedKmph            Int?       @map("top_speed_kmph")
   topSpeedTimeSec         Decimal?   @map("top_speed_time_sec") @db.Decimal(5, 2)
@@ -551,6 +555,7 @@ model CarFaq {
   displayOrder Int      @default(0) @map("display_order")
   isActive     Boolean  @default(true) @map("is_active")
   createdAt    DateTime @default(now()) @map("created_at")
+  aiFaqSources AiFaq[]
 
   @@unique([modelId, displayOrder], name: "car_faqs_model_display_order_unique")
   @@map("car_faqs")
@@ -968,12 +973,21 @@ model AdPlacement {
   id         Int     @id @default(autoincrement())
   name       String  @db.VarChar(100)
   slug       String  @unique @db.VarChar(100)
-  pageType   String? @map("page_type") @db.VarChar(50)
-  adType     String? @map("ad_type") @db.VarChar(20)
-  dimensions String? @db.VarChar(20)
+  pageType   Int    @map("page_type")
+  adType     Int    @map("ad_type")
+  dimensions String @db.VarChar(20)
   isActive   Boolean @default(true) @map("is_active")
+  createdBy      Int?       @map("created_by")
+  createdByAdmin AdminUser? @relation("AdPlacementCreatedBy", fields: [createdBy], references: [id])
+  updatedBy      Int?       @map("updated_by")
+  updatedByAdmin AdminUser? @relation("AdPlacementUpdatedBy", fields: [updatedBy], references: [id])
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
 
   campaigns AdCampaign[]
+  impressions AdImpression[]
+  clicks      AdClick[]   
 
   @@map("ad_placements")
 }
@@ -981,10 +995,16 @@ model AdPlacement {
 model Advertiser {
   id            Int      @id @default(autoincrement())
   name          String   @db.VarChar(150)
-  contactName   String?  @map("contact_name") @db.VarChar(100)
-  contactMobile String?  @map("contact_mobile") @db.VarChar(15)
-  contactEmail  String?  @map("contact_email") @db.VarChar(150)
+  contactName   String  @map("contact_name") @db.VarChar(100)
+  contactMobile String  @map("contact_mobile") @db.VarChar(15)
+  contactEmail  String  @map("contact_email") @db.VarChar(150)
+  isActive      Boolean  @default(true) @map("is_active")
+  createdBy      Int?       @map("created_by")
+  createdByAdmin AdminUser? @relation("AdvertiserCreatedBy", fields: [createdBy], references: [id])
+  updatedBy      Int?       @map("updated_by")
+  updatedByAdmin AdminUser? @relation("AdvertiserUpdatedBy", fields: [updatedBy], references: [id])
   createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
 
   campaigns AdCampaign[]
 
@@ -997,16 +1017,19 @@ model AdCampaign {
   placement        AdPlacement @relation(fields: [placementId], references: [id])
   advertiserId     Int?        @map("advertiser_id")
   advertiser       Advertiser? @relation(fields: [advertiserId], references: [id])
-  adType           String      @map("ad_type") @db.VarChar(20)
-  name             String?     @db.VarChar(150)
-  creativeImageUrl String?     @map("creative_image_url") @db.VarChar(255)
-  targetUrl        String?     @map("target_url") @db.VarChar(255)
-  networkSlotId    String?     @map("network_slot_id") @db.VarChar(150)
-  networkScript    String?     @map("network_script")
-  startDate        DateTime?   @map("start_date") @db.Date
-  endDate          DateTime?   @map("end_date") @db.Date
+  name             String     @db.VarChar(150)
+  creativeImageUrl String     @map("creative_image_url") @db.VarChar(255)
+  targetUrl        String     @map("target_url") @db.VarChar(255)
+  priority         Int         @default(0)
+  startDate        DateTime?   @map("start_date")
+  endDate          DateTime?   @map("end_date")
   status           String      @default("active") @db.VarChar(20)
   createdAt        DateTime    @default(now()) @map("created_at")
+  createdBy      Int?       @map("created_by")
+  createdByAdmin AdminUser? @relation("AdCampaignCreatedBy", fields: [createdBy], references: [id])
+  updatedBy      Int?       @map("updated_by")
+  updatedByAdmin AdminUser? @relation("AdCampaignUpdatedBy", fields: [updatedBy], references: [id])
+  updatedAt      DateTime   @updatedAt @map("updated_at")
 
   impressions AdImpression[]
   clicks      AdClick[]
@@ -1024,8 +1047,16 @@ model AdImpression {
   deviceType String?    @map("device_type") @db.VarChar(20)
   ipAddress  String?    @map("ip_address") @db.VarChar(45)
   viewedAt   DateTime   @default(now()) @map("viewed_at")
+  sessionId     String?   @map("session_id") @db.VarChar(100)
+  referrerUrl   String?   @map("referrer_url") @db.VarChar(255)
+  userAgent     String?   @map("user_agent") @db.VarChar(255)
+  placementId   Int?      @map("placement_id")
+  placement     AdPlacement? @relation(fields: [placementId], references: [id])
+  clicks        AdClick[]    
 
   @@map("ad_impressions")
+  @@index([campaignId, viewedAt])
+  @@index([sessionId])
 }
 
 model AdClick {
@@ -1038,8 +1069,18 @@ model AdClick {
   deviceType String?    @map("device_type") @db.VarChar(20)
   ipAddress  String?    @map("ip_address") @db.VarChar(45)
   clickedAt  DateTime   @default(now()) @map("clicked_at")
+  impressionId  BigInt?   @map("impression_id")
+  impression    AdImpression?  @relation(fields: [impressionId], references: [id])
+  placementId   Int?      @map("placement_id")
+  placement     AdPlacement?   @relation(fields: [placementId], references: [id])
+  sessionId     String?   @map("session_id") @db.VarChar(100)
+  referrerUrl   String?   @map("referrer_url") @db.VarChar(255)
+  userAgent     String?   @map("user_agent") @db.VarChar(255)
 
   @@map("ad_clicks")
+  @@index([campaignId, clickedAt])
+  @@index([sessionId])
+  @@index([impressionId])
 }
 
 // ============================================================
@@ -1340,4 +1381,95 @@ model StoryItem {
   @@unique([groupId, displayOrder])
   @@map("story_items")
 
+}
+
+model AiSetting {
+  id            Int        @id @default(autoincrement())
+  provider      Int
+  baseUrl       String?    @map("base_url") @db.VarChar(255)
+  apiKey        String?    @map("api_key") @db.Text
+  model         String     @db.VarChar(100)
+  language      String     @default("english") @db.VarChar(20)
+  autoSaveMode  String     @default("draft") @map("auto_save_mode") @db.VarChar(20)
+
+  createdBy      Int        @map("created_by")
+  createdByAdmin AdminUser  @relation("AiSettingCreatedBy", fields: [createdBy], references: [id])
+  updatedBy      Int        @map("updated_by")
+  updatedByAdmin AdminUser  @relation("AiSettingUpdatedBy", fields: [updatedBy], references: [id])
+
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime? @updatedAt @map("updated_at")
+
+  @@map("ai_settings")
+}
+
+model AiAutomationRule {
+  id               Int       @id @default(autoincrement())
+  featureKey       Int       @unique @map("feature_key")
+  enabled          Boolean   @default(false)
+  frequencyMinutes Int       @default(180) @map("frequency_minutes")
+  countPerRun      Int       @default(1) @map("count_per_run")
+  imageFolder      String?   @map("image_folder") @db.VarChar(255)
+  autoPickImages   Boolean   @default(false) @map("auto_pick_images")
+  autoDelete       Boolean   @default(false) @map("auto_delete")
+  keepLatest       Int?      @map("keep_latest")
+  nextRunAt        DateTime? @map("next_run_at")
+  lastRunAt        DateTime? @map("last_run_at")
+
+  createdBy      Int?       @map("created_by")
+  createdByAdmin AdminUser? @relation("AiAutomationRuleCreatedBy", fields: [createdBy], references: [id])
+  updatedBy      Int?       @map("updated_by")
+  updatedByAdmin AdminUser? @relation("AiAutomationRuleUpdatedBy", fields: [updatedBy], references: [id])
+
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime? @updatedAt @map("updated_at")
+
+  @@map("ai_automation_rules")
+}
+
+model AiFaq {
+  id        Int         @id @default(autoincrement())
+  modelId   Int         @map("model_id")
+  model     CarModel    @relation(fields: [modelId], references: [id])
+  variantId Int?        @map("variant_id")
+  variant   CarVariant? @relation(fields: [variantId], references: [id])
+
+  question String @db.VarChar(255)
+  answer   String @db.Text
+
+  status     Int
+  aiProvider Int    @map("ai_provider")
+  aiModel    String @map("ai_model") @db.VarChar(100)
+
+  publishedFaqId Int?    @map("published_faq_id")
+  publishedFaq   CarFaq? @relation(fields: [publishedFaqId], references: [id])
+
+  createdBy       Int?       @map("created_by")
+  createdByAdmin  AdminUser? @relation("AiFaqCreatedBy", fields: [createdBy], references: [id])
+  reviewedBy      Int?       @map("reviewed_by")
+  reviewedByAdmin AdminUser? @relation("AiFaqReviewedBy", fields: [reviewedBy], references: [id])
+  reviewedAt      DateTime?  @map("reviewed_at")
+
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime? @updatedAt @map("updated_at")
+
+  @@map("ai_faqs")
+}
+
+model AiLog {
+  id         BigInt   @id @default(autoincrement())
+  featureKey Int      @map("feature_key")
+  action     String   @db.VarChar(50)
+  status     Int
+  message    String   @db.VarChar(500)
+  meta       Json?
+  durationMs Int?     @map("duration_ms")
+
+  createdBy      Int?       @map("created_by")
+  createdByAdmin AdminUser? @relation("AiLogCreatedBy", fields: [createdBy], references: [id])
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([featureKey, createdAt])
+  @@map("ai_logs")
 }

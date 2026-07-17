@@ -6,7 +6,9 @@ import adminsRoutes from './admin-users';
 import locationsRoutes from './locations'
 import NewCarsRoutes from './new-cars'
 import ArticlesRoutes from './articles'
-import StoriesRoute from './stories'
+import StoriesRoutes from './stories'
+import AdsRoutes from './ads'
+import AiRoutes from './ai'
 
 const router = Router();
 
@@ -16,6 +18,8 @@ router.use('/admin-users', adminsRoutes);
 router.use('/locations', locationsRoutes);
 router.use('/new-cars', NewCarsRoutes)
 router.use('/articles', ArticlesRoutes)
-router.use('/stories', StoriesRoute)
+router.use('/stories', StoriesRoutes)
+router.use('/ads' , AdsRoutes)
+router.use('/ai', AiRoutes)
 
 export default router;

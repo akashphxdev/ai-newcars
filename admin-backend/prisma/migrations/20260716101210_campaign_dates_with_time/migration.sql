@@ -1,0 +1,3 @@
+-- AlterTable
+ALTER TABLE "ad_campaigns" ALTER COLUMN "start_date" SET DATA TYPE TIMESTAMP(3),
+ALTER COLUMN "end_date" SET DATA TYPE TIMESTAMP(3);

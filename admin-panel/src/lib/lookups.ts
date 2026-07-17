@@ -65,3 +65,32 @@ export function getTestCycleTypeLabel(code: number | null | undefined): string {
   if (code == null) return "—";
   return TEST_CYCLE_TYPE_OPTIONS.find((o) => o.value === code)?.label ?? "—";
 }
+
+// ===== Ad placement page types =====
+// Mirrors PAGE_TYPE_CODES in backend/src/modules/ads/adPlacement/adPlacement.validation.ts —
+// keep both in sync if a code is ever added/removed.
+export const PAGE_TYPE_OPTIONS: LookupOption[] = [
+  { value: 1, label: "Home" },
+  { value: 2, label: "Car" },
+  { value: 3, label: "Article" },
+];
+
+export function getPageTypeLabel(code: number | null | undefined): string {
+  if (code == null) return "—";
+  return PAGE_TYPE_OPTIONS.find((o) => o.value === code)?.label ?? "—";
+}
+
+// ===== Ad placement ad types =====
+// Mirrors AD_TYPE_CODES in backend/src/modules/ads/adPlacement/adPlacement.validation.ts —
+// keep both in sync if a code is ever added/removed.
+export const AD_TYPE_OPTIONS: LookupOption[] = [
+  { value: 1, label: "Header" },
+  { value: 2, label: "Middle" },
+  { value: 3, label: "Footer" },
+  { value: 4, label: "Slider" },
+];
+
+export function getAdTypeLabel(code: number | null | undefined): string {
+  if (code == null) return "—";
+  return AD_TYPE_OPTIONS.find((o) => o.value === code)?.label ?? "—";
+}

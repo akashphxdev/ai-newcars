@@ -90,11 +90,12 @@ const NAV: NavGroup[] = [
           </svg>
         ),
         children: [
-          { label: "Campaigns", href: "/ads/campaigns" },
-          { label: "Placements", href: "/ads/placements" },
           { label: "Advertisers", href: "/ads/advertisers" },
-          { label: "Impressions", href: "/ads/impressions" },
+          { label: "Placements", href: "/ads/placements" },
+          { label: "Campaigns", href: "/ads/campaigns" },
           { label: "Clicks", href: "/ads/clicks" },
+          { label: "Impressions", href: "/ads/impressions" },
+         
         ],
       },
     ],
@@ -220,6 +221,27 @@ const NAV: NavGroup[] = [
         children: [
           { label: "All Reviews", href: "/reviews/all-reviews" },
           { label: "Helpful Votes", href: "/reviews/votes" },
+        ],
+      },
+    ],
+  },
+  {
+    group: "AI Studio",
+    items: [
+      {
+        label: "AI",
+        icon: (
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
+            <path d="M12 3l1.9 4.6L18.5 9.5l-4.6 1.9L12 16l-1.9-4.6L5.5 9.5l4.6-1.9L12 3z" strokeLinejoin="round" />
+            <path d="M19 15l.9 2.1L22 18l-2.1.9L19 21l-.9-2.1L16 18l2.1-.9L19 15z" strokeLinejoin="round" />
+          </svg>
+        ),
+        children: [
+          { label: "Dashboard", href: "/ai/dashboard" },
+          { label: "FAQ Generator", href: "/ai/car-faqs/generate" },
+          { label: "FAQ Review", href: "/ai/car-faqs/review" },
+          { label: "Logs", href: "/ai/logs" },
+          { label: "Settings", href: "/ai/settings" },
         ],
       },
     ],
