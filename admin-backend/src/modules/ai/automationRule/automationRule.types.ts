@@ -8,10 +8,14 @@ export interface AiAutomationRuleResponse {
   enabled: boolean;
   frequencyMinutes: number;
   countPerRun: number;
+  language: string;
+  autoPublish: boolean;
+  maxTotal: number | null;
   imageFolder: string | null;
   autoPickImages: boolean;
   autoDelete: boolean;
   keepLatest: number | null;
+  deleteStrategy: string;
   nextRunAt: Date | null;
   lastRunAt: Date | null;
   createdBy: number | null;

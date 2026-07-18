@@ -239,6 +239,7 @@ const NAV: NavGroup[] = [
         children: [
           { label: "Dashboard", href: "/ai/dashboard" },
           { label: "FAQ Review", href: "/ai/car-faqs/review" },
+          { label: "Image Pool", href: "/ai/image-pool" },
           { label: "AI Logs", href: "/ai/logs" },
           { label: "AI Settings", href: "/ai/settings" },
         ],

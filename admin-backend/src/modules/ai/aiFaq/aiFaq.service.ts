@@ -243,6 +243,18 @@ export async function deleteAiFaq(id: number, actorId: number, ipAddress?: strin
 const FAQ_FEATURE_KEY = 4; // AI_FEATURE_CODES: 4 = FAQ Generator (see ../ai.constants.ts)
 const AI_LOG_STATUS = { SUCCESS: 1, FAILED: 2 } as const;
 
+// Just the automation-rule fields this module actually needs — keeps
+// this file decoupled from automationRule.types.ts's full response shape.
+export interface FaqGenerationRule {
+  countPerRun: number;
+  language: string;
+  autoPublish: boolean;
+  maxTotal: number | null;
+  autoDelete: boolean;
+  keepLatest: number | null;
+  deleteStrategy: string;
+}
+
 interface GeneratedFaqItem {
   question: string;
   answer: string;
@@ -358,10 +370,49 @@ async function pickModelForGeneration(): Promise<{ id: number; name: string; bra
   return { id: chosen.id, name: chosen.name, brandName: chosen.brand.name };
 }
 
-// Generates `count` FAQs for one specific car model and inserts them
-// as pending AI FAQs for admin review — same review pipeline
-// (approve/reject/publish) as every other row in this table.
-export async function generateAiFaqsForModel(modelId: number, count: number): Promise<{ created: number }> {
+// Trims a model's LIVE (published) FAQs down to `keepLatest`, run after
+// every generation so the live page self-heals even if a manual publish
+// (rather than auto-publish) is what pushed it over. Deliberately only
+// ever targets car_faqs (published), never the ai_faqs review queue —
+// deleting pending rows automatically would defeat the review step, and
+// "lowest views" only means anything for something that's actually been
+// seen by a visitor.
+async function autoDeleteExcessFaqs(modelId: number, keepLatest: number, strategy: string): Promise<void> {
+  const total = await prisma.carFaq.count({ where: { modelId } });
+  const excess = total - keepLatest;
+  if (excess <= 0) return;
+
+  const orderBy: Prisma.CarFaqOrderByWithRelationInput[] =
+    strategy === 'lowestViews' ? [{ viewCount: 'asc' }, { createdAt: 'asc' }] : [{ createdAt: 'asc' }];
+
+  const toDelete = await prisma.carFaq.findMany({
+    where: { modelId },
+    select: { id: true },
+    orderBy,
+    take: excess,
+  });
+  if (toDelete.length === 0) return;
+
+  await prisma.carFaq.deleteMany({ where: { id: { in: toDelete.map((f) => f.id) } } });
+
+  await createAiLog({
+    featureKey: FAQ_FEATURE_KEY,
+    action: 'auto-delete',
+    status: AI_LOG_STATUS.SUCCESS,
+    message: `Auto-deleted ${toDelete.length} FAQ(s) for model ${modelId} to stay within the configured limit of ${keepLatest} (strategy: ${strategy})`,
+    meta: { modelId, deletedCount: toDelete.length, keepLatest, strategy },
+  });
+}
+
+// Generates FAQs for one specific car model. Inserts them as pending
+// AI FAQs for admin review — same review pipeline (approve/reject/
+// publish) as every other row in this table — unless the rule has
+// autoPublish on, in which case each item goes straight to being a
+// live CarFaq with no review step.
+export async function generateAiFaqsForModel(
+  modelId: number,
+  rule: FaqGenerationRule,
+): Promise<{ created: number }> {
   const startedAt = Date.now();
 
   const settings = await getDecryptedSettingsForProvider();
@@ -375,12 +426,6 @@ export async function generateAiFaqsForModel(modelId: number, count: number): Pr
     });
     throw ApiError.badRequest('AI settings are not configured yet');
   }
-
-  // Separate, tiny query rather than extending getDecryptedSettingsForProvider's
-  // return shape — that function is a narrowly-scoped internal helper
-  // used elsewhere for just the provider connection details.
-  const languageRow = await prisma.aiSetting.findFirst({ orderBy: { id: 'asc' }, select: { language: true } });
-  const language = languageRow?.language ?? 'english';
 
   const model = await prisma.carModel.findUnique({
     where: { id: modelId },
@@ -403,6 +448,23 @@ export async function generateAiFaqsForModel(modelId: number, count: number): Pr
   });
   if (!model) {
     throw ApiError.notFound('Car model not found');
+  }
+
+  // Per-model cap on LIVE FAQs — checked against car_faqs, not the
+  // review queue, since the limit is about how many FAQs show on the
+  // site, not how many are waiting for review.
+  if (rule.maxTotal) {
+    const liveCount = await prisma.carFaq.count({ where: { modelId } });
+    if (liveCount >= rule.maxTotal) {
+      await createAiLog({
+        featureKey: FAQ_FEATURE_KEY,
+        action: 'generate',
+        status: AI_LOG_STATUS.FAILED,
+        message: `Skipped generation for "${model.brand.name} ${model.name}": already has ${liveCount} live FAQ(s), at or above the configured limit of ${rule.maxTotal}`,
+        meta: { modelId, liveCount, maxTotal: rule.maxTotal },
+      });
+      return { created: 0 };
+    }
   }
 
   const variantNames = model.variants.map((v) => v.variantName);
@@ -428,15 +490,15 @@ export async function generateAiFaqsForModel(modelId: number, count: number): Pr
     fuelTypes,
     transmissionNames,
     existingQuestions: existingFaqs.map((f) => f.question),
-    count,
-    language,
+    count: rule.countPerRun,
+    language: rule.language,
   });
 
   let items: GeneratedFaqItem[];
   let rawResponse: string | undefined;
   try {
     rawResponse = await callAiProvider(settings, prompt);
-    items = parseGeneratedFaqs(rawResponse, count);
+    items = parseGeneratedFaqs(rawResponse, rule.countPerRun);
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
     await createAiLog({
@@ -453,33 +515,83 @@ export async function generateAiFaqsForModel(modelId: number, count: number): Pr
     throw err;
   }
 
-  await prisma.aiFaq.createMany({
-    data: items.map((item) => ({
-      modelId,
-      question: item.question.trim().slice(0, 255),
-      answer: item.answer.trim(),
-      status: AI_FAQ_STATUS.PENDING,
-      aiProvider: settings.provider,
-      aiModel: settings.model,
-    })),
-  });
+  let createdCount = 0;
+  if (rule.autoPublish) {
+    // Each item needs its own transaction — unlike the plain-pending
+    // path, this also has to create the live car_faqs row and link it,
+    // the same atomic pattern publishAiFaq uses for a manual publish.
+    for (const item of items) {
+      const question = item.question.trim().slice(0, 255);
+      const answer = item.answer.trim();
+
+      await prisma.$transaction(async (tx) => {
+        const maxOrder = await tx.carFaq.aggregate({
+          where: { modelId },
+          _max: { displayOrder: true },
+        });
+        const nextDisplayOrder = (maxOrder._max.displayOrder ?? -1) + 1;
+
+        const carFaq = await tx.carFaq.create({
+          data: { modelId, question, answer, displayOrder: nextDisplayOrder, isActive: true },
+          select: { id: true },
+        });
+
+        await tx.aiFaq.create({
+          data: {
+            modelId,
+            question,
+            answer,
+            status: AI_FAQ_STATUS.PUBLISHED,
+            aiProvider: settings.provider,
+            aiModel: settings.model,
+            publishedFaqId: carFaq.id,
+            reviewedAt: new Date(),
+          },
+        });
+      });
+      createdCount += 1;
+    }
+  } else {
+    await prisma.aiFaq.createMany({
+      data: items.map((item) => ({
+        modelId,
+        question: item.question.trim().slice(0, 255),
+        answer: item.answer.trim(),
+        status: AI_FAQ_STATUS.PENDING,
+        aiProvider: settings.provider,
+        aiModel: settings.model,
+      })),
+    });
+    createdCount = items.length;
+  }
 
   await createAiLog({
     featureKey: FAQ_FEATURE_KEY,
     action: 'generate',
     status: AI_LOG_STATUS.SUCCESS,
-    message: `Generated ${items.length} FAQ(s) for "${model.brand.name} ${model.name}"`,
-    meta: { modelId, count: items.length },
+    message: `Generated ${createdCount} FAQ(s) for "${model.brand.name} ${model.name}"${
+      rule.autoPublish ? ' (auto-published)' : ''
+    }`,
+    meta: { modelId, count: createdCount, autoPublish: rule.autoPublish },
     durationMs: Date.now() - startedAt,
   });
 
-  return { created: items.length };
+  // Self-healing cleanup — runs regardless of whether this particular
+  // run auto-published anything, so a manual publish that pushed the
+  // model over the limit still gets trimmed on the next scheduled run.
+  if (rule.autoDelete && rule.keepLatest) {
+    await autoDeleteExcessFaqs(modelId, rule.keepLatest, rule.deleteStrategy);
+  }
+
+  return { created: createdCount };
 }
 
 // Entry point for the scheduler — picks a model on its own rather than
 // requiring a caller to specify one, since automatic runs aren't tied
 // to any particular admin's choice.
-export async function runAutomaticFaqGeneration(count: number): Promise<{ created: number; modelId: number | null }> {
+export async function runAutomaticFaqGeneration(
+  rule: FaqGenerationRule,
+): Promise<{ created: number; modelId: number | null }> {
   const model = await pickModelForGeneration();
   if (!model) {
     await createAiLog({
@@ -491,6 +603,6 @@ export async function runAutomaticFaqGeneration(count: number): Promise<{ create
     return { created: 0, modelId: null };
   }
 
-  const result = await generateAiFaqsForModel(model.id, count);
+  const result = await generateAiFaqsForModel(model.id, rule);
   return { created: result.created, modelId: model.id };
 }

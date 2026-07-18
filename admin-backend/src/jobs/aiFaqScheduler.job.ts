@@ -17,7 +17,15 @@ async function runCheck() {
     }
 
     logger.info(`[aiFaqScheduler] Running scheduled FAQ generation (${rule.countPerRun} per run)`);
-    const result = await runAutomaticFaqGeneration(rule.countPerRun);
+    const result = await runAutomaticFaqGeneration({
+      countPerRun: rule.countPerRun,
+      language: rule.language,
+      autoPublish: rule.autoPublish,
+      maxTotal: rule.maxTotal,
+      autoDelete: rule.autoDelete,
+      keepLatest: rule.keepLatest,
+      deleteStrategy: rule.deleteStrategy,
+    });
 
     await prisma.aiAutomationRule.update({
       where: { featureKey: FAQ_FEATURE_KEY },

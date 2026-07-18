@@ -212,6 +212,8 @@ model AdminUser {
   aiAutomationRulesUpdated AiAutomationRule[]  @relation("AiAutomationRuleUpdatedBy")
   aiFaqsReviewed           AiFaq[]             @relation("AiFaqReviewedBy")
 
+  aiImagesUploaded AiImagePool[] @relation("AiImagePoolUploadedBy")
+
   @@map("admin_users")
 }
 
@@ -551,6 +553,7 @@ model CarFaq {
   answer       String
   displayOrder Int      @default(0) @map("display_order")
   isActive     Boolean  @default(true) @map("is_active")
+  viewCount    Int      @default(0) @map("view_count")
   createdAt    DateTime @default(now()) @map("created_at")
   aiFaqSources AiFaq[]
 
@@ -1406,10 +1409,14 @@ model AiAutomationRule {
   enabled          Boolean   @default(false)
   frequencyMinutes Int       @default(180) @map("frequency_minutes")
   countPerRun      Int       @default(1) @map("count_per_run")
+  language         String    @default("english") @db.VarChar(20)
+  autoPublish      Boolean   @default(false) @map("auto_publish")
+  maxTotal         Int?      @map("max_total")
   imageFolder      String?   @map("image_folder") @db.VarChar(255)
   autoPickImages   Boolean   @default(false) @map("auto_pick_images")
   autoDelete       Boolean   @default(false) @map("auto_delete")
   keepLatest       Int?      @map("keep_latest")
+  deleteStrategy   String    @default("latest") @map("delete_strategy") @db.VarChar(20)
   nextRunAt        DateTime? @map("next_run_at")
   lastRunAt        DateTime? @map("last_run_at")
 
@@ -1437,7 +1444,11 @@ model AiFaq {
   aiModel    String @map("ai_model") @db.VarChar(100)
 
   publishedFaqId Int?    @map("published_faq_id")
-  publishedFaq   CarFaq? @relation(fields: [publishedFaqId], references: [id])
+  // SetNull rather than the default restrict — auto-delete cleanup
+  // removes old/low-view CarFaq rows directly (see aiFaq.service.ts's
+  // autoDeleteExcessFaqs), and that must not be blocked by this
+  // historical AiFaq record still pointing at it.
+  publishedFaq   CarFaq? @relation(fields: [publishedFaqId], references: [id], onDelete: SetNull)
 
   reviewedBy      Int?       @map("reviewed_by")
   reviewedByAdmin AdminUser? @relation("AiFaqReviewedBy", fields: [reviewedBy], references: [id])
@@ -1462,4 +1473,22 @@ model AiLog {
 
   @@index([featureKey, createdAt])
   @@map("ai_logs")
+}
+
+model AiImagePool {
+  id               Int        @id @default(autoincrement())
+  featureKey       Int        @map("feature_key")
+  imageUrl         String     @map("image_url") @db.VarChar(255)
+  originalFilename String?    @map("original_filename") @db.VarChar(255)
+  isUsed           Boolean    @default(false) @map("is_used")
+  usedForId        Int?       @map("used_for_id")
+  usedAt           DateTime?  @map("used_at")
+
+  uploadedBy      Int?       @map("uploaded_by")
+  uploadedByAdmin AdminUser? @relation("AiImagePoolUploadedBy", fields: [uploadedBy], references: [id])
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([featureKey, isUsed])
+  @@map("ai_image_pool")
 }

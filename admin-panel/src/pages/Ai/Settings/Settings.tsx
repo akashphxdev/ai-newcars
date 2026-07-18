@@ -100,20 +100,28 @@ interface AutomationConfig {
   enabled: boolean;
   frequencyMinutes: number;
   countPerRun: number;
+  language: "english" | "hindi" | "hinglish";
+  autoPublish: boolean;
+  maxTotal: number | null;
   imageFolder: string;
   autoPickImages: boolean;
   autoDelete: boolean;
   keepLatest: number;
+  deleteStrategy: "latest" | "lowestViews";
 }
 
 const DEFAULT_RULE: AutomationConfig = {
   enabled: false,
   frequencyMinutes: 180,
   countPerRun: 1,
+  language: "english",
+  autoPublish: false,
+  maxTotal: null,
   imageFolder: "",
   autoPickImages: false,
   autoDelete: false,
   keepLatest: 10,
+  deleteStrategy: "latest",
 };
 
 function Toggle({ checked, onChange }: { checked: boolean; onChange: () => void }) {
@@ -210,6 +218,33 @@ function AutomationCard({
             </div>
           </div>
 
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="text-[11px] font-semibold text-[#7a7670] block mb-1.5">Language</label>
+              <select
+                value={config.language}
+                onChange={(e) => update({ language: e.target.value as AutomationConfig["language"] })}
+                disabled={!config.enabled}
+                className="w-full text-[12.5px] border border-[#e8e4dc] rounded-lg px-3 py-2 outline-none focus:border-[#D4300F] bg-white disabled:opacity-50"
+              >
+                <option value="english">English</option>
+                <option value="hindi">Hindi</option>
+                <option value="hinglish">Hinglish</option>
+              </select>
+            </div>
+            <div>
+              <div className="flex items-center justify-between mb-1.5">
+                <label className="text-[11px] font-semibold text-[#7a7670]">After Generating</label>
+                <Toggle checked={config.autoPublish} onChange={() => update({ autoPublish: !config.autoPublish })} />
+              </div>
+              <p className="text-[11.5px] text-[#4a4640] leading-snug">
+                {config.autoPublish
+                  ? "Auto Live — publishes immediately, skipping review."
+                  : "Save as Draft — stays pending for admin review before going live."}
+              </p>
+            </div>
+          </div>
+
           {meta.hasImages && (
             <div>
               <div className="flex items-center justify-between mb-1.5">
@@ -231,10 +266,38 @@ function AutomationCard({
 
           <div>
             <div className="flex items-center justify-between mb-1.5">
-              <label className="text-[11px] font-semibold text-[#7a7670]">Auto-Delete Oldest When Limit Reached</label>
+              <label className="text-[11px] font-semibold text-[#7a7670]">Limit Total Live Items</label>
+              <Toggle
+                checked={config.maxTotal !== null}
+                onChange={() => update({ maxTotal: config.maxTotal !== null ? null : 10 })}
+              />
+            </div>
+            {config.maxTotal !== null && (
+              <div className="flex items-center gap-2">
+                <span className="text-[12px] text-[#4a4640]">Stop generating once there are</span>
+                <input
+                  type="number"
+                  min={1}
+                  max={200}
+                  value={config.maxTotal}
+                  onChange={(e) => update({ maxTotal: Number(e.target.value) })}
+                  disabled={!config.enabled}
+                  className="w-20 text-[12.5px] border border-[#e8e4dc] rounded-lg px-3 py-1.5 outline-none focus:border-[#D4300F] disabled:opacity-50"
+                />
+                <span className="text-[12px] text-[#4a4640]">live item(s).</span>
+              </div>
+            )}
+            <p className="text-[11px] text-[#a39e96] mt-1.5">
+              Once this many are live, new generation is skipped until some are removed.
+            </p>
+          </div>
+
+          <div>
+            <div className="flex items-center justify-between mb-1.5">
+              <label className="text-[11px] font-semibold text-[#7a7670]">Auto-Delete When Limit Reached</label>
               <Toggle checked={config.autoDelete} onChange={() => update({ autoDelete: !config.autoDelete })} />
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               <span className="text-[12px] text-[#4a4640]">Keep latest</span>
               <input
                 type="number"
@@ -245,10 +308,21 @@ function AutomationCard({
                 disabled={!config.enabled || !config.autoDelete}
                 className="w-20 text-[12.5px] border border-[#e8e4dc] rounded-lg px-3 py-1.5 outline-none focus:border-[#D4300F] disabled:opacity-50"
               />
-              <span className="text-[12px] text-[#4a4640]">AI-generated items, delete the rest automatically.</span>
+              <span className="text-[12px] text-[#4a4640]">live items, deleting the rest by</span>
+              <select
+                value={config.deleteStrategy}
+                onChange={(e) => update({ deleteStrategy: e.target.value as AutomationConfig["deleteStrategy"] })}
+                disabled={!config.enabled || !config.autoDelete}
+                className="text-[12.5px] border border-[#e8e4dc] rounded-lg px-2 py-1.5 outline-none focus:border-[#D4300F] bg-white disabled:opacity-50"
+              >
+                <option value="latest">Oldest First</option>
+                <option value="lowestViews">Lowest Views First</option>
+              </select>
             </div>
             <p className="text-[11px] text-[#a39e96] mt-1.5">
-              Example: if 2 new items are auto-uploaded and this pushes the count over the limit, the 2 oldest auto-generated items are removed.
+              {config.deleteStrategy === "lowestViews"
+                ? "When over the limit, the least-viewed live items are removed first."
+                : "When over the limit, the oldest live items are removed first."}
             </p>
           </div>
         </div>
@@ -321,10 +395,14 @@ function AISettingsForm({
             enabled: existing.enabled,
             frequencyMinutes: existing.frequencyMinutes,
             countPerRun: existing.countPerRun,
+            language: (existing.language as AutomationConfig["language"]) ?? "english",
+            autoPublish: existing.autoPublish,
+            maxTotal: existing.maxTotal ?? null,
             imageFolder: existing.imageFolder ?? "",
             autoPickImages: existing.autoPickImages,
             autoDelete: existing.autoDelete,
             keepLatest: existing.keepLatest ?? 10,
+            deleteStrategy: (existing.deleteStrategy as AutomationConfig["deleteStrategy"]) ?? "latest",
           }
         : DEFAULT_RULE;
     }
@@ -387,10 +465,14 @@ function AISettingsForm({
               enabled: cfg.enabled,
               frequencyMinutes: cfg.frequencyMinutes,
               countPerRun: cfg.countPerRun,
+              language: cfg.language,
+              autoPublish: cfg.autoPublish,
+              maxTotal: cfg.maxTotal,
               imageFolder: cfg.imageFolder.trim() || null,
               autoPickImages: cfg.autoPickImages,
               autoDelete: cfg.autoDelete,
               keepLatest: cfg.autoDelete ? cfg.keepLatest : null,
+              deleteStrategy: cfg.deleteStrategy,
             },
           }).unwrap();
         }),

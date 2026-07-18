@@ -14,10 +14,14 @@ export const upsertAutomationRuleSchema = z.object({
   enabled: z.boolean().default(false),
   frequencyMinutes: z.coerce.number().int().positive('Frequency must be a positive number of minutes').default(180),
   countPerRun: z.coerce.number().int().positive().default(1),
+  language: z.enum(['english', 'hindi', 'hinglish']).default('english'),
+  autoPublish: z.boolean().default(false),
+  maxTotal: z.coerce.number().int().positive().nullable().optional(),
   imageFolder: z.string().trim().max(255).nullable().optional(),
   autoPickImages: z.boolean().default(false),
   autoDelete: z.boolean().default(false),
   keepLatest: z.coerce.number().int().positive().nullable().optional(),
+  deleteStrategy: z.enum(['latest', 'lowestViews']).default('latest'),
 });
 
 export type FeatureKeyParamParsed = z.infer<typeof featureKeyParamSchema>;

@@ -7,10 +7,14 @@ export interface AiAutomationRuleRecord {
   enabled: boolean;
   frequencyMinutes: number;
   countPerRun: number;
+  language: string;
+  autoPublish: boolean;
+  maxTotal: number | null;
   imageFolder: string | null;
   autoPickImages: boolean;
   autoDelete: boolean;
   keepLatest: number | null;
+  deleteStrategy: string;
   nextRunAt: string | null;
   lastRunAt: string | null;
   createdBy: number | null;
@@ -23,10 +27,14 @@ export interface UpsertAutomationRuleInput {
   enabled: boolean;
   frequencyMinutes: number;
   countPerRun: number;
+  language: "english" | "hindi" | "hinglish";
+  autoPublish: boolean;
+  maxTotal?: number | null;
   imageFolder?: string | null;
   autoPickImages: boolean;
   autoDelete: boolean;
   keepLatest?: number | null;
+  deleteStrategy: "latest" | "lowestViews";
 }
 
 interface AutomationRuleListRawResponse {
