@@ -211,6 +211,8 @@ model AdminUser {
   aiAutomationRulesCreated AiAutomationRule[]  @relation("AiAutomationRuleCreatedBy")
   aiAutomationRulesUpdated AiAutomationRule[]  @relation("AiAutomationRuleUpdatedBy")
   aiFaqsReviewed           AiFaq[]             @relation("AiFaqReviewedBy")
+  aiArticlesReviewed       AiArticle[]         @relation("AiArticleReviewedBy")
+  aiStoryItemsReviewed     AiStoryItem[]       @relation("AiStoryItemReviewedBy")
 
   aiImagesUploaded AiImagePool[] @relation("AiImagePoolUploadedBy")
 
@@ -323,6 +325,7 @@ model Brand {
   softLeads           SoftLead[]
   priceDropAlertLeads PriceDropAlertLead[]
   articleBrands       ArticleBrand[]
+  aiArticles          AiArticle[]
 
   @@map("brands")
 }
@@ -361,6 +364,7 @@ model CarModel {
   mileageLogs         MileageLog[]
   articleCarModels    ArticleCarModel[]
   aiFaqs              AiFaq[]
+  aiArticles          AiArticle[]
 
   @@map("car_models")
 }
@@ -1218,7 +1222,8 @@ model ArticleCategory {
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
-  articles Article[]
+  articles   Article[]
+  aiArticles AiArticle[]
 
   @@map("article_categories")
 }
@@ -1274,6 +1279,7 @@ model Article {
   articleBrands    ArticleBrand[]
   articleCarModels ArticleCarModel[]
   articleComments  ArticleComment[]
+  aiArticleSources AiArticle[]
 
   @@map("articles")
 }
@@ -1348,7 +1354,8 @@ model StoryGroup {
   updatedByAdmin AdminUser? @relation("StoryGroupUpdatedBy", fields: [updatedBy], references: [id])
   updatedAt DateTime?  @updatedAt @map("updated_at")
 
-  items StoryItem[]
+  items        StoryItem[]
+  aiStoryItems AiStoryItem[]
   @@unique([displayOrder])
   @@map("story_groups")
 }
@@ -1378,6 +1385,8 @@ model StoryItem {
   updatedBy Int?       @map("updated_by")
   updatedByAdmin AdminUser? @relation("StoryItemUpdatedBy", fields: [updatedBy], references: [id])
   updatedAt DateTime?  @updatedAt @map("updated_at")
+  aiStoryItemSources AiStoryItem[]
+
   @@unique([groupId, displayOrder])
   @@map("story_items")
 
@@ -1489,6 +1498,107 @@ model AiImagePool {
 
   createdAt DateTime @default(now()) @map("created_at")
 
+  aiStoryItemsSourced AiStoryItem[]
+
   @@index([featureKey, isUsed])
   @@map("ai_image_pool")
+}
+
+// =========================================================================
+// AI ARTICLE — AI Content Studio's Article Generator (feature key 1)
+// review queue. Same lifecycle/status convention as AiFaq: a generated
+// article moves pending -> approved/rejected, and approved -> published
+// (the only transition that creates the real Article row) — unless the
+// automation rule has autoPublish on, in which case it goes straight to
+// Published with no review step (same pattern as aiFaq.service.ts's
+// generateAiFaqsForModel autoPublish branch).
+model AiArticle {
+  id Int @id @default(autoincrement())
+
+  categoryId Int             @map("category_id")
+  category   ArticleCategory @relation(fields: [categoryId], references: [id])
+
+  brandId Int   @map("brand_id")
+  brand   Brand @relation(fields: [brandId], references: [id])
+
+  // Nullable — an AI article can be a single-model piece (e.g. "5 things
+  // to know about the Nexon EV") or a brand-wide roundup with no one
+  // model attached (e.g. "Tata's 5 best cars right now").
+  modelId Int?      @map("model_id")
+  model   CarModel? @relation(fields: [modelId], references: [id])
+
+  title         String @db.VarChar(200)
+  slug          String @db.VarChar(200)
+  excerpt       String @db.VarChar(300)
+  body          String
+  coverImageUrl String @map("cover_image_url") @db.VarChar(255)
+
+  metaTitle       String @map("meta_title") @db.VarChar(160)
+  metaDescription String @map("meta_description") @db.VarChar(300)
+  metaKeywords    String @map("meta_keywords") @db.VarChar(255)
+
+  status     Int
+  aiProvider Int    @map("ai_provider")
+  aiModel    String @map("ai_model") @db.VarChar(100)
+
+  publishedArticleId Int?     @map("published_article_id")
+  // SetNull rather than the default restrict — same reasoning as
+  // AiFaq.publishedFaq: this historical AI record must not block
+  // deletion/cleanup of the live Article it produced.
+  publishedArticle   Article? @relation(fields: [publishedArticleId], references: [id], onDelete: SetNull)
+
+  reviewedBy      Int?       @map("reviewed_by")
+  reviewedByAdmin AdminUser? @relation("AiArticleReviewedBy", fields: [reviewedBy], references: [id])
+  reviewedAt      DateTime?  @map("reviewed_at")
+
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime? @updatedAt @map("updated_at")
+
+  @@map("ai_articles")
+}
+
+// =========================================================================
+// AI STORY ITEM — AI Content Studio's Story Generator (feature key 2)
+// review queue. Same lifecycle as AiArticle/AiFaq. groupId is required —
+// unlike AiFaq's model-picking, the generator auto-picks the
+// least-populated active StoryGroup at generation time and stamps it
+// here immediately (no "figure it out at publish time" step, since the
+// caption/description itself may reference the group's theme).
+model AiStoryItem {
+  id Int @id @default(autoincrement())
+
+  groupId Int        @map("group_id")
+  group   StoryGroup @relation(fields: [groupId], references: [id])
+
+  sourceImagePoolId Int         @map("source_image_pool_id")
+  sourceImage       AiImagePool @relation(fields: [sourceImagePoolId], references: [id])
+
+  // Always "image" today — Story Generator only ever draws from the AI
+  // image pool, which is image-only. Kept as a column (not hardcoded in
+  // code) so a future video-capable pool doesn't need a migration.
+  mediaType   String @map("media_type") @db.VarChar(10)
+  mediaUrl    String @map("media_url") @db.VarChar(255)
+  description String @db.VarChar(300)
+
+  // Always null for AI-generated items — Story Generator never invents a
+  // CTA destination. Column kept only so this table's shape matches
+  // StoryItem's 1:1 and a publish is a straight field copy.
+  link String? @db.VarChar(255)
+
+  status     Int
+  aiProvider Int    @map("ai_provider")
+  aiModel    String @map("ai_model") @db.VarChar(100)
+
+  publishedStoryItemId Int?       @map("published_story_item_id")
+  // SetNull — same reasoning as AiFaq.publishedFaq / AiArticle.publishedArticle.
+  publishedStoryItem   StoryItem? @relation(fields: [publishedStoryItemId], references: [id], onDelete: SetNull)
+
+  reviewedBy      Int?       @map("reviewed_by")
+  reviewedByAdmin AdminUser? @relation("AiStoryItemReviewedBy", fields: [reviewedBy], references: [id])
+  reviewedAt      DateTime?  @map("reviewed_at")
+
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime? @updatedAt @map("updated_at")
+
+  @@map("ai_story_items")
 }
