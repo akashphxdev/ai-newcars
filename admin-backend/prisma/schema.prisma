@@ -216,6 +216,12 @@ model AdminUser {
 
   aiImagesUploaded AiImagePool[] @relation("AiImagePoolUploadedBy")
 
+  bannersCreated Banner[] @relation("BannerCreatedBy")
+  bannersUpdated Banner[] @relation("BannerUpdatedBy")
+
+  testimonialsCreated  Testimonial[] @relation("TestimonialCreatedBy")
+  testimonialsReviewed Testimonial[] @relation("TestimonialReviewedBy")  
+
   @@map("admin_users")
 }
 
@@ -285,6 +291,7 @@ model User {
   pageViews           PageView[]
   searchLogs          SearchLog[]
   userAddresses       UserAddress[]
+  testimonials        Testimonial[] 
 
   @@map("users")
 }
@@ -1398,8 +1405,6 @@ model AiSetting {
   baseUrl       String?    @map("base_url") @db.VarChar(255)
   apiKey        String?    @map("api_key") @db.Text
   model         String     @db.VarChar(100)
-  language      String     @default("english") @db.VarChar(20)
-  autoSaveMode  String     @default("draft") @map("auto_save_mode") @db.VarChar(20)
 
   createdBy      Int        @map("created_by")
   createdByAdmin AdminUser  @relation("AiSettingCreatedBy", fields: [createdBy], references: [id])
@@ -1421,8 +1426,6 @@ model AiAutomationRule {
   language         String    @default("english") @db.VarChar(20)
   autoPublish      Boolean   @default(false) @map("auto_publish")
   maxTotal         Int?      @map("max_total")
-  imageFolder      String?   @map("image_folder") @db.VarChar(255)
-  autoPickImages   Boolean   @default(false) @map("auto_pick_images")
   autoDelete       Boolean   @default(false) @map("auto_delete")
   keepLatest       Int?      @map("keep_latest")
   deleteStrategy   String    @default("latest") @map("delete_strategy") @db.VarChar(20)
@@ -1499,6 +1502,7 @@ model AiImagePool {
   createdAt DateTime @default(now()) @map("created_at")
 
   aiStoryItemsSourced AiStoryItem[]
+  aiArticlesSourced   AiArticle[]
 
   @@index([featureKey, isUsed])
   @@map("ai_image_pool")
@@ -1532,6 +1536,9 @@ model AiArticle {
   excerpt       String @db.VarChar(300)
   body          String
   coverImageUrl String @map("cover_image_url") @db.VarChar(255)
+
+  sourceImagePoolId Int         @map("source_image_pool_id")
+  sourceImage       AiImagePool @relation(fields: [sourceImagePoolId], references: [id])
 
   metaTitle       String @map("meta_title") @db.VarChar(160)
   metaDescription String @map("meta_description") @db.VarChar(300)
@@ -1601,4 +1608,63 @@ model AiStoryItem {
   updatedAt DateTime? @updatedAt @map("updated_at")
 
   @@map("ai_story_items")
+}
+
+model Banner {
+  id             Int       @id @default(autoincrement())
+  name           String    @db.VarChar(150)
+  tagLabel       String    @map("tag_label") @db.VarChar(100)
+  heading        String    @db.VarChar(200)
+  highlightText  String    @map("highlight_text") @db.VarChar(150)
+  description    String    @db.VarChar(300)
+
+  mediaType      Int       @map("media_type") // 1=Image, 2=Video
+  imageUrl       String?   @map("image_url") @db.VarChar(255)
+  videoUrl       String?   @map("video_url") @db.VarChar(255)
+
+  ctaText        String    @map("cta_text") @db.VarChar(50)
+  ctaLink        String    @map("cta_link") @db.VarChar(255)
+
+  displayOrder   Int       @default(0) @map("display_order")
+  isActive       Boolean   @default(true) @map("is_active")
+  clickCount     Int       @default(0) @map("click_count")
+
+  createdBy      Int        @map("created_by")
+  createdByAdmin AdminUser  @relation("BannerCreatedBy", fields: [createdBy], references: [id])
+  updatedBy      Int?       @map("updated_by")
+  updatedByAdmin AdminUser? @relation("BannerUpdatedBy", fields: [updatedBy], references: [id])
+
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime? @updatedAt @map("updated_at")
+
+  @@map("banners")
+}
+
+model Testimonial {
+  id     Int   @id @default(autoincrement())
+
+  userId Int?  @map("user_id")
+  user   User? @relation(fields: [userId], references: [id])
+
+  customerName String   @map("customer_name") @db.VarChar(100)
+  customerCity String?  @map("customer_city") @db.VarChar(100)
+  photoUrl     String?  @map("photo_url") @db.VarChar(255)
+  rating       Decimal? @db.Decimal(2, 1)
+  quote        String   @db.VarChar(500)
+
+  status         String  @default("pending") @db.VarChar(20)
+  rejectedReason String? @map("rejected_reason") @db.VarChar(255)
+
+  reviewedBy      Int?       @map("reviewed_by")
+  reviewedByAdmin AdminUser? @relation("TestimonialReviewedBy", fields: [reviewedBy], references: [id])
+  reviewedAt      DateTime?  @map("reviewed_at")
+
+  displayOrder Int     @default(0) @map("display_order")
+  isActive     Boolean @default(true) @map("is_active")
+
+  createdBy      Int?       @map("created_by")
+  createdByAdmin AdminUser? @relation("TestimonialCreatedBy", fields: [createdBy], references: [id])
+  createdAt      DateTime   @default(now()) @map("created_at")
+
+  @@map("testimonials")
 }

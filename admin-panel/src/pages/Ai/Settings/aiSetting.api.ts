@@ -15,8 +15,6 @@ export interface AiSettingRecord {
   hasApiKey: boolean;
   maskedApiKey: string | null;
   model: string;
-  language: string;
-  autoSaveMode: string;
   createdBy: number;
   updatedBy: number;
   createdAt: string;
@@ -30,8 +28,6 @@ export interface UpsertAiSettingInput {
   // only include this when the admin actually types a new one.
   apiKey?: string;
   model: string;
-  language: "english" | "hindi" | "hinglish";
-  autoSaveMode: "draft" | "preview";
 }
 
 export interface TestAiConnectionInput {

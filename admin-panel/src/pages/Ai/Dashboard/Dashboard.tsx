@@ -1,192 +1,358 @@
-// pages/AI/Dashboard/Dashboard.tsx
-// Usage: Drop inside AdminLayout's <Outlet /> at route /ai/dashboard
-// NOTE: All data below is MOCK — wire up to real /api/v1/ai/* endpoints later.
+// src/pages/Ai/Dashboard/Dashboard.tsx
+// Live AI Studio dashboard — every number here comes from
+// GET /ai/dashboard (see dashboard.api.ts), polled every 20s so an
+// automation being turned on/off, or a scheduled run firing, shows up
+// here without a manual refresh.
 
-import { useEffect, useState } from "react";
+import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useGetAiDashboardQuery, POLL_INTERVAL_MS, type AiDashboardFeatureStatus } from "./dashboard.api";
+import { useToggleAutomationRuleMutation } from "../Settings/automationRule.api";
+import { extractApiError } from "../../../lib/apiClient";
+import { AI_FEATURE_OPTIONS, getAiFeatureLabel } from "../../../lib/aiLookups";
 
 const ACCENT = "#D4300F";
 
-// ─── Types ──────────────────────────────────────────────────────────────────
+type RunState = "running" | "paused" | "error" | "not_built";
 
-type RunState = "running" | "paused" | "error";
+const FEATURE_ROUTES: Record<number, string> = {
+  1: "/ai/article/review",
+  2: "/ai/story/review",
+  3: "/ai/seo/review",
+  4: "/ai/car-faqs/review",
+};
 
-interface FeatureStatus {
-  key: string;
-  label: string;
-  state: RunState;
-  nextRun: string;
-  lastResult: string;
-  generatedToday: number;
-  schedule: string;
+function deriveState(f: AiDashboardFeatureStatus): RunState {
+  if (!f.built) return "not_built";
+  if (f.enabled && f.isError) return "error";
+  if (f.enabled) return "running";
+  return "paused";
 }
 
-// ─── Mock static data (replace with API calls later) ──────────────────────────
+function formatFrequency(minutes: number | null, countPerRun: number | null): string {
+  if (minutes == null) return "Not configured";
+  const label =
+    minutes % 1440 === 0 && minutes >= 1440
+      ? `Every ${minutes / 1440} day${minutes / 1440 === 1 ? "" : "s"}`
+      : minutes % 60 === 0 && minutes >= 60
+      ? `Every ${minutes / 60} hr${minutes / 60 === 1 ? "" : "s"}`
+      : `Every ${minutes} min`;
+  return countPerRun ? `${label} · ${countPerRun} per run` : label;
+}
 
-const TOP_STATS = [
-  { label: "Active Automations", value: "3", sub: "of 4 features", positive: true },
-  { label: "Articles Generated Today", value: "6", sub: "2 pending review", positive: true },
-  { label: "Images Auto-Uploaded", value: "9", sub: "from watched folder", positive: true },
-  { label: "Auto-Deleted (Rotation)", value: "4", sub: "oldest items cleared", positive: false },
-];
-
-const INITIAL_FEATURES: FeatureStatus[] = [
-  { key: "article", label: "Article Generator", state: "running", nextRun: "in 42 min", lastResult: "Generated \"Top 5 SUVs under 15L\"", generatedToday: 4, schedule: "Every 3 hrs · 2 per run" },
-  { key: "story", label: "Story Generator", state: "running", nextRun: "in 1 hr 10 min", lastResult: "Captioned Diwali offer banner", generatedToday: 2, schedule: "Every 6 hrs · 3 per run" },
-  { key: "seo", label: "SEO Generator", state: "paused", nextRun: "—", lastResult: "Filled meta for Hyundai Creta", generatedToday: 0, schedule: "Manual only" },
-  { key: "faq", label: "FAQ Generator", state: "error", nextRun: "retry in 15 min", lastResult: "Ollama connection timeout", generatedToday: 0, schedule: "Daily · 5 per run" },
-];
-
-const LIVE_FEED = [
-  { feature: "Article Generator", detail: "Draft created — \"Tata Nexon EV vs MG ZS EV\"", status: "success", time: "4 min ago" },
-  { feature: "Story Generator", detail: "Image picked from /uploads/ai-source/ — caption added", status: "success", time: "22 min ago" },
-  { feature: "Article Generator", detail: "Old draft auto-deleted (rotation limit: 10)", status: "cleanup", time: "42 min ago" },
-  { feature: "FAQ Generator", detail: "Ollama did not respond within 30s", status: "failed", time: "1 hr ago" },
-  { feature: "SEO Generator", detail: "Meta title & description filled — Maruti Brezza", status: "success", time: "2 hr ago" },
-  { feature: "Article Generator", detail: "Draft created — \"Best mileage cars for highways\"", status: "success", time: "3 hr ago" },
-];
-
-// ─── Helpers ────────────────────────────────────────────────────────────────
+function formatRelativeToNow(iso: string | null, future: boolean): string {
+  if (!iso) return "—";
+  const target = new Date(iso).getTime();
+  const now = Date.now();
+  const diffMs = future ? target - now : now - target;
+  if (future && diffMs <= 0) return "any moment now";
+  const abs = Math.abs(diffMs);
+  const mins = Math.round(abs / 60000);
+  if (mins < 1) return future ? "any moment now" : "just now";
+  if (mins < 60) return future ? `in ${mins} min` : `${mins} min ago`;
+  const hrs = Math.round(mins / 60);
+  if (hrs < 24) return future ? `in ${hrs} hr${hrs === 1 ? "" : "s"}` : `${hrs} hr${hrs === 1 ? "" : "s"} ago`;
+  const days = Math.round(hrs / 24);
+  return future ? `in ${days} day${days === 1 ? "" : "s"}` : `${days} day${days === 1 ? "" : "s"} ago`;
+}
 
 function StatePill({ state }: { state: RunState }) {
-  const map: Record<RunState, { bg: string; text: string; label: string; dot: string }> = {
-    running: { bg: "#f0fdf4", text: "#15803d", label: "Running", dot: "#22c55e" },
-    paused: { bg: "#f7f5f1", text: "#7a7670", label: "Paused", dot: "#a39e96" },
-    error: { bg: "#fef2f0", text: ACCENT, label: "Error", dot: ACCENT },
+  const map: Record<RunState, { bg: string; text: string; label: string; dot: string; pulse: boolean }> = {
+    running: { bg: "#f0fdf4", text: "#15803d", label: "Running", dot: "#22c55e", pulse: true },
+    paused: { bg: "#f7f5f1", text: "#7a7670", label: "Paused", dot: "#a39e96", pulse: false },
+    error: { bg: "#fef2f0", text: ACCENT, label: "Error", dot: ACCENT, pulse: false },
+    not_built: { bg: "#f7f5f1", text: "#c0bab0", label: "Not Built", dot: "#c0bab0", pulse: false },
   };
   const s = map[state];
   return (
-    <span className="inline-flex items-center gap-1.5 text-[10.5px] font-bold px-2 py-1 rounded-full" style={{ background: s.bg, color: s.text }}>
-      <span className="w-1.5 h-1.5 rounded-full" style={{ background: s.dot }} />
+    <span
+      className="inline-flex items-center gap-1.5 text-[10.5px] font-bold px-2 py-1 rounded-full"
+      style={{ background: s.bg, color: s.text }}
+    >
+      <span className="relative flex w-1.5 h-1.5">
+        {s.pulse && (
+          <span
+            className="animate-ping absolute inline-flex h-full w-full rounded-full opacity-60"
+            style={{ background: s.dot }}
+          />
+        )}
+        <span className="relative inline-flex rounded-full w-1.5 h-1.5" style={{ background: s.dot }} />
+      </span>
       {s.label}
     </span>
   );
 }
 
-function LogStatusPill({ status }: { status: string }) {
-  const map: Record<string, { bg: string; text: string; label: string }> = {
-    success: { bg: "#f0fdf4", text: "#15803d", label: "Success" },
-    failed: { bg: "#fef2f0", text: ACCENT, label: "Failed" },
-    cleanup: { bg: "#eef6ff", text: "#1d72c4", label: "Auto-cleanup" },
-  };
-  const s = map[status] ?? { bg: "#f7f5f1", text: "#7a7670", label: status };
+function Toggle({ checked, disabled, onChange }: { checked: boolean; disabled?: boolean; onChange: () => void }) {
   return (
-    <span className="inline-block text-[10px] font-bold px-2 py-0.5 rounded-full" style={{ background: s.bg, color: s.text }}>
-      {s.label}
+    <button
+      type="button"
+      onClick={onChange}
+      disabled={disabled}
+      aria-pressed={checked}
+      className="relative w-9 h-5 rounded-full transition-colors duration-200 shrink-0 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
+      style={{ background: checked ? ACCENT : "#e2ddd4" }}
+    >
+      <span
+        className="absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-white shadow transition-transform duration-200"
+        style={{ transform: checked ? "translateX(16px)" : "translateX(0)" }}
+      />
+    </button>
+  );
+}
+
+function LogStatusPill({ status }: { status: number }) {
+  // 1 = SUCCESS, 2 = FAILED — see AI_LOG_STATUS in each generator's service.ts
+  const isSuccess = status === 1;
+  return (
+    <span
+      className="inline-block text-[10px] font-bold px-2 py-0.5 rounded-full"
+      style={{
+        background: isSuccess ? "#f0fdf4" : "#fef2f0",
+        color: isSuccess ? "#15803d" : ACCENT,
+      }}
+    >
+      {isSuccess ? "Success" : "Failed"}
     </span>
   );
 }
 
-// ─── Main Page ──────────────────────────────────────────────────────────────
+// 30-bar trend chart, no charting library — thin rounded data-ends, a
+// hover tooltip per bar, values only shown on hover (not stamped on
+// every bar). With this many bars the x-axis only labels every 5th day
+// (plus today) so it doesn't collapse into unreadable text.
+function TrendChart({ trend }: { trend: { date: string; count: number }[] }) {
+  const [hoverIdx, setHoverIdx] = useState<number | null>(null);
+  const max = Math.max(1, ...trend.map((t) => t.count));
+  const labelEvery = trend.length > 14 ? 5 : 1;
+
+  return (
+    <div className="flex items-end gap-[3px] h-[100px] px-1">
+      {trend.map((point, i) => {
+        const heightPct = Math.max(3, (point.count / max) * 100);
+        const isToday = i === trend.length - 1;
+        const showLabel = isToday || i % labelEvery === 0;
+        const dateObj = new Date(point.date + "T00:00:00");
+        const dayLabel = dateObj.toLocaleDateString("en-IN", { day: "numeric", month: "short" });
+        const fullLabel = dateObj.toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" });
+        return (
+          <div
+            key={point.date}
+            className="relative flex-1 flex flex-col items-center justify-end h-full min-w-0"
+            onMouseEnter={() => setHoverIdx(i)}
+            onMouseLeave={() => setHoverIdx((cur) => (cur === i ? null : cur))}
+          >
+            {hoverIdx === i && (
+              <div
+                className="absolute -top-9 left-1/2 -translate-x-1/2 text-[10px] font-bold text-white px-2 py-1 rounded-md whitespace-nowrap z-10"
+                style={{ background: "#1c1a17" }}
+              >
+                {point.count} generated
+                <span className="block text-[9px] font-medium text-white/70">{fullLabel}</span>
+              </div>
+            )}
+            <div
+              className="w-full rounded-t-[3px] transition-all duration-300"
+              style={{
+                height: `${heightPct}%`,
+                background: isToday ? ACCENT : "#f0c4b8",
+                opacity: hoverIdx === null || hoverIdx === i ? 1 : 0.55,
+              }}
+            />
+            <span
+              className={`text-[9px] mt-1.5 font-semibold whitespace-nowrap ${isToday ? "text-[#1c1a17]" : "text-[#a39e96]"} ${showLabel ? "" : "opacity-0"}`}
+            >
+              {dayLabel}
+            </span>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
 
 export default function AIDashboard() {
   const navigate = useNavigate();
-  const [features, setFeatures] = useState<FeatureStatus[]>(INITIAL_FEATURES);
-  const [clock, setClock] = useState(0);
+  const { data, isLoading, isFetching, error, refetch } = useGetAiDashboardQuery(undefined, {
+    pollingInterval: POLL_INTERVAL_MS,
+  });
+  const [toggleAutomationRule] = useToggleAutomationRuleMutation();
+  const [togglingFeature, setTogglingFeature] = useState<number | null>(null);
+  const [toggleError, setToggleError] = useState("");
 
-  // purely cosmetic "live" tick so the page feels alive — replace with real polling
-  useEffect(() => {
-    const t = setInterval(() => setClock((c) => c + 1), 1000);
-    return () => clearInterval(t);
-  }, []);
-
-  const toggleFeature = (key: string) => {
-    setFeatures((prev) =>
-      prev.map((f) =>
-        f.key === key
-          ? { ...f, state: f.state === "running" ? "paused" : f.state === "paused" ? "running" : f.state }
-          : f,
-      ),
-    );
+  const handleToggle = async (featureKey: number, nextEnabled: boolean) => {
+    setToggleError("");
+    setTogglingFeature(featureKey);
+    try {
+      await toggleAutomationRule({ featureKey, enabled: nextEnabled }).unwrap();
+      // Toggling changes enabled/nextRunAt, which this same screen also
+      // shows per-feature — refetch immediately instead of waiting out
+      // the poll interval, so flipping the switch reflects right away.
+      refetch();
+    } catch (err) {
+      setToggleError(extractApiError(err));
+    } finally {
+      setTogglingFeature(null);
+    }
   };
 
-  const activeCount = features.filter((f) => f.state === "running").length;
+  const topStats = useMemo(() => {
+    if (!data) return [];
+    return [
+      {
+        label: "Active Automations",
+        value: `${data.activeAutomations}`,
+        sub: `of ${data.totalFeatures} features`,
+        positive: data.activeAutomations > 0,
+      },
+      {
+        label: "Generated Today",
+        value: `${data.generatedToday}`,
+        sub: `${data.pendingReviewTotal} pending review`,
+        positive: data.generatedToday > 0,
+      },
+      {
+        label: "Unused Pool Images",
+        value: `${data.imagesUnusedInPool}`,
+        sub: "ready to be picked",
+        positive: data.imagesUnusedInPool > 0,
+      },
+      {
+        label: "Auto-Deleted Today",
+        value: `${data.autoDeletedToday}`,
+        sub: "oldest items cleared",
+        positive: false,
+      },
+    ];
+  }, [data]);
+
+  if (isLoading) {
+    return <div className="py-20 text-center text-[13px] text-[#a39e96]">Loading AI dashboard...</div>;
+  }
+
+  if (error || !data) {
+    return (
+      <div className="flex items-center gap-2 bg-red-50 border border-red-100 rounded-lg px-3.5 py-2.5">
+        <p className="text-red-500 text-xs font-medium">{error ? extractApiError(error) : "No data available."}</p>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-5 pb-10">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
           <h1 className="text-lg font-bold text-[#1c1a17]">AI Dashboard</h1>
           <p className="text-[12.5px] text-[#7a7670] mt-0.5">
-            Live status of your AI automations. Mock data — connect to backend for real polling.
+            {data.activeAutomations} of {data.totalFeatures} automations active · live, refreshes every{" "}
+            {POLL_INTERVAL_MS / 1000}s{isFetching ? " · syncing…" : ""}
           </p>
         </div>
-        <div className="flex items-center gap-2">
-          <button
-            onClick={() => setFeatures((prev) => prev.map((f) => ({ ...f, state: "paused" })))}
-            className="cursor-pointer text-[12.5px] font-semibold px-4 py-2 rounded-lg border border-[#e8e4dc] text-[#1c1a17] hover:bg-[#f7f5f1] transition-colors"
-          >
-            Pause All
-          </button>
-          <button
-            onClick={() => navigate("/ai/settings")}
-            className="cursor-pointer text-[12.5px] font-semibold text-white px-4 py-2 rounded-lg transition-opacity hover:opacity-90"
-            style={{ background: ACCENT }}
-          >
-            Configure Automation
-          </button>
-        </div>
+        <button
+          onClick={() => navigate("/ai/settings")}
+          className="cursor-pointer text-[12.5px] font-semibold text-white px-4 py-2 rounded-lg transition-opacity hover:opacity-90"
+          style={{ background: ACCENT }}
+        >
+          Configure Automation
+        </button>
       </div>
 
       {/* Top stats */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        {TOP_STATS.map((card) => (
+        {topStats.map((card) => (
           <div key={card.label} className="bg-white border border-[#e8e4dc] rounded-xl p-4 flex flex-col gap-2">
             <span className="text-[11px] font-semibold uppercase tracking-wider text-[#a39e96]">{card.label}</span>
             <p className="text-2xl font-black text-[#1c1a17] leading-none">{card.value}</p>
-            <p className={`text-[11px] font-medium ${card.positive ? "text-emerald-600" : "text-[#a39e96]"}`}>{card.sub}</p>
+            <p className={`text-[11px] font-medium ${card.positive ? "text-emerald-600" : "text-[#a39e96]"}`}>
+              {card.sub}
+            </p>
           </div>
         ))}
       </div>
 
+      {/* 30-day generation trend */}
+      <div className="bg-white border border-[#e8e4dc] rounded-xl p-5">
+        <div className="flex items-center justify-between mb-3">
+          <h2 className="text-[13px] font-bold text-[#1c1a17]">Generated — Last 30 Days</h2>
+          <span className="text-[11px] text-[#a39e96]">across all automations</span>
+        </div>
+        <TrendChart trend={data.trend} />
+      </div>
+
+      {toggleError && (
+        <div className="flex items-center gap-2 bg-red-50 border border-red-100 rounded-lg px-3.5 py-2.5">
+          <p className="text-red-500 text-xs font-medium">{toggleError}</p>
+        </div>
+      )}
+
       {/* Per-feature live cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-        {features.map((f) => (
-          <div key={f.key} className="bg-white border border-[#e8e4dc] rounded-xl p-4">
-            <div className="flex items-center justify-between mb-2">
-              <p className="text-[13px] font-bold text-[#1c1a17]">{f.label}</p>
-              <StatePill state={f.state} />
-            </div>
-            <p className="text-[11.5px] text-[#7a7670] mb-3">{f.lastResult}</p>
-            <div className="grid grid-cols-2 gap-2 text-[11.5px] mb-3">
-              <div className="bg-[#faf8f5] rounded-lg px-3 py-2">
-                <p className="text-[10px] uppercase tracking-wide text-[#a39e96] font-semibold mb-0.5">Next Run</p>
-                <p className="font-semibold text-[#1c1a17]">{f.nextRun}</p>
+        {AI_FEATURE_OPTIONS.map((opt) => {
+          const f = data.features.find((x) => x.featureKey === opt.value);
+          if (!f) return null;
+          const state = deriveState(f);
+          const notBuilt = state === "not_built";
+          return (
+            <div
+              key={opt.value}
+              className={`bg-white border rounded-xl p-4 ${notBuilt ? "border-dashed border-[#e2ddd4] opacity-70" : "border-[#e8e4dc]"}`}
+            >
+              <div className="flex items-center justify-between mb-2">
+                <p className="text-[13px] font-bold text-[#1c1a17]">{getAiFeatureLabel(opt.value)}</p>
+                <div className="flex items-center gap-2.5">
+                  <StatePill state={state} />
+                  {!notBuilt && (
+                    <Toggle
+                      checked={f.enabled}
+                      disabled={togglingFeature === opt.value}
+                      onChange={() => handleToggle(opt.value, !f.enabled)}
+                    />
+                  )}
+                </div>
               </div>
-              <div className="bg-[#faf8f5] rounded-lg px-3 py-2">
-                <p className="text-[10px] uppercase tracking-wide text-[#a39e96] font-semibold mb-0.5">Today</p>
-                <p className="font-semibold text-[#1c1a17]">{f.generatedToday} generated</p>
+              <p className="text-[11.5px] text-[#7a7670] mb-3 line-clamp-2 min-h-[16px]">
+                {notBuilt ? "This generator hasn't been built yet." : f.lastLogMessage ?? "No activity yet."}
+              </p>
+              <div className="grid grid-cols-2 gap-2 text-[11.5px] mb-3">
+                <div className="bg-[#faf8f5] rounded-lg px-3 py-2">
+                  <p className="text-[10px] uppercase tracking-wide text-[#a39e96] font-semibold mb-0.5">Next Run</p>
+                  <p className="font-semibold text-[#1c1a17]">
+                    {state === "running" ? formatRelativeToNow(f.nextRunAt, true) : "—"}
+                  </p>
+                </div>
+                <div className="bg-[#faf8f5] rounded-lg px-3 py-2">
+                  <p className="text-[10px] uppercase tracking-wide text-[#a39e96] font-semibold mb-0.5">Today</p>
+                  <p className="font-semibold text-[#1c1a17]">
+                    {notBuilt ? "—" : `${f.generatedToday} generated`}
+                    {!notBuilt && f.pendingReview > 0 ? ` · ${f.pendingReview} pending` : ""}
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-[11px] text-[#a39e96]">
+                  {notBuilt ? "Coming soon" : formatFrequency(f.frequencyMinutes, f.countPerRun)}
+                </span>
+                {!notBuilt && (
+                  <button
+                    onClick={() => navigate(FEATURE_ROUTES[opt.value])}
+                    className="cursor-pointer text-[11.5px] font-semibold hover:opacity-75 transition-opacity"
+                    style={{ color: ACCENT }}
+                  >
+                    Review queue →
+                  </button>
+                )}
               </div>
             </div>
-            <div className="flex items-center justify-between">
-              <span className="text-[11px] text-[#a39e96]">{f.schedule}</span>
-              {f.state !== "error" && (
-                <button
-                  onClick={() => toggleFeature(f.key)}
-                  className="cursor-pointer text-[11.5px] font-semibold hover:opacity-75 transition-opacity"
-                  style={{ color: ACCENT }}
-                >
-                  {f.state === "running" ? "Pause" : "Resume"}
-                </button>
-              )}
-              {f.state === "error" && (
-                <button className="cursor-pointer text-[11.5px] font-semibold hover:opacity-75 transition-opacity" style={{ color: ACCENT }}>
-                  Retry now
-                </button>
-              )}
-            </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
 
       {/* Live activity feed */}
       <div className="bg-white border border-[#e8e4dc] rounded-xl overflow-hidden">
         <div className="flex items-center justify-between px-5 py-3.5 border-b border-[#f0ece6]">
           <h2 className="text-[13px] font-bold text-[#1c1a17]">Live Activity</h2>
-          <span className="text-[11px] text-[#a39e96]">
-            {activeCount} automation{activeCount !== 1 ? "s" : ""} running · updated {clock}s ago
-          </span>
+          <span className="text-[11px] text-[#a39e96]">most recent {data.recentActivity.length} events</span>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full text-[12px]">
@@ -199,14 +365,28 @@ export default function AIDashboard() {
               </tr>
             </thead>
             <tbody className="divide-y divide-[#f0ece6]">
-              {LIVE_FEED.map((row, i) => (
-                <tr key={i} className="hover:bg-[#faf8f5] transition-colors">
-                  <td className="px-5 py-3 font-semibold text-[#1c1a17]">{row.feature}</td>
-                  <td className="px-5 py-3 text-[#4a4640]">{row.detail}</td>
-                  <td className="px-5 py-3"><LogStatusPill status={row.status} /></td>
-                  <td className="px-5 py-3 text-[#a39e96]">{row.time}</td>
+              {data.recentActivity.length === 0 ? (
+                <tr>
+                  <td colSpan={4} className="px-5 py-8 text-center text-[#a39e96]">
+                    No activity yet — enable an automation or generate something manually.
+                  </td>
                 </tr>
-              ))}
+              ) : (
+                data.recentActivity.map((row) => (
+                  <tr key={row.id} className="hover:bg-[#faf8f5] transition-colors">
+                    <td className="px-5 py-3 font-semibold text-[#1c1a17]">{getAiFeatureLabel(row.featureKey)}</td>
+                    <td className="px-5 py-3 text-[#4a4640] max-w-[420px] truncate" title={row.message}>
+                      {row.message}
+                    </td>
+                    <td className="px-5 py-3">
+                      <LogStatusPill status={row.status} />
+                    </td>
+                    <td className="px-5 py-3 text-[#a39e96] whitespace-nowrap">
+                      {formatRelativeToNow(row.createdAt, false)}
+                    </td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
         </div>

@@ -16,6 +16,21 @@ const PAGE_SIZE = 24;
 
 type UsedTab = "all" | "unused" | "used";
 
+// After publish, img.imageUrl on the backend is updated to point at
+// wherever the file now actually lives (moved out of ai-pool into
+// articles/story-items — see aiArticle.service.ts/aiStoryItem.service.ts's
+// publish flows), so this always resolves to the real, current URL —
+// never a stale ai-pool path for a published image.
+async function copyAndOpenUrl(url: string): Promise<void> {
+  try {
+    await navigator.clipboard.writeText(url);
+  } catch {
+    // Clipboard permission can be denied — still open the URL so the
+    // admin can copy it manually from the address bar.
+  }
+  window.open(url, "_blank", "noopener,noreferrer");
+}
+
 function fmtDate(iso: string): string {
   return new Date(iso).toLocaleDateString("en-IN", {
     day: "2-digit",
@@ -31,7 +46,16 @@ export default function AllImagePool() {
   const [tab, setTab] = useState<UsedTab>("all");
   const [pendingDelete, setPendingDelete] = useState<AiImagePoolRecord | null>(null);
   const [uploadError, setUploadError] = useState("");
+  const [copiedId, setCopiedId] = useState<number | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleCopyUrl = (img: AiImagePoolRecord) => {
+    const url = getUploadUrl(img.imageUrl);
+    if (!url) return;
+    void copyAndOpenUrl(url);
+    setCopiedId(img.id);
+    setTimeout(() => setCopiedId((cur) => (cur === img.id ? null : cur)), 1500);
+  };
 
   const {
     data: poolData,
@@ -182,9 +206,17 @@ export default function AllImagePool() {
                   className="w-full h-full object-cover"
                 />
                 {img.isUsed && (
-                  <span className="absolute top-1.5 left-1.5 text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-[#1c1a17]/80 text-white">
-                    Used{img.usedForId ? ` #${img.usedForId}` : ""}
-                  </span>
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleCopyUrl(img);
+                    }}
+                    title="Copy the live image URL and open it in a new tab"
+                    className="cursor-pointer absolute top-1.5 left-1.5 text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-[#1c1a17]/80 text-white hover:bg-[#1c1a17] transition-colors"
+                  >
+                    {copiedId === img.id ? "Copied!" : `Used${img.usedForId ? ` #${img.usedForId}` : ""}`}
+                  </button>
                 )}
                 <button
                   onClick={() => setPendingDelete(img)}

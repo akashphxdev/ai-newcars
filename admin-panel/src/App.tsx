@@ -44,6 +44,8 @@ import AllAiFaqs from "./pages/Ai/Faqs/AllAiFaqs";
 import AllAiLogs from "./pages/Ai/Logs/AllAiLogs";
 import AllImagePool from "./pages/Ai/ImagePool/AllImagePool";
 import AllAiSeos from "./pages/Ai/Seo/AllAiSeos";
+import AllAiArticles from "./pages/Ai/Articles/AllAiArticles";
+import AllAiStoryItems from "./pages/Ai/Stories/AllAiStoryItems";
 // ── Auth guard — baad mein real auth logic lagao ──────────────────────────────
 function RequireAuth({ children }: { children: React.ReactNode }) {
   const isLoggedIn = !!localStorage.getItem("admin_token"); // apna auth check yahan
@@ -109,6 +111,8 @@ export default function App() {
 
           <Route path="/ai/dashboard" element={<AIDashboard />} />
           <Route path="/ai/car-faqs/review" element={<AllAiFaqs />} />
+          <Route path="/ai/article/review" element={<AllAiArticles />} />
+          <Route path="/ai/story/review" element={<AllAiStoryItems />} />
           <Route path ="/ai/seo/review" element={<AllAiSeos/>}/>
           <Route path="/ai/image-pool" element={<AllImagePool />} />
           <Route path ="/ai/logs" element={<AllAiLogs/>}/>

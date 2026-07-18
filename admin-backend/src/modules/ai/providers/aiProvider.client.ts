@@ -5,7 +5,7 @@
 // installed first, so those branches throw a clear "not wired up yet"
 // error instead of silently failing or half-working.
 
-const OLLAMA_TIMEOUT_MS = 120_000; // generation can be slow on local hardware
+const OLLAMA_TIMEOUT_MS = 300_000; // generation can be slow on local hardware
 const OLLAMA_PING_TIMEOUT_MS = 10_000; // /api/tags is just a list call — should be fast
 
 export interface ProviderCallSettings {
@@ -33,11 +33,15 @@ async function callOllama(settings: ProviderCallSettings, prompt: string): Promi
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        model: settings.model,
-        prompt,
-        stream: false,
-        format: 'json',
-      }),
+      model: settings.model,
+      prompt,
+      stream: false,
+      format: 'json',
+      options: {
+        num_predict: 4096,
+        num_ctx: 8192,
+      },
+    }),
       signal: controller.signal,
     });
 

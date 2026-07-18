@@ -10,8 +10,6 @@ export interface AiAutomationRuleRecord {
   language: string;
   autoPublish: boolean;
   maxTotal: number | null;
-  imageFolder: string | null;
-  autoPickImages: boolean;
   autoDelete: boolean;
   keepLatest: number | null;
   deleteStrategy: string;
@@ -30,8 +28,6 @@ export interface UpsertAutomationRuleInput {
   language: "english" | "hindi" | "hinglish";
   autoPublish: boolean;
   maxTotal?: number | null;
-  imageFolder?: string | null;
-  autoPickImages: boolean;
   autoDelete: boolean;
   keepLatest?: number | null;
   deleteStrategy: "latest" | "lowestViews";
@@ -70,7 +66,24 @@ export const automationRuleApi = api.injectEndpoints({
       transformResponse: (res: AutomationRuleSingleRawResponse) => res.data as AiAutomationRuleRecord,
       invalidatesTags: ["AiAutomationRule"],
     }),
+
+    // Dashboard's on/off switch — only ever touches `enabled`, never
+    // the rest of the config (see automationRule.service.ts's
+    // toggleAutomationRule on the backend).
+    toggleAutomationRule: builder.mutation<AiAutomationRuleRecord, { featureKey: number; enabled: boolean }>({
+      query: ({ featureKey, enabled }) => ({
+        url: `/ai/automation-rules/${featureKey}/toggle`,
+        method: "PATCH",
+        data: { enabled },
+      }),
+      transformResponse: (res: AutomationRuleSingleRawResponse) => res.data as AiAutomationRuleRecord,
+      invalidatesTags: ["AiAutomationRule"],
+    }),
   }),
 });
 
-export const { useGetAutomationRulesQuery, useUpsertAutomationRuleMutation } = automationRuleApi;
+export const {
+  useGetAutomationRulesQuery,
+  useUpsertAutomationRuleMutation,
+  useToggleAutomationRuleMutation,
+} = automationRuleApi;

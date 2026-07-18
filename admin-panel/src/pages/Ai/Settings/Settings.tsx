@@ -74,13 +74,11 @@ const PROVIDER_META: Record<
   },
 };
 
-// hasImages: only content-producing features (Article/Story) get the
-// image-folder + rotation fields — same UI restriction as before.
-const FEATURE_META: Record<number, { desc: string; hasImages: boolean }> = {
-  1: { desc: "Auto-writes articles, picks a cover image, saves as draft.", hasImages: true },
-  2: { desc: "Auto-creates story items from a media folder with AI captions.", hasImages: true },
-  3: { desc: "Auto-fills meta title, description & keywords on existing pages.", hasImages: false },
-  4: { desc: "Auto-builds FAQs from car variant specs.", hasImages: false },
+const FEATURE_META: Record<number, { desc: string }> = {
+  1: { desc: "Auto-writes articles, picks a cover image from the AI image pool, saves as draft." },
+  2: { desc: "Auto-creates story items with AI captions, using images from the AI image pool." },
+  3: { desc: "Auto-fills meta title, description & keywords on existing pages." },
+  4: { desc: "Auto-builds FAQs from car variant specs." },
 };
 
 const FREQUENCY_OPTIONS = [
@@ -103,8 +101,6 @@ interface AutomationConfig {
   language: "english" | "hindi" | "hinglish";
   autoPublish: boolean;
   maxTotal: number | null;
-  imageFolder: string;
-  autoPickImages: boolean;
   autoDelete: boolean;
   keepLatest: number;
   deleteStrategy: "latest" | "lowestViews";
@@ -117,8 +113,6 @@ const DEFAULT_RULE: AutomationConfig = {
   language: "english",
   autoPublish: false,
   maxTotal: null,
-  imageFolder: "",
-  autoPickImages: false,
   autoDelete: false,
   keepLatest: 10,
   deleteStrategy: "latest",
@@ -245,25 +239,6 @@ function AutomationCard({
             </div>
           </div>
 
-          {meta.hasImages && (
-            <div>
-              <div className="flex items-center justify-between mb-1.5">
-                <label className="text-[11px] font-semibold text-[#7a7670]">Auto-Pick Images From Folder</label>
-                <Toggle checked={config.autoPickImages} onChange={() => update({ autoPickImages: !config.autoPickImages })} />
-              </div>
-              <input
-                value={config.imageFolder}
-                onChange={(e) => update({ imageFolder: e.target.value })}
-                disabled={!config.enabled || !config.autoPickImages}
-                placeholder="/uploads/ai-source/..."
-                className="w-full text-[12.5px] border border-[#e8e4dc] rounded-lg px-3 py-2 outline-none focus:border-[#D4300F] disabled:opacity-50"
-              />
-              <p className="text-[11px] text-[#a39e96] mt-1.5">
-                AI will pick the next unused image from this folder, upload it, and attach it as the cover image automatically.
-              </p>
-            </div>
-          )}
-
           <div>
             <div className="flex items-center justify-between mb-1.5">
               <label className="text-[11px] font-semibold text-[#7a7670]">Limit Total Live Items</label>
@@ -374,10 +349,6 @@ function AISettingsForm({
   // now becomes the new key. Left blank on save = keep the existing one.
   const [apiKey, setApiKey] = useState("");
   const [model, setModel] = useState(initialSettings?.model ?? PROVIDER_META[1].defaultModel);
-  const [language, setLanguage] = useState(initialSettings?.language ?? "english");
-  const [autoSaveMode, setAutoSaveMode] = useState<"draft" | "preview">(
-    (initialSettings?.autoSaveMode as "draft" | "preview") ?? "draft",
-  );
   const [hasApiKey, setHasApiKey] = useState(initialSettings?.hasApiKey ?? false);
   const [maskedApiKey, setMaskedApiKey] = useState(initialSettings?.maskedApiKey ?? null);
 
@@ -398,8 +369,6 @@ function AISettingsForm({
             language: (existing.language as AutomationConfig["language"]) ?? "english",
             autoPublish: existing.autoPublish,
             maxTotal: existing.maxTotal ?? null,
-            imageFolder: existing.imageFolder ?? "",
-            autoPickImages: existing.autoPickImages,
             autoDelete: existing.autoDelete,
             keepLatest: existing.keepLatest ?? 10,
             deleteStrategy: (existing.deleteStrategy as AutomationConfig["deleteStrategy"]) ?? "latest",
@@ -448,8 +417,6 @@ function AISettingsForm({
         baseUrl: providerMeta.fields === "local" ? baseUrl.trim() || undefined : undefined,
         apiKey: apiKey.trim() || undefined,
         model: model.trim(),
-        language: language as "english" | "hindi" | "hinglish",
-        autoSaveMode,
       }).unwrap();
 
       setHasApiKey(result.hasApiKey);
@@ -468,8 +435,6 @@ function AISettingsForm({
               language: cfg.language,
               autoPublish: cfg.autoPublish,
               maxTotal: cfg.maxTotal,
-              imageFolder: cfg.imageFolder.trim() || null,
-              autoPickImages: cfg.autoPickImages,
               autoDelete: cfg.autoDelete,
               keepLatest: cfg.autoDelete ? cfg.keepLatest : null,
               deleteStrategy: cfg.deleteStrategy,
@@ -601,33 +566,6 @@ function AISettingsForm({
               ● {testMessage}
             </span>
           )}
-        </div>
-      </div>
-
-      {/* Behavior */}
-      <div className="bg-white border border-[#e8e4dc] rounded-xl p-5 grid grid-cols-1 md:grid-cols-2 gap-5">
-        <div>
-          <label className="text-[11px] font-semibold text-[#7a7670] block mb-1.5">Default Output Language</label>
-          <select
-            value={language}
-            onChange={(e) => setLanguage(e.target.value)}
-            className="w-full text-[12.5px] border border-[#e8e4dc] rounded-lg px-3 py-2 outline-none focus:border-[#D4300F] bg-white"
-          >
-            <option value="english">English</option>
-            <option value="hindi">Hindi</option>
-            <option value="hinglish">Hinglish</option>
-          </select>
-        </div>
-        <div>
-          <label className="text-[11px] font-semibold text-[#7a7670] block mb-1.5">After Generating</label>
-          <select
-            value={autoSaveMode}
-            onChange={(e) => setAutoSaveMode(e.target.value as "draft" | "preview")}
-            className="w-full text-[12.5px] border border-[#e8e4dc] rounded-lg px-3 py-2 outline-none focus:border-[#D4300F] bg-white"
-          >
-            <option value="draft">Save as Draft automatically</option>
-            <option value="preview">Show preview before saving</option>
-          </select>
         </div>
       </div>
 

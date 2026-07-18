@@ -25,3 +25,27 @@ export const AI_FAQ_STATUS = {
   REJECTED: 3,
   PUBLISHED: 4,
 } as const;
+
+// AiArticle.status — same pending -> approved/rejected -> published
+// lifecycle as AiFaq. published/rejected are both terminal.
+export const AI_ARTICLE_STATUS_CODES = [1, 2, 3, 4] as const;
+export type AiArticleStatusCode = (typeof AI_ARTICLE_STATUS_CODES)[number];
+
+export const AI_ARTICLE_STATUS = {
+  PENDING: 1,
+  APPROVED: 2,
+  REJECTED: 3,
+  PUBLISHED: 4,
+} as const;
+
+// AiStoryItem.status — same pending -> approved/rejected -> published
+// lifecycle as AiFaq/AiArticle.
+export const AI_STORY_ITEM_STATUS_CODES = [1, 2, 3, 4] as const;
+export type AiStoryItemStatusCode = (typeof AI_STORY_ITEM_STATUS_CODES)[number];
+
+export const AI_STORY_ITEM_STATUS = {
+  PENDING: 1,
+  APPROVED: 2,
+  REJECTED: 3,
+  PUBLISHED: 4,
+} as const;

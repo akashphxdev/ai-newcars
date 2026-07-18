@@ -19,8 +19,6 @@ export const upsertAiSettingSchema = z.object({
   baseUrl: z.string().trim().url('Must be a valid URL').max(255).optional(),
   apiKey: z.string().trim().min(1).max(500).optional(),
   model: z.string().trim().min(1, 'Model is required').max(100),
-  language: z.enum(['english', 'hindi', 'hinglish']).default('english'),
-  autoSaveMode: z.enum(['draft', 'preview']).default('draft'),
 });
 
 export const testAiConnectionSchema = z.object({

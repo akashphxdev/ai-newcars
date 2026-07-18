@@ -2,6 +2,7 @@
 
 import { prisma } from '@/prisma/client';
 import { createLog } from '@/core/utils/createLog';
+import { upsertAutomationRuleSchema } from './automationRule.validation';
 import type { UpsertAutomationRuleParsed } from './automationRule.validation';
 import type { AiAutomationRuleResponse } from './automationRule.types';
 
@@ -14,8 +15,6 @@ const RULE_SELECT = {
   language: true,
   autoPublish: true,
   maxTotal: true,
-  imageFolder: true,
-  autoPickImages: true,
   autoDelete: true,
   keepLatest: true,
   deleteStrategy: true,
@@ -88,8 +87,6 @@ export async function upsertAutomationRule(
     language: input.language,
     autoPublish: input.autoPublish,
     maxTotal: input.maxTotal ?? null,
-    imageFolder: input.imageFolder ?? null,
-    autoPickImages: input.autoPickImages,
     autoDelete: input.autoDelete,
     keepLatest: input.keepLatest ?? null,
     deleteStrategy: input.deleteStrategy,
@@ -112,6 +109,47 @@ export async function upsertAutomationRule(
     description: `${existing ? 'Updated' : 'Created'} AI automation rule for feature ${featureKey} (${
       input.enabled ? 'enabled' : 'disabled'
     })`,
+    ipAddress,
+  });
+
+  return row as unknown as AiAutomationRuleResponse;
+}
+
+// The dashboard's on/off switch — only ever touches `enabled` (+ the
+// nextRunAt it implies), never the rest of the config, so it can't
+// clobber a carefully-tuned frequency/countPerRun/etc. set on the
+// Settings page.
+export async function toggleAutomationRule(
+  featureKey: number,
+  enabled: boolean,
+  actorId: number,
+  ipAddress?: string | null,
+): Promise<AiAutomationRuleResponse> {
+  const existing = await prisma.aiAutomationRule.findUnique({
+    where: { featureKey },
+    select: { frequencyMinutes: true },
+  });
+
+  if (!existing) {
+    // Never configured on the Settings page yet — create it now with
+    // the same defaults Settings' own save would have used, so the
+    // toggle "just works" instead of forcing a detour through Settings
+    // first the very first time a feature is turned on.
+    const defaults = upsertAutomationRuleSchema.parse({ enabled });
+    return upsertAutomationRule(featureKey, defaults, actorId, ipAddress);
+  }
+
+  const nextRunAt = enabled ? new Date(Date.now() + existing.frequencyMinutes * 60_000) : null;
+
+  const row = await prisma.aiAutomationRule.update({
+    where: { featureKey },
+    data: { enabled, nextRunAt, updatedBy: actorId },
+    select: RULE_SELECT,
+  });
+
+  await createLog({
+    adminId: actorId,
+    description: `${enabled ? 'Enabled' : 'Disabled'} AI automation rule for feature ${featureKey} from the dashboard`,
     ipAddress,
   });
 

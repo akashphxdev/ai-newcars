@@ -9,8 +9,6 @@ export interface AiSettingResponse {
   hasApiKey: boolean;
   maskedApiKey: string | null;
   model: string;
-  language: string;
-  autoSaveMode: string;
   createdBy: number;
   updatedBy: number;
   createdAt: Date;

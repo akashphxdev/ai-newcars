@@ -14,8 +14,6 @@ const SETTING_SELECT = {
   baseUrl: true,
   apiKey: true,
   model: true,
-  language: true,
-  autoSaveMode: true,
   createdBy: true,
   updatedBy: true,
   createdAt: true,
@@ -28,8 +26,6 @@ type RawSetting = {
   baseUrl: string | null;
   apiKey: string | null;
   model: string;
-  language: string;
-  autoSaveMode: string;
   createdBy: number;
   updatedBy: number;
   createdAt: Date;
@@ -55,8 +51,6 @@ function toResponse(row: RawSetting): AiSettingResponse {
     hasApiKey: Boolean(row.apiKey),
     maskedApiKey,
     model: row.model,
-    language: row.language,
-    autoSaveMode: row.autoSaveMode,
     createdBy: row.createdBy,
     updatedBy: row.updatedBy,
     createdAt: row.createdAt,
@@ -133,8 +127,6 @@ export async function upsertSettings(
           // stored, so the admin isn't forced to re-paste it every save.
           ...(encryptedApiKey !== undefined ? { apiKey: encryptedApiKey } : {}),
           model: input.model,
-          language: input.language,
-          autoSaveMode: input.autoSaveMode,
           updatedBy: actorId,
         },
         select: SETTING_SELECT,
@@ -145,8 +137,6 @@ export async function upsertSettings(
           baseUrl: input.baseUrl ?? null,
           apiKey: encryptedApiKey ?? null,
           model: input.model,
-          language: input.language,
-          autoSaveMode: input.autoSaveMode,
           createdBy: actorId,
           updatedBy: actorId,
         },

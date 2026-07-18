@@ -17,12 +17,19 @@ export const upsertAutomationRuleSchema = z.object({
   language: z.enum(['english', 'hindi', 'hinglish']).default('english'),
   autoPublish: z.boolean().default(false),
   maxTotal: z.coerce.number().int().positive().nullable().optional(),
-  imageFolder: z.string().trim().max(255).nullable().optional(),
-  autoPickImages: z.boolean().default(false),
   autoDelete: z.boolean().default(false),
   keepLatest: z.coerce.number().int().positive().nullable().optional(),
   deleteStrategy: z.enum(['latest', 'lowestViews']).default('latest'),
 });
 
+// Dashboard's on/off switch — only ever touches `enabled`, never the
+// rest of the rule's config, so it can't accidentally clobber a
+// carefully-tuned frequency/countPerRun/etc. that was set on the
+// Settings page.
+export const toggleAutomationRuleSchema = z.object({
+  enabled: z.boolean(),
+});
+
 export type FeatureKeyParamParsed = z.infer<typeof featureKeyParamSchema>;
 export type UpsertAutomationRuleParsed = z.infer<typeof upsertAutomationRuleSchema>;
+export type ToggleAutomationRuleParsed = z.infer<typeof toggleAutomationRuleSchema>;

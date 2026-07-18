@@ -11,8 +11,6 @@ export interface AiAutomationRuleResponse {
   language: string;
   autoPublish: boolean;
   maxTotal: number | null;
-  imageFolder: string | null;
-  autoPickImages: boolean;
   autoDelete: boolean;
   keepLatest: number | null;
   deleteStrategy: string;

@@ -78,3 +78,49 @@ export function getAiLogStatusLabel(code: number | null | undefined): string {
   if (code == null) return "—";
   return AI_LOG_STATUS_OPTIONS.find((o) => o.value === code)?.label ?? "—";
 }
+
+// ===== AI story item review status =====
+// Mirrors AI_STORY_ITEM_STATUS_CODES / AI_STORY_ITEM_STATUS in
+// admin-backend/src/modules/ai/ai.constants.ts. pending -> approved/rejected,
+// approved -> published (the only transition that creates a real story item).
+export const AI_STORY_ITEM_STATUS = {
+  PENDING: 1,
+  APPROVED: 2,
+  REJECTED: 3,
+  PUBLISHED: 4,
+} as const;
+
+export const AI_STORY_ITEM_STATUS_OPTIONS: LookupOption[] = [
+  { value: AI_STORY_ITEM_STATUS.PENDING, label: "Pending" },
+  { value: AI_STORY_ITEM_STATUS.APPROVED, label: "Approved" },
+  { value: AI_STORY_ITEM_STATUS.REJECTED, label: "Rejected" },
+  { value: AI_STORY_ITEM_STATUS.PUBLISHED, label: "Published" },
+];
+
+export function getAiStoryItemStatusLabel(code: number | null | undefined): string {
+  if (code == null) return "—";
+  return AI_STORY_ITEM_STATUS_OPTIONS.find((o) => o.value === code)?.label ?? "—";
+}
+
+// ===== AI Article review status =====
+// Mirrors AI_ARTICLE_STATUS_CODES / AI_ARTICLE_STATUS in
+// admin-backend/src/modules/ai/ai.constants.ts. pending -> approved/rejected,
+// approved -> published (the only transition that creates a real Article).
+export const AI_ARTICLE_STATUS = {
+  PENDING: 1,
+  APPROVED: 2,
+  REJECTED: 3,
+  PUBLISHED: 4,
+} as const;
+
+export const AI_ARTICLE_STATUS_OPTIONS: LookupOption[] = [
+  { value: AI_ARTICLE_STATUS.PENDING, label: "Pending" },
+  { value: AI_ARTICLE_STATUS.APPROVED, label: "Approved" },
+  { value: AI_ARTICLE_STATUS.REJECTED, label: "Rejected" },
+  { value: AI_ARTICLE_STATUS.PUBLISHED, label: "Published" },
+];
+
+export function getAiArticleStatusLabel(code: number | null | undefined): string {
+  if (code == null) return "—";
+  return AI_ARTICLE_STATUS_OPTIONS.find((o) => o.value === code)?.label ?? "—";
+}
