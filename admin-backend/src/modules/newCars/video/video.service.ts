@@ -83,7 +83,12 @@ async function assertModelExists(modelId: number) {
   }
 }
 
-export async function createVideo(input: CreateVideoParsed, actorId: number, thumbnailFilename: string) {
+export async function createVideo(
+  input: CreateVideoParsed,
+  actorId: number,
+  thumbnailFilename: string,
+  ipAddress?: string | null,
+) {
   await assertModelExists(input.modelId);
 
   const video = await prisma.carVideo.create({
@@ -105,6 +110,7 @@ export async function createVideo(input: CreateVideoParsed, actorId: number, thu
   await createLog({
     adminId: actorId,
     description: `Created video "${video.title}" (id ${video.id}) for "${video.model.brand.name} ${video.model.name}"`,
+    ipAddress,
   });
 
   return video;
@@ -113,7 +119,12 @@ export async function createVideo(input: CreateVideoParsed, actorId: number, thu
 // Full replace on every edit — same convention as faq/variant/offer.
 // Thumbnail is NOT touched here — it's replaced via the dedicated
 // uploadVideoThumbnail() below (same split as Brand's logo).
-export async function updateVideo(id: number, input: UpdateVideoParsed, actorId: number) {
+export async function updateVideo(
+  id: number,
+  input: UpdateVideoParsed,
+  actorId: number,
+  ipAddress?: string | null,
+) {
   await getVideoById(id);
   await assertModelExists(input.modelId);
 
@@ -134,6 +145,7 @@ export async function updateVideo(id: number, input: UpdateVideoParsed, actorId:
   await createLog({
     adminId: actorId,
     description: `Updated video "${video.title}" (id ${id})`,
+    ipAddress,
   });
 
   return video;
@@ -141,7 +153,12 @@ export async function updateVideo(id: number, input: UpdateVideoParsed, actorId:
 
 // Lightweight row-level Active/Inactive toggle — separate from the full
 // update so flipping the switch doesn't need the whole edit form's payload.
-export async function updateVideoStatus(id: number, isActive: boolean, actorId: number) {
+export async function updateVideoStatus(
+  id: number,
+  isActive: boolean,
+  actorId: number,
+  ipAddress?: string | null,
+) {
   await getVideoById(id);
 
   const video = await prisma.carVideo.update({
@@ -153,6 +170,7 @@ export async function updateVideoStatus(id: number, isActive: boolean, actorId: 
   await createLog({
     adminId: actorId,
     description: `${isActive ? 'Activated' : 'Deactivated'} video "${video.title}" (id ${id})`,
+    ipAddress,
   });
 
   return video;
@@ -164,6 +182,7 @@ export async function uploadVideoThumbnail(
   id: number,
   savedFilename: string,
   actorId: number,
+  ipAddress?: string | null,
 ): Promise<VideoUploadThumbnailResult> {
   const existing = await getVideoById(id);
 
@@ -182,12 +201,13 @@ export async function uploadVideoThumbnail(
   await createLog({
     adminId: actorId,
     description: `Updated thumbnail for video "${existing.title}" (id ${id})`,
+    ipAddress,
   });
 
   return video as VideoUploadThumbnailResult;
 }
 
-export async function deleteVideo(id: number, actorId: number) {
+export async function deleteVideo(id: number, actorId: number, ipAddress?: string | null) {
   const video = await getVideoById(id);
 
   await prisma.carVideo.delete({ where: { id } });
@@ -199,6 +219,7 @@ export async function deleteVideo(id: number, actorId: number) {
   await createLog({
     adminId: actorId,
     description: `Deleted video "${video.title}" (id ${id})`,
+    ipAddress,
   });
 
   return { message: 'Video deleted successfully' };

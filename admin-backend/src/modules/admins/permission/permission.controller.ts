@@ -3,6 +3,7 @@
 import { Request, Response } from 'express';
 import { ApiError } from '@/core/errors/ApiError';
 import { sendSuccess } from '@/core/utils/sendResponse';
+import { getClientIp } from '@/core/utils/getClientIp';
 import * as permissionService from './permission.service';
 import {
   createPermissionSchema,
@@ -23,7 +24,7 @@ export async function createPermission(req: Request, res: Response) {
 
   if (!req.auth) throw ApiError.unauthorized();
 
-  const permission = await permissionService.createPermission(input, req.auth.id);
+  const permission = await permissionService.createPermission(input, req.auth.id, getClientIp(req));
   return sendSuccess(res, permission, 'Permission created successfully', 201);
 }
 
@@ -33,6 +34,6 @@ export async function deletePermission(req: Request, res: Response) {
 
   if (!req.auth) throw ApiError.unauthorized();
 
-  const result = await permissionService.deletePermission(id, req.auth.id);
+  const result = await permissionService.deletePermission(id, req.auth.id, getClientIp(req));
   return sendSuccess(res, null, result.message);
 }

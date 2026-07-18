@@ -109,7 +109,11 @@ async function assertNameAvailableInState(stateId: number, name: string, exclude
   }
 }
 
-export async function createDistrict(input: CreateDistrictParsed, actorId: number) {
+export async function createDistrict(
+  input: CreateDistrictParsed,
+  actorId: number,
+  ipAddress?: string | null,
+) {
   await assertStateExists(input.stateId);
   await assertNameAvailableInState(input.stateId, input.name);
 
@@ -124,12 +128,18 @@ export async function createDistrict(input: CreateDistrictParsed, actorId: numbe
   await createLog({
     adminId: actorId,
     description: `Created district "${district.name}" (id ${district.id}) under state "${district.state.name}"`,
+    ipAddress,
   });
 
   return district;
 }
 
-export async function updateDistrict(id: number, input: UpdateDistrictParsed, actorId: number) {
+export async function updateDistrict(
+  id: number,
+  input: UpdateDistrictParsed,
+  actorId: number,
+  ipAddress?: string | null,
+) {
   const existing = await getDistrictById(id);
 
   const targetStateId = input.stateId ?? existing.stateId;
@@ -151,12 +161,13 @@ export async function updateDistrict(id: number, input: UpdateDistrictParsed, ac
   await createLog({
     adminId: actorId,
     description: `Updated district "${district.name}" (id ${district.id})`,
+    ipAddress,
   });
 
   return district;
 }
 
-export async function deleteDistrict(id: number, actorId: number) {
+export async function deleteDistrict(id: number, actorId: number, ipAddress?: string | null) {
   const district = await getDistrictById(id);
 
   // Same "protect referenced parent rows" rule as state.service.ts's
@@ -173,6 +184,7 @@ export async function deleteDistrict(id: number, actorId: number) {
   await createLog({
     adminId: actorId,
     description: `Deleted district "${district.name}" (id ${id})`,
+    ipAddress,
   });
 
   return { message: 'District deleted successfully' };

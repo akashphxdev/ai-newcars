@@ -103,6 +103,7 @@ export async function createStoryItem(
   input: CreateStoryItemParsed,
   actorId: number,
   mediaFilename: string,
+  ipAddress?: string | null,
 ): Promise<StoryItemRecord> {
   await assertGroupExists(input.groupId);
 
@@ -132,6 +133,7 @@ export async function createStoryItem(
   await createLog({
     adminId: actorId,
     description: `Created story item in group "${item.group.title}" (id ${item.id})`,
+    ipAddress,
   });
 
   return item as unknown as StoryItemRecord;
@@ -141,6 +143,7 @@ export async function updateStoryItem(
   id: number,
   input: UpdateStoryItemParsed,
   actorId: number,
+  ipAddress?: string | null,
 ): Promise<StoryItemRecord> {
   const existing = await getStoryItemById(id);
   await assertGroupExists(input.groupId);
@@ -179,6 +182,7 @@ export async function updateStoryItem(
   await createLog({
     adminId: actorId,
     description: `Updated story item in group "${item.group.title}" (id ${id})`,
+    ipAddress,
   });
 
   return item as unknown as StoryItemRecord;
@@ -190,6 +194,7 @@ export async function updateStoryItemStatus(
   actorId: number,
   startAt?: Date | null,
   endAt?: Date | null,
+  ipAddress?: string | null,
 ): Promise<StoryItemRecord> {
   const existing = await getStoryItemById(id);
 
@@ -209,6 +214,7 @@ export async function updateStoryItemStatus(
   await createLog({
     adminId: actorId,
     description: `Set story item in group "${existing.group.title}" (id ${id}) to "${status}"`,
+    ipAddress,
   });
 
   return item as unknown as StoryItemRecord;
@@ -219,6 +225,7 @@ export async function uploadStoryItemMedia(
   mediaType: MediaType,
   savedFilename: string,
   actorId: number,
+  ipAddress?: string | null,
 ): Promise<StoryItemUploadMediaResult> {
   const existing = await getStoryItemById(id);
 
@@ -244,12 +251,13 @@ export async function uploadStoryItemMedia(
   await createLog({
     adminId: actorId,
     description: `Updated media for story item in group "${existing.group.title}" (id ${id})`,
+    ipAddress,
   });
 
   return item;
 }
 
-export async function deleteStoryItem(id: number, actorId: number) {
+export async function deleteStoryItem(id: number, actorId: number, ipAddress?: string | null) {
   const existing = await getStoryItemById(id);
 
   await prisma.storyItem.delete({ where: { id } });
@@ -259,6 +267,7 @@ export async function deleteStoryItem(id: number, actorId: number) {
   await createLog({
     adminId: actorId,
     description: `Deleted story item from group "${existing.group.title}" (id ${id})`,
+    ipAddress,
   });
 
   return { message: 'Story item deleted successfully' };

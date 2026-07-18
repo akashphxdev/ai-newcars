@@ -210,9 +210,7 @@ model AdminUser {
   aiSettingsUpdated        AiSetting[]         @relation("AiSettingUpdatedBy")
   aiAutomationRulesCreated AiAutomationRule[]  @relation("AiAutomationRuleCreatedBy")
   aiAutomationRulesUpdated AiAutomationRule[]  @relation("AiAutomationRuleUpdatedBy")
-  aiFaqsCreated            AiFaq[]             @relation("AiFaqCreatedBy")
   aiFaqsReviewed           AiFaq[]             @relation("AiFaqReviewedBy")
-  aiLogsCreated            AiLog[]             @relation("AiLogCreatedBy")
 
   @@map("admin_users")
 }
@@ -379,7 +377,6 @@ model CarVariant {
 
   icePowertrains      CarPowertrainIce[]
   electricPowertrains CarPowertrainElectric[]
-  aiFaqs              AiFaq[]
   images              CarImage[]
   features            CarFeature[]
   newCarOffers        NewCarOffer[]
@@ -1428,11 +1425,9 @@ model AiAutomationRule {
 }
 
 model AiFaq {
-  id        Int         @id @default(autoincrement())
-  modelId   Int         @map("model_id")
-  model     CarModel    @relation(fields: [modelId], references: [id])
-  variantId Int?        @map("variant_id")
-  variant   CarVariant? @relation(fields: [variantId], references: [id])
+  id      Int      @id @default(autoincrement())
+  modelId Int      @map("model_id")
+  model   CarModel @relation(fields: [modelId], references: [id])
 
   question String @db.VarChar(255)
   answer   String @db.Text
@@ -1444,8 +1439,6 @@ model AiFaq {
   publishedFaqId Int?    @map("published_faq_id")
   publishedFaq   CarFaq? @relation(fields: [publishedFaqId], references: [id])
 
-  createdBy       Int?       @map("created_by")
-  createdByAdmin  AdminUser? @relation("AiFaqCreatedBy", fields: [createdBy], references: [id])
   reviewedBy      Int?       @map("reviewed_by")
   reviewedByAdmin AdminUser? @relation("AiFaqReviewedBy", fields: [reviewedBy], references: [id])
   reviewedAt      DateTime?  @map("reviewed_at")
@@ -1464,9 +1457,6 @@ model AiLog {
   message    String   @db.VarChar(500)
   meta       Json?
   durationMs Int?     @map("duration_ms")
-
-  createdBy      Int?       @map("created_by")
-  createdByAdmin AdminUser? @relation("AiLogCreatedBy", fields: [createdBy], references: [id])
 
   createdAt DateTime @default(now()) @map("created_at")
 

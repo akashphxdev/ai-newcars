@@ -5,6 +5,7 @@
 // Studio's generator jobs — a failed log write should never take down
 // the generation run that triggered it.
 
+import { Prisma } from '@prisma/client';
 import { prisma } from '@/prisma/client';
 import { logger } from '@/core/utils/logger';
 
@@ -18,7 +19,6 @@ export interface CreateAiLogInput {
   message: string;
   meta?: Record<string, unknown>;
   durationMs?: number;
-  createdBy?: number | null;
 }
 
 export async function createAiLog(input: CreateAiLogInput): Promise<void> {
@@ -29,9 +29,8 @@ export async function createAiLog(input: CreateAiLogInput): Promise<void> {
         action: input.action,
         status: input.status,
         message: input.message.slice(0, 500),
-        meta: input.meta ?? undefined,
+        meta: input.meta !== undefined ? (input.meta as Prisma.InputJsonValue) : undefined,
         durationMs: input.durationMs,
-        createdBy: input.createdBy ?? null,
       },
     });
   } catch (err) {

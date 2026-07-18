@@ -4,6 +4,7 @@ import { Request, Response } from 'express';
 import { ApiError } from '@/core/errors/ApiError';
 import { sendSuccess, sendPaginated } from '@/core/utils/sendResponse';
 import { buildPublicPath, deleteUploadedFile } from '@/core/utils/fileStorage.util';
+import { getClientIp } from '@/core/utils/getClientIp';
 import * as storyGroupService from './storyGroup.service';
 import {
   storyGroupListQuerySchema,
@@ -40,7 +41,7 @@ export async function createStoryGroup(req: Request, res: Response) {
   }
 
   try {
-    const group = await storyGroupService.createStoryGroup(input, req.auth.id, req.file.filename);
+    const group = await storyGroupService.createStoryGroup(input, req.auth.id, req.file.filename, getClientIp(req));
     return sendSuccess(res, group, 'Story group created successfully', 201);
   } catch (err) {
     if (req.file) {
@@ -58,7 +59,7 @@ export async function updateStoryGroup(req: Request, res: Response) {
     throw ApiError.unauthorized();
   }
 
-  const group = await storyGroupService.updateStoryGroup(id, input, req.auth.id);
+  const group = await storyGroupService.updateStoryGroup(id, input, req.auth.id, getClientIp(req));
   return sendSuccess(res, group, 'Story group updated successfully');
 }
 
@@ -71,7 +72,7 @@ export async function updateStoryGroupStatus(req: Request, res: Response) {
     throw ApiError.unauthorized();
   }
 
-  const group = await storyGroupService.updateStoryGroupStatus(id, isActive, req.auth.id);
+  const group = await storyGroupService.updateStoryGroupStatus(id, isActive, req.auth.id, getClientIp(req));
   return sendSuccess(res, group, 'Story group status updated successfully');
 }
 
@@ -86,7 +87,7 @@ export async function uploadStoryGroupCover(req: Request, res: Response) {
     throw ApiError.badRequest('No cover file received (expected field name "cover")');
   }
 
-  const group = await storyGroupService.uploadStoryGroupCover(id, coverMediaType, req.file.filename, req.auth.id);
+  const group = await storyGroupService.uploadStoryGroupCover(id, coverMediaType, req.file.filename, req.auth.id, getClientIp(req));
   return sendSuccess(res, group, 'Story group cover updated successfully');
 }
 
@@ -98,7 +99,7 @@ export async function deleteStoryGroup(req: Request, res: Response) {
     throw ApiError.unauthorized();
   }
 
-  const result = await storyGroupService.deleteStoryGroup(id, req.auth.id);
+  const result = await storyGroupService.deleteStoryGroup(id, req.auth.id, getClientIp(req));
   return sendSuccess(res, null, result.message);
 }
 

@@ -3,6 +3,7 @@
 import { Request, Response } from 'express';
 import { ApiError } from '@/core/errors/ApiError';
 import { sendSuccess } from '@/core/utils/sendResponse';
+import { getClientIp } from '@/core/utils/getClientIp';
 import * as settingService from './setting.service';
 import { upsertAiSettingSchema, testAiConnectionSchema } from './setting.validation';
 
@@ -20,7 +21,7 @@ export async function upsertAiSettings(req: Request, res: Response) {
     throw ApiError.unauthorized();
   }
 
-  const settings = await settingService.upsertSettings(input, req.auth.id);
+  const settings = await settingService.upsertSettings(input, req.auth.id, getClientIp(req));
   return sendSuccess(res, settings, 'AI settings saved successfully');
 }
 

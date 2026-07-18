@@ -123,7 +123,7 @@ export async function listPowertrainIce(query: PowertrainIceListQueryParsed): Pr
   ]);
 
   return {
-    items,
+    items: items as unknown as PowertrainIceListItem[],
     pagination: {
       page,
       limit,
@@ -187,7 +187,11 @@ async function unsetOtherDefaults(
   });
 }
 
-export async function createPowertrainIce(input: CreatePowertrainIceParsed, actorId: number) {
+export async function createPowertrainIce(
+  input: CreatePowertrainIceParsed,
+  actorId: number,
+  ipAddress?: string | null,
+) {
   await assertVariantExists(input.variantId);
   if (typeof input.transmissionTypeId === 'number') {
     await assertAttributeOptionExists(input.transmissionTypeId, 'transmission', 'transmissionType');
@@ -245,6 +249,7 @@ export async function createPowertrainIce(input: CreatePowertrainIceParsed, acto
   await createLog({
     adminId: actorId,
     description: `Created ICE powertrain for "${describePowertrainSubject(powertrain)}" (id ${powertrain.id})`,
+    ipAddress,
   });
 
   return powertrain;
@@ -254,6 +259,7 @@ export async function updatePowertrainIce(
   id: number,
   input: UpdatePowertrainIceParsed,
   actorId: number,
+  ipAddress?: string | null,
 ) {
   const existing = await getPowertrainIceById(id);
 
@@ -316,12 +322,13 @@ export async function updatePowertrainIce(
   await createLog({
     adminId: actorId,
     description: `Updated ICE powertrain for "${describePowertrainSubject(powertrain)}" (id ${id})`,
+    ipAddress,
   });
 
   return powertrain;
 }
 
-export async function deletePowertrainIce(id: number, actorId: number) {
+export async function deletePowertrainIce(id: number, actorId: number, ipAddress?: string | null) {
   const powertrain = await getPowertrainIceById(id);
 
   if (powertrain.isDeleted) {
@@ -341,12 +348,13 @@ export async function deletePowertrainIce(id: number, actorId: number) {
   await createLog({
     adminId: actorId,
     description: `Deleted ICE powertrain for "${describePowertrainSubject(powertrain)}" (id ${id})`,
+    ipAddress,
   });
 
   return { message: 'ICE powertrain deleted successfully' };
 }
 
-export async function restorePowertrainIce(id: number, actorId: number) {
+export async function restorePowertrainIce(id: number, actorId: number, ipAddress?: string | null) {
   const powertrain = await getPowertrainIceById(id);
 
   if (!powertrain.isDeleted) {
@@ -365,6 +373,7 @@ export async function restorePowertrainIce(id: number, actorId: number) {
   await createLog({
     adminId: actorId,
     description: `Restored ICE powertrain for "${describePowertrainSubject(powertrain)}" (id ${id})`,
+    ipAddress,
   });
 
   return { message: 'ICE powertrain restored successfully' };

@@ -114,6 +114,7 @@ export async function createAdCampaign(
   input: CreateAdCampaignParsed,
   actorId: number,
   creativeImageFilename?: string,
+  ipAddress?: string | null,
 ): Promise<AdCampaignRecord> {
   await assertPlacementExists(input.placementId);
   if (input.advertiserId) {
@@ -145,6 +146,7 @@ export async function createAdCampaign(
   await createLog({
     adminId: actorId,
     description: `Created ad campaign "${campaign.name}" (id ${campaign.id})`,
+    ipAddress,
   });
 
   return campaign as unknown as AdCampaignRecord;
@@ -155,6 +157,7 @@ export async function updateAdCampaign(
   input: UpdateAdCampaignParsed,
   actorId: number,
   creativeImageFilename?: string,
+  ipAddress?: string | null,
 ): Promise<AdCampaignRecord> {
   const existing = await getAdCampaignById(id);
 
@@ -199,6 +202,7 @@ export async function updateAdCampaign(
   await createLog({
     adminId: actorId,
     description: `Updated ad campaign "${campaign.name}" (id ${campaign.id})`,
+    ipAddress,
   });
 
   return campaign as unknown as AdCampaignRecord;
@@ -208,6 +212,7 @@ export async function updateAdCampaignStatus(
   id: number,
   status: CampaignStatus,
   actorId: number,
+  ipAddress?: string | null,
 ): Promise<AdCampaignRecord> {
   const existing = await getAdCampaignById(id);
 
@@ -220,12 +225,13 @@ export async function updateAdCampaignStatus(
   await createLog({
     adminId: actorId,
     description: `Set ad campaign "${existing.name}" (id ${id}) status to "${status}"`,
+    ipAddress,
   });
 
   return campaign as unknown as AdCampaignRecord;
 }
 
-export async function deleteAdCampaign(id: number, actorId: number) {
+export async function deleteAdCampaign(id: number, actorId: number, ipAddress?: string | null) {
   const campaign = await getAdCampaignById(id);
 
   // ad_impressions/ad_clicks FKs are ON DELETE RESTRICT (see
@@ -248,6 +254,7 @@ export async function deleteAdCampaign(id: number, actorId: number) {
   await createLog({
     adminId: actorId,
     description: `Deleted ad campaign "${campaign.name}" (id ${id})`,
+    ipAddress,
   });
 
   return { message: 'Ad campaign deleted successfully' };

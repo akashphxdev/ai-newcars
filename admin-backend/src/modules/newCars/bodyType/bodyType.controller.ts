@@ -3,6 +3,7 @@ import { Request, Response } from 'express';
 import { ApiError } from '@/core/errors/ApiError';
 import { sendSuccess, sendPaginated } from '@/core/utils/sendResponse';
 import { buildPublicPath, deleteUploadedFile } from '@/core/utils/fileStorage.util';
+import { getClientIp } from '@/core/utils/getClientIp';
 import * as bodyTypeService from './bodyType.service';
 import {
   bodyTypeListQuerySchema,
@@ -41,7 +42,7 @@ export async function createBodyType(req: Request, res: Response) {
 
   try {
     const input = createBodyTypeSchema.parse(req.body);
-    const bodyType = await bodyTypeService.createBodyType(input, req.auth.id, req.file.filename);
+    const bodyType = await bodyTypeService.createBodyType(input, req.auth.id, req.file.filename, getClientIp(req));
     return sendSuccess(res, bodyType, 'Body type created successfully', 201);
   } catch (err) {
     if (req.file) {
@@ -59,7 +60,7 @@ export async function updateBodyType(req: Request, res: Response) {
     throw ApiError.unauthorized();
   }
 
-  const bodyType = await bodyTypeService.updateBodyType(id, input, req.auth.id);
+  const bodyType = await bodyTypeService.updateBodyType(id, input, req.auth.id, getClientIp(req));
   return sendSuccess(res, bodyType, 'Body type updated successfully');
 }
 
@@ -73,7 +74,7 @@ export async function uploadBodyTypeIcon(req: Request, res: Response) {
     throw ApiError.badRequest('No icon file received (expected field name "icon")');
   }
 
-  const bodyType = await bodyTypeService.uploadBodyTypeIcon(id, req.file.filename, req.auth.id);
+  const bodyType = await bodyTypeService.uploadBodyTypeIcon(id, req.file.filename, req.auth.id, getClientIp(req));
   return sendSuccess(res, bodyType, 'Body type icon updated successfully');
 }
 
@@ -84,6 +85,6 @@ export async function deleteBodyType(req: Request, res: Response) {
     throw ApiError.unauthorized();
   }
 
-  const result = await bodyTypeService.deleteBodyType(id, req.auth.id);
+  const result = await bodyTypeService.deleteBodyType(id, req.auth.id, getClientIp(req));
   return sendSuccess(res, null, result.message);
 }

@@ -68,7 +68,11 @@ export async function getAdminById(id: number) {
   return admin;
 }
 
-export async function createAdmin(input: CreateAdminParsed, createdBy: number) {
+export async function createAdmin(
+  input: CreateAdminParsed,
+  createdBy: number,
+  ipAddress?: string | null,
+) {
   const existing = await prisma.adminUser.findFirst({
     where: { OR: [{ email: input.email }, { mobile: input.mobile }] },
     select: { id: true, email: true, mobile: true },
@@ -110,12 +114,18 @@ export async function createAdmin(input: CreateAdminParsed, createdBy: number) {
   await createLog({
     adminId: createdBy,
     description: `Created new admin "${admin.name}" (id ${admin.id}, role: ${role.roleName})`,
+    ipAddress,
   });
 
   return admin;
 }
 
-export async function updateAdmin(id: number, input: UpdateAdminParsed, actorId: number) {
+export async function updateAdmin(
+  id: number,
+  input: UpdateAdminParsed,
+  actorId: number,
+  ipAddress?: string | null,
+) {
   const existing = await getAdminById(id);
 
   if (id === actorId && input.status && input.status !== existing.status) {
@@ -172,6 +182,7 @@ export async function updateAdmin(id: number, input: UpdateAdminParsed, actorId:
   await createLog({
     adminId: actorId,
     description: `Updated admin "${admin.name}" (id ${admin.id})`,
+    ipAddress,
   });
 
   return admin;
@@ -209,13 +220,18 @@ export async function updateAdminStatus(
   await createLog({
     adminId: actorId,
     description: `Changed status of admin "${admin.name}" (id ${admin.id}) from "${existing.status}" to "${status}"`,
-    ipAddress: ipAddress ?? undefined,
+    ipAddress,
   });
 
   return admin;
 }
 
-export async function changeAdminPassword(id: number, newPassword: string, actorId: number) {
+export async function changeAdminPassword(
+  id: number,
+  newPassword: string,
+  actorId: number,
+  ipAddress?: string | null,
+) {
   const target = await getAdminById(id);
   const passwordHash = await bcrypt.hash(newPassword, SALT_ROUNDS);
 
@@ -227,12 +243,18 @@ export async function changeAdminPassword(id: number, newPassword: string, actor
   await createLog({
     adminId: actorId,
     description: `Changed password for admin "${target.name}" (id ${id})`,
+    ipAddress,
   });
 
   return { message: 'Password updated successfully' };
 }
 
-export async function lockAdmin(id: number, lockedBy: number, reason?: string) {
+export async function lockAdmin(
+  id: number,
+  lockedBy: number,
+  reason?: string,
+  ipAddress?: string | null,
+) {
   if (id === lockedBy) {
     throw ApiError.badRequest('You cannot lock your own account');
   }
@@ -256,12 +278,13 @@ export async function lockAdmin(id: number, lockedBy: number, reason?: string) {
   await createLog({
     adminId: lockedBy,
     description: `Locked admin "${admin.name}" (id ${admin.id})${reason ? ` — reason: ${reason}` : ''}`,
+    ipAddress,
   });
 
   return admin;
 }
 
-export async function unlockAdmin(id: number, unlockedBy: number) {
+export async function unlockAdmin(id: number, unlockedBy: number, ipAddress?: string | null) {
   await getAdminById(id);
 
   const admin = await prisma.adminUser.update({
@@ -284,12 +307,13 @@ export async function unlockAdmin(id: number, unlockedBy: number) {
   await createLog({
     adminId: unlockedBy,
     description: `Unlocked admin "${admin.name}" (id ${admin.id})`,
+    ipAddress,
   });
 
   return admin;
 }
 
-export async function deactivateAdmin(id: number, requestedBy: number) {
+export async function deactivateAdmin(id: number, requestedBy: number, ipAddress?: string | null) {
   if (id === requestedBy) {
     throw ApiError.badRequest('You cannot deactivate your own account');
   }
@@ -307,6 +331,7 @@ export async function deactivateAdmin(id: number, requestedBy: number) {
   await createLog({
     adminId: requestedBy,
     description: `Deactivated admin "${admin.name}" (id ${admin.id})`,
+    ipAddress,
   });
 
   return admin;

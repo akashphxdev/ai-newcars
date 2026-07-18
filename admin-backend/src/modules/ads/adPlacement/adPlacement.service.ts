@@ -100,6 +100,7 @@ export async function getAdPlacementById(id: number): Promise<AdPlacementRecord>
 export async function createAdPlacement(
   input: CreateAdPlacementParsed,
   actorId: number,
+  ipAddress?: string | null,
 ): Promise<AdPlacementRecord> {
   await assertSlugAvailable(input.slug);
 
@@ -120,6 +121,7 @@ export async function createAdPlacement(
   await createLog({
     adminId: actorId,
     description: `Created ad placement "${placement.name}" (id ${placement.id}, slug "${placement.slug}")`,
+    ipAddress,
   });
 
   return shapePlacement(placement);
@@ -129,6 +131,7 @@ export async function updateAdPlacement(
   id: number,
   input: UpdateAdPlacementParsed,
   actorId: number,
+  ipAddress?: string | null,
 ): Promise<AdPlacementRecord> {
   const existing = await getAdPlacementById(id);
 
@@ -153,6 +156,7 @@ export async function updateAdPlacement(
   await createLog({
     adminId: actorId,
     description: `Updated ad placement "${placement.name}" (id ${placement.id})`,
+    ipAddress,
   });
 
   return shapePlacement(placement);
@@ -162,6 +166,7 @@ export async function updateAdPlacementStatus(
   id: number,
   isActive: boolean,
   actorId: number,
+  ipAddress?: string | null,
 ): Promise<AdPlacementRecord> {
   const existing = await getAdPlacementById(id);
 
@@ -174,12 +179,13 @@ export async function updateAdPlacementStatus(
   await createLog({
     adminId: actorId,
     description: `${isActive ? 'Activated' : 'Deactivated'} ad placement "${existing.name}" (id ${id})`,
+    ipAddress,
   });
 
   return shapePlacement(placement);
 }
 
-export async function deleteAdPlacement(id: number, actorId: number) {
+export async function deleteAdPlacement(id: number, actorId: number, ipAddress?: string | null) {
   const placement = await getAdPlacementById(id);
 
   const campaignCount = await prisma.adCampaign.count({ where: { placementId: id } });
@@ -194,6 +200,7 @@ export async function deleteAdPlacement(id: number, actorId: number) {
   await createLog({
     adminId: actorId,
     description: `Deleted ad placement "${placement.name}" (id ${id})`,
+    ipAddress,
   });
 
   return { message: 'Ad placement deleted successfully' };

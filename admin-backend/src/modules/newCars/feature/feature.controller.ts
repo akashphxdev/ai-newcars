@@ -3,6 +3,7 @@
 import { Request, Response } from 'express';
 import { ApiError } from '@/core/errors/ApiError';
 import { sendSuccess, sendPaginated } from '@/core/utils/sendResponse';
+import { getClientIp } from '@/core/utils/getClientIp';
 import * as featureService from './feature.service';
 import {
   featureListQuerySchema,
@@ -33,7 +34,7 @@ export async function createFeature(req: Request, res: Response) {
     throw ApiError.unauthorized();
   }
 
-  const feature = await featureService.createFeature(input, req.auth.id);
+  const feature = await featureService.createFeature(input, req.auth.id, getClientIp(req));
   return sendSuccess(res, feature, 'Feature sheet created successfully', 201);
 }
 
@@ -46,7 +47,7 @@ export async function updateFeature(req: Request, res: Response) {
     throw ApiError.unauthorized();
   }
 
-  const feature = await featureService.updateFeature(id, input, req.auth.id);
+  const feature = await featureService.updateFeature(id, input, req.auth.id, getClientIp(req));
   return sendSuccess(res, feature, 'Feature sheet updated successfully');
 }
 
@@ -58,6 +59,6 @@ export async function deleteFeature(req: Request, res: Response) {
     throw ApiError.unauthorized();
   }
 
-  const result = await featureService.deleteFeature(id, req.auth.id);
+  const result = await featureService.deleteFeature(id, req.auth.id, getClientIp(req));
   return sendSuccess(res, null, result.message);
 }

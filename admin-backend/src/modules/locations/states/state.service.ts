@@ -106,7 +106,11 @@ async function assertNameAvailableInCountry(countryId: number, name: string, exc
   }
 }
 
-export async function createState(input: CreateStateParsed, actorId: number) {
+export async function createState(
+  input: CreateStateParsed,
+  actorId: number,
+  ipAddress?: string | null,
+) {
   await assertCountryExists(input.countryId);
   await assertNameAvailableInCountry(input.countryId, input.name);
 
@@ -122,12 +126,18 @@ export async function createState(input: CreateStateParsed, actorId: number) {
   await createLog({
     adminId: actorId,
     description: `Created state "${state.name}" (id ${state.id}) under country "${state.country.name}"`,
+    ipAddress,
   });
 
   return state;
 }
 
-export async function updateState(id: number, input: UpdateStateParsed, actorId: number) {
+export async function updateState(
+  id: number,
+  input: UpdateStateParsed,
+  actorId: number,
+  ipAddress?: string | null,
+) {
   const existing = await getStateById(id);
 
   const targetCountryId = input.countryId ?? existing.countryId;
@@ -149,12 +159,13 @@ export async function updateState(id: number, input: UpdateStateParsed, actorId:
   await createLog({
     adminId: actorId,
     description: `Updated state "${state.name}" (id ${state.id})`,
+    ipAddress,
   });
 
   return state;
 }
 
-export async function deleteState(id: number, actorId: number) {
+export async function deleteState(id: number, actorId: number, ipAddress?: string | null) {
   const state = await getStateById(id);
 
   // Same "protect referenced parent rows" rule as country.service.ts's
@@ -171,6 +182,7 @@ export async function deleteState(id: number, actorId: number) {
   await createLog({
     adminId: actorId,
     description: `Deleted state "${state.name}" (id ${id})`,
+    ipAddress,
   });
 
   return { message: 'State deleted successfully' };

@@ -7,11 +7,6 @@ import type { AiFeatureCode } from '../ai.constants';
 // the only writer today).
 export type AiLogStatusCode = 1 | 2;
 
-export interface AiLogAdminSummary {
-  id: number;
-  name: string;
-}
-
 export interface AiLogRecord {
   id: number;
   featureKey: AiFeatureCode;
@@ -20,7 +15,5 @@ export interface AiLogRecord {
   message: string;
   meta: Record<string, unknown> | null;
   durationMs: number | null;
-  createdBy: number | null;
-  createdByAdmin: AiLogAdminSummary | null;
   createdAt: Date;
 }

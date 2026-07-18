@@ -5,6 +5,7 @@ import { ApiError } from '@/core/errors/ApiError';
 import { sendSuccess, sendPaginated } from '@/core/utils/sendResponse';
 import { buildPublicPath, deleteUploadedFile } from '@/core/utils/fileStorage.util';
 import { createLog } from '@/core/utils/createLog';
+import { getClientIp } from '@/core/utils/getClientIp';
 import * as brandService from './brand.service';
 import {
   brandListQuerySchema,
@@ -39,6 +40,7 @@ export async function getBrandById(req: Request, res: Response) {
     await createLog({
       adminId: req.auth.id,
       description: `Viewed brand "${brand.name}" (id ${id})`,
+      ipAddress: getClientIp(req),
     });
   }
 
@@ -56,7 +58,7 @@ export async function createBrand(req: Request, res: Response) {
 
   try {
     const input = createBrandSchema.parse(req.body);
-    const brand = await brandService.createBrand(input, req.auth.id, req.file.filename);
+    const brand = await brandService.createBrand(input, req.auth.id, req.file.filename, getClientIp(req));
     return sendSuccess(res, brand, 'Brand created successfully', 201);
   } catch (err) {
     await deleteUploadedFile(buildPublicPath('brands', req.file.filename));
@@ -73,7 +75,7 @@ export async function updateBrand(req: Request, res: Response) {
     throw ApiError.unauthorized();
   }
 
-  const brand = await brandService.updateBrand(id, input, req.auth.id);
+  const brand = await brandService.updateBrand(id, input, req.auth.id, getClientIp(req));
   return sendSuccess(res, brand, 'Brand updated successfully');
 }
 export async function updateBrandStatus(req: Request, res: Response) {
@@ -84,7 +86,7 @@ export async function updateBrandStatus(req: Request, res: Response) {
     throw ApiError.unauthorized();
   }
 
-  const brand = await brandService.updateBrandStatus(id, isActive, req.auth.id);
+  const brand = await brandService.updateBrandStatus(id, isActive, req.auth.id, getClientIp(req));
   return sendSuccess(res, brand, 'Brand status updated successfully');
 }
 
@@ -98,7 +100,7 @@ export async function uploadBrandLogo(req: Request, res: Response) {
     throw ApiError.badRequest('No image file received (expected field name "logo")');
   }
 
-  const brand = await brandService.uploadBrandLogo(id, req.file.filename, req.auth.id);
+  const brand = await brandService.uploadBrandLogo(id, req.file.filename, req.auth.id, getClientIp(req));
   return sendSuccess(res, brand, 'Brand logo updated successfully');
 }
 
@@ -110,6 +112,6 @@ export async function deleteBrand(req: Request, res: Response) {
     throw ApiError.unauthorized();
   }
 
-  const result = await brandService.deleteBrand(id, req.auth.id);
+  const result = await brandService.deleteBrand(id, req.auth.id, getClientIp(req));
   return sendSuccess(res, null, result.message);
 }

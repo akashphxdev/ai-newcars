@@ -3,6 +3,7 @@
 import { Request, Response } from 'express';
 import { ApiError } from '@/core/errors/ApiError';
 import { sendSuccess } from '@/core/utils/sendResponse';
+import { getClientIp } from '@/core/utils/getClientIp';
 import * as automationRuleService from './automationRule.service';
 import { featureKeyParamSchema, upsertAutomationRuleSchema } from './automationRule.validation';
 
@@ -28,6 +29,6 @@ export async function upsertAutomationRule(req: Request, res: Response) {
     throw ApiError.unauthorized();
   }
 
-  const rule = await automationRuleService.upsertAutomationRule(featureKey, input, req.auth.id);
+  const rule = await automationRuleService.upsertAutomationRule(featureKey, input, req.auth.id, getClientIp(req));
   return sendSuccess(res, rule, 'AI automation rule saved successfully');
 }

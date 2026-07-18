@@ -4,6 +4,7 @@ import { Request, Response } from 'express';
 import { ApiError } from '@/core/errors/ApiError';
 import { sendSuccess, sendPaginated } from '@/core/utils/sendResponse';
 import { buildPublicPath, deleteUploadedFile } from '@/core/utils/fileStorage.util';
+import { getClientIp } from '@/core/utils/getClientIp';
 import * as cityService from './city.service';
 import { cityListQuerySchema, cityIdParamSchema, createCitySchema, updateCitySchema, updateCityFlagsSchema } from './city.validation';
 
@@ -38,7 +39,7 @@ export async function createCity(req: Request, res: Response) {
   }
   try {
     const input = createCitySchema.parse(req.body);
-    const city = await cityService.createCity(input, req.file.filename, req.auth.id);
+    const city = await cityService.createCity(input, req.file.filename, req.auth.id, getClientIp(req));
     return sendSuccess(res, city, 'City created successfully', 201);
   } catch (err) {
     await deleteUploadedFile(buildPublicPath('cities', req.file.filename));
@@ -55,7 +56,7 @@ export async function updateCity(req: Request, res: Response) {
     throw ApiError.unauthorized();
   }
 
-  const city = await cityService.updateCity(id, input, req.auth.id);
+  const city = await cityService.updateCity(id, input, req.auth.id, getClientIp(req));
   return sendSuccess(res, city, 'City updated successfully');
 }
 
@@ -67,7 +68,7 @@ export async function updateCityFlags(req: Request, res: Response) {
     throw ApiError.unauthorized();
   }
 
-  const city = await cityService.updateCityFlags(id, flags, req.auth.id);
+  const city = await cityService.updateCityFlags(id, flags, req.auth.id, getClientIp(req));
   return sendSuccess(res, city, 'City flags updated successfully');
 }
 export async function uploadCityLogo(req: Request, res: Response) {
@@ -80,7 +81,7 @@ export async function uploadCityLogo(req: Request, res: Response) {
     throw ApiError.badRequest('No image file received (expected field name "logo")');
   }
 
-  const city = await cityService.uploadCityLogo(id, req.file.filename, req.auth.id);
+  const city = await cityService.uploadCityLogo(id, req.file.filename, req.auth.id, getClientIp(req));
   return sendSuccess(res, city, 'City logo updated successfully');
 }
 
@@ -92,6 +93,6 @@ export async function deleteCity(req: Request, res: Response) {
     throw ApiError.unauthorized();
   }
 
-  const result = await cityService.deleteCity(id, req.auth.id);
+  const result = await cityService.deleteCity(id, req.auth.id, getClientIp(req));
   return sendSuccess(res, null, result.message);
 }

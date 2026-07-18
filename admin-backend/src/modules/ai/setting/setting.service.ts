@@ -99,6 +99,7 @@ export async function getDecryptedSettingsForProvider(): Promise<{
 export async function upsertSettings(
   input: UpsertAiSettingParsed,
   actorId: number,
+  ipAddress?: string | null,
 ): Promise<AiSettingResponse> {
   const existing = await prisma.aiSetting.findFirst({
     orderBy: { id: 'asc' },
@@ -155,6 +156,7 @@ export async function upsertSettings(
   await createLog({
     adminId: actorId,
     description: existing ? 'Updated AI provider settings' : 'Created AI provider settings',
+    ipAddress,
   });
 
   return toResponse(row);

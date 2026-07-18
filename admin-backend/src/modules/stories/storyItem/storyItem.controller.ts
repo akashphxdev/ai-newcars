@@ -4,6 +4,7 @@ import { Request, Response } from 'express';
 import { ApiError } from '@/core/errors/ApiError';
 import { sendSuccess, sendPaginated } from '@/core/utils/sendResponse';
 import { buildPublicPath, deleteUploadedFile } from '@/core/utils/fileStorage.util';
+import { getClientIp } from '@/core/utils/getClientIp';
 import * as storyItemService from './storyItem.service';
 import {
   storyItemListQuerySchema,
@@ -38,7 +39,7 @@ export async function createStoryItem(req: Request, res: Response) {
   }
 
   try {
-    const item = await storyItemService.createStoryItem(input, req.auth.id, req.file.filename);
+    const item = await storyItemService.createStoryItem(input, req.auth.id, req.file.filename, getClientIp(req));
     return sendSuccess(res, item, 'Story item created successfully', 201);
   } catch (err) {
     if (req.file) {
@@ -56,7 +57,7 @@ export async function updateStoryItem(req: Request, res: Response) {
     throw ApiError.unauthorized();
   }
 
-  const item = await storyItemService.updateStoryItem(id, input, req.auth.id);
+  const item = await storyItemService.updateStoryItem(id, input, req.auth.id, getClientIp(req));
   return sendSuccess(res, item, 'Story item updated successfully');
 }
 
@@ -68,7 +69,7 @@ export async function updateStoryItemStatus(req: Request, res: Response) {
     throw ApiError.unauthorized();
   }
 
-  const item = await storyItemService.updateStoryItemStatus(id, status, req.auth.id, startAt, endAt);
+  const item = await storyItemService.updateStoryItemStatus(id, status, req.auth.id, startAt, endAt, getClientIp(req));
   return sendSuccess(res, item, 'Story item status updated successfully');
 }
 
@@ -83,7 +84,7 @@ export async function uploadStoryItemMedia(req: Request, res: Response) {
     throw ApiError.badRequest('No media file received (expected field name "media")');
   }
 
-  const item = await storyItemService.uploadStoryItemMedia(id, mediaType, req.file.filename, req.auth.id);
+  const item = await storyItemService.uploadStoryItemMedia(id, mediaType, req.file.filename, req.auth.id, getClientIp(req));
   return sendSuccess(res, item, 'Story item media updated successfully');
 }
 
@@ -94,7 +95,7 @@ export async function deleteStoryItem(req: Request, res: Response) {
     throw ApiError.unauthorized();
   }
 
-  const result = await storyItemService.deleteStoryItem(id, req.auth.id);
+  const result = await storyItemService.deleteStoryItem(id, req.auth.id, getClientIp(req));
   return sendSuccess(res, null, result.message);
 }
 

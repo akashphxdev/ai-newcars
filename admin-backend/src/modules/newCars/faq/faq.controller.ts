@@ -3,6 +3,7 @@
 import { Request, Response } from 'express';
 import { ApiError } from '@/core/errors/ApiError';
 import { sendSuccess, sendPaginated } from '@/core/utils/sendResponse';
+import { getClientIp } from '@/core/utils/getClientIp';
 import * as faqService from './faq.service';
 import {
   faqListQuerySchema,
@@ -34,7 +35,7 @@ export async function createFaq(req: Request, res: Response) {
     throw ApiError.unauthorized();
   }
 
-  const faq = await faqService.createFaq(input, req.auth.id);
+  const faq = await faqService.createFaq(input, req.auth.id, getClientIp(req));
   return sendSuccess(res, faq, 'FAQ created successfully', 201);
 }
 
@@ -50,7 +51,7 @@ export async function updateFaq(req: Request, res: Response) {
     throw ApiError.unauthorized();
   }
 
-  const faq = await faqService.updateFaq(id, input, req.auth.id);
+  const faq = await faqService.updateFaq(id, input, req.auth.id, getClientIp(req));
   return sendSuccess(res, faq, 'FAQ updated successfully');
 }
 
@@ -64,7 +65,7 @@ export async function updateFaqStatus(req: Request, res: Response) {
     throw ApiError.unauthorized();
   }
 
-  const faq = await faqService.updateFaqStatus(id, isActive, req.auth.id);
+  const faq = await faqService.updateFaqStatus(id, isActive, req.auth.id, getClientIp(req));
   return sendSuccess(res, faq, 'FAQ status updated successfully');
 }
 
@@ -76,6 +77,6 @@ export async function deleteFaq(req: Request, res: Response) {
     throw ApiError.unauthorized();
   }
 
-  const result = await faqService.deleteFaq(id, req.auth.id);
+  const result = await faqService.deleteFaq(id, req.auth.id, getClientIp(req));
   return sendSuccess(res, null, result.message);
 }

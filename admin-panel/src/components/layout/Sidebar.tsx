@@ -238,10 +238,9 @@ const NAV: NavGroup[] = [
         ),
         children: [
           { label: "Dashboard", href: "/ai/dashboard" },
-          { label: "FAQ Generator", href: "/ai/car-faqs/generate" },
           { label: "FAQ Review", href: "/ai/car-faqs/review" },
-          { label: "Logs", href: "/ai/logs" },
-          { label: "Settings", href: "/ai/settings" },
+          { label: "AI Logs", href: "/ai/logs" },
+          { label: "AI Settings", href: "/ai/settings" },
         ],
       },
     ],

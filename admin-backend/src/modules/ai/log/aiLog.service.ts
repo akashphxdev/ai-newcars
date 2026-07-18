@@ -17,8 +17,6 @@ const AI_LOG_SELECT = {
   message: true,
   meta: true,
   durationMs: true,
-  createdBy: true,
-  createdByAdmin: { select: { id: true, name: true } },
   createdAt: true,
 } as const;
 

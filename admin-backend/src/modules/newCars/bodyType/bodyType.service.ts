@@ -93,6 +93,7 @@ export async function createBodyType(
   input: CreateBodyTypeParsed,
   actorId: number,
   iconFilename: string,
+  ipAddress?: string | null,
 ) {
   await assertSlugAvailable(input.slug);
 
@@ -109,12 +110,18 @@ export async function createBodyType(
   await createLog({
     adminId: actorId,
     description: `Created body type "${bodyType.name}" (id ${bodyType.id}, slug "${bodyType.slug}")`,
+    ipAddress,
   });
 
   return bodyType;
 }
 
-export async function updateBodyType(id: number, input: UpdateBodyTypeParsed, actorId: number) {
+export async function updateBodyType(
+  id: number,
+  input: UpdateBodyTypeParsed,
+  actorId: number,
+  ipAddress?: string | null,
+) {
   const existing = await getBodyTypeById(id);
 
   if (input.slug !== existing.slug) {
@@ -130,12 +137,13 @@ export async function updateBodyType(id: number, input: UpdateBodyTypeParsed, ac
   await createLog({
     adminId: actorId,
     description: `Updated body type "${bodyType.name}" (id ${bodyType.id})`,
+    ipAddress,
   });
 
   return bodyType;
 }
 
-export async function deleteBodyType(id: number, actorId: number) {
+export async function deleteBodyType(id: number, actorId: number, ipAddress?: string | null) {
   const bodyType = await getBodyTypeById(id);
 
   const carModelCount = await prisma.carModel.count({ where: { bodyTypeId: id } });
@@ -152,6 +160,7 @@ export async function deleteBodyType(id: number, actorId: number) {
   await createLog({
     adminId: actorId,
     description: `Deleted body type "${bodyType.name}" (id ${id})`,
+    ipAddress,
   });
 
   return { message: 'Body type deleted successfully' };
@@ -161,6 +170,7 @@ export async function uploadBodyTypeIcon(
   id: number,
   savedFilename: string,
   actorId: number,
+  ipAddress?: string | null,
 ): Promise<BodyTypeUploadIconResult> {
   const existing = await getBodyTypeById(id);
 
@@ -177,6 +187,7 @@ export async function uploadBodyTypeIcon(
   await createLog({
     adminId: actorId,
     description: `Updated icon for body type "${existing.name}" (id ${id})`,
+    ipAddress,
   });
 
   return bodyType as BodyTypeUploadIconResult;

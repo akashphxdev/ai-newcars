@@ -94,7 +94,11 @@ export async function getAttributeOptionById(id: number) {
   return option;
 }
 
-export async function createAttributeOption(input: CreateAttributeOptionParsed, actorId: number) {
+export async function createAttributeOption(
+  input: CreateAttributeOptionParsed,
+  actorId: number,
+  ipAddress?: string | null,
+) {
   await assertSlugAvailableInCategory(input.category, input.slug);
 
   const option = await prisma.attributeOption.create({
@@ -109,6 +113,7 @@ export async function createAttributeOption(input: CreateAttributeOptionParsed, 
   await createLog({
     adminId: actorId,
     description: `Created attribute option "${option.name}" (id ${option.id}, category "${option.category}", slug "${option.slug}")`,
+    ipAddress,
   });
 
   return option;
@@ -118,6 +123,7 @@ export async function updateAttributeOption(
   id: number,
   input: UpdateAttributeOptionParsed,
   actorId: number,
+  ipAddress?: string | null,
 ) {
   const existing = await getAttributeOptionById(id);
 
@@ -134,12 +140,13 @@ export async function updateAttributeOption(
   await createLog({
     adminId: actorId,
     description: `Updated attribute option "${option.name}" (id ${option.id})`,
+    ipAddress,
   });
 
   return option;
 }
 
-export async function deleteAttributeOption(id: number, actorId: number) {
+export async function deleteAttributeOption(id: number, actorId: number, ipAddress?: string | null) {
   const option = await getAttributeOptionById(id);
 
   const [variantCount, icePowertrainAsTransmission, icePowertrainAsDrivetrain, electricPowertrainCount] =
@@ -164,6 +171,7 @@ export async function deleteAttributeOption(id: number, actorId: number) {
   await createLog({
     adminId: actorId,
     description: `Deleted attribute option "${option.name}" (id ${id}, category "${option.category}")`,
+    ipAddress,
   });
 
   return { message: 'Attribute option deleted successfully' };

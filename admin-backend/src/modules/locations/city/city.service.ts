@@ -110,7 +110,12 @@ async function assertSlugAvailable(slug: string, excludeId?: number) {
   }
 }
 
-export async function createCity(input: CreateCityParsed, logoFilename: string, actorId: number) {
+export async function createCity(
+  input: CreateCityParsed,
+  logoFilename: string,
+  actorId: number,
+  ipAddress?: string | null,
+) {
   await assertDistrictExists(input.districtId);
 
   await assertSlugAvailable(input.slug);
@@ -131,12 +136,18 @@ export async function createCity(input: CreateCityParsed, logoFilename: string, 
   await createLog({
     adminId: actorId,
     description: `Created city "${city.name}" (id ${city.id}, slug "${city.slug}") under district "${city.district.name}"`,
+    ipAddress,
   });
 
   return city;
 }
 
-export async function updateCity(id: number, input: UpdateCityParsed, actorId: number) {
+export async function updateCity(
+  id: number,
+  input: UpdateCityParsed,
+  actorId: number,
+  ipAddress?: string | null,
+) {
   const existing = await getCityById(id);
 
   if (input.districtId) {
@@ -155,12 +166,18 @@ export async function updateCity(id: number, input: UpdateCityParsed, actorId: n
   await createLog({
     adminId: actorId,
     description: `Updated city "${city.name}" (id ${city.id})`,
+    ipAddress,
   });
 
   return city;
 }
 
-export async function updateCityFlags(id: number, flags: UpdateCityFlagsParsed, actorId: number) {
+export async function updateCityFlags(
+  id: number,
+  flags: UpdateCityFlagsParsed,
+  actorId: number,
+  ipAddress?: string | null,
+) {
   await getCityById(id);
 
   const city = await prisma.city.update({
@@ -176,12 +193,13 @@ export async function updateCityFlags(id: number, flags: UpdateCityFlagsParsed, 
   await createLog({
     adminId: actorId,
     description: `Updated flags for city "${city.name}" (id ${id}) — ${changedFlags}`,
+    ipAddress,
   });
 
   return city;
 }
 
-export async function deleteCity(id: number, actorId: number) {
+export async function deleteCity(id: number, actorId: number, ipAddress?: string | null) {
   const city = await getCityById(id);
   const [listingCount, userCount, addressCount] = await Promise.all([
     prisma.usedCarListing.count({ where: { cityId: id } }),
@@ -211,6 +229,7 @@ export async function deleteCity(id: number, actorId: number) {
   await createLog({
     adminId: actorId,
     description: `Deleted city "${city.name}" (id ${id})`,
+    ipAddress,
   });
 
   return { message: 'City deleted successfully' };
@@ -219,6 +238,7 @@ export async function uploadCityLogo(
   id: number,
   savedFilename: string,
   actorId: number,
+  ipAddress?: string | null,
 ): Promise<CityUploadLogoResult> {
   const existing = await getCityById(id);
 
@@ -237,6 +257,7 @@ export async function uploadCityLogo(
   await createLog({
     adminId: actorId,
     description: `Updated logo for city "${existing.name}" (id ${id})`,
+    ipAddress,
   });
 
   return city as CityUploadLogoResult;

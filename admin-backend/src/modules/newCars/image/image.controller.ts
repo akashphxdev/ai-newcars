@@ -5,6 +5,7 @@ import { ApiError } from '@/core/errors/ApiError';
 import { sendSuccess, sendPaginated } from '@/core/utils/sendResponse';
 import { createLog } from '@/core/utils/createLog';
 import { buildPublicPath, deleteUploadedFile } from '@/core/utils/fileStorage.util';
+import { getClientIp } from '@/core/utils/getClientIp';
 import * as imageService from './image.service';
 import {
   imageListQuerySchema,
@@ -33,6 +34,7 @@ export async function getImageById(req: Request, res: Response) {
     await createLog({
       adminId: req.auth.id,
       description: `Viewed image (id ${id}) for car model id ${image.modelId}`,
+      ipAddress: getClientIp(req),
     });
   }
 
@@ -50,7 +52,7 @@ export async function createImage(req: Request, res: Response) {
 
   try {
     const input = createImageSchema.parse(req.body);
-    const image = await imageService.createImage(input, req.auth.id, req.file.filename);
+    const image = await imageService.createImage(input, req.auth.id, req.file.filename, getClientIp(req));
     return sendSuccess(res, image, 'Image uploaded successfully', 201);
   } catch (err) {
     await deleteUploadedFile(buildPublicPath('car-images', req.file.filename));
@@ -72,7 +74,12 @@ export async function createImagesBulk(req: Request, res: Response) {
 
   try {
     const input = bulkCreateImagesSchema.parse(req.body);
-    const images = await imageService.createImagesBulk(input, req.auth.id, files.map((f) => f.filename));
+    const images = await imageService.createImagesBulk(
+      input,
+      req.auth.id,
+      files.map((f) => f.filename),
+      getClientIp(req),
+    );
     return sendSuccess(res, images, `${images.length} image(s) uploaded successfully`, 201);
   } catch (err) {
     await Promise.all(
@@ -91,7 +98,7 @@ export async function updateImage(req: Request, res: Response) {
     throw ApiError.unauthorized();
   }
 
-  const image = await imageService.updateImage(id, input, req.auth.id);
+  const image = await imageService.updateImage(id, input, req.auth.id, getClientIp(req));
   return sendSuccess(res, image, 'Image updated successfully');
 }
 
@@ -106,7 +113,7 @@ export async function setPrimaryImage(req: Request, res: Response) {
     throw ApiError.unauthorized();
   }
 
-  const image = await imageService.setPrimaryImage(id, isPrimary, req.auth.id);
+  const image = await imageService.setPrimaryImage(id, isPrimary, req.auth.id, getClientIp(req));
   return sendSuccess(res, image, 'Primary image updated successfully');
 }
 
@@ -123,7 +130,7 @@ export async function replaceImageFile(req: Request, res: Response) {
     throw ApiError.badRequest('No image file received (expected field name "image")');
   }
 
-  const image = await imageService.replaceImageFile(id, req.file.filename, req.auth.id);
+  const image = await imageService.replaceImageFile(id, req.file.filename, req.auth.id, getClientIp(req));
   return sendSuccess(res, image, 'Image file replaced successfully');
 }
 
@@ -135,6 +142,6 @@ export async function deleteImage(req: Request, res: Response) {
     throw ApiError.unauthorized();
   }
 
-  const result = await imageService.deleteImage(id, req.auth.id);
+  const result = await imageService.deleteImage(id, req.auth.id, getClientIp(req));
   return sendSuccess(res, null, result.message);
 }

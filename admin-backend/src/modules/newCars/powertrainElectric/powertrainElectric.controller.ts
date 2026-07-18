@@ -4,6 +4,7 @@ import { Request, Response } from 'express';
 import { ApiError } from '@/core/errors/ApiError';
 import { sendSuccess, sendPaginated } from '@/core/utils/sendResponse';
 import { createLog } from '@/core/utils/createLog';
+import { getClientIp } from '@/core/utils/getClientIp';
 import * as powertrainElectricService from './powertrainElectric.service';
 import {
   powertrainElectricListQuerySchema,
@@ -29,6 +30,7 @@ export async function getPowertrainElectricById(req: Request, res: Response) {
     await createLog({
       adminId: req.auth.id,
       description: `Viewed Electric powertrain for "${v.model.brand.name} ${v.model.name} — ${v.variantName}" (id ${id})`,
+      ipAddress: getClientIp(req),
     });
   }
 
@@ -43,7 +45,7 @@ export async function createPowertrainElectric(req: Request, res: Response) {
     throw ApiError.unauthorized();
   }
 
-  const powertrain = await powertrainElectricService.createPowertrainElectric(input, req.auth.id);
+  const powertrain = await powertrainElectricService.createPowertrainElectric(input, req.auth.id, getClientIp(req));
   return sendSuccess(res, powertrain, 'Electric powertrain created successfully', 201);
 }
 
@@ -56,7 +58,7 @@ export async function updatePowertrainElectric(req: Request, res: Response) {
     throw ApiError.unauthorized();
   }
 
-  const powertrain = await powertrainElectricService.updatePowertrainElectric(id, input, req.auth.id);
+  const powertrain = await powertrainElectricService.updatePowertrainElectric(id, input, req.auth.id, getClientIp(req));
   return sendSuccess(res, powertrain, 'Electric powertrain updated successfully');
 }
 
@@ -68,7 +70,7 @@ export async function restorePowertrainElectric(req: Request, res: Response) {
     throw ApiError.unauthorized();
   }
 
-  const result = await powertrainElectricService.restorePowertrainElectric(id, req.auth.id);
+  const result = await powertrainElectricService.restorePowertrainElectric(id, req.auth.id, getClientIp(req));
   return sendSuccess(res, null, result.message);
 }
 
@@ -80,6 +82,6 @@ export async function deletePowertrainElectric(req: Request, res: Response) {
     throw ApiError.unauthorized();
   }
 
-  const result = await powertrainElectricService.deletePowertrainElectric(id, req.auth.id);
+  const result = await powertrainElectricService.deletePowertrainElectric(id, req.auth.id, getClientIp(req));
   return sendSuccess(res, null, result.message);
 }

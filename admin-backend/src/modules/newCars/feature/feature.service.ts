@@ -123,7 +123,11 @@ export async function getFeatureById(id: number) {
   return feature;
 }
 
-export async function createFeature(input: CreateFeatureParsed, actorId: number) {
+export async function createFeature(
+  input: CreateFeatureParsed,
+  actorId: number,
+  ipAddress?: string | null,
+) {
   await assertVariantExists(input.variantId);
   await assertNoExistingFeatureForVariant(input.variantId);
 
@@ -135,12 +139,18 @@ export async function createFeature(input: CreateFeatureParsed, actorId: number)
   await createLog({
     adminId: actorId,
     description: `Created feature sheet for "${describeFeatureSubject(feature)}" (id ${feature.id})`,
+    ipAddress,
   });
 
   return feature;
 }
 
-export async function updateFeature(id: number, input: UpdateFeatureParsed, actorId: number) {
+export async function updateFeature(
+  id: number,
+  input: UpdateFeatureParsed,
+  actorId: number,
+  ipAddress?: string | null,
+) {
   // Existence check only — id 404s here before the update runs.
   await getFeatureById(id);
 
@@ -158,12 +168,13 @@ export async function updateFeature(id: number, input: UpdateFeatureParsed, acto
   await createLog({
     adminId: actorId,
     description: `Updated feature sheet for "${describeFeatureSubject(feature)}" (id ${id})`,
+    ipAddress,
   });
 
   return feature;
 }
 
-export async function deleteFeature(id: number, actorId: number) {
+export async function deleteFeature(id: number, actorId: number, ipAddress?: string | null) {
   const feature = await getFeatureById(id);
 
   await prisma.carFeature.delete({ where: { id } });
@@ -171,6 +182,7 @@ export async function deleteFeature(id: number, actorId: number) {
   await createLog({
     adminId: actorId,
     description: `Deleted feature sheet for "${describeFeatureSubject(feature)}" (id ${id})`,
+    ipAddress,
   });
 
   return { message: 'Feature sheet deleted successfully' };

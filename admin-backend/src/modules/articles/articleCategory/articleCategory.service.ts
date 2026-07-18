@@ -87,7 +87,11 @@ export async function getArticleCategoryById(id: number) {
   return shapeCategory(category);
 }
 
-export async function createArticleCategory(input: CreateArticleCategoryParsed, actorId: number) {
+export async function createArticleCategory(
+  input: CreateArticleCategoryParsed,
+  actorId: number,
+  ipAddress?: string | null,
+) {
   await assertSlugAvailable(input.slug);
 
   const category = await prisma.articleCategory.create({
@@ -104,6 +108,7 @@ export async function createArticleCategory(input: CreateArticleCategoryParsed, 
   await createLog({
     adminId: actorId,
     description: `Created article category "${category.name}" (id ${category.id}, slug "${category.slug}")`,
+    ipAddress,
   });
 
   return shapeCategory(category);
@@ -113,6 +118,7 @@ export async function updateArticleCategory(
   id: number,
   input: UpdateArticleCategoryParsed,
   actorId: number,
+  ipAddress?: string | null,
 ) {
   const existing = await getArticleCategoryById(id);
 
@@ -134,12 +140,18 @@ export async function updateArticleCategory(
   await createLog({
     adminId: actorId,
     description: `Updated article category "${category.name}" (id ${category.id})`,
+    ipAddress,
   });
 
   return shapeCategory(category);
 }
 
-export async function updateArticleCategoryStatus(id: number, isActive: boolean, actorId: number) {
+export async function updateArticleCategoryStatus(
+  id: number,
+  isActive: boolean,
+  actorId: number,
+  ipAddress?: string | null,
+) {
   const existing = await getArticleCategoryById(id);
 
   const category = await prisma.articleCategory.update({
@@ -151,12 +163,13 @@ export async function updateArticleCategoryStatus(id: number, isActive: boolean,
   await createLog({
     adminId: actorId,
     description: `${isActive ? 'Activated' : 'Deactivated'} article category "${existing.name}" (id ${id})`,
+    ipAddress,
   });
 
   return shapeCategory(category);
 }
 
-export async function deleteArticleCategory(id: number, actorId: number) {
+export async function deleteArticleCategory(id: number, actorId: number, ipAddress?: string | null) {
   const category = await getArticleCategoryById(id);
 
   const articleCount = await prisma.article.count({ where: { categoryId: id } });
@@ -171,6 +184,7 @@ export async function deleteArticleCategory(id: number, actorId: number) {
   await createLog({
     adminId: actorId,
     description: `Deleted article category "${category.name}" (id ${id})`,
+    ipAddress,
   });
 
   return { message: 'Article category deleted successfully' };

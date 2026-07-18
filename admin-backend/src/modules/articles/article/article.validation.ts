@@ -76,29 +76,34 @@ const articleShape = {
   modelIds: idArray.default([]),
 };
 
-function withScheduleRule<T extends z.ZodTypeAny>(schema: T) {
-  return schema.superRefine((data: unknown, ctx: z.RefinementCtx) => {
-    const d = data as { status: string; scheduledAt?: Date | null };
-    if (d.status === 'scheduled') {
-      if (!d.scheduledAt) {
-        ctx.addIssue({
-          code: z.ZodIssueCode.custom,
-          message: 'scheduledAt is required when status is "scheduled"',
-          path: ['scheduledAt'],
-        });
-      } else if (d.scheduledAt.getTime() <= Date.now()) {
-        ctx.addIssue({
-          code: z.ZodIssueCode.custom,
-          message: 'scheduledAt must be a future date/time',
-          path: ['scheduledAt'],
-        });
-      }
+// Shared by createArticleSchema/updateArticleSchema below — kept as a plain
+// function (not a generic schema-wrapping helper) because calling
+// `.superRefine()` through a generic `<T extends z.ZodTypeAny>` wrapper loses
+// Zod's output-type inference entirely (TypeScript falls back to the bare
+// `ZodTypeAny` constraint for contextual typing), which silently turned every
+// field on CreateArticleParsed/UpdateArticleParsed into `any`. Calling
+// `.superRefine()` directly on each concrete schema below (same pattern as
+// updateArticleStatusSchema) keeps full field-level type inference intact.
+function scheduleRule(data: { status: string; scheduledAt?: Date | null }, ctx: z.RefinementCtx) {
+  if (data.status === 'scheduled') {
+    if (!data.scheduledAt) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'scheduledAt is required when status is "scheduled"',
+        path: ['scheduledAt'],
+      });
+    } else if (data.scheduledAt.getTime() <= Date.now()) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'scheduledAt must be a future date/time',
+        path: ['scheduledAt'],
+      });
     }
-  });
+  }
 }
 
-export const createArticleSchema = withScheduleRule(z.object(articleShape));
-export const updateArticleSchema = withScheduleRule(z.object(articleShape));
+export const createArticleSchema = z.object(articleShape).superRefine(scheduleRule);
+export const updateArticleSchema = z.object(articleShape).superRefine(scheduleRule);
 
 export const updateArticleStatusSchema = z
   .object({

@@ -63,7 +63,7 @@ async function validatePermissionIds(permissionIds: number[]) {
   }
 }
 
-export async function createRole(input: CreateRoleParsed, actorId: number) {
+export async function createRole(input: CreateRoleParsed, actorId: number, ipAddress?: string | null) {
   const existingName = await prisma.role.findFirst({ where: { roleName: input.roleName } });
   if (existingName) {
     throw ApiError.conflict(`A role named "${input.roleName}" already exists`);
@@ -98,12 +98,18 @@ export async function createRole(input: CreateRoleParsed, actorId: number) {
     description: `Created role "${role.roleName}"${
       input.parentRoleId ? ` (sub-role of role id ${input.parentRoleId})` : ''
     } with ${input.permissionIds.length} permission(s)`,
+    ipAddress,
   });
 
   return role;
 }
 
-export async function updateRole(id: number, input: UpdateRoleParsed, actorId: number) {
+export async function updateRole(
+  id: number,
+  input: UpdateRoleParsed,
+  actorId: number,
+  ipAddress?: string | null,
+) {
   const existing = await getRoleById(id);
 
   if (existing.roleName === SUPER_ADMIN_ROLE_NAME && input.roleName && input.roleName !== existing.roleName) {
@@ -138,12 +144,13 @@ export async function updateRole(id: number, input: UpdateRoleParsed, actorId: n
   await createLog({
     adminId: actorId,
     description: `Updated role "${existing.roleName}" (id ${id})`,
+    ipAddress,
   });
 
   return role;
 }
 
-export async function deleteRole(id: number, actorId: number) {
+export async function deleteRole(id: number, actorId: number, ipAddress?: string | null) {
   const role = await getRoleById(id);
 
   // Guard: never allow the Super Admin role itself to be deleted — the
@@ -168,6 +175,7 @@ export async function deleteRole(id: number, actorId: number) {
   await createLog({
     adminId: actorId,
     description: `Deleted role "${role.roleName}" (id ${id})`,
+    ipAddress,
   });
 
   return { message: 'Role deleted successfully' };

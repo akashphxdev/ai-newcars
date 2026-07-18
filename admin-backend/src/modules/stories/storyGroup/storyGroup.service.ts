@@ -80,6 +80,7 @@ export async function createStoryGroup(
   input: CreateStoryGroupParsed,
   actorId: number,
   coverFilename: string,
+  ipAddress?: string | null,
 ): Promise<StoryGroupRecord> {
   const coverMediaUrl = buildPublicPath('story-groups', coverFilename);
 
@@ -108,6 +109,7 @@ export async function createStoryGroup(
   await createLog({
     adminId: actorId,
     description: `Created story group "${group.title}" (id ${group.id})`,
+    ipAddress,
   });
 
   return group as unknown as StoryGroupRecord;
@@ -117,6 +119,7 @@ export async function updateStoryGroup(
   id: number,
   input: UpdateStoryGroupParsed,
   actorId: number,
+  ipAddress?: string | null,
 ): Promise<StoryGroupRecord> {
   const existing = await getStoryGroupById(id);
 
@@ -154,6 +157,7 @@ export async function updateStoryGroup(
   await createLog({
     adminId: actorId,
     description: `Updated story group "${group.title}" (id ${id})`,
+    ipAddress,
   });
 
   return group as unknown as StoryGroupRecord;
@@ -163,6 +167,7 @@ export async function updateStoryGroupStatus(
   id: number,
   isActive: boolean,
   actorId: number,
+  ipAddress?: string | null,
 ): Promise<StoryGroupRecord> {
   const existing = await getStoryGroupById(id);
 
@@ -177,6 +182,7 @@ export async function updateStoryGroupStatus(
   await createLog({
     adminId: actorId,
     description: `${isActive ? 'Activated' : 'Deactivated'} story group "${existing.title}" (id ${id})`,
+    ipAddress,
   });
 
   return group as unknown as StoryGroupRecord;
@@ -187,6 +193,7 @@ export async function uploadStoryGroupCover(
   coverMediaType: MediaType,
   savedFilename: string,
   actorId: number,
+  ipAddress?: string | null,
 ): Promise<StoryGroupUploadCoverResult> {
   const existing = await getStoryGroupById(id);
 
@@ -212,12 +219,13 @@ export async function uploadStoryGroupCover(
   await createLog({
     adminId: actorId,
     description: `Updated cover for story group "${existing.title}" (id ${id})`,
+    ipAddress,
   });
 
   return group;
 }
 
-export async function deleteStoryGroup(id: number, actorId: number) {
+export async function deleteStoryGroup(id: number, actorId: number, ipAddress?: string | null) {
   const existing = await getStoryGroupById(id);
 
   // Same relation-guard convention as brand.service.ts's deleteBrand —
@@ -237,6 +245,7 @@ export async function deleteStoryGroup(id: number, actorId: number) {
   await createLog({
     adminId: actorId,
     description: `Deleted story group "${existing.title}" (id ${id})`,
+    ipAddress,
   });
 
   return { message: 'Story group deleted successfully' };

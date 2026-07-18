@@ -3,6 +3,7 @@
 import { Request, Response } from 'express';
 import { ApiError } from '@/core/errors/ApiError';
 import { sendSuccess } from '@/core/utils/sendResponse';
+import { getClientIp } from '@/core/utils/getClientIp';
 import * as roleService from './role.service';
 import { createRoleSchema, updateRoleSchema, roleIdParamSchema } from './role.validation';
 
@@ -25,7 +26,7 @@ export async function createRole(req: Request, res: Response) {
 
   if (!req.auth) throw ApiError.unauthorized();
 
-  const role = await roleService.createRole(input, req.auth.id);
+  const role = await roleService.createRole(input, req.auth.id, getClientIp(req));
   return sendSuccess(res, role, 'Role created successfully', 201);
 }
 
@@ -36,7 +37,7 @@ export async function updateRole(req: Request, res: Response) {
 
   if (!req.auth) throw ApiError.unauthorized();
 
-  const role = await roleService.updateRole(id, input, req.auth.id);
+  const role = await roleService.updateRole(id, input, req.auth.id, getClientIp(req));
   return sendSuccess(res, role, 'Role updated successfully');
 }
 
@@ -46,6 +47,6 @@ export async function deleteRole(req: Request, res: Response) {
 
   if (!req.auth) throw ApiError.unauthorized();
 
-  const result = await roleService.deleteRole(id, req.auth.id);
+  const result = await roleService.deleteRole(id, req.auth.id, getClientIp(req));
   return sendSuccess(res, null, result.message);
 }

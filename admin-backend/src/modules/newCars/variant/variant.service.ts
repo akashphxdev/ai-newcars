@@ -139,7 +139,11 @@ async function assertVariantNameUnique(modelId: number, variantName: string, exc
   }
 }
 
-export async function createVariant(input: CreateVariantParsed, actorId: number) {
+export async function createVariant(
+  input: CreateVariantParsed,
+  actorId: number,
+  ipAddress?: string | null,
+) {
   await assertModelExists(input.modelId);
   await assertTransmissionOptionExists(input.transmissionId);
   await assertVariantNameUnique(input.modelId, input.variantName);
@@ -159,6 +163,7 @@ export async function createVariant(input: CreateVariantParsed, actorId: number)
   await createLog({
     adminId: actorId,
     description: `Created variant "${variant.variantName}" (id ${variant.id}) under model id ${variant.modelId}`,
+    ipAddress,
   });
 
   return variant;
@@ -166,7 +171,12 @@ export async function createVariant(input: CreateVariantParsed, actorId: number)
 
 // Every field is required here too (per product requirement) — this is a
 // full replace on every edit, not a partial PATCH like Brand/CarModel.
-export async function updateVariant(id: number, input: UpdateVariantParsed, actorId: number) {
+export async function updateVariant(
+  id: number,
+  input: UpdateVariantParsed,
+  actorId: number,
+  ipAddress?: string | null,
+) {
   await getVariantById(id);
   await assertModelExists(input.modelId);
   await assertTransmissionOptionExists(input.transmissionId);
@@ -188,12 +198,13 @@ export async function updateVariant(id: number, input: UpdateVariantParsed, acto
   await createLog({
     adminId: actorId,
     description: `Updated variant "${variant.variantName}" (id ${id})`,
+    ipAddress,
   });
 
   return variant;
 }
 
-export async function deleteVariant(id: number, actorId: number) {
+export async function deleteVariant(id: number, actorId: number, ipAddress?: string | null) {
   const variant = await getVariantById(id);
 
   // A variant can't be deleted while ICE/electric powertrains (or other
@@ -232,6 +243,7 @@ export async function deleteVariant(id: number, actorId: number) {
   await createLog({
     adminId: actorId,
     description: `Deleted variant "${variant.variantName}" (id ${id})`,
+    ipAddress,
   });
 
   return { message: 'Variant deleted successfully' };

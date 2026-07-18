@@ -3,6 +3,7 @@
 import { Request, Response } from 'express';
 import { ApiError } from '@/core/errors/ApiError';
 import { sendSuccess, sendPaginated } from '@/core/utils/sendResponse';
+import { getClientIp } from '@/core/utils/getClientIp';
 import * as adPlacementService from './adPlacement.service';
 import {
   adPlacementListQuerySchema,
@@ -30,7 +31,7 @@ export async function createAdPlacement(req: Request, res: Response) {
   }
 
   const input = createAdPlacementSchema.parse(req.body);
-  const placement = await adPlacementService.createAdPlacement(input, req.auth.id);
+  const placement = await adPlacementService.createAdPlacement(input, req.auth.id, getClientIp(req));
   return sendSuccess(res, placement, 'Ad placement created successfully', 201);
 }
 
@@ -42,7 +43,7 @@ export async function updateAdPlacement(req: Request, res: Response) {
     throw ApiError.unauthorized();
   }
 
-  const placement = await adPlacementService.updateAdPlacement(id, input, req.auth.id);
+  const placement = await adPlacementService.updateAdPlacement(id, input, req.auth.id, getClientIp(req));
   return sendSuccess(res, placement, 'Ad placement updated successfully');
 }
 
@@ -55,7 +56,7 @@ export async function updateAdPlacementStatus(req: Request, res: Response) {
     throw ApiError.unauthorized();
   }
 
-  const placement = await adPlacementService.updateAdPlacementStatus(id, isActive, req.auth.id);
+  const placement = await adPlacementService.updateAdPlacementStatus(id, isActive, req.auth.id, getClientIp(req));
   return sendSuccess(res, placement, 'Ad placement status updated successfully');
 }
 
@@ -66,6 +67,6 @@ export async function deleteAdPlacement(req: Request, res: Response) {
     throw ApiError.unauthorized();
   }
 
-  const result = await adPlacementService.deleteAdPlacement(id, req.auth.id);
+  const result = await adPlacementService.deleteAdPlacement(id, req.auth.id, getClientIp(req));
   return sendSuccess(res, null, result.message);
 }

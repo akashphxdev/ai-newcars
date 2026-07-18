@@ -334,7 +334,6 @@ export default function AllAiFaqs() {
               </div>
               <p className="text-[10px] text-[#a39e96] pt-1">
                 Generated {fmtDate(f.createdAt)}
-                {f.createdByAdmin ? ` by ${f.createdByAdmin.name}` : ""}
                 {f.publishedFaqId ? ` · Published as real FAQ #${f.publishedFaqId}` : ""}
               </p>
             </div>

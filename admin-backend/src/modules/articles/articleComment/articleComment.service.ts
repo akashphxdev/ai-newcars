@@ -75,6 +75,7 @@ export async function updateArticleCommentStatus(
   id: number,
   input: UpdateArticleCommentStatusParsed,
   actorId: number,
+  ipAddress?: string | null,
 ) {
   await getArticleCommentById(id);
 
@@ -87,6 +88,7 @@ export async function updateArticleCommentStatus(
   await createLog({
     adminId: actorId,
     description: `Set comment by "${comment.user.name}" on "${comment.article.title}" to "${input.status}" (id ${id})`,
+    ipAddress,
   });
 
   return shapeComment(comment);
@@ -115,7 +117,7 @@ async function collectDescendantCommentIds(rootId: number): Promise<number[]> {
   return allIds;
 }
 
-export async function deleteArticleComment(id: number, actorId: number) {
+export async function deleteArticleComment(id: number, actorId: number, ipAddress?: string | null) {
   const comment = await getArticleCommentById(id);
 
   const descendantIds = await collectDescendantCommentIds(id);
@@ -129,6 +131,7 @@ export async function deleteArticleComment(id: number, actorId: number) {
         ? ` — also deleted ${descendantIds.length} repl${descendantIds.length === 1 ? 'y' : 'ies'}`
         : ''
     }`,
+    ipAddress,
   });
 
   return { message: 'Comment deleted successfully' };

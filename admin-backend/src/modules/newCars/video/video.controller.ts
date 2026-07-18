@@ -4,6 +4,7 @@ import { Request, Response } from 'express';
 import { ApiError } from '@/core/errors/ApiError';
 import { sendSuccess, sendPaginated } from '@/core/utils/sendResponse';
 import { buildPublicPath, deleteUploadedFile } from '@/core/utils/fileStorage.util';
+import { getClientIp } from '@/core/utils/getClientIp';
 import * as videoService from './video.service';
 import {
   videoListQuerySchema,
@@ -38,7 +39,7 @@ export async function createVideo(req: Request, res: Response) {
 
   try {
     const input = createVideoSchema.parse(req.body);
-    const video = await videoService.createVideo(input, req.auth.id, req.file.filename);
+    const video = await videoService.createVideo(input, req.auth.id, req.file.filename, getClientIp(req));
     return sendSuccess(res, video, 'Video created successfully', 201);
   } catch (err) {
     await deleteUploadedFile(buildPublicPath('car-videos', req.file.filename));
@@ -55,7 +56,7 @@ export async function updateVideo(req: Request, res: Response) {
     throw ApiError.unauthorized();
   }
 
-  const video = await videoService.updateVideo(id, input, req.auth.id);
+  const video = await videoService.updateVideo(id, input, req.auth.id, getClientIp(req));
   return sendSuccess(res, video, 'Video updated successfully');
 }
 
@@ -69,7 +70,7 @@ export async function updateVideoStatus(req: Request, res: Response) {
     throw ApiError.unauthorized();
   }
 
-  const video = await videoService.updateVideoStatus(id, isActive, req.auth.id);
+  const video = await videoService.updateVideoStatus(id, isActive, req.auth.id, getClientIp(req));
   return sendSuccess(res, video, 'Video status updated successfully');
 }
 
@@ -84,7 +85,7 @@ export async function uploadVideoThumbnail(req: Request, res: Response) {
     throw ApiError.badRequest('No image file received (expected field name "thumbnail")');
   }
 
-  const video = await videoService.uploadVideoThumbnail(id, req.file.filename, req.auth.id);
+  const video = await videoService.uploadVideoThumbnail(id, req.file.filename, req.auth.id, getClientIp(req));
   return sendSuccess(res, video, 'Video thumbnail updated successfully');
 }
 
@@ -96,6 +97,6 @@ export async function deleteVideo(req: Request, res: Response) {
     throw ApiError.unauthorized();
   }
 
-  const result = await videoService.deleteVideo(id, req.auth.id);
+  const result = await videoService.deleteVideo(id, req.auth.id, getClientIp(req));
   return sendSuccess(res, null, result.message);
 }

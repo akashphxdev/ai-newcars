@@ -93,7 +93,7 @@ async function assertDisplayOrderAvailable(modelId: number, displayOrder: number
   }
 }
 
-export async function createFaq(input: CreateFaqParsed, actorId: number) {
+export async function createFaq(input: CreateFaqParsed, actorId: number, ipAddress?: string | null) {
   await assertModelExists(input.modelId);
   await assertDisplayOrderAvailable(input.modelId, input.displayOrder);
 
@@ -111,6 +111,7 @@ export async function createFaq(input: CreateFaqParsed, actorId: number) {
   await createLog({
     adminId: actorId,
     description: `Created FAQ "${faq.question}" (id ${faq.id}) for "${faq.model.brand.name} ${faq.model.name}"`,
+    ipAddress,
   });
 
   return faq;
@@ -118,7 +119,12 @@ export async function createFaq(input: CreateFaqParsed, actorId: number) {
 
 // Every field is required here too (per product requirement) — this is a
 // full replace on every edit, not a partial PATCH like Brand/CarModel.
-export async function updateFaq(id: number, input: UpdateFaqParsed, actorId: number) {
+export async function updateFaq(
+  id: number,
+  input: UpdateFaqParsed,
+  actorId: number,
+  ipAddress?: string | null,
+) {
   await getFaqById(id);
   await assertModelExists(input.modelId);
   await assertDisplayOrderAvailable(input.modelId, input.displayOrder, id);
@@ -138,6 +144,7 @@ export async function updateFaq(id: number, input: UpdateFaqParsed, actorId: num
   await createLog({
     adminId: actorId,
     description: `Updated FAQ "${faq.question}" (id ${id})`,
+    ipAddress,
   });
 
   return faq;
@@ -145,7 +152,12 @@ export async function updateFaq(id: number, input: UpdateFaqParsed, actorId: num
 
 // Lightweight row-level Active/Inactive toggle — separate from the full
 // update so flipping the switch doesn't need the whole edit form's payload.
-export async function updateFaqStatus(id: number, isActive: boolean, actorId: number) {
+export async function updateFaqStatus(
+  id: number,
+  isActive: boolean,
+  actorId: number,
+  ipAddress?: string | null,
+) {
   await getFaqById(id);
 
   const faq = await prisma.carFaq.update({
@@ -157,12 +169,13 @@ export async function updateFaqStatus(id: number, isActive: boolean, actorId: nu
   await createLog({
     adminId: actorId,
     description: `${isActive ? 'Activated' : 'Deactivated'} FAQ "${faq.question}" (id ${id})`,
+    ipAddress,
   });
 
   return faq;
 }
 
-export async function deleteFaq(id: number, actorId: number) {
+export async function deleteFaq(id: number, actorId: number, ipAddress?: string | null) {
   const faq = await getFaqById(id);
 
   await prisma.carFaq.delete({ where: { id } });
@@ -170,6 +183,7 @@ export async function deleteFaq(id: number, actorId: number) {
   await createLog({
     adminId: actorId,
     description: `Deleted FAQ "${faq.question}" (id ${id})`,
+    ipAddress,
   });
 
   return { message: 'FAQ deleted successfully' };

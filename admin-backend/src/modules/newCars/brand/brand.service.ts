@@ -10,7 +10,6 @@ import type {
   BrandOptionsQueryParsed,
   CreateBrandParsed,
   UpdateBrandParsed,
-  UpdateBrandStatusParsed,
 } from './brand.validation';
 import type { BrandUploadLogoResult } from './brand.types';
 
@@ -113,7 +112,12 @@ async function assertSlugAvailable(slug: string, excludeId?: number) {
     throw ApiError.conflict(`A brand with the slug "${slug}" already exists`);
   }
 }
-export async function createBrand(input: CreateBrandParsed, actorId: number, logoFilename: string) {
+export async function createBrand(
+  input: CreateBrandParsed,
+  actorId: number,
+  logoFilename: string,
+  ipAddress?: string | null,
+) {
   if (input.countryOriginId) {
     await assertCountryExists(input.countryOriginId);
   }
@@ -136,12 +140,18 @@ export async function createBrand(input: CreateBrandParsed, actorId: number, log
   await createLog({
     adminId: actorId,
     description: `Created brand "${brand.name}" (id ${brand.id}, slug "${brand.slug}")`,
+    ipAddress,
   });
 
   return brand;
 }
 
-export async function updateBrand(id: number, input: UpdateBrandParsed, actorId: number) {
+export async function updateBrand(
+  id: number,
+  input: UpdateBrandParsed,
+  actorId: number,
+  ipAddress?: string | null,
+) {
   const existing = await getBrandById(id);
 
   if (typeof input.countryOriginId === 'number') {
@@ -166,11 +176,17 @@ export async function updateBrand(id: number, input: UpdateBrandParsed, actorId:
   await createLog({
     adminId: actorId,
     description: `Updated brand "${brand.name}" (id ${brand.id})`,
+    ipAddress,
   });
 
   return brand;
 }
-export async function updateBrandStatus(id: number, isActive: boolean, actorId: number) {
+export async function updateBrandStatus(
+  id: number,
+  isActive: boolean,
+  actorId: number,
+  ipAddress?: string | null,
+) {
   await getBrandById(id);
 
   const brand = await prisma.brand.update({
@@ -182,12 +198,13 @@ export async function updateBrandStatus(id: number, isActive: boolean, actorId: 
   await createLog({
     adminId: actorId,
     description: `${isActive ? 'Activated' : 'Deactivated'} brand "${brand.name}" (id ${id})`,
+    ipAddress,
   });
 
   return brand;
 }
 
-export async function deleteBrand(id: number, actorId: number) {
+export async function deleteBrand(id: number, actorId: number, ipAddress?: string | null) {
   const brand = await getBrandById(id);
 
   const carModelCount = await prisma.carModel.count({ where: { brandId: id } });
@@ -206,6 +223,7 @@ export async function deleteBrand(id: number, actorId: number) {
   await createLog({
     adminId: actorId,
     description: `Deleted brand "${brand.name}" (id ${id})`,
+    ipAddress,
   });
 
   return { message: 'Brand deleted successfully' };
@@ -215,6 +233,7 @@ export async function uploadBrandLogo(
   id: number,
   savedFilename: string,
   actorId: number,
+  ipAddress?: string | null,
 ): Promise<BrandUploadLogoResult> {
   const existing = await getBrandById(id);
 
@@ -233,6 +252,7 @@ export async function uploadBrandLogo(
   await createLog({
     adminId: actorId,
     description: `Updated logo for brand "${existing.name}" (id ${id})`,
+    ipAddress,
   });
 
   return brand as BrandUploadLogoResult;

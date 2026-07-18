@@ -142,6 +142,7 @@ export async function createCarModel(
   input: CreateCarModelParsed,
   actorId: number,
   coverImageFilename?: string,
+  ipAddress?: string | null,
 ) {
   await assertBrandExists(input.brandId);
   await assertBodyTypeExists(input.bodyTypeId);
@@ -166,12 +167,18 @@ export async function createCarModel(
   await createLog({
     adminId: actorId,
     description: `Created car model "${carModel.name}" (id ${carModel.id}, slug "${carModel.slug}")`,
+    ipAddress,
   });
 
   return carModel;
 }
 
-export async function updateCarModel(id: number, input: UpdateCarModelParsed, actorId: number) {
+export async function updateCarModel(
+  id: number,
+  input: UpdateCarModelParsed,
+  actorId: number,
+  ipAddress?: string | null,
+) {
   const existing = await getCarModelById(id);
 
   if (typeof input.brandId === 'number') {
@@ -224,6 +231,7 @@ export async function updateCarModel(id: number, input: UpdateCarModelParsed, ac
   await createLog({
     adminId: actorId,
     description: `Updated car model "${carModel.name}" (id ${carModel.id})`,
+    ipAddress,
   });
 
   return carModel;
@@ -237,6 +245,7 @@ export async function updateCarModelLaunchStatus(
   launchStatus: string,
   expectedLaunchDate: Date | undefined,
   actorId: number,
+  ipAddress?: string | null,
 ) {
   const existing = await getCarModelById(id);
 
@@ -265,6 +274,7 @@ export async function updateCarModelLaunchStatus(
   await createLog({
     adminId: actorId,
     description: `Changed launch status of car model "${carModel.name}" (id ${id}) to "${launchStatus}"`,
+    ipAddress,
   });
 
   return carModel;
@@ -278,6 +288,7 @@ export async function uploadCarModelCoverImage(
   id: number,
   savedFilename: string,
   actorId: number,
+  ipAddress?: string | null,
 ): Promise<CarModelCoverImageResult> {
   const existing = await getCarModelById(id);
 
@@ -296,12 +307,13 @@ export async function uploadCarModelCoverImage(
   await createLog({
     adminId: actorId,
     description: `Replaced cover image for car model "${existing.name}" (id ${id})`,
+    ipAddress,
   });
 
   return carModel as CarModelCoverImageResult;
 }
 
-export async function deleteCarModel(id: number, actorId: number) {
+export async function deleteCarModel(id: number, actorId: number, ipAddress?: string | null) {
   const carModel = await getCarModelById(id);
 
   // A car model with any of these still pointing at it can't be deleted
@@ -358,6 +370,7 @@ export async function deleteCarModel(id: number, actorId: number) {
   await createLog({
     adminId: actorId,
     description: `Deleted car model "${carModel.name}" (id ${id})`,
+    ipAddress,
   });
 
   return { message: 'Car model deleted successfully' };

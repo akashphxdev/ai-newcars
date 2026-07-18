@@ -111,7 +111,12 @@ export async function getImageById(id: number) {
   return image;
 }
 
-export async function createImage(input: CreateImageParsed, actorId: number, imageFilename: string) {
+export async function createImage(
+  input: CreateImageParsed,
+  actorId: number,
+  imageFilename: string,
+  ipAddress?: string | null,
+) {
   await assertModelExists(input.modelId);
   if (input.variantId) {
     await assertVariantBelongsToModel(input.variantId, input.modelId);
@@ -144,6 +149,7 @@ export async function createImage(input: CreateImageParsed, actorId: number, ima
   await createLog({
     adminId: actorId,
     description: `Uploaded image (id ${image.id}) for "${image.model.name}"`,
+    ipAddress,
   });
 
   return image;
@@ -157,6 +163,7 @@ export async function createImagesBulk(
   input: BulkCreateImagesParsed,
   actorId: number,
   filenames: string[],
+  ipAddress?: string | null,
 ) {
   if (filenames.length === 0) {
     throw ApiError.badRequest('No image files received (expected field name "images")');
@@ -191,12 +198,18 @@ export async function createImagesBulk(
   await createLog({
     adminId: actorId,
     description: `Bulk-uploaded ${images.length} image(s) for "${images[0]?.model.name ?? input.modelId}"`,
+    ipAddress,
   });
 
   return images;
 }
 
-export async function updateImage(id: number, input: UpdateImageParsed, actorId: number) {
+export async function updateImage(
+  id: number,
+  input: UpdateImageParsed,
+  actorId: number,
+  ipAddress?: string | null,
+) {
   const existing = await getImageById(id);
 
   const targetModelId = input.modelId ?? existing.modelId;
@@ -243,6 +256,7 @@ export async function updateImage(id: number, input: UpdateImageParsed, actorId:
   await createLog({
     adminId: actorId,
     description: `Updated image (id ${id}) for "${image.model.name}"`,
+    ipAddress,
   });
 
   return image;
@@ -250,7 +264,12 @@ export async function updateImage(id: number, input: UpdateImageParsed, actorId:
 
 // Dedicated quick toggle for the gallery's "set as cover" action —
 // mirrors brand.service.ts's updateBrandStatus in shape/simplicity.
-export async function setPrimaryImage(id: number, isPrimary: boolean, actorId: number) {
+export async function setPrimaryImage(
+  id: number,
+  isPrimary: boolean,
+  actorId: number,
+  ipAddress?: string | null,
+) {
   const existing = await getImageById(id);
 
   const image = await prisma.$transaction(async (tx) => {
@@ -267,6 +286,7 @@ export async function setPrimaryImage(id: number, isPrimary: boolean, actorId: n
   await createLog({
     adminId: actorId,
     description: `${isPrimary ? 'Set' : 'Unset'} image (id ${id}) as primary for "${existing.model.name}"`,
+    ipAddress,
   });
 
   return image;
@@ -283,7 +303,7 @@ async function clearOtherPrimaryFlagsTx(
   });
 }
 
-export async function deleteImage(id: number, actorId: number) {
+export async function deleteImage(id: number, actorId: number, ipAddress?: string | null) {
   const image = await getImageById(id);
 
   await prisma.carImage.delete({ where: { id } });
@@ -294,6 +314,7 @@ export async function deleteImage(id: number, actorId: number) {
   await createLog({
     adminId: actorId,
     description: `Deleted image (id ${id}) for "${image.model.name}"`,
+    ipAddress,
   });
 
   return { message: 'Image deleted successfully' };
@@ -303,6 +324,7 @@ export async function replaceImageFile(
   id: number,
   savedFilename: string,
   actorId: number,
+  ipAddress?: string | null,
 ): Promise<ImageReplaceFileResult> {
   const existing = await getImageById(id);
 
@@ -320,6 +342,7 @@ export async function replaceImageFile(
   await createLog({
     adminId: actorId,
     description: `Replaced file for image (id ${id}) on "${existing.model.name}"`,
+    ipAddress,
   });
 
   return image as ImageReplaceFileResult;

@@ -3,6 +3,7 @@
 import { Request, Response } from 'express';
 import { ApiError } from '@/core/errors/ApiError';
 import { sendSuccess, sendPaginated } from '@/core/utils/sendResponse';
+import { getClientIp } from '@/core/utils/getClientIp';
 import * as articleCategoryService from './articleCategory.service';
 import {
   articleCategoryListQuerySchema,
@@ -30,7 +31,7 @@ export async function createArticleCategory(req: Request, res: Response) {
   }
 
   const input = createArticleCategorySchema.parse(req.body);
-  const category = await articleCategoryService.createArticleCategory(input, req.auth.id);
+  const category = await articleCategoryService.createArticleCategory(input, req.auth.id, getClientIp(req));
   return sendSuccess(res, category, 'Article category created successfully', 201);
 }
 
@@ -42,7 +43,7 @@ export async function updateArticleCategory(req: Request, res: Response) {
     throw ApiError.unauthorized();
   }
 
-  const category = await articleCategoryService.updateArticleCategory(id, input, req.auth.id);
+  const category = await articleCategoryService.updateArticleCategory(id, input, req.auth.id, getClientIp(req));
   return sendSuccess(res, category, 'Article category updated successfully');
 }
 
@@ -55,7 +56,7 @@ export async function updateArticleCategoryStatus(req: Request, res: Response) {
     throw ApiError.unauthorized();
   }
 
-  const category = await articleCategoryService.updateArticleCategoryStatus(id, isActive, req.auth.id);
+  const category = await articleCategoryService.updateArticleCategoryStatus(id, isActive, req.auth.id, getClientIp(req));
   return sendSuccess(res, category, 'Article category status updated successfully');
 }
 
@@ -66,6 +67,6 @@ export async function deleteArticleCategory(req: Request, res: Response) {
     throw ApiError.unauthorized();
   }
 
-  const result = await articleCategoryService.deleteArticleCategory(id, req.auth.id);
+  const result = await articleCategoryService.deleteArticleCategory(id, req.auth.id, getClientIp(req));
   return sendSuccess(res, null, result.message);
 }

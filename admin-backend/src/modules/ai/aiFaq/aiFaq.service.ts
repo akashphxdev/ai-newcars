@@ -28,8 +28,6 @@ const AI_FAQ_SELECT = {
   aiProvider: true,
   aiModel: true,
   publishedFaqId: true,
-  createdBy: true,
-  createdByAdmin: { select: { id: true, name: true } },
   reviewedBy: true,
   reviewedByAdmin: { select: { id: true, name: true } },
   reviewedAt: true,
@@ -87,6 +85,7 @@ export async function updateAiFaq(
   id: number,
   input: UpdateAiFaqParsed,
   actorId: number,
+  ipAddress?: string | null,
 ): Promise<AiFaqRecord> {
   const existing = await getAiFaqById(id);
 
@@ -106,12 +105,13 @@ export async function updateAiFaq(
   await createLog({
     adminId: actorId,
     description: `Edited AI-generated FAQ "${faq.question}" (ai_faq id ${id})`,
+    ipAddress,
   });
 
   return faq as unknown as AiFaqRecord;
 }
 
-export async function approveAiFaq(id: number, actorId: number): Promise<AiFaqRecord> {
+export async function approveAiFaq(id: number, actorId: number, ipAddress?: string | null): Promise<AiFaqRecord> {
   const existing = await getAiFaqById(id);
 
   if (existing.status !== AI_FAQ_STATUS.PENDING) {
@@ -131,6 +131,7 @@ export async function approveAiFaq(id: number, actorId: number): Promise<AiFaqRe
   await createLog({
     adminId: actorId,
     description: `Approved AI-generated FAQ "${faq.question}" (ai_faq id ${id})`,
+    ipAddress,
   });
 
   return faq as unknown as AiFaqRecord;
@@ -138,7 +139,7 @@ export async function approveAiFaq(id: number, actorId: number): Promise<AiFaqRe
 
 // Allowed from pending OR approved — an admin can still change their
 // mind on one they already approved, right up until it's published.
-export async function rejectAiFaq(id: number, actorId: number): Promise<AiFaqRecord> {
+export async function rejectAiFaq(id: number, actorId: number, ipAddress?: string | null): Promise<AiFaqRecord> {
   const existing = await getAiFaqById(id);
 
   if (existing.status === AI_FAQ_STATUS.REJECTED || existing.status === AI_FAQ_STATUS.PUBLISHED) {
@@ -158,6 +159,7 @@ export async function rejectAiFaq(id: number, actorId: number): Promise<AiFaqRec
   await createLog({
     adminId: actorId,
     description: `Rejected AI-generated FAQ "${faq.question}" (ai_faq id ${id})`,
+    ipAddress,
   });
 
   return faq as unknown as AiFaqRecord;
@@ -167,7 +169,7 @@ export async function rejectAiFaq(id: number, actorId: number): Promise<AiFaqRec
 // transaction so the new car_faqs row and the ai_faqs status flip
 // either both happen or neither does — same atomicity pattern as
 // article.service.ts's update+cover-image transaction.
-export async function publishAiFaq(id: number, actorId: number): Promise<AiFaqRecord> {
+export async function publishAiFaq(id: number, actorId: number, ipAddress?: string | null): Promise<AiFaqRecord> {
   const existing = await getAiFaqById(id);
 
   if (existing.status !== AI_FAQ_STATUS.APPROVED) {
@@ -207,6 +209,7 @@ export async function publishAiFaq(id: number, actorId: number): Promise<AiFaqRe
   await createLog({
     adminId: actorId,
     description: `Published AI-generated FAQ "${published.question}" (ai_faq id ${id}) as FAQ #${published.publishedFaqId} for "${published.model.brand.name} ${published.model.name}"`,
+    ipAddress,
   });
 
   return published as unknown as AiFaqRecord;
@@ -214,7 +217,7 @@ export async function publishAiFaq(id: number, actorId: number): Promise<AiFaqRe
 
 // Cleanup only — rejected FAQs have no live counterpart, so there's
 // nothing else to unwind on delete.
-export async function deleteAiFaq(id: number, actorId: number) {
+export async function deleteAiFaq(id: number, actorId: number, ipAddress?: string | null) {
   const existing = await getAiFaqById(id);
 
   if (existing.status !== AI_FAQ_STATUS.REJECTED) {
@@ -226,6 +229,7 @@ export async function deleteAiFaq(id: number, actorId: number) {
   await createLog({
     adminId: actorId,
     description: `Deleted rejected AI-generated FAQ "${existing.question}" (ai_faq id ${id})`,
+    ipAddress,
   });
 
   return { message: 'AI FAQ deleted successfully' };

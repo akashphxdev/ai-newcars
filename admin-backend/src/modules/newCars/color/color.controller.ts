@@ -4,6 +4,7 @@ import { Request, Response } from 'express';
 import { ApiError } from '@/core/errors/ApiError';
 import { sendSuccess, sendPaginated } from '@/core/utils/sendResponse';
 import { buildPublicPath, deleteUploadedFile } from '@/core/utils/fileStorage.util';
+import { getClientIp } from '@/core/utils/getClientIp';
 import * as colorService from './color.service';
 import { colorListQuerySchema, colorIdParamSchema, createColorSchema, updateColorSchema } from './color.validation';
 
@@ -31,7 +32,7 @@ export async function createColor(req: Request, res: Response) {
 
   try {
     const input = createColorSchema.parse(req.body);
-    const color = await colorService.createColor(input, req.auth.id, req.file?.filename);
+    const color = await colorService.createColor(input, req.auth.id, req.file?.filename, getClientIp(req));
     return sendSuccess(res, color, 'Color created successfully', 201);
   } catch (err) {
     if (req.file) {
@@ -50,7 +51,7 @@ export async function updateColor(req: Request, res: Response) {
     throw ApiError.unauthorized();
   }
 
-  const color = await colorService.updateColor(id, input, req.auth.id);
+  const color = await colorService.updateColor(id, input, req.auth.id, getClientIp(req));
   return sendSuccess(res, color, 'Color updated successfully');
 }
 
@@ -65,7 +66,7 @@ export async function uploadColorImage(req: Request, res: Response) {
     throw ApiError.badRequest('No image file received (expected field name "image")');
   }
 
-  const color = await colorService.uploadColorImage(id, req.file.filename, req.auth.id);
+  const color = await colorService.uploadColorImage(id, req.file.filename, req.auth.id, getClientIp(req));
   return sendSuccess(res, color, 'Color image updated successfully');
 }
 
@@ -77,6 +78,6 @@ export async function deleteColor(req: Request, res: Response) {
     throw ApiError.unauthorized();
   }
 
-  const result = await colorService.deleteColor(id, req.auth.id);
+  const result = await colorService.deleteColor(id, req.auth.id, getClientIp(req));
   return sendSuccess(res, null, result.message);
 }

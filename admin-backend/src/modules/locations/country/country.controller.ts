@@ -3,6 +3,7 @@
 import { Request, Response } from 'express';
 import { ApiError } from '@/core/errors/ApiError';
 import { sendSuccess, sendPaginated } from '@/core/utils/sendResponse';
+import { getClientIp } from '@/core/utils/getClientIp';
 import * as countryService from './country.service';
 import {
   countryListQuerySchema,
@@ -44,7 +45,7 @@ export async function createCountry(req: Request, res: Response) {
     throw ApiError.unauthorized();
   }
 
-  const country = await countryService.createCountry(input, req.auth.id);
+  const country = await countryService.createCountry(input, req.auth.id, getClientIp(req));
   return sendSuccess(res, country, 'Country created successfully', 201);
 }
 
@@ -57,7 +58,7 @@ export async function updateCountry(req: Request, res: Response) {
     throw ApiError.unauthorized();
   }
 
-  const country = await countryService.updateCountry(id, input, req.auth.id);
+  const country = await countryService.updateCountry(id, input, req.auth.id, getClientIp(req));
   return sendSuccess(res, country, 'Country updated successfully');
 }
 
@@ -69,7 +70,7 @@ export async function updateCountryStatus(req: Request, res: Response) {
     throw ApiError.unauthorized();
   }
 
-  const country = await countryService.updateCountryStatus(id, isActive, req.auth.id);
+  const country = await countryService.updateCountryStatus(id, isActive, req.auth.id, getClientIp(req));
   return sendSuccess(res, country, 'Country status updated successfully');
 }
 
@@ -81,6 +82,6 @@ export async function deleteCountry(req: Request, res: Response) {
     throw ApiError.unauthorized();
   }
 
-  const result = await countryService.deleteCountry(id, req.auth.id);
+  const result = await countryService.deleteCountry(id, req.auth.id, getClientIp(req));
   return sendSuccess(res, null, result.message);
 }

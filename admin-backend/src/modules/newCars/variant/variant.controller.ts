@@ -4,6 +4,7 @@ import { Request, Response } from 'express';
 import { ApiError } from '@/core/errors/ApiError';
 import { sendSuccess, sendPaginated } from '@/core/utils/sendResponse';
 import { createLog } from '@/core/utils/createLog';
+import { getClientIp } from '@/core/utils/getClientIp';
 import * as variantService from './variant.service';
 import {
   variantListQuerySchema,
@@ -37,6 +38,7 @@ export async function getVariantById(req: Request, res: Response) {
     await createLog({
       adminId: req.auth.id,
       description: `Viewed variant "${variant.model.brand.name} ${variant.model.name} — ${variant.variantName}" (id ${id})`,
+      ipAddress: getClientIp(req),
     });
   }
 
@@ -51,7 +53,7 @@ export async function createVariant(req: Request, res: Response) {
     throw ApiError.unauthorized();
   }
 
-  const variant = await variantService.createVariant(input, req.auth.id);
+  const variant = await variantService.createVariant(input, req.auth.id, getClientIp(req));
   return sendSuccess(res, variant, 'Variant created successfully', 201);
 }
 
@@ -67,7 +69,7 @@ export async function updateVariant(req: Request, res: Response) {
     throw ApiError.unauthorized();
   }
 
-  const variant = await variantService.updateVariant(id, input, req.auth.id);
+  const variant = await variantService.updateVariant(id, input, req.auth.id, getClientIp(req));
   return sendSuccess(res, variant, 'Variant updated successfully');
 }
 
@@ -79,6 +81,6 @@ export async function deleteVariant(req: Request, res: Response) {
     throw ApiError.unauthorized();
   }
 
-  const result = await variantService.deleteVariant(id, req.auth.id);
+  const result = await variantService.deleteVariant(id, req.auth.id, getClientIp(req));
   return sendSuccess(res, null, result.message);
 }

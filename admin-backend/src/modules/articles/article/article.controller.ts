@@ -6,6 +6,7 @@ import { ApiError } from '@/core/errors/ApiError';
 import { sendSuccess, sendPaginated } from '@/core/utils/sendResponse';
 import { buildPublicPath, deleteUploadedFile } from '@/core/utils/fileStorage.util';
 import { createLog } from '@/core/utils/createLog';
+import { getClientIp } from '@/core/utils/getClientIp';
 import * as articleService from './article.service';
 import {
   articleListQuerySchema,
@@ -44,7 +45,7 @@ export async function createArticle(req: Request, res: Response) {
 
   try {
     const input = createArticleSchema.parse(req.body);
-    const article = await articleService.createArticle(input, req.auth.id, req.file?.filename);
+    const article = await articleService.createArticle(input, req.auth.id, req.file?.filename, getClientIp(req));
     return sendSuccess(res, article, 'Article created successfully', 201);
   } catch (err) {
     if (req.file) {
@@ -66,7 +67,7 @@ export async function updateArticle(req: Request, res: Response) {
     // Cover image (if any) rides along in the same call now — it's
     // saved inside the same transaction as the rest of the fields, not
     // as a separate follow-up write.
-    const article = await articleService.updateArticle(id, input, req.auth.id, req.file?.filename);
+    const article = await articleService.updateArticle(id, input, req.auth.id, req.file?.filename, getClientIp(req));
     return sendSuccess(res, article, 'Article updated successfully');
   } catch (err) {
     if (req.file) {
@@ -84,7 +85,7 @@ export async function updateArticleStatus(req: Request, res: Response) {
     throw ApiError.unauthorized();
   }
 
-  const article = await articleService.updateArticleStatus(id, input, req.auth.id);
+  const article = await articleService.updateArticleStatus(id, input, req.auth.id, getClientIp(req));
   return sendSuccess(res, article, 'Article status updated successfully');
 }
 
@@ -98,7 +99,7 @@ export async function uploadArticleCoverImage(req: Request, res: Response) {
     throw ApiError.badRequest('No image file received (expected field name "coverImage")');
   }
 
-  const article = await articleService.uploadArticleCoverImage(id, req.file.filename, req.auth.id);
+  const article = await articleService.uploadArticleCoverImage(id, req.file.filename, req.auth.id, getClientIp(req));
   return sendSuccess(res, article, 'Article cover image updated successfully');
 }
 
@@ -109,7 +110,7 @@ export async function deleteArticle(req: Request, res: Response) {
     throw ApiError.unauthorized();
   }
 
-  const result = await articleService.deleteArticle(id, req.auth.id);
+  const result = await articleService.deleteArticle(id, req.auth.id, getClientIp(req));
   return sendSuccess(res, null, result.message);
 }
 

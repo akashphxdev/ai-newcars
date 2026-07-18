@@ -110,7 +110,7 @@ export default function App() {
           <Route path="/ai/dashboard" element={<AIDashboard />} />
           <Route path="/ai/car-faqs/review" element={<AllAiFaqs />} />
           <Route path ="/ai/settings" element={<AISettings/>}/>
-           <Route path ="/ai/logs" element={<AllAiLogs/>}/>
+          <Route path ="/ai/logs" element={<AllAiLogs/>}/>
 
  
 

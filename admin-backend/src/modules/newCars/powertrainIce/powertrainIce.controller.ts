@@ -4,6 +4,7 @@ import { Request, Response } from 'express';
 import { ApiError } from '@/core/errors/ApiError';
 import { sendSuccess, sendPaginated } from '@/core/utils/sendResponse';
 import { createLog } from '@/core/utils/createLog';
+import { getClientIp } from '@/core/utils/getClientIp';
 import * as powertrainIceService from './powertrainIce.service';
 import {
   powertrainIceListQuerySchema,
@@ -29,6 +30,7 @@ export async function getPowertrainIceById(req: Request, res: Response) {
     await createLog({
       adminId: req.auth.id,
       description: `Viewed ICE powertrain for "${v.model.brand.name} ${v.model.name} — ${v.variantName}" (id ${id})`,
+      ipAddress: getClientIp(req),
     });
   }
 
@@ -43,7 +45,7 @@ export async function createPowertrainIce(req: Request, res: Response) {
     throw ApiError.unauthorized();
   }
 
-  const powertrain = await powertrainIceService.createPowertrainIce(input, req.auth.id);
+  const powertrain = await powertrainIceService.createPowertrainIce(input, req.auth.id, getClientIp(req));
   return sendSuccess(res, powertrain, 'ICE powertrain created successfully', 201);
 }
 
@@ -56,7 +58,7 @@ export async function updatePowertrainIce(req: Request, res: Response) {
     throw ApiError.unauthorized();
   }
 
-  const powertrain = await powertrainIceService.updatePowertrainIce(id, input, req.auth.id);
+  const powertrain = await powertrainIceService.updatePowertrainIce(id, input, req.auth.id, getClientIp(req));
   return sendSuccess(res, powertrain, 'ICE powertrain updated successfully');
 }
 
@@ -68,7 +70,7 @@ export async function restorePowertrainIce(req: Request, res: Response) {
     throw ApiError.unauthorized();
   }
 
-  const result = await powertrainIceService.restorePowertrainIce(id, req.auth.id);
+  const result = await powertrainIceService.restorePowertrainIce(id, req.auth.id, getClientIp(req));
   return sendSuccess(res, null, result.message);
 }
 
@@ -80,6 +82,6 @@ export async function deletePowertrainIce(req: Request, res: Response) {
     throw ApiError.unauthorized();
   }
 
-  const result = await powertrainIceService.deletePowertrainIce(id, req.auth.id);
+  const result = await powertrainIceService.deletePowertrainIce(id, req.auth.id, getClientIp(req));
   return sendSuccess(res, null, result.message);
 }

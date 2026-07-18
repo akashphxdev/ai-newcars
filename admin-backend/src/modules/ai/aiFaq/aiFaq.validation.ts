@@ -23,8 +23,7 @@ export const aiFaqIdParamSchema = z.object({
 });
 
 // Editing only ever touches the generated text — modelId is fixed at
-// generation time (variantId is deliberately not part of this app's
-// logic; that column is going away from the schema separately).
+// generation time.
 export const updateAiFaqSchema = z.object({
   question: z.string().trim().min(5, 'Question must be at least 5 characters').max(255),
   answer: z.string().trim().min(2, 'Answer is required'),

@@ -3,6 +3,7 @@
 import { Request, Response } from 'express';
 import { ApiError } from '@/core/errors/ApiError';
 import { sendSuccess, sendPaginated } from '@/core/utils/sendResponse';
+import { getClientIp } from '@/core/utils/getClientIp';
 import * as aiFaqService from './aiFaq.service';
 import { aiFaqListQuerySchema, aiFaqIdParamSchema, updateAiFaqSchema } from './aiFaq.validation';
 
@@ -29,7 +30,7 @@ export async function updateAiFaq(req: Request, res: Response) {
     throw ApiError.unauthorized();
   }
 
-  const faq = await aiFaqService.updateAiFaq(id, input, req.auth.id);
+  const faq = await aiFaqService.updateAiFaq(id, input, req.auth.id, getClientIp(req));
   return sendSuccess(res, faq, 'AI FAQ updated successfully');
 }
 
@@ -41,7 +42,7 @@ export async function approveAiFaq(req: Request, res: Response) {
     throw ApiError.unauthorized();
   }
 
-  const faq = await aiFaqService.approveAiFaq(id, req.auth.id);
+  const faq = await aiFaqService.approveAiFaq(id, req.auth.id, getClientIp(req));
   return sendSuccess(res, faq, 'AI FAQ approved successfully');
 }
 
@@ -53,7 +54,7 @@ export async function rejectAiFaq(req: Request, res: Response) {
     throw ApiError.unauthorized();
   }
 
-  const faq = await aiFaqService.rejectAiFaq(id, req.auth.id);
+  const faq = await aiFaqService.rejectAiFaq(id, req.auth.id, getClientIp(req));
   return sendSuccess(res, faq, 'AI FAQ rejected successfully');
 }
 
@@ -65,7 +66,7 @@ export async function publishAiFaq(req: Request, res: Response) {
     throw ApiError.unauthorized();
   }
 
-  const faq = await aiFaqService.publishAiFaq(id, req.auth.id);
+  const faq = await aiFaqService.publishAiFaq(id, req.auth.id, getClientIp(req));
   return sendSuccess(res, faq, 'AI FAQ published successfully');
 }
 
@@ -77,6 +78,6 @@ export async function deleteAiFaq(req: Request, res: Response) {
     throw ApiError.unauthorized();
   }
 
-  const result = await aiFaqService.deleteAiFaq(id, req.auth.id);
+  const result = await aiFaqService.deleteAiFaq(id, req.auth.id, getClientIp(req));
   return sendSuccess(res, null, result.message);
 }

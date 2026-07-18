@@ -4,6 +4,7 @@ import { Request, Response } from 'express';
 import { ApiError } from '@/core/errors/ApiError';
 import { sendSuccess, sendPaginated } from '@/core/utils/sendResponse';
 import { buildPublicPath, deleteUploadedFile } from '@/core/utils/fileStorage.util';
+import { getClientIp } from '@/core/utils/getClientIp';
 import * as adCampaignService from './adCampaign.service';
 import {
   adCampaignListQuerySchema,
@@ -36,7 +37,7 @@ export async function createAdCampaign(req: Request, res: Response) {
 
   try {
     const input = createAdCampaignSchema.parse(req.body);
-    const campaign = await adCampaignService.createAdCampaign(input, req.auth.id, req.file.filename);
+    const campaign = await adCampaignService.createAdCampaign(input, req.auth.id, req.file.filename, getClientIp(req));
     return sendSuccess(res, campaign, 'Ad campaign created successfully', 201);
   } catch (err) {
     if (req.file) {
@@ -58,7 +59,7 @@ export async function updateAdCampaign(req: Request, res: Response) {
     // Creative image (if any) rides along in the same call — saved in
     // the same operation as the rest of the fields, same atomic
     // convention as article.controller.ts's updateArticle.
-    const campaign = await adCampaignService.updateAdCampaign(id, input, req.auth.id, req.file?.filename);
+    const campaign = await adCampaignService.updateAdCampaign(id, input, req.auth.id, req.file?.filename, getClientIp(req));
     return sendSuccess(res, campaign, 'Ad campaign updated successfully');
   } catch (err) {
     if (req.file) {
@@ -77,7 +78,7 @@ export async function updateAdCampaignStatus(req: Request, res: Response) {
     throw ApiError.unauthorized();
   }
 
-  const campaign = await adCampaignService.updateAdCampaignStatus(id, status, req.auth.id);
+  const campaign = await adCampaignService.updateAdCampaignStatus(id, status, req.auth.id, getClientIp(req));
   return sendSuccess(res, campaign, 'Ad campaign status updated successfully');
 }
 
@@ -88,6 +89,6 @@ export async function deleteAdCampaign(req: Request, res: Response) {
     throw ApiError.unauthorized();
   }
 
-  const result = await adCampaignService.deleteAdCampaign(id, req.auth.id);
+  const result = await adCampaignService.deleteAdCampaign(id, req.auth.id, getClientIp(req));
   return sendSuccess(res, null, result.message);
 }

@@ -119,7 +119,12 @@ function describeOfferSubject(offer: {
   return offer.variant ? `${base} — ${offer.variant.variantName}` : base;
 }
 
-export async function createOffer(input: CreateOfferParsed, actorId: number, imageFilename: string) {
+export async function createOffer(
+  input: CreateOfferParsed,
+  actorId: number,
+  imageFilename: string,
+  ipAddress?: string | null,
+) {
   await assertModelExists(input.modelId);
   if (input.variantId) await assertVariantExists(input.variantId, input.modelId);
   if (input.cityId) await assertCityExists(input.cityId);
@@ -145,6 +150,7 @@ export async function createOffer(input: CreateOfferParsed, actorId: number, ima
   await createLog({
     adminId: actorId,
     description: `Created offer for "${describeOfferSubject(offer)}" (id ${offer.id})`,
+    ipAddress,
   });
 
   return offer;
@@ -154,7 +160,12 @@ export async function createOffer(input: CreateOfferParsed, actorId: number, ima
 // variant.service.ts, not a partial PATCH like Brand/CarModel. Image is
 // NOT touched here — it has its own dedicated route/mutation
 // (uploadOfferImage), same split as Brand's logo.
-export async function updateOffer(id: number, input: UpdateOfferParsed, actorId: number) {
+export async function updateOffer(
+  id: number,
+  input: UpdateOfferParsed,
+  actorId: number,
+  ipAddress?: string | null,
+) {
   await getOfferById(id);
   await assertModelExists(input.modelId);
   if (input.variantId) await assertVariantExists(input.variantId, input.modelId);
@@ -179,6 +190,7 @@ export async function updateOffer(id: number, input: UpdateOfferParsed, actorId:
   await createLog({
     adminId: actorId,
     description: `Updated offer for "${describeOfferSubject(offer)}" (id ${id})`,
+    ipAddress,
   });
 
   return offer;
@@ -187,7 +199,12 @@ export async function updateOffer(id: number, input: UpdateOfferParsed, actorId:
 // Lightweight row-level Active/Inactive toggle — separate from the full
 // edit mutation so flipping the switch doesn't need the whole edit
 // form's payload. Same pattern as brand.service.ts's updateBrandStatus.
-export async function updateOfferStatus(id: number, isActive: boolean, actorId: number) {
+export async function updateOfferStatus(
+  id: number,
+  isActive: boolean,
+  actorId: number,
+  ipAddress?: string | null,
+) {
   await getOfferById(id);
 
   const offer = await prisma.newCarOffer.update({
@@ -199,6 +216,7 @@ export async function updateOfferStatus(id: number, isActive: boolean, actorId: 
   await createLog({
     adminId: actorId,
     description: `${isActive ? 'Activated' : 'Deactivated'} offer for "${describeOfferSubject(offer)}" (id ${id})`,
+    ipAddress,
   });
 
   return offer;
@@ -211,6 +229,7 @@ export async function uploadOfferImage(
   id: number,
   savedFilename: string,
   actorId: number,
+  ipAddress?: string | null,
 ): Promise<OfferUploadImageResult> {
   const existing = await getOfferById(id);
 
@@ -229,12 +248,13 @@ export async function uploadOfferImage(
   await createLog({
     adminId: actorId,
     description: `Updated image for offer on "${describeOfferSubject(existing)}" (id ${id})`,
+    ipAddress,
   });
 
   return offer;
 }
 
-export async function deleteOffer(id: number, actorId: number) {
+export async function deleteOffer(id: number, actorId: number, ipAddress?: string | null) {
   const offer = await getOfferById(id);
 
   await prisma.newCarOffer.delete({ where: { id } });
@@ -246,6 +266,7 @@ export async function deleteOffer(id: number, actorId: number) {
   await createLog({
     adminId: actorId,
     description: `Deleted offer for "${describeOfferSubject(offer)}" (id ${id})`,
+    ipAddress,
   });
 
   return { message: 'Offer deleted successfully' };

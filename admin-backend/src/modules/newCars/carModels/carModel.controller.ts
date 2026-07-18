@@ -5,6 +5,7 @@ import { ApiError } from '@/core/errors/ApiError';
 import { sendSuccess, sendPaginated } from '@/core/utils/sendResponse';
 import { createLog } from '@/core/utils/createLog';
 import { buildPublicPath, deleteUploadedFile } from '@/core/utils/fileStorage.util';
+import { getClientIp } from '@/core/utils/getClientIp';
 import * as carModelService from './carModel.service';
 import {
   carModelListQuerySchema,
@@ -39,6 +40,7 @@ export async function getCarModelById(req: Request, res: Response) {
     await createLog({
       adminId: req.auth.id,
       description: `Viewed car model "${carModel.name}" (id ${id})`,
+      ipAddress: getClientIp(req),
     });
   }
 
@@ -56,7 +58,7 @@ export async function createCarModel(req: Request, res: Response) {
 
   try {
     const input = createCarModelSchema.parse(req.body);
-    const carModel = await carModelService.createCarModel(input, req.auth.id, req.file.filename);
+    const carModel = await carModelService.createCarModel(input, req.auth.id, req.file.filename, getClientIp(req));
     return sendSuccess(res, carModel, 'Car model created successfully', 201);
   } catch (err) {
     if (req.file) {
@@ -75,7 +77,7 @@ export async function updateCarModel(req: Request, res: Response) {
     throw ApiError.unauthorized();
   }
 
-  const carModel = await carModelService.updateCarModel(id, input, req.auth.id);
+  const carModel = await carModelService.updateCarModel(id, input, req.auth.id, getClientIp(req));
   return sendSuccess(res, carModel, 'Car model updated successfully');
 }
 
@@ -87,7 +89,7 @@ export async function updateCarModelLaunchStatus(req: Request, res: Response) {
     throw ApiError.unauthorized();
   }
 
-  const carModel = await carModelService.updateCarModelLaunchStatus(id, launchStatus, expectedLaunchDate, req.auth.id);
+  const carModel = await carModelService.updateCarModelLaunchStatus(id, launchStatus, expectedLaunchDate, req.auth.id, getClientIp(req));
   return sendSuccess(res, carModel, 'Car model launch status updated successfully');
 }
 
@@ -101,7 +103,7 @@ export async function uploadCarModelCoverImage(req: Request, res: Response) {
     throw ApiError.badRequest('No image file received (expected field name "coverImage")');
   }
 
-  const carModel = await carModelService.uploadCarModelCoverImage(id, req.file.filename, req.auth.id);
+  const carModel = await carModelService.uploadCarModelCoverImage(id, req.file.filename, req.auth.id, getClientIp(req));
   return sendSuccess(res, carModel, 'Cover image updated successfully');
 }
 
@@ -113,6 +115,6 @@ export async function deleteCarModel(req: Request, res: Response) {
     throw ApiError.unauthorized();
   }
 
-  const result = await carModelService.deleteCarModel(id, req.auth.id);
+  const result = await carModelService.deleteCarModel(id, req.auth.id, getClientIp(req));
   return sendSuccess(res, null, result.message);
 }

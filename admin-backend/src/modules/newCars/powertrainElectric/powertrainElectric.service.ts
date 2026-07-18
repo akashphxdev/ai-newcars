@@ -119,7 +119,7 @@ export async function listPowertrainElectric(query: PowertrainElectricListQueryP
   ]);
 
   return {
-    items,
+    items: items as unknown as PowertrainElectricListItem[],
     pagination: {
       page,
       limit,
@@ -186,6 +186,7 @@ async function unsetOtherDefaults(
 export async function createPowertrainElectric(
   input: CreatePowertrainElectricParsed,
   actorId: number,
+  ipAddress?: string | null,
 ) {
   await assertVariantExists(input.variantId);
   if (typeof input.drivetrainId === 'number') {
@@ -240,6 +241,7 @@ export async function createPowertrainElectric(
   await createLog({
     adminId: actorId,
     description: `Created Electric powertrain for "${describePowertrainSubject(powertrain)}" (id ${powertrain.id})`,
+    ipAddress,
   });
 
   return powertrain;
@@ -249,6 +251,7 @@ export async function updatePowertrainElectric(
   id: number,
   input: UpdatePowertrainElectricParsed,
   actorId: number,
+  ipAddress?: string | null,
 ) {
   const existing = await getPowertrainElectricById(id);
 
@@ -309,12 +312,13 @@ export async function updatePowertrainElectric(
   await createLog({
     adminId: actorId,
     description: `Updated Electric powertrain for "${describePowertrainSubject(powertrain)}" (id ${id})`,
+    ipAddress,
   });
 
   return powertrain;
 }
 
-export async function deletePowertrainElectric(id: number, actorId: number) {
+export async function deletePowertrainElectric(id: number, actorId: number, ipAddress?: string | null) {
   const powertrain = await getPowertrainElectricById(id);
 
   if (powertrain.isDeleted) {
@@ -334,12 +338,13 @@ export async function deletePowertrainElectric(id: number, actorId: number) {
   await createLog({
     adminId: actorId,
     description: `Deleted Electric powertrain for "${describePowertrainSubject(powertrain)}" (id ${id})`,
+    ipAddress,
   });
 
   return { message: 'Electric powertrain deleted successfully' };
 }
 
-export async function restorePowertrainElectric(id: number, actorId: number) {
+export async function restorePowertrainElectric(id: number, actorId: number, ipAddress?: string | null) {
   const powertrain = await getPowertrainElectricById(id);
 
   if (!powertrain.isDeleted) {
@@ -358,6 +363,7 @@ export async function restorePowertrainElectric(id: number, actorId: number) {
   await createLog({
     adminId: actorId,
     description: `Restored Electric powertrain for "${describePowertrainSubject(powertrain)}" (id ${id})`,
+    ipAddress,
   });
 
   return { message: 'Electric powertrain restored successfully' };

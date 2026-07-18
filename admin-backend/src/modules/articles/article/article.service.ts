@@ -154,6 +154,7 @@ export async function createArticle(
   input: CreateArticleParsed,
   actorId: number,
   coverImageFilename?: string,
+  ipAddress?: string | null,
 ) {
   await assertCategoryExists(input.categoryId);
   await assertAuthorExists(input.authorId);
@@ -206,6 +207,7 @@ export async function createArticle(
   await createLog({
     adminId: actorId,
     description: `Created article "${article.title}" (id ${article.id}, slug "${article.slug}")`,
+    ipAddress,
   });
 
   return shapeArticle(article);
@@ -216,6 +218,7 @@ export async function updateArticle(
   input: UpdateArticleParsed,
   actorId: number,
   coverImageFilename?: string,
+  ipAddress?: string | null,
 ) {
   const existing = await getArticleById(id);
 
@@ -289,12 +292,18 @@ export async function updateArticle(
   await createLog({
     adminId: actorId,
     description: `Updated article "${article.title}" (id ${article.id})`,
+    ipAddress,
   });
 
   return shapeArticle(article);
 }
 
-export async function updateArticleStatus(id: number, input: UpdateArticleStatusParsed, actorId: number) {
+export async function updateArticleStatus(
+  id: number,
+  input: UpdateArticleStatusParsed,
+  actorId: number,
+  ipAddress?: string | null,
+) {
   const existing = await getArticleById(id);
   const publishedAt = resolvePublishedAt(input.status, existing.publishedAt);
 
@@ -312,12 +321,13 @@ export async function updateArticleStatus(id: number, input: UpdateArticleStatus
   await createLog({
     adminId: actorId,
     description: `Changed status of article "${article.title}" (id ${id}) to "${input.status}"`,
+    ipAddress,
   });
 
   return shapeArticle(article);
 }
 
-export async function deleteArticle(id: number, actorId: number) {
+export async function deleteArticle(id: number, actorId: number, ipAddress?: string | null) {
   const article = await getArticleById(id);
 
   // Article's FKs from article_brands/article_car_models/article_comments
@@ -337,6 +347,7 @@ export async function deleteArticle(id: number, actorId: number) {
   await createLog({
     adminId: actorId,
     description: `Deleted article "${article.title}" (id ${id})`,
+    ipAddress,
   });
 
   return { message: 'Article deleted successfully' };
@@ -346,6 +357,7 @@ export async function uploadArticleCoverImage(
   id: number,
   savedFilename: string,
   actorId: number,
+  ipAddress?: string | null,
 ): Promise<ArticleUploadCoverResult> {
   const existing = await getArticleById(id);
 
@@ -364,6 +376,7 @@ export async function uploadArticleCoverImage(
   await createLog({
     adminId: actorId,
     description: `Updated cover image for article "${existing.title}" (id ${id})`,
+    ipAddress,
   });
 
   return article as ArticleUploadCoverResult;

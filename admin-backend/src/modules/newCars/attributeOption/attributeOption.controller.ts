@@ -3,6 +3,7 @@
 import { Request, Response } from 'express';
 import { ApiError } from '@/core/errors/ApiError';
 import { sendSuccess, sendPaginated } from '@/core/utils/sendResponse';
+import { getClientIp } from '@/core/utils/getClientIp';
 import * as attributeOptionService from './attributeOption.service';
 import {
   attributeOptionListQuerySchema,
@@ -42,7 +43,7 @@ export async function createAttributeOption(req: Request, res: Response) {
     throw ApiError.unauthorized();
   }
 
-  const option = await attributeOptionService.createAttributeOption(input, req.auth.id);
+  const option = await attributeOptionService.createAttributeOption(input, req.auth.id, getClientIp(req));
   return sendSuccess(res, option, 'Attribute option created successfully', 201);
 }
 
@@ -55,7 +56,7 @@ export async function updateAttributeOption(req: Request, res: Response) {
     throw ApiError.unauthorized();
   }
 
-  const option = await attributeOptionService.updateAttributeOption(id, input, req.auth.id);
+  const option = await attributeOptionService.updateAttributeOption(id, input, req.auth.id, getClientIp(req));
   return sendSuccess(res, option, 'Attribute option updated successfully');
 }
 
@@ -67,6 +68,6 @@ export async function deleteAttributeOption(req: Request, res: Response) {
     throw ApiError.unauthorized();
   }
 
-  const result = await attributeOptionService.deleteAttributeOption(id, req.auth.id);
+  const result = await attributeOptionService.deleteAttributeOption(id, req.auth.id, getClientIp(req));
   return sendSuccess(res, null, result.message);
 }

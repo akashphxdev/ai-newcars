@@ -89,6 +89,7 @@ export async function getAdvertiserById(id: number): Promise<AdvertiserListItem>
 export async function createAdvertiser(
   input: CreateAdvertiserParsed,
   actorId: number,
+  ipAddress?: string | null,
 ): Promise<AdvertiserListItem> {
   const advertiser = await prisma.advertiser.create({
     data: {
@@ -106,6 +107,7 @@ export async function createAdvertiser(
   await createLog({
     adminId: actorId,
     description: `Created advertiser "${advertiser.name}" (id ${advertiser.id})`,
+    ipAddress,
   });
 
   return shapeAdvertiser(advertiser);
@@ -115,6 +117,7 @@ export async function updateAdvertiser(
   id: number,
   input: UpdateAdvertiserParsed,
   actorId: number,
+  ipAddress?: string | null,
 ): Promise<AdvertiserListItem> {
   await getAdvertiserById(id);
 
@@ -134,6 +137,7 @@ export async function updateAdvertiser(
   await createLog({
     adminId: actorId,
     description: `Updated advertiser "${advertiser.name}" (id ${advertiser.id})`,
+    ipAddress,
   });
 
   return shapeAdvertiser(advertiser);
@@ -143,6 +147,7 @@ export async function updateAdvertiserStatus(
   id: number,
   isActive: boolean,
   actorId: number,
+  ipAddress?: string | null,
 ): Promise<AdvertiserListItem> {
   const existing = await getAdvertiserById(id);
 
@@ -155,12 +160,13 @@ export async function updateAdvertiserStatus(
   await createLog({
     adminId: actorId,
     description: `${isActive ? 'Activated' : 'Deactivated'} advertiser "${existing.name}" (id ${id})`,
+    ipAddress,
   });
 
   return shapeAdvertiser(advertiser);
 }
 
-export async function deleteAdvertiser(id: number, actorId: number) {
+export async function deleteAdvertiser(id: number, actorId: number, ipAddress?: string | null) {
   const advertiser = await getAdvertiserById(id);
 
   await prisma.advertiser.delete({ where: { id } });
@@ -171,6 +177,7 @@ export async function deleteAdvertiser(id: number, actorId: number) {
       advertiser.campaignCount > 0
         ? `Deleted advertiser "${advertiser.name}" (id ${id}) — ${advertiser.campaignCount} linked campaign(s) had their advertiser cleared`
         : `Deleted advertiser "${advertiser.name}" (id ${id})`,
+    ipAddress,
   });
 
   return { message: 'Advertiser deleted successfully' };

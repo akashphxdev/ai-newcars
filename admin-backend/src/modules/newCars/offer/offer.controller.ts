@@ -5,6 +5,7 @@ import { ApiError } from '@/core/errors/ApiError';
 import { sendSuccess, sendPaginated } from '@/core/utils/sendResponse';
 import { buildPublicPath, deleteUploadedFile } from '@/core/utils/fileStorage.util';
 import { createLog } from '@/core/utils/createLog';
+import { getClientIp } from '@/core/utils/getClientIp';
 import * as offerService from './offer.service';
 import {
   offerListQuerySchema,
@@ -33,6 +34,7 @@ export async function getOfferById(req: Request, res: Response) {
     await createLog({
       adminId: req.auth.id,
       description: `Viewed offer for "${subject}" (id ${id})`,
+      ipAddress: getClientIp(req),
     });
   }
 
@@ -52,7 +54,7 @@ export async function createOffer(req: Request, res: Response) {
 
   try {
     const input = createOfferSchema.parse(req.body);
-    const offer = await offerService.createOffer(input, req.auth.id, req.file.filename);
+    const offer = await offerService.createOffer(input, req.auth.id, req.file.filename, getClientIp(req));
     return sendSuccess(res, offer, 'Offer created successfully', 201);
   } catch (err) {
     await deleteUploadedFile(buildPublicPath('offers', req.file.filename));
@@ -73,7 +75,7 @@ export async function updateOffer(req: Request, res: Response) {
     throw ApiError.unauthorized();
   }
 
-  const offer = await offerService.updateOffer(id, input, req.auth.id);
+  const offer = await offerService.updateOffer(id, input, req.auth.id, getClientIp(req));
   return sendSuccess(res, offer, 'Offer updated successfully');
 }
 
@@ -89,7 +91,7 @@ export async function updateOfferStatus(req: Request, res: Response) {
     throw ApiError.unauthorized();
   }
 
-  const offer = await offerService.updateOfferStatus(id, isActive, req.auth.id);
+  const offer = await offerService.updateOfferStatus(id, isActive, req.auth.id, getClientIp(req));
   return sendSuccess(res, offer, 'Offer status updated successfully');
 }
 
@@ -106,7 +108,7 @@ export async function uploadOfferImage(req: Request, res: Response) {
     throw ApiError.badRequest('No image file received (expected field name "image")');
   }
 
-  const offer = await offerService.uploadOfferImage(id, req.file.filename, req.auth.id);
+  const offer = await offerService.uploadOfferImage(id, req.file.filename, req.auth.id, getClientIp(req));
   return sendSuccess(res, offer, 'Offer image updated successfully');
 }
 
@@ -118,6 +120,6 @@ export async function deleteOffer(req: Request, res: Response) {
     throw ApiError.unauthorized();
   }
 
-  const result = await offerService.deleteOffer(id, req.auth.id);
+  const result = await offerService.deleteOffer(id, req.auth.id, getClientIp(req));
   return sendSuccess(res, null, result.message);
 }

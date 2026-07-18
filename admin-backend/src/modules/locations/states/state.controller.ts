@@ -3,6 +3,7 @@
 import { Request, Response } from 'express';
 import { ApiError } from '@/core/errors/ApiError';
 import { sendSuccess, sendPaginated } from '@/core/utils/sendResponse';
+import { getClientIp } from '@/core/utils/getClientIp';
 import * as stateService from './state.service';
 import {
   stateListQuerySchema,
@@ -42,7 +43,7 @@ export async function createState(req: Request, res: Response) {
     throw ApiError.unauthorized();
   }
 
-  const state = await stateService.createState(input, req.auth.id);
+  const state = await stateService.createState(input, req.auth.id, getClientIp(req));
   return sendSuccess(res, state, 'State created successfully', 201);
 }
 
@@ -55,7 +56,7 @@ export async function updateState(req: Request, res: Response) {
     throw ApiError.unauthorized();
   }
 
-  const state = await stateService.updateState(id, input, req.auth.id);
+  const state = await stateService.updateState(id, input, req.auth.id, getClientIp(req));
   return sendSuccess(res, state, 'State updated successfully');
 }
 
@@ -67,6 +68,6 @@ export async function deleteState(req: Request, res: Response) {
     throw ApiError.unauthorized();
   }
 
-  const result = await stateService.deleteState(id, req.auth.id);
+  const result = await stateService.deleteState(id, req.auth.id, getClientIp(req));
   return sendSuccess(res, null, result.message);
 }

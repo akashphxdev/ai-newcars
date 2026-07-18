@@ -23,8 +23,6 @@ export interface AiFaqRecord {
   aiProvider: AiProviderCode;
   aiModel: string;
   publishedFaqId: number | null;
-  createdBy: number | null;
-  createdByAdmin: AiFaqAdminSummary | null;
   reviewedBy: number | null;
   reviewedByAdmin: AiFaqAdminSummary | null;
   reviewedAt: Date | null;

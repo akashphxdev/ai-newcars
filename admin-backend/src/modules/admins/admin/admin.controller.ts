@@ -46,7 +46,7 @@ export async function createAdmin(req: Request, res: Response) {
     throw ApiError.unauthorized();
   }
 
-  const admin = await adminService.createAdmin(input, req.auth.id);
+  const admin = await adminService.createAdmin(input, req.auth.id, getClientIp(req));
   return sendSuccess(res, admin, 'Admin created successfully', 201);
 }
 
@@ -59,7 +59,7 @@ export async function updateAdmin(req: Request, res: Response) {
     throw ApiError.unauthorized();
   }
 
-  const admin = await adminService.updateAdmin(id, input, req.auth.id);
+  const admin = await adminService.updateAdmin(id, input, req.auth.id, getClientIp(req));
   return sendSuccess(res, admin, 'Admin updated successfully');
 }
 
@@ -87,7 +87,7 @@ export async function changeAdminPassword(req: Request, res: Response) {
     throw ApiError.unauthorized();
   }
 
-  const result = await adminService.changeAdminPassword(id, newPassword, req.auth.id);
+  const result = await adminService.changeAdminPassword(id, newPassword, req.auth.id, getClientIp(req));
   return sendSuccess(res, null, result.message);
 }
 
@@ -100,7 +100,7 @@ export async function lockAdmin(req: Request, res: Response) {
     throw ApiError.unauthorized();
   }
 
-  const admin = await adminService.lockAdmin(id, req.auth.id, reason);
+  const admin = await adminService.lockAdmin(id, req.auth.id, reason, getClientIp(req));
   return sendSuccess(res, admin, 'Admin locked successfully');
 }
 
@@ -112,7 +112,7 @@ export async function unlockAdmin(req: Request, res: Response) {
     throw ApiError.unauthorized();
   }
 
-  const admin = await adminService.unlockAdmin(id, req.auth.id);
+  const admin = await adminService.unlockAdmin(id, req.auth.id, getClientIp(req));
   return sendSuccess(res, admin, 'Admin unlocked successfully');
 }
 
@@ -124,6 +124,6 @@ export async function deactivateAdmin(req: Request, res: Response) {
     throw ApiError.unauthorized();
   }
 
-  const admin = await adminService.deactivateAdmin(id, req.auth.id);
+  const admin = await adminService.deactivateAdmin(id, req.auth.id, getClientIp(req));
   return sendSuccess(res, admin, 'Admin deactivated successfully');
 }

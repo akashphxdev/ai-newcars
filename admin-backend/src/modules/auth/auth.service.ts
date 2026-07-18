@@ -62,7 +62,7 @@ function assertAccountAccessible(admin: {
 }
 
 export const adminAuthService = {
-  async login(input: AdminLoginParsed, ipAddress?: string): Promise<LoginStep1Response> {
+  async login(input: AdminLoginParsed, ipAddress?: string | null): Promise<LoginStep1Response> {
     const admin = await prisma.adminUser.findUnique({ where: { email: input.email } });
 
     if (!admin || !admin.passwordHash) {
@@ -143,7 +143,7 @@ export const adminAuthService = {
   async verifyOtp(
     adminId: number,
     otp: string,
-    ipAddress?: string,
+    ipAddress?: string | null,
   ): Promise<LoginStep2Response> {
     const admin = await prisma.adminUser.findUnique({ where: { id: adminId } });
     if (!admin) throw ApiError.notFound('Admin not found');
@@ -196,7 +196,7 @@ export const adminAuthService = {
     };
   },
 
-  async resendOtp(adminId: number, ipAddress?: string): Promise<ResendOtpResponse> {
+  async resendOtp(adminId: number, ipAddress?: string | null): Promise<ResendOtpResponse> {
     const admin = await prisma.adminUser.findUnique({ where: { id: adminId } });
     if (!admin) throw ApiError.notFound('Admin not found');
 
@@ -234,7 +234,7 @@ export const adminAuthService = {
 
   // Logout — stateless JWT means there's nothing to revoke server-side yet.
   // This just records the action for the audit trail.
-  async logout(adminId: number, ipAddress?: string): Promise<{ message: string }> {
+  async logout(adminId: number, ipAddress?: string | null): Promise<{ message: string }> {
     await createLog({
       adminId,
       description: 'Admin logged out',

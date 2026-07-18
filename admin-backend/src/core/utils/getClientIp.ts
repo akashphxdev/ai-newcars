@@ -31,11 +31,11 @@ function normalizeToIpv4(rawIp: string | undefined | null): string | null {
 }
 
 export function getClientIp(req: Request): string | null {
-  const forwardedForHeader = req.headers['x-forwarded-for'];
-  const forwardedFor = Array.isArray(forwardedForHeader) ? forwardedForHeader[0] : forwardedForHeader;
-  const firstForwarded = forwardedFor?.split(',')[0]?.trim();
-
-  const candidates = [firstForwarded, req.ip, req.socket?.remoteAddress];
+  // `req.ip` is resolved by Express using the app's `trust proxy` setting
+  // (see app.ts) — it only honors X-Forwarded-For for the configured
+  // number of trusted hops. Reading the raw header ourselves (as this used
+  // to) trusts whatever the client sent first, which is spoofable.
+  const candidates = [req.ip, req.socket?.remoteAddress];
 
   for (const candidate of candidates) {
     const normalized = normalizeToIpv4(candidate);

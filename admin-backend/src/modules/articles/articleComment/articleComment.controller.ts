@@ -3,6 +3,7 @@
 import { Request, Response } from 'express';
 import { ApiError } from '@/core/errors/ApiError';
 import { sendSuccess, sendPaginated } from '@/core/utils/sendResponse';
+import { getClientIp } from '@/core/utils/getClientIp';
 import * as articleCommentService from './articleComment.service';
 import {
   articleCommentListQuerySchema,
@@ -30,7 +31,7 @@ export async function updateArticleCommentStatus(req: Request, res: Response) {
     throw ApiError.unauthorized();
   }
 
-  const comment = await articleCommentService.updateArticleCommentStatus(id, input, req.auth.id);
+  const comment = await articleCommentService.updateArticleCommentStatus(id, input, req.auth.id, getClientIp(req));
   return sendSuccess(res, comment, 'Comment status updated successfully');
 }
 
@@ -41,6 +42,6 @@ export async function deleteArticleComment(req: Request, res: Response) {
     throw ApiError.unauthorized();
   }
 
-  const result = await articleCommentService.deleteArticleComment(id, req.auth.id);
+  const result = await articleCommentService.deleteArticleComment(id, req.auth.id, getClientIp(req));
   return sendSuccess(res, null, result.message);
 }

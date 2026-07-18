@@ -95,7 +95,11 @@ async function assertNameAndCodeAvailable(name: string, code: string, excludeId?
   }
 }
 
-export async function createCountry(input: CreateCountryParsed, actorId: number) {
+export async function createCountry(
+  input: CreateCountryParsed,
+  actorId: number,
+  ipAddress?: string | null,
+) {
   await assertNameAndCodeAvailable(input.name, input.code);
 
   const country = await prisma.country.create({
@@ -115,12 +119,18 @@ export async function createCountry(input: CreateCountryParsed, actorId: number)
   await createLog({
     adminId: actorId,
     description: `Created country "${country.name}" (id ${country.id})`,
+    ipAddress,
   });
 
   return country;
 }
 
-export async function updateCountry(id: number, input: UpdateCountryParsed, actorId: number) {
+export async function updateCountry(
+  id: number,
+  input: UpdateCountryParsed,
+  actorId: number,
+  ipAddress?: string | null,
+) {
   const existing = await getCountryById(id);
 
   if (input.name || input.code) {
@@ -135,12 +145,18 @@ export async function updateCountry(id: number, input: UpdateCountryParsed, acto
   await createLog({
     adminId: actorId,
     description: `Updated country "${country.name}" (id ${country.id})`,
+    ipAddress,
   });
 
   return country;
 }
 
-export async function updateCountryStatus(id: number, isActive: boolean, actorId: number) {
+export async function updateCountryStatus(
+  id: number,
+  isActive: boolean,
+  actorId: number,
+  ipAddress?: string | null,
+) {
   await getCountryById(id);
 
   const country = await prisma.country.update({
@@ -151,12 +167,13 @@ export async function updateCountryStatus(id: number, isActive: boolean, actorId
   await createLog({
     adminId: actorId,
     description: `${isActive ? 'Activated' : 'Deactivated'} country "${country.name}" (id ${id})`,
+    ipAddress,
   });
 
   return country;
 }
 
-export async function deleteCountry(id: number, actorId: number) {
+export async function deleteCountry(id: number, actorId: number, ipAddress?: string | null) {
   const country = await getCountryById(id);
 
   // A country with states under it can't be deleted outright — same
@@ -183,6 +200,7 @@ export async function deleteCountry(id: number, actorId: number) {
   await createLog({
     adminId: actorId,
     description: `Deleted country "${country.name}" (id ${id})`,
+    ipAddress,
   });
 
   return { message: 'Country deleted successfully' };

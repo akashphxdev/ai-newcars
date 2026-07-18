@@ -22,7 +22,11 @@ export async function listPermissions(query: PermissionListQueryParsed) {
   return { flat: permissions, grouped };
 }
 
-export async function createPermission(input: CreatePermissionParsed, actorId: number) {
+export async function createPermission(
+  input: CreatePermissionParsed,
+  actorId: number,
+  ipAddress?: string | null,
+) {
   const permissionKey = `${input.module}.${input.action}`; // CHANGED: colon -> dot
 
   const existing = await prisma.permission.findUnique({ where: { permissionKey } });
@@ -41,12 +45,13 @@ export async function createPermission(input: CreatePermissionParsed, actorId: n
   await createLog({
     adminId: actorId,
     description: `Created permission "${permissionKey}"`,
+    ipAddress,
   });
 
   return permission;
 }
 
-export async function deletePermission(id: number, actorId: number) {
+export async function deletePermission(id: number, actorId: number, ipAddress?: string | null) {
   const permission = await prisma.permission.findUnique({ where: { id } });
   if (!permission) {
     throw ApiError.notFound('Permission not found');
@@ -89,6 +94,7 @@ export async function deletePermission(id: number, actorId: number) {
     description: `Deleted permission "${permission.permissionKey}"${
       rolesToClean.length > 0 ? ` (removed from ${rolesToClean.length} role(s))` : ''
     }`,
+    ipAddress,
   });
 
   return { message: 'Permission deleted successfully' };

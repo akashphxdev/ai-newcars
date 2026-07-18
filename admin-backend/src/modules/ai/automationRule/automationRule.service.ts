@@ -53,6 +53,7 @@ export async function upsertAutomationRule(
   featureKey: number,
   input: UpsertAutomationRuleParsed,
   actorId: number,
+  ipAddress?: string | null,
 ): Promise<AiAutomationRuleResponse> {
   const existing = await prisma.aiAutomationRule.findUnique({
     where: { featureKey },
@@ -103,6 +104,7 @@ export async function upsertAutomationRule(
     description: `${existing ? 'Updated' : 'Created'} AI automation rule for feature ${featureKey} (${
       input.enabled ? 'enabled' : 'disabled'
     })`,
+    ipAddress,
   });
 
   return row as unknown as AiAutomationRuleResponse;

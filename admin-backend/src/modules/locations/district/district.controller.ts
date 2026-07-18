@@ -3,6 +3,7 @@
 import { Request, Response } from 'express';
 import { ApiError } from '@/core/errors/ApiError';
 import { sendSuccess, sendPaginated } from '@/core/utils/sendResponse';
+import { getClientIp } from '@/core/utils/getClientIp';
 import * as districtService from './district.service';
 import {
   districtListQuerySchema,
@@ -42,7 +43,7 @@ export async function createDistrict(req: Request, res: Response) {
     throw ApiError.unauthorized();
   }
 
-  const district = await districtService.createDistrict(input, req.auth.id);
+  const district = await districtService.createDistrict(input, req.auth.id, getClientIp(req));
   return sendSuccess(res, district, 'District created successfully', 201);
 }
 
@@ -55,7 +56,7 @@ export async function updateDistrict(req: Request, res: Response) {
     throw ApiError.unauthorized();
   }
 
-  const district = await districtService.updateDistrict(id, input, req.auth.id);
+  const district = await districtService.updateDistrict(id, input, req.auth.id, getClientIp(req));
   return sendSuccess(res, district, 'District updated successfully');
 }
 
@@ -67,6 +68,6 @@ export async function deleteDistrict(req: Request, res: Response) {
     throw ApiError.unauthorized();
   }
 
-  const result = await districtService.deleteDistrict(id, req.auth.id);
+  const result = await districtService.deleteDistrict(id, req.auth.id, getClientIp(req));
   return sendSuccess(res, null, result.message);
 }

@@ -3,6 +3,7 @@
 import { Request, Response } from 'express';
 import { ApiError } from '@/core/errors/ApiError';
 import { sendSuccess, sendPaginated } from '@/core/utils/sendResponse';
+import { getClientIp } from '@/core/utils/getClientIp';
 import * as advertiserService from './advertiser.service';
 import {
   advertiserListQuerySchema,
@@ -30,7 +31,7 @@ export async function createAdvertiser(req: Request, res: Response) {
   }
 
   const input = createAdvertiserSchema.parse(req.body);
-  const advertiser = await advertiserService.createAdvertiser(input, req.auth.id);
+  const advertiser = await advertiserService.createAdvertiser(input, req.auth.id, getClientIp(req));
   return sendSuccess(res, advertiser, 'Advertiser created successfully', 201);
 }
 
@@ -42,7 +43,7 @@ export async function updateAdvertiser(req: Request, res: Response) {
     throw ApiError.unauthorized();
   }
 
-  const advertiser = await advertiserService.updateAdvertiser(id, input, req.auth.id);
+  const advertiser = await advertiserService.updateAdvertiser(id, input, req.auth.id, getClientIp(req));
   return sendSuccess(res, advertiser, 'Advertiser updated successfully');
 }
 
@@ -56,7 +57,7 @@ export async function updateAdvertiserStatus(req: Request, res: Response) {
     throw ApiError.unauthorized();
   }
 
-  const advertiser = await advertiserService.updateAdvertiserStatus(id, isActive, req.auth.id);
+  const advertiser = await advertiserService.updateAdvertiserStatus(id, isActive, req.auth.id, getClientIp(req));
   return sendSuccess(res, advertiser, 'Advertiser status updated successfully');
 }
 
@@ -67,6 +68,6 @@ export async function deleteAdvertiser(req: Request, res: Response) {
     throw ApiError.unauthorized();
   }
 
-  const result = await advertiserService.deleteAdvertiser(id, req.auth.id);
+  const result = await advertiserService.deleteAdvertiser(id, req.auth.id, getClientIp(req));
   return sendSuccess(res, null, result.message);
 }

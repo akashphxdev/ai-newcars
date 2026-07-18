@@ -83,6 +83,7 @@ export async function createColor(
   input: CreateColorParsed,
   actorId: number,
   imageFilename?: string,
+  ipAddress?: string | null,
 ) {
   await assertModelExists(input.modelId);
 
@@ -104,12 +105,18 @@ export async function createColor(
   await createLog({
     adminId: actorId,
     description: `Created color "${color.colorName}" (id ${color.id}) for "${color.model.name}"`,
+    ipAddress,
   });
 
   return color;
 }
 
-export async function updateColor(id: number, input: UpdateColorParsed, actorId: number) {
+export async function updateColor(
+  id: number,
+  input: UpdateColorParsed,
+  actorId: number,
+  ipAddress?: string | null,
+) {
   await getColorById(id);
 
   if (typeof input.modelId === 'number') {
@@ -139,12 +146,13 @@ export async function updateColor(id: number, input: UpdateColorParsed, actorId:
   await createLog({
     adminId: actorId,
     description: `Updated color "${color.colorName}" (id ${color.id}) for "${color.model.name}"`,
+    ipAddress,
   });
 
   return color;
 }
 
-export async function deleteColor(id: number, actorId: number) {
+export async function deleteColor(id: number, actorId: number, ipAddress?: string | null) {
   const color = await getColorById(id);
 
   // Shades cascade-delete at the DB level (onDelete: Cascade), but images
@@ -159,6 +167,7 @@ export async function deleteColor(id: number, actorId: number) {
   await createLog({
     adminId: actorId,
     description: `Deleted color "${color.colorName}" (id ${id}) from "${color.model.name}"`,
+    ipAddress,
   });
 
   return { message: 'Color deleted successfully' };
@@ -168,6 +177,7 @@ export async function uploadColorImage(
   id: number,
   savedFilename: string,
   actorId: number,
+  ipAddress?: string | null,
 ): Promise<ColorUploadImageResult> {
   const existing = await getColorById(id);
 
@@ -185,6 +195,7 @@ export async function uploadColorImage(
   await createLog({
     adminId: actorId,
     description: `Updated image for color "${existing.colorName}" (id ${id}) on "${existing.model.name}"`,
+    ipAddress,
   });
 
   return color as ColorUploadImageResult;
