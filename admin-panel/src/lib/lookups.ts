@@ -94,3 +94,16 @@ export function getAdTypeLabel(code: number | null | undefined): string {
   if (code == null) return "—";
   return AD_TYPE_OPTIONS.find((o) => o.value === code)?.label ?? "—";
 }
+
+// ===== Banner media types =====
+// Mirrors BANNER_MEDIA_TYPE_CODES in backend/src/modules/home/banner/banner.validation.ts —
+// keep both in sync if a code is ever added/removed.
+export const BANNER_MEDIA_TYPE_OPTIONS: LookupOption[] = [
+  { value: 1, label: "Image" },
+  { value: 2, label: "Video" },
+];
+
+export function getBannerMediaTypeLabel(code: number | null | undefined): string {
+  if (code == null) return "—";
+  return BANNER_MEDIA_TYPE_OPTIONS.find((o) => o.value === code)?.label ?? "—";
+}

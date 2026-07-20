@@ -113,7 +113,7 @@ export default function AllImagePool() {
           <input
             ref={fileInputRef}
             type="file"
-            accept="image/jpeg,image/png,image/webp"
+            accept="image/jpeg,image/png,image/webp,image/avif"
             multiple
             className="hidden"
             onChange={(e) => handleFilesSelected(e.target.files)}

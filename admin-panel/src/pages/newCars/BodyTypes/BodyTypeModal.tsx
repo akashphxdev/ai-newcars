@@ -225,11 +225,11 @@ export default function BodyTypeModal({
               <input
                 ref={iconInputRef}
                 type="file"
-                accept="image/jpeg,image/png,image/webp,image/svg+xml"
+                accept="image/jpeg,image/png,image/webp,image/avif,image/svg+xml"
                 onChange={(e) => handleIconSelect(e.target.files?.[0])}
                 className="hidden"
               />
-              <p className="text-[10px] text-[#a39e96] mt-1">Required. JPG, PNG, SVG or WEBP, up to 2MB.</p>
+              <p className="text-[10px] text-[#a39e96] mt-1">Required. JPG, PNG, WEBP, AVIF or SVG, up to 2MB.</p>
               {(iconError || errors.icon) && (
                 <p className="text-[11px] font-medium text-[#D4300F] mt-1">{iconError || errors.icon}</p>
               )}

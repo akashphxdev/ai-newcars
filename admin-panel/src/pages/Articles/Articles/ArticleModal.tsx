@@ -448,11 +448,11 @@ export default function ArticleModal({
                   <input
                     ref={coverInputRef}
                     type="file"
-                    accept="image/jpeg,image/png,image/webp"
+                    accept="image/jpeg,image/png,image/webp,image/avif"
                     onChange={(e) => handleCoverChange(e.target.files?.[0] ?? null)}
                     className="hidden"
                   />
-                  <p className="text-[10px] text-[#a39e96] mt-1">JPG, PNG or WEBP.</p>
+                  <p className="text-[10px] text-[#a39e96] mt-1">JPG, PNG, WEBP or AVIF.</p>
                 </div>
               </div>
             </Field>

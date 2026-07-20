@@ -99,13 +99,13 @@ export default function BulkImageUploader({
           <line x1="12" y1="3" x2="12" y2="15" />
         </svg>
         <p className="text-[12px] font-semibold text-[#4a4640]">
-          Click or drag images here — up to {MAX_FILES} at once (JPG, PNG, WEBP, 2MB each)
+          Click or drag images here — up to {MAX_FILES} at once (JPG, PNG, WEBP, AVIF, 2MB each)
         </p>
         <input
           ref={fileInputRef}
           type="file"
           multiple
-          accept="image/jpeg,image/png,image/webp"
+          accept="image/jpeg,image/png,image/webp,image/avif"
           onChange={(e) => addFiles(e.target.files)}
           className="hidden"
         />

@@ -281,11 +281,11 @@ export default function ImageModal({
                 <input
                   ref={fileInputRef}
                   type="file"
-                  accept="image/jpeg,image/png,image/webp"
+                  accept="image/jpeg,image/png,image/webp,image/avif"
                   onChange={(e) => handleFileSelect(e.target.files)}
                   className="hidden"
                 />
-                <p className="text-[10px] text-[#a39e96] mt-1">JPG, PNG or WEBP, up to 2MB.</p>
+                <p className="text-[10px] text-[#a39e96] mt-1">JPG, PNG, WEBP or AVIF, up to 2MB.</p>
                 {fileError && <p className="text-[11px] font-medium text-[#D4300F] mt-1">{fileError}</p>}
               </div>
             </div>
@@ -310,13 +310,13 @@ export default function ImageModal({
                   <line x1="12" y1="3" x2="12" y2="15" />
                 </svg>
                 <p className="text-[12px] font-semibold text-[#4a4640]">
-                  Click or drag images here — one or many at once (JPG, PNG, WEBP, 2MB each)
+                  Click or drag images here — one or many at once (JPG, PNG, WEBP, AVIF, 2MB each)
                 </p>
                 <input
                   ref={fileInputRef}
                   type="file"
                   multiple
-                  accept="image/jpeg,image/png,image/webp"
+                  accept="image/jpeg,image/png,image/webp,image/avif"
                   onChange={(e) => handleFileSelect(e.target.files)}
                   className="hidden"
                 />

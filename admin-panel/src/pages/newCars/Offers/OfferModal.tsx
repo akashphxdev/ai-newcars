@@ -267,11 +267,11 @@ export default function OfferModal({
               <input
                 ref={imageInputRef}
                 type="file"
-                accept="image/jpeg,image/png,image/webp"
+                accept="image/jpeg,image/png,image/webp,image/avif"
                 onChange={(e) => handleImageSelect(e.target.files?.[0])}
                 className="hidden"
               />
-              <p className="text-[10px] text-[#a39e96] mt-1">JPG, PNG or WEBP, up to 2MB.</p>
+              <p className="text-[10px] text-[#a39e96] mt-1">JPG, PNG, WEBP or AVIF, up to 2MB.</p>
               {errors.image && <p className="text-[11px] font-medium text-[#D4300F] mt-1">{errors.image}</p>}
               {imageError && <p className="text-[11px] font-medium text-[#D4300F] mt-1">{imageError}</p>}
             </div>

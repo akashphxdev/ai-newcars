@@ -9,6 +9,7 @@ import ArticlesRoutes from './articles'
 import StoriesRoutes from './stories'
 import AdsRoutes from './ads'
 import AiRoutes from './ai'
+import HomeRoutes from './home'
 
 const router = Router();
 
@@ -21,5 +22,6 @@ router.use('/articles', ArticlesRoutes)
 router.use('/stories', StoriesRoutes)
 router.use('/ads' , AdsRoutes)
 router.use('/ai', AiRoutes)
+router.use('/home', HomeRoutes)
 
 export default router;

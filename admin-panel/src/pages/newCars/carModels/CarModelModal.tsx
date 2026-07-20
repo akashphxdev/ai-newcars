@@ -256,7 +256,7 @@ export default function CarModelModal({
                 <input
                   ref={coverInputRef}
                   type="file"
-                  accept="image/jpeg,image/png,image/webp"
+                  accept="image/jpeg,image/png,image/webp,image/avif"
                   onChange={(e) => handleCoverImageChange(e.target.files?.[0] ?? null)}
                   className="hidden"
                   id="cover-image-input"
@@ -267,7 +267,7 @@ export default function CarModelModal({
                 >
                   {coverImagePreview ? "Change image" : "Upload image"}
                 </label>
-                <p className="text-[10px] text-[#a39e96] mt-1">JPG, PNG or WEBP — max 2MB.</p>
+                <p className="text-[10px] text-[#a39e96] mt-1">JPG, PNG, WEBP or AVIF — max 2MB.</p>
               </div>
             </div>
             {errors.coverImage && (

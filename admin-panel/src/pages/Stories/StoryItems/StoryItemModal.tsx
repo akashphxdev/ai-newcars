@@ -379,7 +379,7 @@ export default function StoryItemModal({
 
           {status === "scheduled" && (
             <div className="grid grid-cols-2 gap-3">
-              <Field label="Start" required>
+              <Field label="Start">
                 <input
                   type="datetime-local"
                   value={startAt}
