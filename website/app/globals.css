@@ -1,19 +1,62 @@
 @import "tailwindcss";
+@custom-variant dark (&:where(.dark, .dark *));
 
-:root {
-  --red: #DC2626;
-  --red-hover: #991B1B;
-  --red-light: #FEE2E2;
+/*
+ * Design tokens — the ONE place colors/fonts are defined for the whole
+ * site. Tailwind v4 auto-generates utility classes from every
+ * `--color-*` variable below (e.g. --color-brand -> bg-brand, text-brand,
+ * border-brand, ...), so every component should reach for these
+ * (text-ink, bg-page, border-border, text-muted, bg-brand, ...) instead
+ * of raw Tailwind grays or inline hex. Values here match what
+ * Header.tsx/Footer.tsx/HeroSection.tsx already use.
+ *
+ * Dark mode needs NO `dark:` prefix on every usage — the tokens
+ * themselves flip inside the `.dark { }` block below, so `text-ink` (etc)
+ * automatically resolves to the right color once Header's dark-mode
+ * toggle adds the `.dark` class to <html>.
+ */
+@theme {
+  --font-body: var(--font-body), system-ui, sans-serif;
+  --font-head: var(--font-head), var(--font-body), system-ui, sans-serif;
+
+  --color-brand: #d4300f;
+  --color-brand-hover: #b82a0c;
+  --color-brand-soft: #fef2f0;
+
+  --color-ev: #3ddc97;
+  --color-ev-hover: #33c787;
+
+  --color-ink: #1c1a17;
+  --color-muted: #7a7670;
+  --color-subtle: #a39e96;
+  --color-faint: #b0ab9f;
+
+  --color-border: #e8e4dc;
+  --color-border-soft: #f0ece5;
+
+  --color-surface: #ffffff;
+  --color-page: #f7f5f1;
 }
 
 .dark {
-  --red-light: #7F1D1D;
+  --color-ink: #f5f2ec;
+  --color-muted: #a39e96;
+  --color-subtle: #7a7670;
+  --color-faint: #6b665f;
+
+  --color-border: #2c2a27;
+  --color-border-soft: #242220;
+
+  --color-surface: #211f1c;
+  --color-page: #16140f;
 }
 
 body {
   font-family: var(--font-body), system-ui, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  background-color: var(--color-page);
+  color: var(--color-ink);
 }
 
 @layer base {
@@ -22,11 +65,12 @@ body {
   }
 
   ::-webkit-scrollbar-track {
-    @apply bg-gray-100 dark:bg-zinc-900;
+    background: var(--color-page);
   }
 
   ::-webkit-scrollbar-thumb {
-    @apply bg-gray-400 dark:bg-zinc-700 rounded-full;
+    background: var(--color-border);
+    @apply rounded-full;
   }
 
   input:focus,
@@ -35,21 +79,14 @@ body {
   }
 }
 
-@layer components {
-  .btn-primary {
-    @apply px-4 py-2 bg-red-600 hover:bg-red-700 text-white font-semibold rounded-lg transition-all shadow-md hover:shadow-lg active:scale-95;
+/* Hide scrollbar on horizontal-scroll rails (carousels) while staying
+   scrollable — used by every horizontally-scrolling section. */
+@layer utilities {
+  .scrollbar-none {
+    scrollbar-width: none;
   }
-
-  .btn-secondary {
-    @apply px-4 py-2 border border-gray-300 dark:border-zinc-700 text-gray-800 dark:text-gray-200 font-semibold rounded-lg hover:bg-gray-100 dark:hover:bg-zinc-800 transition-all;
-  }
-
-  .nav-link {
-    @apply text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white font-medium transition-colors;
-  }
-
-  .nav-link-active {
-    @apply text-gray-900 dark:text-white;
+  .scrollbar-none::-webkit-scrollbar {
+    display: none;
   }
 }
 

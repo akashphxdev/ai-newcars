@@ -1,4 +1,5 @@
-"use client"
+"use client";
+import { useRef, useState, useEffect } from "react";
 
 type Car = {
   rank: number;
@@ -9,238 +10,324 @@ type Car = {
   power: string;
   torque: string;
   mileage: string;
-  fuel: string;
-  transmission: string;
-  seats: number;
-  rating: number;
   img: string;
   badge?: string;
-  launchDate?: string;
 };
 
 const CARS: Car[] = [
   {
     rank: 1,
-    name: "Nexon",
+    name: "Sierra",
     brand: "Tata",
-    priceMin: "₹8.1L",
-    priceMax: "₹15.6L",
-    power: "118 PS",
-    torque: "260 Nm",
-    mileage: "17.4 km/l",
-    fuel: "Petrol",
-    transmission: "Manual",
-    seats: 5,
-    rating: 4.3,
-    img: "https://images.unsplash.com/photo-1606664515524-ed2f786a0bd6?q=80&w=1200&auto=format&fit=crop",
+    priceMin: "14.99",
+    priceMax: "19.99",
+    power: "170 PS",
+    torque: "280 Nm",
+    mileage: "17.0 km/l",
+    img: "https://stimg.cardekho.com/images/carexteriorimages/630x420/Tata/Sierra/12271/1765181428462/front-left-side-47.jpg?tr=w-300",
     badge: "Bookings Open",
-    launchDate: "Launched: 15 Aug 2024",
   },
   {
     rank: 2,
-    name: "Creta",
-    brand: "Hyundai",
-    priceMin: "₹11.1L",
-    priceMax: "₹20.4L",
-    power: "115 PS",
-    torque: "250 Nm",
-    mileage: "21.4 km/l",
-    fuel: "Diesel",
-    transmission: "Automatic",
-    seats: 5,
-    rating: 4.5,
-    img: "https://images.unsplash.com/photo-1568844293986-8d0400bd55b9?q=80&w=1200&auto=format&fit=crop",
-    badge: "EV specs: 5kw",
-    launchDate: "Launched: 15 Aug 2024",
+    name: "Brezza",
+    brand: "Maruti Suzuki",
+    priceMin: "8.34",
+    priceMax: "14.14",
+    power: "103 PS",
+    torque: "137 Nm",
+    mileage: "19.80 km/l",
+    img: "https://stimg.cardekho.com/images/carexteriorimages/630x420/Maruti/Brezza/10400/1770885013083/front-left-side-47.jpg?tr=w-300",
   },
   {
     rank: 3,
-    name: "Swift",
-    brand: "Maruti Suzuki",
-    priceMin: "₹6.5L",
-    priceMax: "₹9.4L",
-    power: "82 PS",
-    torque: "113 Nm",
-    mileage: "22.4 km/l",
-    fuel: "Petrol",
-    transmission: "Manual",
-    seats: 5,
-    rating: 4.2,
-    img: "https://images.unsplash.com/photo-1494976388531-d1058494cdd8?q=80&w=1200&auto=format&fit=crop",
-    badge: "Top Spec: ZX1+",
-    launchDate: "Launched: 15 Aug 2024",
+    name: "Punch",
+    brand: "Tata",
+    priceMin: "6.00",
+    priceMax: "10.20",
+    power: "86 PS",
+    torque: "115 Nm",
+    mileage: "20.09 km/l",
+    img: "https://stimg.cardekho.com/images/carexteriorimages/630x420/Tata/Punch/13243/1768986024623/front-left-side-47.jpg?tr=w-300",
+    badge: "Top Spec: Creative+",
   },
   {
     rank: 4,
+    name: "Thar Roxx",
+    brand: "Mahindra",
+    priceMin: "12.99",
+    priceMax: "22.49",
+    power: "152 PS",
+    torque: "330 Nm",
+    mileage: "15.2 km/l",
+    img: "https://stimg.cardekho.com/images/carexteriorimages/630x420/Mahindra/Thar/12264/1776055307473/front-left-side-47.jpg?tr=w-300",
+  },
+  {
+    rank: 5,
+    name: "Fronx",
+    brand: "Maruti Suzuki",
+    priceMin: "7.51",
+    priceMax: "13.06",
+    power: "99 PS",
+    torque: "148 Nm",
+    mileage: "20.01 km/l",
+    img: "https://stimg.cardekho.com/images/carexteriorimages/630x420/Maruti/FRONX/9916/1771931850505/front-left-side-47.jpg?tr=w-300",
+  },
+  {
+    rank: 6,
     name: "Scorpio-N",
     brand: "Mahindra",
-    priceMin: "₹13.6L",
-    priceMax: "₹24.8L",
+    priceMin: "13.65",
+    priceMax: "24.60",
     power: "175 PS",
     torque: "370 Nm",
-    mileage: "16.3 km/l",
-    fuel: "Diesel",
-    transmission: "Automatic",
-    seats: 7,
-    rating: 4.4,
-    img: "https://images.unsplash.com/photo-1533473359331-0135ef1b58bf?q=80&w=1200&auto=format&fit=crop",
-    badge: "First Drive Review",
-    launchDate: "Launched: 15 Aug 2024",
+    mileage: "16.2 km/l",
+    img: "https://stimg.cardekho.com/images/carexteriorimages/630x420/Mahindra/Scorpio-N/10818/1755775730308/front-left-side-47.jpg?tr=w-300",
+  },
+  {
+    rank: 7,
+    name: "Scorpio Classic",
+    brand: "Mahindra",
+    priceMin: "13.03",
+    priceMax: "16.29",
+    power: "120 PS",
+    torque: "300 Nm",
+    mileage: "15.4 km/l",
+    img: "https://stimg.cardekho.com/images/carexteriorimages/630x420/Mahindra/Scorpio/10764/1778474504907/front-left-side-47.jpg?tr=w-300",
+  },
+  {
+    rank: 8,
+    name: "Nexon",
+    brand: "Tata",
+    priceMin: "8.10",
+    priceMax: "15.60",
+    power: "118 PS",
+    torque: "260 Nm",
+    mileage: "17.44 km/l",
+    img: "https://stimg.cardekho.com/images/carexteriorimages/630x420/Tata/Nexon/11115/1779101151711/front-left-side-47.jpg?tr=w-300",
   },
 ];
 
-const FuelIcon = () => (
-  <svg className="size-3.5" viewBox="0 0 24 24" fill="none">
-    <path d="M5 21V8l5-5h4v3h2a2 2 0 0 1 2 2v9.5a1.5 1.5 0 0 1-3 0V13a1 1 0 0 0-1-1h-1" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
-    <path d="M5 21h9M5 12h9" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
-  </svg>
-);
-
-const GearIcon = () => (
-  <svg className="size-3.5" viewBox="0 0 24 24" fill="none">
-    <circle cx="12" cy="12" r="2.5" stroke="currentColor" strokeWidth="1.6" />
-    <path d="M12 4v2.5M12 17.5V20M4 12h2.5M17.5 12H20M6.3 6.3l1.8 1.8M15.9 15.9l1.8 1.8M6.3 17.7l1.8-1.8M15.9 8.1l1.8-1.8" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
-  </svg>
-);
-
-const SeatIcon = () => (
-  <svg className="size-3.5" viewBox="0 0 24 24" fill="none">
-    <path d="M7 11V5a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v6" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
-    <path d="M5 11h10a2 2 0 0 1 2 2v2H7a2 2 0 0 1-2-2v-2Z" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" />
-    <path d="M7 17v3M15 17v3" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
-  </svg>
-);
-
-const GaugeIcon = () => (
-  <svg className="size-3.5" viewBox="0 0 24 24" fill="none">
-    <path d="M4 14a8 8 0 1 1 16 0" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
-    <path d="M12 14 16 9" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
-  </svg>
-);
+const ORANGE = "#f2650f";
+const DARK = "#111827";
+const MUTED = "#6b7280";
+const BORDER = "#e5e7eb";
+const SURFACE = "#f4f5f9";
 
 const PowerIcon = () => (
-  <svg className="size-3.5" viewBox="0 0 24 24" fill="none">
-    <path d="M13 2 4 14h6l-1 8 9-12h-6l1-8Z" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" />
+  <svg className="size-4" viewBox="0 0 24 24" fill="none">
+    <path d="M13 2 4 14h6l-1 8 9-12h-6l1-8Z" stroke="currentColor" strokeWidth="1.7" strokeLinejoin="round" />
   </svg>
 );
 
 const TorqueIcon = () => (
-  <svg className="size-3.5" viewBox="0 0 24 24" fill="none">
-    <circle cx="12" cy="12" r="7" stroke="currentColor" strokeWidth="1.6" />
-    <path d="M12 8v4l3 2" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+  <svg className="size-4" viewBox="0 0 24 24" fill="none">
+    <circle cx="12" cy="12" r="7.5" stroke="currentColor" strokeWidth="1.6" />
+    <path d="M12 7.5v4.7l3.2 1.9" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
   </svg>
 );
 
-const StarIcon = ({ filled }: { filled: boolean }) => (
-  <svg className="size-3" viewBox="0 0 20 20" fill={filled ? "currentColor" : "none"} stroke="currentColor" strokeWidth="1.3">
-    <path d="M10 2.5 12.5 7.5 18 8.3 14 12.2 15 17.7 10 15 5 17.7 6 12.2 2 8.3 7.5 7.5 10 2.5Z" strokeLinejoin="round" />
+const GaugeIcon = () => (
+  <svg className="size-4" viewBox="0 0 24 24" fill="none">
+    <path d="M4 14.5a8 8 0 1 1 16 0" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+    <path d="M12 14.5 16.2 9.3" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+    <circle cx="12" cy="14.5" r="1" fill="currentColor" />
   </svg>
 );
 
-const SpecChip = ({ icon, label }: { icon: React.ReactNode; label: string }) => (
-  <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-gray-100 px-2.5 py-1 text-[10px] font-semibold text-gray-700">
-    {icon}
-    {label}
-  </span>
-);
-
-const Card = ({ car }: { car: Car }) => (
-  <a
-    href="#"
-    className="group flex flex-col overflow-hidden rounded-xl bg-white ring-1 ring-gray-200 transition-shadow duration-300 hover:shadow-lg"
+const ChevronIcon = ({ dir = "right" }: { dir?: "left" | "right" }) => (
+  <svg
+    className="size-3.5"
+    viewBox="0 0 12 12"
+    fill="none"
+    style={{ transform: dir === "left" ? "rotate(180deg)" : "none" }}
   >
-    <div className="relative aspect-[4/3] overflow-hidden bg-gray-100">
-      <img
-        src={car.img}
-        alt={`${car.brand} ${car.name}`}
-        className="size-full object-cover transition-transform duration-700 ease-out group-hover:scale-[1.05]"
-      />
-      <div className="absolute left-2 top-2 flex items-center gap-1.5 rounded-full bg-white/95 px-2 py-1 text-[9px] font-bold text-gray-900 backdrop-blur-sm">
-        <span className="text-red-600">#{car.rank}</span>
-        <span className="text-gray-500">Most searched</span>
-      </div>
-      
-      {car.badge && (
-        <span className="absolute left-2 top-9 rounded-full bg-red-600 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wide text-white">
-          {car.badge}
-        </span>
-      )}
-      
-      <button
-        onClick={(e) => e.preventDefault()}
-        className="absolute right-2 top-2 rounded-full bg-white p-1.5 transition-colors hover:bg-gray-100"
-      >
-        <svg className="size-3.5 text-gray-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-          <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z" />
-        </svg>
-      </button>
-
-      <span className="absolute right-2 bottom-2 inline-flex items-center gap-1 rounded-full bg-white/95 px-2 py-1 text-[10px] font-bold text-gray-900 backdrop-blur-sm">
-        <StarIcon filled />
-        {car.rating}
-      </span>
-    </div>
-
-    <div className="flex flex-1 flex-col gap-2 p-3">
-      <div>
-        <p className="text-[10px] font-bold uppercase tracking-wide text-gray-500">{car.brand}</p>
-        <h3 className="text-sm font-bold text-gray-900">{car.name}</h3>
-        <p className="text-xs text-gray-500">{car.launchDate}</p>
-        <p className="mt-1 text-base font-black text-red-600">
-          ₹{car.priceMin} - {car.priceMax}
-        </p>
-        <p className="text-xs text-gray-600 mt-0.5">
-          Top Variant: {car.transmission}
-        </p>
-      </div>
-
-      <div className="space-y-2 border-t border-gray-100 pt-2">
-        <div className="flex flex-wrap gap-1">
-          <SpecChip icon={<PowerIcon />} label={car.power} />
-          <SpecChip icon={<TorqueIcon />} label={car.torque} />
-          <SpecChip icon={<GaugeIcon />} label={car.mileage} />
-        </div>
-
-        <div className="flex flex-wrap gap-1">
-          <SpecChip icon={<FuelIcon />} label={car.fuel} />
-          <SpecChip icon={<GearIcon />} label={car.transmission} />
-          <SpecChip icon={<SeatIcon />} label={`${car.seats} seat`} />
-        </div>
-      </div>
-
-      <button
-        type="button"
-        onClick={(e) => e.preventDefault()}
-        className="mt-auto w-full flex items-center justify-between rounded-lg bg-red-600 px-3 py-2 text-xs font-bold text-white transition-colors hover:bg-red-700 active:bg-red-800"
-      >
-        Check Offers
-        <svg className="size-3" viewBox="0 0 12 12" fill="none">
-          <path d="M2 6h8M8 2l4 4-4 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-        </svg>
-      </button>
-    </div>
-  </a>
+    <path d="M2 6h8M8 2l4 4-4 4" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />
+  </svg>
 );
+
+const HeartIcon = ({ filled }: { filled: boolean }) => (
+  <svg className="size-4" viewBox="0 0 24 24" fill={filled ? ORANGE : "none"}>
+    <path
+      d="M12 20.5s-7.5-4.6-10-9.4C.5 7.6 2.4 4 6 4c2.1 0 3.7 1.2 6 3.6C14.3 5.2 15.9 4 18 4c3.6 0 5.5 3.6 4 7.1-2.5 4.8-10 9.4-10 9.4Z"
+      stroke={filled ? ORANGE : "currentColor"}
+      strokeWidth="1.8"
+      strokeLinejoin="round"
+    />
+  </svg>
+);
+
+const Spec = ({ icon, value, label }: { icon: React.ReactNode; value: string; label: string }) => (
+  <div className="flex items-center gap-1.5">
+    <span style={{ color: "#9aa1ad" }}>{icon}</span>
+    <div className="leading-tight">
+      <p className="text-[12px] font-bold" style={{ color: DARK }}>
+        {value}
+      </p>
+      <p className="text-[10px] font-medium" style={{ color: MUTED }}>
+        {label}
+      </p>
+    </div>
+  </div>
+);
+
+const Card = ({ car }: { car: Car }) => {
+  const [saved, setSaved] = useState(false);
+
+  return (
+    <div
+      className="flex h-full w-[248px] shrink-0 snap-start flex-col overflow-hidden rounded-2xl bg-white"
+      style={{ border: `1px solid ${BORDER}` }}
+    >
+      <div className="relative aspect-[4/3] overflow-hidden" style={{ background: SURFACE }}>
+        <img src={car.img} alt={`${car.brand} ${car.name}`} className="size-full object-cover" />
+
+        <span
+          className="absolute left-3 top-3 inline-flex items-center gap-1.5 rounded-md bg-white px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide"
+          style={{ color: DARK }}
+        >
+          <span className="size-1.5 rounded-full" style={{ background: ORANGE }} />
+          #{car.rank} Most Searched
+        </span>
+
+        <button
+          type="button"
+          onClick={() => setSaved((s) => !s)}
+          aria-label="Save to wishlist"
+          className="absolute right-3 top-3 flex size-8 items-center justify-center rounded-full bg-white"
+          style={{ color: saved ? ORANGE : "#374151" }}
+        >
+          <HeartIcon filled={saved} />
+        </button>
+
+        {car.badge && (
+          <span
+            className="absolute bottom-3 left-3 rounded-md px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-white"
+            style={{ background: ORANGE }}
+          >
+            {car.badge}
+          </span>
+        )}
+      </div>
+
+      <div className="flex flex-1 flex-col gap-3 px-3.5 pt-3.5">
+        <div>
+          <p className="text-[10.5px] font-semibold uppercase tracking-[0.06em]" style={{ color: MUTED }}>
+            {car.brand}
+          </p>
+          <h3 className="text-[15px] font-bold leading-tight" style={{ color: DARK }}>
+            {car.name}
+          </h3>
+        </div>
+
+        <p className="text-[16.5px] font-extrabold leading-none" style={{ color: DARK }}>
+          ₹{car.priceMin} - {car.priceMax} Lakh
+          <span className="block pt-1 text-[11px] font-semibold" style={{ color: MUTED }}>
+            *ex-showroom
+          </span>
+        </p>
+
+        <div className="flex items-center justify-between border-t pt-3" style={{ borderColor: "#f0f1f4" }}>
+          <Spec icon={<PowerIcon />} value={car.power} label="Power" />
+          <Spec icon={<TorqueIcon />} value={car.torque} label="Torque" />
+          <Spec icon={<GaugeIcon />} value={car.mileage} label="Mileage" />
+        </div>
+      </div>
+
+      <div className="mt-auto flex items-center gap-2 px-3.5 pb-3.5 pt-3">
+        <button
+          type="button"
+          className="flex-1 rounded-xl px-3 py-2.5 text-[12px] font-bold"
+          style={{ border: `1px solid ${BORDER}`, color: DARK }}
+        >
+          View Details
+        </button>
+        <button
+          type="button"
+          className="flex-1 whitespace-nowrap rounded-xl px-3 py-2.5 text-[12px] font-bold transition-colors hover:bg-orange-50"
+          style={{ border: `1.5px solid ${ORANGE}`, color: ORANGE }}
+        >
+          Check Offers
+        </button>
+      </div>
+    </div>
+  );
+};
 
 export default function PopularCars() {
+  const trackRef = useRef<HTMLDivElement>(null);
+  const [canScrollLeft, setCanScrollLeft] = useState(false);
+  const [canScrollRight, setCanScrollRight] = useState(true);
+
+  const updateArrows = () => {
+    const el = trackRef.current;
+    if (!el) return;
+    setCanScrollLeft(el.scrollLeft > 4);
+    setCanScrollRight(el.scrollLeft + el.clientWidth < el.scrollWidth - 4);
+  };
+
+  useEffect(() => {
+    updateArrows();
+  }, []);
+
+  const scrollBy = (dir: "left" | "right") => {
+    const el = trackRef.current;
+    if (!el) return;
+    const amount = el.clientWidth * 0.8;
+    el.scrollBy({ left: dir === "left" ? -amount : amount, behavior: "smooth" });
+  };
+
   return (
-    <section className="bg-white py-12 sm:py-16">
+    <section className="py-12 sm:py-16" style={{ background: SURFACE }}>
       <div className="mx-auto max-w-7xl px-4">
-        <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
           <div>
-            <p className="mb-1 text-xs font-bold uppercase tracking-widest text-red-600">Most Searched</p>
-            <h2 className="text-2xl sm:text-3xl font-black text-gray-900">Popular cars</h2>
-            <p className="mt-1 text-xs text-gray-500">Ranked by buyer interest this month</p>
+            <p className="mb-1.5 text-[11px] font-bold uppercase tracking-[0.14em]" style={{ color: ORANGE }}>
+              Most Searched
+            </p>
+            <h2 className="text-2xl sm:text-[28px] font-bold tracking-tight" style={{ color: DARK }}>
+              Popular cars
+            </h2>
           </div>
-          <a href="#" className="inline-flex items-center gap-1.5 text-xs sm:text-sm font-bold text-gray-900 hover:text-red-600">
-            View full ranking
-            <svg className="size-3" viewBox="0 0 12 12" fill="none">
-              <path d="M2 6h8M8 2l4 4-4 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
-          </a>
+
+          <div className="flex items-center gap-3">
+            <a
+              href="#"
+              className="inline-flex items-center gap-1.5 text-[12.5px] font-bold transition-colors"
+              style={{ color: DARK }}
+            >
+              View all popular cars
+              <ChevronIcon />
+            </a>
+            <div className="hidden items-center gap-1.5 sm:flex">
+              <button
+                type="button"
+                aria-label="Scroll left"
+                onClick={() => scrollBy("left")}
+                disabled={!canScrollLeft}
+                className="flex size-8 items-center justify-center rounded-full border bg-white transition-colors disabled:opacity-30"
+                style={{ borderColor: BORDER, color: DARK }}
+              >
+                <ChevronIcon dir="left" />
+              </button>
+              <button
+                type="button"
+                aria-label="Scroll right"
+                onClick={() => scrollBy("right")}
+                disabled={!canScrollRight}
+                className="flex size-8 items-center justify-center rounded-full border bg-white transition-colors disabled:opacity-30"
+                style={{ borderColor: BORDER, color: DARK }}
+              >
+                <ChevronIcon />
+              </button>
+            </div>
+          </div>
         </div>
 
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        <div
+          ref={trackRef}
+          onScroll={updateArrows}
+          className="flex snap-x snap-mandatory gap-4 overflow-x-auto pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+        >
           {CARS.map((car) => (
             <Card key={car.name} car={car} />
           ))}

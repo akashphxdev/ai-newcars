@@ -1,5 +1,5 @@
-"use client"
-import { useState, useEffect } from "react";
+"use client";
+import { useRef, useState, useEffect } from "react";
 
 type Car = {
   name: string;
@@ -22,7 +22,7 @@ const CARS: Car[] = [
     fuel: "Petrol",
     transmission: "Automatic",
     rating: 4.3,
-    img: "https://images.unsplash.com/photo-1605559424843-9e4c228bf1c2?q=80&w=1200&auto=format&fit=crop",
+    img: "https://stimg.cardekho.com/images/carexteriorimages/630x420/Maruti/Brezza-2026/12258/1784291755589/front-left-side-47.jpg?tr=w-300",
     badge: "Coming Soon",
   },
   {
@@ -33,8 +33,8 @@ const CARS: Car[] = [
     fuel: "Electric",
     transmission: "Automatic",
     rating: 4.4,
-    img: "https://images.unsplash.com/photo-1617788138017-80ad40651399?q=80&w=1200&auto=format&fit=crop",
-    badge: "Pre-bookings Live",
+    img: "https://stimg.cardekho.com/images/carexteriorimages/630x420/Audi/A6-2026/12513/1770183324417/front-left-side-47.jpg?tr=w-300",
+    badge: "Coming Soon",
   },
   {
     name: "Hyundai Creta EV",
@@ -44,7 +44,7 @@ const CARS: Car[] = [
     fuel: "Electric",
     transmission: "Automatic",
     rating: 4.5,
-    img: "https://images.unsplash.com/photo-1619767886558-efdc259cde1a?q=80&w=1200&auto=format&fit=crop",
+    img: "https://stimg.cardekho.com/images/carexteriorimages/630x420/Toyota/Hilux-2026/13623/1781861197533/front-left-side-47.jpg?tr=w-300",
     badge: "Coming Soon",
   },
   {
@@ -55,10 +55,38 @@ const CARS: Car[] = [
     fuel: "Electric",
     transmission: "Automatic",
     rating: 4.6,
-    img: "https://images.unsplash.com/photo-1617470702761-2bb9c41523c5?q=80&w=1200&auto=format&fit=crop",
-    badge: "Pre-bookings Live",
+    img: "https://stimg.cardekho.com/images/carexteriorimages/630x420/Mercedes-Benz/AMG-E-53/13668/1784012657850/front-left-side-47.jpg?tr=w-300",
+    badge: "Coming Soon",
+  },
+  {
+    name: "Skoda Kylaq",
+    cat: "SUV",
+    date: "2026-08-05",
+    price: "₹9.9L",
+    fuel: "Petrol",
+    transmission: "Manual",
+    rating: 4.2,
+    img: "https://stimg.cardekho.com/images/carexteriorimages/630x420/Maruti/Brezza-2026/12258/1784291755589/front-left-side-47.jpg?tr=w-300",
+    badge: "Coming Soon",
+  },
+  {
+    name: "Toyota Land Cruiser 250",
+    cat: "SUV",
+    date: "2026-09-25",
+    price: "₹92L",
+    fuel: "Diesel",
+    transmission: "Automatic",
+    rating: 4.7,
+    img: "https://stimg.cardekho.com/images/carexteriorimages/630x420/Audi/A6-2026/12513/1770183324417/front-left-side-47.jpg?tr=w-300",
+    badge: "Flagship",
   },
 ];
+
+const ORANGE = "#f2650f";
+const DARK = "#111827";
+const MUTED = "#6b7280";
+const BORDER = "#e5e7eb";
+const SURFACE = "#f4f5f9";
 
 const DATE_FMT = new Intl.DateTimeFormat("en-IN", { day: "2-digit", month: "short", year: "numeric" });
 
@@ -73,149 +101,254 @@ const useDaysLeft = (date: string) => {
   return days;
 };
 
+const ChevronIcon = ({ dir = "right" }: { dir?: "left" | "right" }) => (
+  <svg
+    className="size-3.5"
+    viewBox="0 0 12 12"
+    fill="none"
+    style={{ transform: dir === "left" ? "rotate(180deg)" : "none" }}
+  >
+    <path d="M2 6h8M8 2l4 4-4 4" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />
+  </svg>
+);
+
+const HeartIcon = ({ filled }: { filled: boolean }) => (
+  <svg className="size-4" viewBox="0 0 24 24" fill={filled ? ORANGE : "none"}>
+    <path
+      d="M12 20.5s-7.5-4.6-10-9.4C.5 7.6 2.4 4 6 4c2.1 0 3.7 1.2 6 3.6C14.3 5.2 15.9 4 18 4c3.6 0 5.5 3.6 4 7.1-2.5 4.8-10 9.4-10 9.4Z"
+      stroke={filled ? ORANGE : "currentColor"}
+      strokeWidth="1.8"
+      strokeLinejoin="round"
+    />
+  </svg>
+);
+
 const FuelIcon = () => (
-  <svg className="size-3.5" viewBox="0 0 24 24" fill="none">
-    <path d="M5 21V8l5-5h4v3h2a2 2 0 0 1 2 2v9.5a1.5 1.5 0 0 1-3 0V13a1 1 0 0 0-1-1h-1" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
-    <path d="M5 21h9M5 12h9" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+  <svg className="size-4" viewBox="0 0 24 24" fill="none">
+    <path d="M6 21V6a2 2 0 0 1 2-2h5a2 2 0 0 1 2 2v15" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" />
+    <path d="M6 21H3M15 21h4M15 10h1.5a1.5 1.5 0 0 1 1.5 1.5V17a1.5 1.5 0 0 0 3 0v-5l-2.5-3" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+    <path d="M8 8h5" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
   </svg>
 );
 
 const GearIcon = () => (
-  <svg className="size-3.5" viewBox="0 0 24 24" fill="none">
-    <circle cx="12" cy="12" r="2.5" stroke="currentColor" strokeWidth="1.6" />
-    <path d="M12 4v2.5M12 17.5V20M4 12h2.5M17.5 12H20M6.3 6.3l1.8 1.8M15.9 15.9l1.8 1.8M6.3 17.7l1.8-1.8M15.9 8.1l1.8-1.8" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+  <svg className="size-4" viewBox="0 0 24 24" fill="none">
+    <rect x="4" y="9" width="6" height="6" rx="1" stroke="currentColor" strokeWidth="1.6" />
+    <path d="M7 9V6.5M4 12H2.5M10 12h1.5M7 15v2.5" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+    <path d="M14 7h6.5M14 12h6.5M14 17h6.5" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
   </svg>
 );
 
-const CalendarIcon = () => (
-  <svg className="size-3.5" viewBox="0 0 24 24" fill="none">
-    <rect x="3" y="4" width="18" height="18" rx="2" stroke="currentColor" strokeWidth="1.6" />
-    <path d="M16 2v4M8 2v4M3 10h18" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+const StarIcon = () => (
+  <svg className="size-3" viewBox="0 0 24 24" fill={ORANGE}>
+    <path d="m12 2.5 2.9 6.1 6.6.9-4.8 4.6 1.2 6.6L12 17.6l-5.9 3.1 1.2-6.6-4.8-4.6 6.6-.9L12 2.5Z" />
   </svg>
 );
 
-const StarIcon = ({ filled }: { filled: boolean }) => (
-  <svg className="size-3" viewBox="0 0 20 20" fill={filled ? "currentColor" : "none"} stroke="currentColor" strokeWidth="1.3">
-    <path d="M10 2.5 12.5 7.5 18 8.3 14 12.2 15 17.7 10 15 5 17.7 6 12.2 2 8.3 7.5 7.5 10 2.5Z" strokeLinejoin="round" />
-  </svg>
-);
-
-const SpecChip = ({ icon, label }: { icon: React.ReactNode; label: string }) => (
-  <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-gray-100 px-2.5 py-1 text-[10px] font-semibold text-gray-700">
-    {icon}
-    {label}
-  </span>
+const Spec = ({ icon, label }: { icon: React.ReactNode; label: string }) => (
+  <div className="flex items-center gap-1.5">
+    <span style={{ color: "#9aa1ad" }}>{icon}</span>
+    <span className="text-[11.5px] font-semibold" style={{ color: DARK }}>
+      {label}
+    </span>
+  </div>
 );
 
 const Card = ({ car }: { car: Car }) => {
+  const [saved, setSaved] = useState(false);
   const days = useDaysLeft(car.date);
   const formatted = DATE_FMT.format(new Date(car.date));
   const isUpcoming = days > 0;
 
   return (
-    <a
-      href="#"
-      className="group relative flex flex-col overflow-hidden rounded-xl bg-white ring-1 ring-gray-200 transition-shadow duration-300 hover:shadow-lg"
+    <div
+      className="group flex h-full w-[260px] shrink-0 snap-start flex-col overflow-hidden rounded-2xl bg-white transition-all duration-300 hover:-translate-y-1"
+      style={{ border: `1px solid ${BORDER}`, boxShadow: "0 1px 2px rgba(17,24,39,0.04)" }}
+      onMouseEnter={(e) => (e.currentTarget.style.boxShadow = "0 12px 28px rgba(17,24,39,0.12)")}
+      onMouseLeave={(e) => (e.currentTarget.style.boxShadow = "0 1px 2px rgba(17,24,39,0.04)")}
     >
-      {/* Image */}
-      <div className="relative aspect-[4/3] overflow-hidden bg-gray-100">
+      <div className="relative aspect-[4/3] overflow-hidden" style={{ background: SURFACE }}>
         <img
           src={car.img}
           alt={car.name}
-          className="size-full object-cover transition-transform duration-700 ease-out group-hover:scale-[1.05]"
+          className="size-full object-cover transition-transform duration-700 ease-out group-hover:scale-[1.06]"
         />
-        
-        {isUpcoming && (
-          <div className="absolute inset-0 bg-black/50 backdrop-blur-xl flex items-center justify-center">
-            <div className="text-center">
-              <p className="text-white text-[10px] font-bold uppercase tracking-widest mb-2 opacity-90">Launching Soon</p>
-              <p className="text-white text-5xl font-black tabular-nums">{days}</p>
-              <p className="text-white/95 text-[11px] font-semibold mt-1">{days === 1 ? "day" : "days"} left</p>
-            </div>
-          </div>
-        )}
 
-        <div className="absolute left-2 top-2">
-          <span className="inline-block rounded-full bg-white/95 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wide text-gray-900">
-            {car.cat}
-          </span>
-          {car.badge && (
-            <span className="ml-1.5 inline-block rounded-full bg-red-600 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wide text-white">
-              {car.badge}
+        <div
+          className="absolute inset-x-0 top-0 h-16"
+          style={{ background: "linear-gradient(180deg, rgba(17,24,39,0.35), transparent)" }}
+        />
+
+        <div className="absolute inset-x-0 top-0 flex items-start justify-between p-3">
+          <div className="flex items-center gap-1.5">
+            <span
+              className="inline-flex items-center rounded-full bg-white/95 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide backdrop-blur-sm"
+              style={{ color: DARK }}
+            >
+              {car.cat}
             </span>
-          )}
+            {car.badge && (
+              <span
+                className="inline-flex items-center rounded-full px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wide text-white"
+                style={{ background: ORANGE }}
+              >
+                {car.badge}
+              </span>
+            )}
+          </div>
+
+          <button
+            type="button"
+            onClick={() => setSaved((s) => !s)}
+            aria-label="Save to wishlist"
+            className="flex size-8 shrink-0 items-center justify-center rounded-full bg-white/95 backdrop-blur-sm transition-transform hover:scale-105"
+            style={{ color: saved ? ORANGE : "#374151" }}
+          >
+            <HeartIcon filled={saved} />
+          </button>
         </div>
 
-        <button
-          onClick={(e) => e.preventDefault()}
-          className="absolute right-2 top-2 rounded-full bg-white p-1.5 transition-colors hover:bg-gray-100"
-        >
-          <svg className="size-3.5 text-gray-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z" />
-          </svg>
-        </button>
+        {isUpcoming && (
+          <span
+            className="absolute bottom-3 left-3 inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[10px] font-bold text-white backdrop-blur-sm"
+            style={{ background: "rgba(17,24,39,0.78)" }}
+          >
+            <span className="tabular-nums" style={{ color: "#ff8a3d" }}>
+              {days}
+            </span>{" "}
+            {days === 1 ? "day" : "days"} left
+          </span>
+        )}
 
-        <span className="absolute right-2 bottom-2 inline-flex items-center gap-1 rounded-full bg-white/95 px-2 py-1 text-[10px] font-bold text-gray-900">
-          <StarIcon filled />
+        <span
+          className="absolute bottom-3 right-3 inline-flex items-center gap-1 rounded-full bg-white/95 px-2 py-1 text-[10.5px] font-bold backdrop-blur-sm"
+          style={{ color: DARK }}
+        >
+          <StarIcon />
           {car.rating}
         </span>
       </div>
 
-      {/* Content */}
-      <div className="flex flex-1 flex-col gap-2 p-3">
+      <div className="flex flex-1 flex-col gap-3 px-4 pt-4">
         <div>
-          <h3 className="text-sm font-bold text-gray-900">{car.name}</h3>
-          <p className="text-xs text-gray-500 mt-1">Launching on {formatted}</p>
-          <p className="mt-1 text-base font-black text-red-600">{car.price}</p>
+          <h3 className="text-[15.5px] font-bold leading-tight" style={{ color: DARK }}>
+            {car.name}
+          </h3>
+          <p className="mt-1 text-[11px] font-medium" style={{ color: MUTED }}>
+            Launching on {formatted}
+          </p>
         </div>
 
-        <div className="space-y-2 border-t border-gray-100 pt-2">
-          <div className="flex flex-wrap gap-1">
-            <SpecChip icon={<FuelIcon />} label={car.fuel} />
-            <SpecChip icon={<GearIcon />} label={car.transmission} />
-          </div>
-
-          <div className="flex items-center gap-1 text-[10px] font-semibold text-gray-600">
-            <CalendarIcon />
-            <span className="text-red-600 font-bold">{days}</span>
-            <span>{days === 1 ? "day" : "days"} left</span>
-          </div>
+        <div>
+          <p className="text-[18px] font-bold leading-none" style={{ color: DARK }}>
+            {car.price}
+            <span className="ml-1 align-middle text-[10.5px] font-semibold" style={{ color: MUTED }}>
+              *est.
+            </span>
+          </p>
+          <p className="mt-1 text-[10px] font-medium" style={{ color: "#9aa1ad" }}>
+            Estimated price, subject to change
+          </p>
         </div>
 
+        <div className="flex items-center gap-3 border-t pt-3" style={{ borderColor: "#f0f1f4" }}>
+          <Spec icon={<FuelIcon />} label={car.fuel} />
+          <Spec icon={<GearIcon />} label={car.transmission} />
+        </div>
+      </div>
+
+      <div className="mt-auto px-4 pb-4 pt-3.5">
         <button
           type="button"
-          onClick={(e) => e.preventDefault()}
-          className="mt-auto w-full flex items-center justify-between rounded-lg bg-red-600 px-3 py-2 text-xs font-bold text-white transition-colors hover:bg-red-700 active:bg-red-800"
+          className="flex w-full items-center justify-center gap-1.5 whitespace-nowrap rounded-xl px-3 py-2.5 text-[12.5px] font-bold transition-colors hover:bg-orange-50"
+          style={{ border: `1.5px solid ${ORANGE}`, color: ORANGE }}
         >
           {isUpcoming ? "Notify me at launch" : "Check Offers"}
-          <svg className="size-3" viewBox="0 0 12 12" fill="none">
-            <path d="M2 6h8M8 2l4 4-4 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-          </svg>
+          <ChevronIcon />
         </button>
       </div>
-    </a>
+    </div>
   );
 };
 
 export default function UpcomingLaunches() {
+  const trackRef = useRef<HTMLDivElement>(null);
+  const [canScrollLeft, setCanScrollLeft] = useState(false);
+  const [canScrollRight, setCanScrollRight] = useState(true);
+
+  const updateArrows = () => {
+    const el = trackRef.current;
+    if (!el) return;
+    setCanScrollLeft(el.scrollLeft > 4);
+    setCanScrollRight(el.scrollLeft + el.clientWidth < el.scrollWidth - 4);
+  };
+
+  useEffect(() => {
+    updateArrows();
+  }, []);
+
+  const scrollBy = (dir: "left" | "right") => {
+    const el = trackRef.current;
+    if (!el) return;
+    const amount = el.clientWidth * 0.8;
+    el.scrollBy({ left: dir === "left" ? -amount : amount, behavior: "smooth" });
+  };
+
   return (
-    <section className="bg-white py-12 sm:py-16">
+    <section className="py-12 sm:py-16" style={{ background: SURFACE }}>
       <div className="mx-auto max-w-7xl px-4">
-        <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
           <div>
-            <p className="mb-1 text-xs font-bold uppercase tracking-widest text-red-600">Latest Launches</p>
-            <h2 className="text-2xl sm:text-3xl font-black text-gray-900">Upcoming cars in India</h2>
-            <p className="mt-1 text-xs text-gray-500">Real-time countdowns for the most anticipated launches</p>
+            <p className="mb-1.5 text-[11px] font-bold uppercase tracking-[0.14em]" style={{ color: ORANGE }}>
+              Latest Launches
+            </p>
+            <h2 className="text-2xl sm:text-[28px] font-bold tracking-tight" style={{ color: DARK }}>
+              Upcoming cars in India
+            </h2>
+            <p className="mt-1 text-[13px] font-medium" style={{ color: MUTED }}>
+              Real-time countdowns for the most anticipated launches
+            </p>
           </div>
-          <a href="#" className="inline-flex items-center gap-1.5 text-xs sm:text-sm font-bold text-gray-900 hover:text-red-600">
-            View all launches
-            <svg className="size-3" viewBox="0 0 12 12" fill="none">
-              <path d="M2 6h8M8 2l4 4-4 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
-          </a>
+
+          <div className="flex items-center gap-3">
+            <a
+              href="#"
+              className="inline-flex items-center gap-1.5 text-[12.5px] font-bold"
+              style={{ color: DARK }}
+            >
+              View all launches
+              <ChevronIcon />
+            </a>
+            <div className="hidden items-center gap-1.5 sm:flex">
+              <button
+                type="button"
+                aria-label="Scroll left"
+                onClick={() => scrollBy("left")}
+                disabled={!canScrollLeft}
+                className="flex size-8 items-center justify-center rounded-full bg-white transition-colors disabled:opacity-30"
+                style={{ border: `1px solid ${BORDER}`, color: DARK }}
+              >
+                <ChevronIcon dir="left" />
+              </button>
+              <button
+                type="button"
+                aria-label="Scroll right"
+                onClick={() => scrollBy("right")}
+                disabled={!canScrollRight}
+                className="flex size-8 items-center justify-center rounded-full bg-white transition-colors disabled:opacity-30"
+                style={{ border: `1px solid ${BORDER}`, color: DARK }}
+              >
+                <ChevronIcon />
+              </button>
+            </div>
+          </div>
         </div>
 
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        <div
+          ref={trackRef}
+          onScroll={updateArrows}
+          className="flex snap-x snap-mandatory gap-4 overflow-x-auto pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+        >
           {CARS.map((car) => (
             <Card key={car.name} car={car} />
           ))}
