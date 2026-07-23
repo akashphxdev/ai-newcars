@@ -1,8 +1,12 @@
 # Project Rules for Claude Code
 
-## 1. Always Follow the Existing Project Structure
-- Always follow the EXISTING folder structure, naming conventions, and coding patterns used in this project.
-- Do not invent a new structure or pattern on your own. Before creating a new file/component, check how similar things are already done elsewhere in the codebase and follow that same pattern.
+## 1. Always Follow the Existing Project Structure (Per Area)
+- Always follow the EXISTING folder structure, naming conventions, and coding patterns used in this project — but scoped to the correct area:
+  - **Admin panel** → follow the admin panel's own existing structure/pattern.
+  - **Backend** → follow the backend's own existing structure/pattern.
+  - **Website (frontend)** → follow whatever is the proper, best-practice structure for a website — it does not need to match admin or backend structure.
+- It is NOT required that admin, backend, and website all use one identical structure. Each area follows its own correct/best convention.
+- Do not invent a new structure or pattern on your own. Before creating a new file/component, check how similar things are already done in that same area (admin/backend/website) and follow that same pattern.
 - If anything about the existing structure is unclear or seems missing, ask me — do not decide on your own.
 
 ## 2. No Code Changes Without Explicit Permission
@@ -17,7 +21,7 @@
 
 ## 4. Reusable Code — Always Extract to a Common Location
 - If any function/component/logic is used (or will be used) in two or more places, move it into a shared/common file right away.
-- **Use the existing common location — don't create a new one.** Find out where shared/common code already lives in this project (e.g. `src/components/common/`, `src/lib/`, `src/utils/` — whatever the actual project uses) and put new shared code there. Explore the project first, then place it in the existing convention.
+- **Use the existing common location — don't create a new one.** Find out where shared/common code already lives in that area of the project (e.g. `src/components/common/`, `src/lib/`, `src/utils/` — whatever the actual project uses) and put new shared code there. Explore the project first, then place it in the existing convention.
 - Never write duplicate code — always check for existing common functions/components first, and reuse them if they already exist.
 
 ## 5. Proactive Suggestions — Tell, Don't Do
@@ -44,11 +48,11 @@
 
 ## 8. Bug Fixing & Better-Approach Discipline
 - **While I'm writing/asking for code:** if the approach I'm using could cause bugs down the line (missed edge cases, performance issues, race conditions, security gaps, etc.), tell me clearly BEFORE any change is made — what the risk is and why (per Rule #6). Don't just silently code it and let the bug surface later.
-- **If a better way already exists** (either as an existing pattern already used elsewhere in this project, or a generally better practice), tell me about it and explain why it's better. Do not switch to it yourself — only after I say "yes, do it" (Rule #2 & #5).
+- **If a better way already exists** (either as an existing pattern already used elsewhere in that area of the project, or a generally better practice), tell me about it and explain why it's better. Do not switch to it yourself — only after I say "yes, do it" (Rule #2 & #5).
 - **When fixing a bug:**
   - Do NOT just patch the symptom and call it fixed.
   - Find the root cause first, and explain it to me.
-  - Propose a proper fix that follows the existing project's conventions/patterns (Rule #1) — not a random one-off hack.
+  - Propose a proper fix that follows the existing project's conventions/patterns for that area (Rule #1) — not a random one-off hack.
   - Avoid quick "band-aid" fixes. If a temporary fix is genuinely the only option for some reason, say so explicitly: "this is temporary, the proper fix should be ___."
   - Give the one-line reason for the fix (Rule #7) and wait for my explicit "yes" before editing any file (Rule #2).
 - **Database-related bugs:** Rule #3 still applies without exception — diagnose and explain the issue and the fix needed, but never execute the actual database change yourself.
@@ -101,3 +105,15 @@
 ## 18. Logging & Error Handling Consistency
 - When writing new code, follow the existing error-handling and logging pattern already used in this project — don't invent a new pattern of your own.
 - If proper error handling is missing somewhere, flag it — implement only once I say "yes."
+
+## 19. Comments — Only What's Truly Necessary
+- Do not add unnecessary/obvious comments in code. A comment must earn its place — write one only when it's genuinely needed (e.g. explaining non-obvious logic, a tricky workaround, a business-rule reason, a warning about a gotcha).
+- Do not write comments that just restate what the code already says (e.g. `// set loading to true` above `setLoading(true)`).
+- When editing or touching any existing file that has excessive/unnecessary comments, clean it up: remove the unneeded ones and keep only the most important, genuinely-needed comments.
+- When creating a new file, keep comments minimal from the start — only the essential ones, not one per line/block.
+
+## 20. APIs — Fetch Only the Data That's Needed (No `SELECT *`, No Over-fetching)
+- Whenever building or updating a website API, only fetch/select the exact fields/columns that are actually needed for that screen/response — never `SELECT *` or return the full row/object "just in case."
+- Extra unused fields mean extra data over the network and extra DB work for nothing — this directly conflicts with Rule #9 (performance is non-negotiable), so it's not allowed even if it's quicker to just grab everything.
+- This applies at both levels: the DB query (select only needed columns) and the API response (don't send back fields the frontend doesn't use).
+- If you find an existing endpoint/query already over-fetching, don't fix it silently — flag it to me first (per Rule #5), then fix once I say "yes."

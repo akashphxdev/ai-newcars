@@ -5,80 +5,69 @@ import ScrollArrows from "@/components/common/ScrollArrows";
 import { useScrollRail } from "@/components/common/useScrollRail";
 import { StarIcon } from "@/components/common/icons";
 
+// Mirrors PublicHomeTestimonialRecord (admin-backend's
+// modules/public/home/testimonial) — no car/verified/ownership fields,
+// since the Testimonial table doesn't store those.
 type Review = {
   name: string;
-  verified: boolean;
-  car: string;
+  city: string | null;
   rating: number;
   date: string;
   quote: string;
-  ownership: string;
 };
 
 const REVIEWS: Review[] = [
   {
     name: "Rohit Sharma",
-    verified: true,
-    car: "Hyundai Creta 2023",
+    city: "Jaipur",
     rating: 5,
     date: "2 weeks ago",
     quote:
       "Driven it for 8 months now, mostly city plus a few highway trips. Mileage matches what the dealer promised and the cabin stays quiet even at 100+ km/h.",
-    ownership: "8 months of ownership",
   },
   {
     name: "Ananya Desai",
-    verified: true,
-    car: "Tata Nexon EV 2024",
+    city: "Mumbai",
     rating: 4,
     date: "1 month ago",
     quote:
       "Range is genuinely close to claimed figures if you drive sensibly. My only complaint is finding fast chargers outside the city.",
-    ownership: "1 year of ownership",
   },
   {
     name: "Vikram Singh",
-    verified: false,
-    car: "Maruti Suzuki Swift 2022",
+    city: "Delhi NCR",
     rating: 5,
     date: "3 weeks ago",
     quote:
       "Bought it as a second car for my wife's commute. Zero issues in two years, and service costs are the lowest among all the cars I've owned.",
-    ownership: "2 years of ownership",
   },
   {
     name: "Priya Nair",
-    verified: true,
-    car: "Mahindra Scorpio-N 2023",
+    city: "Bangalore",
     rating: 4,
     date: "5 days ago",
     quote:
       "Love the ride height and how it handles bad roads. Just be ready for the fuel bills if you're doing a lot of city driving.",
-    ownership: "6 months of ownership",
   },
   {
     name: "Sameer Khan",
-    verified: true,
-    car: "Kia Seltos 2023",
+    city: "Hyderabad",
     rating: 4,
     date: "1 week ago",
     quote:
       "The panoramic sunroof and ventilated seats make a real difference on 6+ hour drives. Infotainment lags occasionally after an update.",
-    ownership: "10 months of ownership",
   },
   {
     name: "Neha Gupta",
-    verified: false,
-    car: "Toyota Innova Crysta 2022",
+    city: null,
     rating: 5,
     date: "4 days ago",
     quote:
       "Three years and two long road trips in, nothing has gone wrong beyond routine service. Resale value has also held up well.",
-    ownership: "3 years of ownership",
   },
 ];
 
-const FILTERS = ["All Reviews", "5 Star", "4 Star", "3 Star & below", "Verified Owners"];
+const FILTERS = ["All Reviews", "5 Star", "4 Star", "3 Star & below"];
 
 const ORANGE = "#f2650f";
 const DARK = "#111827";
@@ -96,19 +85,6 @@ const StarRow = ({ rating }: { rating: number }) => (
       <StarIcon key={i} filled={i < Math.round(rating)} className={`size-3.5 ${i < Math.round(rating) ? "text-brand" : "text-border"}`} />
     ))}
   </div>
-);
-
-const VerifiedBadge = () => (
-  <span className="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-600">
-    <svg className="size-3" viewBox="0 0 24 24" fill="none">
-      <path
-        d="M12 2 14.5 4.2 17.8 3.8 18.6 7 21.5 8.6 20.4 11.8 21.5 15 18.6 16.6 17.8 19.8 14.5 19.4 12 21.6 9.5 19.4 6.2 19.8 5.4 16.6 2.5 15 3.6 11.8 2.5 8.6 5.4 7 6.2 3.8 9.5 4.2Z"
-        fill="currentColor"
-      />
-      <path d="M8.5 12.2 11 14.7 15.5 9.8" stroke="white" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
-    Verified
-  </span>
 );
 
 const QuoteMark = () => (
@@ -151,15 +127,14 @@ const ReviewCard = ({ review }: { review: Review }) => {
         <div className="flex min-w-0 items-center gap-2.5">
           <Avatar name={review.name} />
           <div className="min-w-0">
-            <div className="flex items-center gap-1.5">
-              <p className="truncate text-[12.5px] font-bold" style={{ color: DARK }}>
-                {review.name}
-              </p>
-              {review.verified && <VerifiedBadge />}
-            </div>
-            <p className="truncate text-[11px] font-medium" style={{ color: MUTED }}>
-              {review.car}
+            <p className="truncate text-[12.5px] font-bold" style={{ color: DARK }}>
+              {review.name}
             </p>
+            {review.city && (
+              <p className="truncate text-[11px] font-medium" style={{ color: MUTED }}>
+                {review.city}
+              </p>
+            )}
           </div>
         </div>
         <div className="flex shrink-0 flex-col items-end gap-1">
@@ -170,10 +145,7 @@ const ReviewCard = ({ review }: { review: Review }) => {
         </div>
       </div>
 
-      <div className="flex items-center justify-between border-t pt-3" style={{ borderColor: "#f0f1f4" }}>
-        <p className="text-[10px] font-semibold" style={{ color: MUTED }}>
-          {review.ownership}
-        </p>
+      <div className="flex items-center justify-end border-t pt-3" style={{ borderColor: "#f0f1f4" }}>
         <button
           type="button"
           onClick={() => setHelpful((h) => !h)}
