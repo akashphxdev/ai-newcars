@@ -10,6 +10,7 @@ import StoriesRoutes from './stories'
 import AdsRoutes from './ads'
 import AiRoutes from './ai'
 import HomeRoutes from './home'
+import SiteSettingRoutes from './site-setting'
 
 const router = Router();
 
@@ -23,5 +24,7 @@ router.use('/stories', StoriesRoutes)
 router.use('/ads' , AdsRoutes)
 router.use('/ai', AiRoutes)
 router.use('/home', HomeRoutes)
+router.use('/site-settings',SiteSettingRoutes)
+
 
 export default router;

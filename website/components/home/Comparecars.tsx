@@ -1,5 +1,8 @@
 "use client";
-import { useRef, useState, useEffect, useCallback } from "react";
+import { useState, useEffect } from "react";
+import SectionHeader from "@/components/common/SectionHeader";
+import ScrollArrows from "@/components/common/ScrollArrows";
+import { useScrollRail } from "@/components/common/useScrollRail";
 
 type CarSide = {
   brand: string;
@@ -111,17 +114,6 @@ const SURFACE = "#f4f5f9";
 const FALLBACK_IMG =
   "data:image/svg+xml;charset=UTF-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='225' viewBox='0 0 300 225'%3E%3Crect width='300' height='225' fill='%23e5e7eb'/%3E%3Ctext x='50%25' y='50%25' text-anchor='middle' dy='.3em' font-family='sans-serif' font-size='13' fill='%239ca3af'%3EImage unavailable%3C/text%3E%3C/svg%3E";
 
-const ChevronIcon = ({ dir = "right" }: { dir?: "left" | "right" }) => (
-  <svg
-    className="size-3.5"
-    viewBox="0 0 12 12"
-    fill="none"
-    style={{ transform: dir === "left" ? "rotate(180deg)" : "none" }}
-  >
-    <path d="M2 6h8M8 2l4 4-4 4" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />
-  </svg>
-);
-
 const CarSideBlock = ({ car }: { car: CarSide }) => (
   <div className="flex-1 min-w-0">
     <p className="truncate text-[10.5px] font-semibold uppercase tracking-wide" style={{ color: MUTED }}>
@@ -194,19 +186,11 @@ const Card = ({ pair }: { pair: Pair }) => (
 );
 
 export default function CompareCars() {
-  const trackRef = useRef<HTMLDivElement>(null);
-  const [canScrollLeft, setCanScrollLeft] = useState(false);
-  const [canScrollRight, setCanScrollRight] = useState(true);
+  const { trackRef, canScrollLeft, canScrollRight, updateArrows, scrollBy } = useScrollRail<HTMLDivElement>();
 
-  const updateArrows = useCallback(() => {
-    const el = trackRef.current;
-    if (!el) return;
-    setCanScrollLeft(el.scrollLeft > 4);
-    setCanScrollRight(el.scrollLeft + el.clientWidth < el.scrollWidth - 4);
-  }, []);
-
+  // Compare cards' widths don't change with viewport, but the number of
+  // visible cards does — re-check arrow state on resize, not just on mount.
   useEffect(() => {
-    updateArrows();
     const el = trackRef.current;
     if (!el) return;
     const ro = new ResizeObserver(updateArrows);
@@ -216,61 +200,26 @@ export default function CompareCars() {
       ro.disconnect();
       window.removeEventListener("resize", updateArrows);
     };
-  }, [updateArrows]);
-
-  const scrollBy = (dir: "left" | "right") => {
-    const el = trackRef.current;
-    if (!el) return;
-    const amount = el.clientWidth * 0.8;
-    el.scrollBy({ left: dir === "left" ? -amount : amount, behavior: "smooth" });
-  };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [trackRef]);
 
   return (
     <section className="font-body py-12 sm:py-16" style={{ background: SURFACE }}>
       <div className="mx-auto max-w-7xl px-4">
-        <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-          <div>
-            <p className="mb-1.5 text-[11px] font-bold uppercase tracking-[0.14em]" style={{ color: ORANGE }}>
-              Decide Faster
-            </p>
-            <h2 className="font-head text-2xl sm:text-[28px] font-bold tracking-tight" style={{ color: DARK }}>
-              Compare to buy the right car
-            </h2>
-          </div>
-
-          <div className="flex items-center gap-3">
-            <a
-              href="/compare"
-              className="inline-flex items-center gap-1.5 text-[12.5px] font-bold focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 rounded"
-              style={{ color: DARK, outlineColor: ORANGE }}
-            >
-              View all comparisons
-              <ChevronIcon />
-            </a>
-            <div className="hidden items-center gap-1.5 sm:flex">
-              <button
-                type="button"
-                aria-label="Scroll left"
-                onClick={() => scrollBy("left")}
-                disabled={!canScrollLeft}
-                className="flex size-8 items-center justify-center rounded-full bg-white transition-colors disabled:opacity-30 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2"
-                style={{ border: "1px solid " + BORDER, color: DARK, outlineColor: ORANGE }}
-              >
-                <ChevronIcon dir="left" />
-              </button>
-              <button
-                type="button"
-                aria-label="Scroll right"
-                onClick={() => scrollBy("right")}
-                disabled={!canScrollRight}
-                className="flex size-8 items-center justify-center rounded-full bg-white transition-colors disabled:opacity-30 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2"
-                style={{ border: "1px solid " + BORDER, color: DARK, outlineColor: ORANGE }}
-              >
-                <ChevronIcon />
-              </button>
-            </div>
-          </div>
-        </div>
+        <SectionHeader
+          eyebrow="Decide Faster"
+          title="Compare to buy the right car"
+          href="/compare"
+          linkLabel="View all comparisons"
+          after={
+            <ScrollArrows
+              canScrollLeft={canScrollLeft}
+              canScrollRight={canScrollRight}
+              onLeft={() => scrollBy("left")}
+              onRight={() => scrollBy("right")}
+            />
+          }
+        />
 
         <div className="relative">
           {/* edge fades hint that the row scrolls, especially useful on mobile where arrows are hidden */}

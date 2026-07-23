@@ -1,5 +1,7 @@
 "use client";
 import SectionHeader from "@/components/common/SectionHeader";
+import ScrollArrows from "@/components/common/ScrollArrows";
+import { useScrollRail } from "@/components/common/useScrollRail";
 
 type Brand = {
   name: string;
@@ -16,15 +18,11 @@ const BRANDS: Brand[] = [
   { name: "Toyota", logo: "/logo/toyoto.jfif" },
 ];
 
-const ORANGE = "#f2650f";
 const DARK = "#111827";
-const BORDER = "#e5e7eb";
-const PAGE_BG = "#f4f5f9";
-const PEACH = "#fde3d3";
 
 const BrandCard = ({ brand }: { brand: Brand }) => (
-  <a href="#" className="flex cursor-pointer flex-col items-center gap-3 p-4 text-center">
-    <div className="flex size-16 items-center justify-center rounded-2xl p-3 sm:size-20"  >
+  <a href="#" className="flex cursor-pointer flex-col items-center gap-2 p-2 text-center sm:gap-3 sm:p-4">
+    <div className="flex size-14 items-center justify-center rounded-2xl p-2 sm:size-20 sm:p-3 md:size-24">
       <img src={brand.logo} alt={brand.name} className="size-full object-contain" />
     </div>
     <h3 className="text-[13px] font-bold" style={{ color: DARK }}>
@@ -34,6 +32,8 @@ const BrandCard = ({ brand }: { brand: Brand }) => (
 );
 
 export default function PopularBrands() {
+  const { trackRef, canScrollLeft, canScrollRight, updateArrows, scrollBy } = useScrollRail<HTMLDivElement>();
+
   return (
     <section style={{ background: "#fff" }} className="py-12 sm:py-16">
       <div className="mx-auto max-w-7xl px-4">
@@ -43,9 +43,25 @@ export default function PopularBrands() {
           subtitle={`Explore top manufacturers across ${BRANDS.length} brands. Find your perfect car today.`}
           href="#"
           linkLabel="View all brands"
+          after={
+            <ScrollArrows
+              canScrollLeft={canScrollLeft}
+              canScrollRight={canScrollRight}
+              onLeft={() => scrollBy("left")}
+              onRight={() => scrollBy("right")}
+            />
+          }
         />
 
-        <div className="grid grid-cols-3 gap-2 sm:grid-cols-4 sm:gap-3 md:grid-cols-7">
+        {/* Fixed column width — stays this size no matter how many brands
+            are added; extras slide in via scroll instead of shrinking
+            everyone to re-fit the row. Smaller on mobile, unchanged from
+            sm: up. */}
+        <div
+          ref={trackRef}
+          onScroll={updateArrows}
+          className="scrollbar-none grid grid-flow-col auto-cols-[110px] gap-1 overflow-x-auto pb-2 sm:auto-cols-[171px] sm:gap-2"
+        >
           {BRANDS.map((brand) => (
             <BrandCard key={brand.name} brand={brand} />
           ))}

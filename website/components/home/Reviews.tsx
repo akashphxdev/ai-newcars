@@ -1,5 +1,9 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
+import SectionHeader from "@/components/common/SectionHeader";
+import ScrollArrows from "@/components/common/ScrollArrows";
+import { useScrollRail } from "@/components/common/useScrollRail";
+import { StarIcon } from "@/components/common/icons";
 
 type Review = {
   name: string;
@@ -83,32 +87,13 @@ const BORDER = "#e5e7eb";
 const PAGE_BG = "#f4f5f9";
 const PEACH = "#fde3d3";
 
-const ChevronIcon = ({ dir = "right" }: { dir?: "left" | "right" | "down" }) => (
-  <svg
-    className="size-3.5"
-    viewBox="0 0 12 12"
-    fill="none"
-    style={{ transform: dir === "left" ? "rotate(180deg)" : dir === "down" ? "rotate(90deg)" : "none" }}
-  >
-    <path d="M2 6h8M8 2l4 4-4 4" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />
-  </svg>
-);
-
-const StarIcon = ({ filled }: { filled: boolean }) => (
-  <svg className="size-3.5" viewBox="0 0 24 24" fill={filled ? ORANGE : "none"}>
-    <path
-      d="m12 2.5 2.9 6 6.6.7-4.9 4.5 1.3 6.5L12 16.9l-5.9 3.3 1.3-6.5-4.9-4.5 6.6-.7Z"
-      stroke={filled ? ORANGE : "#d1d5db"}
-      strokeWidth="1.4"
-      strokeLinejoin="round"
-    />
-  </svg>
-);
-
+// Brand-orange stars (not the amber ones common/CardBits' StarRow uses
+// elsewhere) — Reviews' rating chip is intentionally orange-themed, so
+// this stays a local wrapper around the shared StarIcon.
 const StarRow = ({ rating }: { rating: number }) => (
   <div className="flex items-center gap-0.5">
     {Array.from({ length: 5 }).map((_, i) => (
-      <StarIcon key={i} filled={i < Math.round(rating)} />
+      <StarIcon key={i} filled={i < Math.round(rating)} className={`size-3.5 ${i < Math.round(rating) ? "text-brand" : "text-border"}`} />
     ))}
   </div>
 );
@@ -209,24 +194,9 @@ const RESUME_AFTER_MANUAL = 4000; // ms before auto-scroll resumes after a manua
 
 export default function Reviews() {
   const [activeFilter, setActiveFilter] = useState("All Reviews");
-  const scrollerRef = useRef<HTMLDivElement>(null);
+  const { trackRef, canScrollLeft, canScrollRight, updateArrows, scrollBy } = useScrollRail<HTMLDivElement>();
   const isPausedRef = useRef(false);
   const resumeTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  const getCardStep = () => {
-    const el = scrollerRef.current;
-    if (!el || !el.firstElementChild) return 320;
-    const card = el.firstElementChild as HTMLElement;
-    const gap = 20; // matches gap-5
-    return card.offsetWidth + gap;
-  };
-
-  const scrollByCards = (dir: "left" | "right", count = 1) => {
-    const el = scrollerRef.current;
-    if (!el) return;
-    const step = getCardStep();
-    el.scrollBy({ left: dir === "left" ? -step * count : step * count, behavior: "smooth" });
-  };
 
   const pauseAutoScrollTemporarily = () => {
     isPausedRef.current = true;
@@ -238,18 +208,20 @@ export default function Reviews() {
 
   const handleArrowClick = (dir: "left" | "right") => {
     pauseAutoScrollTemporarily();
-    scrollByCards(dir, 2);
+    scrollBy(dir);
   };
 
   // Auto-scroll: advance one card at a time, loop back to start at the end.
   useEffect(() => {
-    const el = scrollerRef.current;
+    const el = trackRef.current;
     if (!el) return;
 
     const interval = setInterval(() => {
       if (isPausedRef.current) return;
 
-      const step = getCardStep();
+      const first = el.children[0] as HTMLElement | undefined;
+      const second = el.children[1] as HTMLElement | undefined;
+      const step = first && second ? second.offsetLeft - first.offsetLeft : el.clientWidth * 0.8;
       const atEnd = el.scrollLeft + el.clientWidth >= el.scrollWidth - 4;
 
       if (atEnd) {
@@ -260,70 +232,68 @@ export default function Reviews() {
     }, AUTO_SCROLL_INTERVAL);
 
     return () => clearInterval(interval);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return (
     <div style={{ background: PAGE_BG }}>
       <section className="py-10">
         <div className="mx-auto max-w-7xl px-6">
-          <div
-            className="mb-7 flex flex-col gap-4 border-b pb-7 sm:flex-row sm:items-start sm:justify-between"
-            style={{ borderColor: BORDER }}
-          >
-            <div>
-              <h2 className="text-[32px] font-bold tracking-tight" style={{ color: DARK }}>
-                Customer Reviews
-              </h2>
-              <span className="mt-2 mb-3 block h-[3px] w-10 rounded-full" style={{ background: ORANGE }} />
-              <p className="max-w-md text-[14px] font-medium leading-relaxed" style={{ color: MUTED }}>
-                Honest feedback from real owners who've driven these cars every day.
-              </p>
+          <SectionHeader
+            eyebrow="Real Owner Feedback"
+            title="Customer Reviews"
+            subtitle="Honest feedback from real owners who've driven these cars every day."
+            divider
+            href="#"
+            linkLabel="View all reviews"
+            after={
+              <>
+                <div className="hidden items-center gap-2 rounded-xl px-3.5 py-2 sm:flex" style={{ background: PEACH }}>
+                  <span className="text-lg font-black" style={{ color: ORANGE }}>
+                    {OVERALL_RATING}
+                  </span>
+                  <StarRow rating={OVERALL_RATING} />
+                  <span className="text-[11px] font-semibold" style={{ color: DARK }}>
+                    {TOTAL_REVIEWS.toLocaleString("en-IN")} reviews
+                  </span>
+                </div>
+                <ScrollArrows
+                  canScrollLeft={canScrollLeft}
+                  canScrollRight={canScrollRight}
+                  onLeft={() => handleArrowClick("left")}
+                  onRight={() => handleArrowClick("right")}
+                />
+              </>
+            }
+          />
+
+          {/* Filter chips scroll horizontally on mobile on their own —
+              "Write a Review" stays outside that scroll area so it's
+              always visible without having to scroll the chips. */}
+          <div className="mb-7 flex items-center gap-2.5">
+            <div className="scrollbar-none flex min-w-0 flex-1 flex-nowrap items-center gap-2.5 overflow-x-auto sm:flex-wrap">
+              {FILTERS.map((f) => {
+                const active = f === activeFilter;
+                return (
+                  <button
+                    key={f}
+                    type="button"
+                    onClick={() => setActiveFilter(f)}
+                    className="shrink-0 whitespace-nowrap rounded-full px-4 py-2 text-[13px] font-semibold transition-colors"
+                    style={{
+                      background: "#fff",
+                      color: active ? ORANGE : DARK,
+                      border: `1.5px solid ${active ? ORANGE : BORDER}`,
+                    }}
+                  >
+                    {f}
+                  </button>
+                );
+              })}
             </div>
-
-            <div className="flex shrink-0 items-center gap-4">
-              <div className="flex items-center gap-2 rounded-xl px-3.5 py-2" style={{ background: PEACH }}>
-                <span className="text-lg font-black" style={{ color: ORANGE }}>
-                  {OVERALL_RATING}
-                </span>
-                <StarRow rating={OVERALL_RATING} />
-                <span className="text-[11px] font-semibold" style={{ color: DARK }}>
-                  {TOTAL_REVIEWS.toLocaleString("en-IN")} reviews
-                </span>
-              </div>
-
-              <button
-                type="button"
-                className="inline-flex items-center gap-1.5 whitespace-nowrap rounded-xl px-5 py-3 text-[13.5px] font-bold"
-                style={{ border: `1px solid ${ORANGE}`, color: ORANGE }}
-              >
-                View All Reviews
-                <ChevronIcon />
-              </button>
-            </div>
-          </div>
-
-          <div className="mb-7 flex flex-wrap items-center gap-2.5">
-            {FILTERS.map((f) => {
-              const active = f === activeFilter;
-              return (
-                <button
-                  key={f}
-                  type="button"
-                  onClick={() => setActiveFilter(f)}
-                  className="rounded-full px-4 py-2 text-[13px] font-semibold transition-colors"
-                  style={{
-                    background: "#fff",
-                    color: active ? ORANGE : DARK,
-                    border: `1.5px solid ${active ? ORANGE : BORDER}`,
-                  }}
-                >
-                  {f}
-                </button>
-              );
-            })}
             <button
               type="button"
-              className="ml-auto whitespace-nowrap rounded-xl px-4 py-2 text-[13px] font-bold transition-colors hover:bg-orange-50"
+              className="shrink-0 whitespace-nowrap rounded-xl px-4 py-2 text-[13px] font-bold transition-colors hover:bg-orange-50"
               style={{ border: `1.5px solid ${ORANGE}`, color: ORANGE }}
             >
               Write a Review
@@ -331,39 +301,20 @@ export default function Reviews() {
           </div>
 
           <div
-            className="relative"
             onMouseEnter={() => (isPausedRef.current = true)}
             onMouseLeave={() => {
               if (!resumeTimeoutRef.current) isPausedRef.current = false;
             }}
           >
             <div
-              ref={scrollerRef}
+              ref={trackRef}
+              onScroll={updateArrows}
               className="flex snap-x snap-mandatory gap-5 overflow-x-auto scroll-smooth pb-2 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
             >
               {REVIEWS.map((review) => (
                 <ReviewCard key={review.name} review={review} />
               ))}
             </div>
-
-            <button
-              type="button"
-              aria-label="Previous reviews"
-              onClick={() => handleArrowClick("left")}
-              className="absolute left-[-18px] top-1/2 hidden size-9 -translate-y-1/2 items-center justify-center rounded-full bg-white lg:flex"
-              style={{ boxShadow: "0 4px 12px rgba(17,24,39,0.12)", color: DARK }}
-            >
-              <ChevronIcon dir="left" />
-            </button>
-            <button
-              type="button"
-              aria-label="Next reviews"
-              onClick={() => handleArrowClick("right")}
-              className="absolute right-[-18px] top-1/2 hidden size-9 -translate-y-1/2 items-center justify-center rounded-full bg-white lg:flex"
-              style={{ boxShadow: "0 4px 12px rgba(17,24,39,0.12)", color: DARK }}
-            >
-              <ChevronIcon />
-            </button>
           </div>
         </div>
       </section>

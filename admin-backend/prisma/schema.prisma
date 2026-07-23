@@ -208,6 +208,8 @@ model AdminUser {
 
   aiSettingsCreated        AiSetting[]         @relation("AiSettingCreatedBy")
   aiSettingsUpdated        AiSetting[]         @relation("AiSettingUpdatedBy")
+  siteSettingsCreated      SiteSetting[]       @relation("SiteSettingCreatedBy")
+  siteSettingsUpdated      SiteSetting[]       @relation("SiteSettingUpdatedBy")
   aiAutomationRulesCreated AiAutomationRule[]  @relation("AiAutomationRuleCreatedBy")
   aiAutomationRulesUpdated AiAutomationRule[]  @relation("AiAutomationRuleUpdatedBy")
   aiFaqsReviewed           AiFaq[]             @relation("AiFaqReviewedBy")
@@ -1636,7 +1638,7 @@ model Banner {
 
   createdAt DateTime  @default(now()) @map("created_at")
   updatedAt DateTime? @updatedAt @map("updated_at")
-
+  @@index([isActive, displayOrder])
   @@map("banners")
 }
 
@@ -1667,4 +1669,34 @@ model Testimonial {
   createdAt      DateTime   @default(now()) @map("created_at")
 
   @@map("testimonials")
+}
+
+
+model SiteSetting {
+  id                Int       @id @default(autoincrement())
+
+  maintenanceMode    Boolean   @default(false) @map("maintenance_mode")
+  maintenanceMessage String?   @map("maintenance_message") @db.Text
+
+  supportEmail      String?   @map("support_email") @db.VarChar(255)
+  contactEmail      String?   @map("contact_email") @db.VarChar(255)
+  contactNumber     String?   @map("contact_number") @db.VarChar(20)
+  whatsappNumber    String?   @map("whatsapp_number") @db.VarChar(20)
+  address           String?   @db.Text
+
+  facebookUrl       String?   @map("facebook_url") @db.VarChar(255)
+  instagramUrl      String?   @map("instagram_url") @db.VarChar(255)
+  twitterUrl        String?   @map("twitter_url") @db.VarChar(255)
+  youtubeUrl        String?   @map("youtube_url") @db.VarChar(255)
+  linkedinUrl       String?   @map("linkedin_url") @db.VarChar(255)
+
+  createdBy      Int        @map("created_by")
+  createdByAdmin AdminUser  @relation("SiteSettingCreatedBy", fields: [createdBy], references: [id])
+  updatedBy      Int        @map("updated_by")
+  updatedByAdmin AdminUser  @relation("SiteSettingUpdatedBy", fields: [updatedBy], references: [id])
+
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime? @updatedAt @map("updated_at")
+
+  @@map("site_settings")
 }

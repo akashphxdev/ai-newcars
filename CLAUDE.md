@@ -52,3 +52,52 @@
   - Avoid quick "band-aid" fixes. If a temporary fix is genuinely the only option for some reason, say so explicitly: "this is temporary, the proper fix should be ___."
   - Give the one-line reason for the fix (Rule #7) and wait for my explicit "yes" before editing any file (Rule #2).
 - **Database-related bugs:** Rule #3 still applies without exception — diagnose and explain the issue and the fix needed, but never execute the actual database change yourself.
+
+## 9. Performance Is a Fixed Goal — Never Trade Speed Away
+- **Fast loading is a non-negotiable goal** for this website. No change should make the site slower — not even a little — even if it's easier, quicker to write, or I ask for it casually.
+- If a request/approach would slow down the site (extra unoptimized calls, unindexed queries, large bundles, blocking scripts, etc.), **do not implement it silently**. Tell me clearly: what will get slower, why, and what the faster alternative is (per Rule #6). Only proceed after I explicitly confirm — and even then, prefer the faster approach if one exists.
+- This rule is fixed like Rule #3 — "just do it anyway" from me doesn't override it; flag it and remind me.
+
+## 10. Required Performance Tooling — Indexing, Redis, Compression
+- Database indexing, Redis caching, and response compression are **mandatory parts of this project's performance strategy** — not optional suggestions.
+- Whenever new queries, endpoints, or heavy data are added, actively check: does this need an index? Can this be cached in Redis? Should this response be compressed? If yes, tell me (per Rule #5) and implement once I say yes.
+- **Indexing = database schema change, so Rule #3 applies fully here.** Claude will **never run** the actual index creation (no `ALTER TABLE ... ADD INDEX`, no migration execution) — no exceptions, even if I say it's okay.
+- Instead, Claude will only **tell me**:
+  - Which column(s)/table needs an index
+  - Why (which query/slow path it fixes)
+  - The exact SQL/migration statement I (or the DBA) should run manually
+- Redis caching and compression are **not** database changes, so those can be implemented directly once I say "yes" (per Rule #2), same as normal code changes.
+
+## 11. Keep Code Lean — No Unnecessary Bloat
+- When building UI or implementing any feature, keep the code as small/clean as reasonably possible. Don't over-engineer or add unnecessary abstraction, files, or complexity.
+- If something is reused or reusable, extract it into the existing common location immediately (per Rule #4) — don't let duplicate or bloated code pile up "for now."
+
+## 12. Always Use the Proper Standard Approach (Not Just "A" Way)
+- Whenever there are multiple ways to implement something, always default to the **proper, standard, production-grade approach** — the one commonly used in large, real-world websites — not a quick/hacky/unconventional way, even if it's faster to write.
+- If there's a genuinely better or more modern approach available, tell me what it is and why it's better (per Rule #5/#6), but implement only after I confirm.
+- This applies to both frontend (UI patterns, state management, component structure) and backend (API design, caching, query patterns) work.
+
+## 13. Environment Variables & Secrets — Never Hardcode
+- API keys, DB credentials, Redis connection strings, tokens — never hardcode these in code.
+- Always use `.env` / the existing config pattern already used in this project.
+- If a new secret/env variable is needed, tell me (what's needed, why) — don't add it yourself without telling me first.
+
+## 14. Security Checks — Flag, Don't Silently Fix or Ignore
+- Whether working on frontend or backend, whenever writing/reviewing code, check for security gaps: SQL injection risk, XSS, exposed API endpoints without auth, CORS misconfiguration, sensitive data in responses/logs.
+- If anything is found, flag it immediately (what the risk is, where it is) — even if I'm not directly working on that piece, flag it if related code is being touched.
+
+## 15. Performance Regression Check Before/After Changes
+- Whenever adding a new feature/UI/API, consider whether it could negatively impact existing loading speed (bigger bundle size? extra API call? N+1 query?).
+- If there's a possible impact, tell me first — linked with Rule #9.
+
+## 16. No Silent Breaking Changes to Existing Features
+- Whenever modifying shared/common code (Rule #4) or any existing API/component, first check where else it's being used.
+- If the change could break something elsewhere, clearly say so before implementing — even if I only asked to fix one specific place.
+
+## 17. Git / Version Control Discipline (if applicable)
+- Before any risky or large change, tell me whether it's a "small change safe to commit directly" or "better kept in a separate branch/commit" so rollback stays easy if something goes wrong.
+- Do not commit/push/merge yourself without me saying so (if Claude Code has git access).
+
+## 18. Logging & Error Handling Consistency
+- When writing new code, follow the existing error-handling and logging pattern already used in this project — don't invent a new pattern of your own.
+- If proper error handling is missing somewhere, flag it — implement only once I say "yes."

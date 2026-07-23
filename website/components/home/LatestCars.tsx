@@ -1,5 +1,10 @@
 "use client";
 import { useState } from "react";
+import SectionHeader from "@/components/common/SectionHeader";
+import ScrollArrows from "@/components/common/ScrollArrows";
+import { useScrollRail } from "@/components/common/useScrollRail";
+import { WishlistButton } from "@/components/common/CardBits";
+import { ChevronIcon, GaugeIcon } from "@/components/common/icons";
 
 type Car = {
   name: string;
@@ -58,6 +63,39 @@ const CARS: Car[] = [
     mileage: "17.5 kmpl",
     seater: "5/7 Seater",
   },
+  {
+    name: "Tata Sierra",
+    trim: "Adventure",
+    fuel: "Petrol",
+    type: "SUV",
+    img: "https://stimg.cardekho.com/images/carexteriorimages/630x420/Tata/Sierra/12271/1765181428462/front-left-side-47.jpg?tr=w-300",
+    price: "₹14.99 - 19.99 Lakh*",
+    engineCc: "1500 cc",
+    mileage: "17.0 kmpl",
+    seater: "5 Seater",
+  },
+  {
+    name: "Maruti Suzuki Brezza",
+    trim: "ZXi+",
+    fuel: "Petrol",
+    type: "SUV",
+    img: "https://stimg.cardekho.com/images/carexteriorimages/630x420/Maruti/Brezza/10400/1770885013083/front-left-side-47.jpg?tr=w-300",
+    price: "₹8.34 - 14.14 Lakh*",
+    engineCc: "1462 cc",
+    mileage: "19.80 kmpl",
+    seater: "5 Seater",
+  },
+  {
+    name: "Mahindra Thar Roxx",
+    trim: "AX7L",
+    fuel: "Diesel",
+    type: "SUV",
+    img: "https://stimg.cardekho.com/images/carexteriorimages/630x420/Mahindra/Thar/12264/1776055307473/front-left-side-47.jpg?tr=w-300",
+    price: "₹12.99 - 22.49 Lakh*",
+    engineCc: "2184 cc",
+    mileage: "15.2 kmpl",
+    seater: "5 Seater",
+  },
 ];
 const BRANDS = ["All Brands", "Maruti Suzuki", "Hyundai", "Tata", "Mahindra", "Kia", "Honda", "Toyota", "Volkswagen"];
 
@@ -66,37 +104,9 @@ const DARK = "#111827";
 const MUTED = "#6b7280";
 const BORDER = "#e5e7eb";
 const PAGE_BG = "#f4f5f9";
-const PEACH = "#fde3d3";
 
-const ChevronIcon = ({ dir = "right" }: { dir?: "left" | "right" | "down" }) => (
-  <svg
-    className="size-3.5"
-    viewBox="0 0 12 12"
-    fill="none"
-    style={{ transform: dir === "left" ? "rotate(180deg)" : dir === "down" ? "rotate(90deg)" : "none" }}
-  >
-    <path d="M2 6h8M8 2l4 4-4 4" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />
-  </svg>
-);
-
-const HeartIcon = ({ filled }: { filled: boolean }) => (
-  <svg className="size-4" viewBox="0 0 24 24" fill={filled ? ORANGE : "none"}>
-    <path
-      d="M12 20.5s-7.5-4.6-10-9.3C.4 7.6 2.3 4 6 4c2.1 0 3.6 1.1 4.7 2.6C11.8 5.1 13.3 4 15.4 4c3.7 0 5.6 3.6 4 7.2-2.5 4.7-10 9.3-10 9.3Z"
-      stroke={filled ? ORANGE : "currentColor"}
-      strokeWidth="1.8"
-      strokeLinejoin="round"
-    />
-  </svg>
-);
-
-const PinIcon = () => (
-  <svg className="size-3.5" viewBox="0 0 24 24" fill="none">
-    <path d="M12 21s7-6.3 7-11.5A7 7 0 0 0 5 9.5C5 14.7 12 21 12 21Z" stroke="currentColor" strokeWidth="1.7" strokeLinejoin="round" />
-    <circle cx="12" cy="9.5" r="2.2" stroke="currentColor" strokeWidth="1.7" />
-  </svg>
-);
-
+// Distinctive icons kept local since they're visually different from the
+// generic common/icons.tsx equivalents (or have no equivalent there).
 const FilterIcon = () => (
   <svg className="size-3.5" viewBox="0 0 24 24" fill="none">
     <path d="M4 6h16M7 12h10M10 18h4" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" />
@@ -113,47 +123,10 @@ const EngineIcon = () => (
   </svg>
 );
 
-const GaugeIcon = () => (
-  <svg className="size-4" viewBox="0 0 24 24" fill="none">
-    <path d="M4 14.5a8 8 0 1 1 16 0" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
-    <path d="M12 14.5 16.2 9.3" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
-    <circle cx="12" cy="14.5" r="1" fill="currentColor" />
-  </svg>
-);
-
 const SeaterIcon = () => (
   <svg className="size-4" viewBox="0 0 24 24" fill="none">
     <circle cx="12" cy="7" r="3" stroke="currentColor" strokeWidth="1.6" />
     <path d="M5 20c0-3.9 3.1-7 7-7s7 3.1 7 7" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
-  </svg>
-);
-
-const ShieldIcon = () => (
-  <svg className="size-5" viewBox="0 0 24 24" fill="none">
-    <path d="M12 3 4.5 6v6c0 5 3.2 8.4 7.5 9 4.3-.6 7.5-4 7.5-9V6L12 3Z" stroke={ORANGE} strokeWidth="1.6" strokeLinejoin="round" />
-    <path d="m8.5 12.2 2.2 2.3 4.8-5" stroke={ORANGE} strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
-  </svg>
-);
-
-const RupeeIcon = () => (
-  <svg className="size-5" viewBox="0 0 24 24" fill="none">
-    <path d="M7 5h10M7 9h10M7 5c4 0 6 1.5 6 4s-2 4-6 4h-1l7 6" stroke={ORANGE} strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
-  </svg>
-);
-
-const CompareIcon = () => (
-  <svg className="size-5" viewBox="0 0 24 24" fill="none">
-    <rect x="3" y="6" width="8" height="12" rx="1.5" stroke={ORANGE} strokeWidth="1.6" />
-    <rect x="13" y="6" width="8" height="12" rx="1.5" stroke={ORANGE} strokeWidth="1.6" />
-    <path d="m16 20 3-3-3-3" stroke={ORANGE} strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
-  </svg>
-);
-
-const SupportIcon = () => (
-  <svg className="size-5" viewBox="0 0 24 24" fill="none">
-    <circle cx="9" cy="8" r="3" stroke={ORANGE} strokeWidth="1.6" />
-    <path d="M3.5 19c0-3.3 2.5-6 5.5-6M15 12.5a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5Z" stroke={ORANGE} strokeWidth="1.6" strokeLinecap="round" />
-    <path d="M13.5 19c0-2.4 1.6-4.4 4-5" stroke={ORANGE} strokeWidth="1.6" strokeLinecap="round" />
   </svg>
 );
 
@@ -172,11 +145,9 @@ const Spec = ({ icon, value, label }: { icon: React.ReactNode; value: string; la
 );
 
 const Card = ({ car }: { car: Car }) => {
-  const [saved, setSaved] = useState(false);
-
   return (
     <div
-      className="flex h-full w-full shrink-0 flex-col overflow-hidden rounded-2xl bg-white"
+      className="flex h-full w-[290px] shrink-0 snap-start flex-col overflow-hidden rounded-2xl bg-white"
       style={{ border: `1px solid ${BORDER}` }}
     >
       <div className="relative aspect-[4/3] overflow-hidden" style={{ background: PAGE_BG }}>
@@ -190,15 +161,9 @@ const Card = ({ car }: { car: Car }) => {
           New Launch
         </span>
 
-        <button
-          type="button"
-          onClick={() => setSaved((s) => !s)}
-          aria-label="Save to wishlist"
-          className="absolute right-3 top-3 flex size-8 items-center justify-center rounded-full bg-white"
-          style={{ color: saved ? ORANGE : "#374151" }}
-        >
-          <HeartIcon filled={saved} />
-        </button>
+        <div className="absolute right-3 top-3">
+          <WishlistButton size="md" />
+        </div>
       </div>
 
       <div className="flex flex-1 flex-col gap-3 px-4 pt-4">
@@ -217,7 +182,7 @@ const Card = ({ car }: { car: Car }) => {
 
         <div className="flex items-center justify-between border-t pt-3" style={{ borderColor: "#f0f1f4" }}>
           <Spec icon={<EngineIcon />} value={car.engineCc} label="Engine" />
-          <Spec icon={<GaugeIcon />} value={car.mileage} label="Mileage" />
+          <Spec icon={<GaugeIcon className="size-4" />} value={car.mileage} label="Mileage" />
           <Spec icon={<SeaterIcon />} value={car.seater.split(" ")[0]} label="Seater" />
         </div>
       </div>
@@ -242,79 +207,67 @@ const Card = ({ car }: { car: Car }) => {
   );
 };
 
-const FEATURES = [
-  {
-    icon: <ShieldIcon />,
-    title: "100% Verified Cars",
-    desc: "All cars listed are verified for a safe experience",
-  },
-  {
-    icon: <RupeeIcon />,
-    title: "Best Price Guarantee",
-    desc: "Find the best prices across all brands",
-  },
-  {
-    icon: <CompareIcon />,
-    title: "Compare Easily",
-    desc: "Compare specs, features and prices side-by-side",
-  },
-  {
-    icon: <SupportIcon />,
-    title: "Expert Assistance",
-    desc: "Get help from our automotive experts anytime",
-  },
-];
-
 export default function LatestCars() {
   const [activeBrand, setActiveBrand] = useState("All Brands");
+  const { trackRef, canScrollLeft, canScrollRight, updateArrows, scrollBy } = useScrollRail<HTMLDivElement>();
 
   return (
-    <div style={{ background: PAGE_BG }} className="min-h-screen">
+    <div style={{ background: PAGE_BG }}>
       <section className="py-10">
         <div className="mx-auto max-w-7xl px-6">
-          <div className="mb-7 flex flex-col gap-4 border-b pb-7 sm:flex-row sm:items-start sm:justify-between" style={{ borderColor: BORDER }}>
-            <div>
-              <h2 className="text-[32px] font-bold tracking-tight" style={{ color: DARK }}>
-                Latest Cars
-              </h2>
-              <span className="mt-2 mb-3 block h-[3px] w-10 rounded-full" style={{ background: ORANGE }} />
-              <p className="max-w-md text-[14px] font-medium leading-relaxed" style={{ color: MUTED }}>
-                Explore the newest launches in the market. Stay ahead with the latest features, designs, and innovation.
-              </p>
-            </div>
-
-            <button
-              type="button"
-              className="inline-flex shrink-0 items-center gap-1.5 rounded-xl px-5 py-3 text-[13.5px] font-bold"
-              style={{ border: `1px solid ${ORANGE}`, color: ORANGE }}
-            >
-              View All New Cars
-              <ChevronIcon />
-            </button>
-          </div>
-
-          <div className="mb-7 flex flex-wrap items-center gap-2.5">
-            {BRANDS.map((brand) => {
-              const active = brand === activeBrand;
-              return (
+          <SectionHeader
+            title="Latest Cars"
+            titleSize="lg"
+            underline
+            divider
+            subtitle="Explore the newest launches in the market. Stay ahead with the latest features, designs, and innovation."
+            after={
+              <>
                 <button
-                  key={brand}
                   type="button"
-                  onClick={() => setActiveBrand(brand)}
-                  className="rounded-full px-4 py-2 text-[13px] font-semibold transition-colors"
-                  style={{
-                    background: "#fff",
-                    color: active ? ORANGE : DARK,
-                    border: `1.5px solid ${active ? ORANGE : BORDER}`,
-                  }}
+                  className="inline-flex shrink-0 items-center gap-1.5 rounded-xl px-5 py-3 text-[13.5px] font-bold"
+                  style={{ border: `1px solid ${ORANGE}`, color: ORANGE }}
                 >
-                  {brand}
+                  View All New Cars
+                  <ChevronIcon />
                 </button>
-              );
-            })}
+                <ScrollArrows
+                  canScrollLeft={canScrollLeft}
+                  canScrollRight={canScrollRight}
+                  onLeft={() => scrollBy("left")}
+                  onRight={() => scrollBy("right")}
+                />
+              </>
+            }
+          />
+
+          {/* Brand chips scroll horizontally on mobile on their own —
+              "All Filters" stays outside that scroll area so it's
+              always visible without having to scroll the chips. */}
+          <div className="mb-7 flex items-center gap-2.5">
+            <div className="scrollbar-none flex min-w-0 flex-1 flex-nowrap items-center gap-2.5 overflow-x-auto sm:flex-wrap">
+              {BRANDS.map((brand) => {
+                const active = brand === activeBrand;
+                return (
+                  <button
+                    key={brand}
+                    type="button"
+                    onClick={() => setActiveBrand(brand)}
+                    className="shrink-0 whitespace-nowrap rounded-full px-4 py-2 text-[13px] font-semibold transition-colors"
+                    style={{
+                      background: "#fff",
+                      color: active ? ORANGE : DARK,
+                      border: `1.5px solid ${active ? ORANGE : BORDER}`,
+                    }}
+                  >
+                    {brand}
+                  </button>
+                );
+              })}
+            </div>
             <button
               type="button"
-              className="ml-auto inline-flex items-center gap-1.5 rounded-full bg-white px-4 py-2 text-[13px] font-semibold"
+              className="inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full bg-white px-4 py-2 text-[13px] font-semibold"
               style={{ border: `1px solid ${BORDER}`, color: DARK }}
             >
               <FilterIcon />
@@ -322,41 +275,13 @@ export default function LatestCars() {
             </button>
           </div>
 
-          <div className="relative">
-            <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
-              {CARS.map((car) => (
-                <Card key={car.name} car={car} />
-              ))}
-            </div>
-
-            <button
-              type="button"
-              aria-label="See more cars"
-              className="absolute right-[-18px] top-1/2 hidden size-9 -translate-y-1/2 items-center justify-center rounded-full bg-white lg:flex"
-              style={{ boxShadow: "0 4px 12px rgba(17,24,39,0.12)", color: DARK }}
-            >
-              <ChevronIcon />
-            </button>
-          </div>
-
-          <div className="mt-9 grid grid-cols-1 gap-8 rounded-2xl bg-white p-8 sm:grid-cols-2 lg:grid-cols-4" style={{ border: `1px solid ${BORDER}` }}>
-            {FEATURES.map((f) => (
-              <div key={f.title} className="flex items-start gap-3.5">
-                <span
-                  className="flex size-11 shrink-0 items-center justify-center rounded-xl"
-                  style={{ background: PEACH }}
-                >
-                  {f.icon}
-                </span>
-                <div>
-                  <p className="text-[14.5px] font-bold" style={{ color: DARK }}>
-                    {f.title}
-                  </p>
-                  <p className="mt-0.5 text-[12.5px] font-medium leading-relaxed" style={{ color: MUTED }}>
-                    {f.desc}
-                  </p>
-                </div>
-              </div>
+          <div
+            ref={trackRef}
+            onScroll={updateArrows}
+            className="scrollbar-none flex snap-x snap-mandatory gap-5 overflow-x-auto pb-2"
+          >
+            {CARS.map((car) => (
+              <Card key={car.name} car={car} />
             ))}
           </div>
         </div>

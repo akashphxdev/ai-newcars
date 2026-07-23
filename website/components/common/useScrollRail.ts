@@ -22,14 +22,27 @@ export function useScrollRail<T extends HTMLElement>() {
 
   useEffect(() => {
     updateArrows();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Distance to the next card = gap between the first two children's left
+  // edges (works for any gap-* value the section uses) — falls back to
+  // the first card's own width if there's only one card.
+  const getCardStep = () => {
+    const el = trackRef.current;
+    if (!el || el.children.length === 0) return 0;
+    const first = el.children[0] as HTMLElement;
+    if (el.children.length > 1) {
+      const second = el.children[1] as HTMLElement;
+      return second.offsetLeft - first.offsetLeft;
+    }
+    return first.offsetWidth;
+  };
 
   const scrollBy = (dir: "left" | "right") => {
     const el = trackRef.current;
     if (!el) return;
-    const amount = el.clientWidth * 0.8;
-    el.scrollBy({ left: dir === "left" ? -amount : amount, behavior: "smooth" });
+    const step = getCardStep() || el.clientWidth * 0.8;
+    el.scrollBy({ left: dir === "left" ? -step : step, behavior: "smooth" });
   };
 
   return { trackRef, canScrollLeft, canScrollRight, updateArrows, scrollBy };

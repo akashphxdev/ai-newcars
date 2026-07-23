@@ -189,9 +189,15 @@ export default function Header() {
 
         {/* Left group: logo + nav */}
         <div className="flex items-center gap-8">
-          <Link href="/" className="flex shrink-0 items-center gap-1.5 no-underline">
-            <span className="text-xl font-black tracking-tight" style={{ color: DARK }}>
+          <Link href="/" className="flex shrink-0 flex-col items-start gap-0 leading-none no-underline">
+            <span className="font-head text-2xl font-extrabold tracking-tight" style={{ color: DARK }}>
               Times<span style={{ color: ORANGE }}>Auto</span>
+            </span>
+            <span
+              className="mt-0.5 text-[9.5px] font-bold uppercase tracking-[0.16em]"
+              style={{ color: FAINT }}
+            >
+              India&apos;s Auto Guide
             </span>
           </Link>
 
@@ -276,7 +282,7 @@ export default function Header() {
           </div>
 
           <button
-            className="hidden shrink-0 items-center gap-1 text-[13px] font-semibold md:flex"
+            className="flex shrink-0 items-center gap-1 text-[13px] font-semibold"
             style={{ color: DARK }}
           >
             <span style={{ color: ORANGE }}>
@@ -287,8 +293,8 @@ export default function Header() {
 
           <button
             onClick={() => setAuthOpen(true)}
-            className="hidden whitespace-nowrap rounded-full px-4 py-2 text-[13px] font-semibold transition-opacity hover:opacity-90 sm:block"
-            style={{ background: SURFACE, border: `1.5px solid ${ORANGE}`, color: ORANGE }}
+            className="hidden whitespace-nowrap rounded-full px-4 py-2 text-[13px] font-semibold transition-colors hover:bg-orange-50 sm:block"
+            style={{ border: `1.5px solid ${ORANGE}`, color: ORANGE, background: "transparent" }}
           >
             Login / Signup
           </button>
@@ -311,9 +317,15 @@ export default function Header() {
         </div>
       </div>
 
-      {/* Mobile drawer */}
+      {/* Mobile drawer — absolutely positioned so it overlays the page
+          instead of pushing content (e.g. the Hero section) down when
+          it opens; header is `sticky`, which gives it a positioning
+          context for this. */}
       {mobileOpen && (
-        <div className="px-6 py-2 lg:hidden" style={{ borderTop: `1px solid ${BORDER}`, background: SURFACE }}>
+        <div
+          className="absolute inset-x-0 top-full z-40 max-h-[calc(100vh-4rem)] overflow-y-auto px-6 py-2 shadow-lg lg:hidden"
+          style={{ borderTop: `1px solid ${BORDER}`, background: SURFACE }}
+        >
           <div
             className="mb-2 flex items-center gap-2 rounded-full px-3.5 py-2.5"
             style={{ background: PAGE_BG }}
@@ -387,8 +399,8 @@ export default function Header() {
 
           <button
             onClick={() => setAuthOpen(true)}
-            className="my-2 w-full rounded-full py-2.5 text-sm font-semibold transition-opacity hover:opacity-90"
-            style={{ background: SURFACE, border: `1.5px solid ${ORANGE}`, color: ORANGE }}
+            className="my-2 w-full rounded-full py-2.5 text-sm font-semibold transition-colors hover:bg-orange-50"
+            style={{ border: `1.5px solid ${ORANGE}`, color: ORANGE, background: "transparent" }}
           >
             Login / Signup
           </button>

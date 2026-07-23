@@ -1,5 +1,10 @@
 "use client";
-import { useRef, useState, useEffect } from "react";
+import { useState, useEffect } from "react";
+import SectionHeader from "@/components/common/SectionHeader";
+import ScrollArrows from "@/components/common/ScrollArrows";
+import { useScrollRail } from "@/components/common/useScrollRail";
+import { WishlistButton } from "@/components/common/CardBits";
+import { FuelIcon, GearIcon, StarIcon } from "@/components/common/icons";
 
 type Car = {
   name: string;
@@ -101,50 +106,6 @@ const useDaysLeft = (date: string) => {
   return days;
 };
 
-const ChevronIcon = ({ dir = "right" }: { dir?: "left" | "right" }) => (
-  <svg
-    className="size-3.5"
-    viewBox="0 0 12 12"
-    fill="none"
-    style={{ transform: dir === "left" ? "rotate(180deg)" : "none" }}
-  >
-    <path d="M2 6h8M8 2l4 4-4 4" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />
-  </svg>
-);
-
-const HeartIcon = ({ filled }: { filled: boolean }) => (
-  <svg className="size-4" viewBox="0 0 24 24" fill={filled ? ORANGE : "none"}>
-    <path
-      d="M12 20.5s-7.5-4.6-10-9.4C.5 7.6 2.4 4 6 4c2.1 0 3.7 1.2 6 3.6C14.3 5.2 15.9 4 18 4c3.6 0 5.5 3.6 4 7.1-2.5 4.8-10 9.4-10 9.4Z"
-      stroke={filled ? ORANGE : "currentColor"}
-      strokeWidth="1.8"
-      strokeLinejoin="round"
-    />
-  </svg>
-);
-
-const FuelIcon = () => (
-  <svg className="size-4" viewBox="0 0 24 24" fill="none">
-    <path d="M6 21V6a2 2 0 0 1 2-2h5a2 2 0 0 1 2 2v15" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" />
-    <path d="M6 21H3M15 21h4M15 10h1.5a1.5 1.5 0 0 1 1.5 1.5V17a1.5 1.5 0 0 0 3 0v-5l-2.5-3" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
-    <path d="M8 8h5" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
-  </svg>
-);
-
-const GearIcon = () => (
-  <svg className="size-4" viewBox="0 0 24 24" fill="none">
-    <rect x="4" y="9" width="6" height="6" rx="1" stroke="currentColor" strokeWidth="1.6" />
-    <path d="M7 9V6.5M4 12H2.5M10 12h1.5M7 15v2.5" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
-    <path d="M14 7h6.5M14 12h6.5M14 17h6.5" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
-  </svg>
-);
-
-const StarIcon = () => (
-  <svg className="size-3" viewBox="0 0 24 24" fill={ORANGE}>
-    <path d="m12 2.5 2.9 6.1 6.6.9-4.8 4.6 1.2 6.6L12 17.6l-5.9 3.1 1.2-6.6-4.8-4.6 6.6-.9L12 2.5Z" />
-  </svg>
-);
-
 const Spec = ({ icon, label }: { icon: React.ReactNode; label: string }) => (
   <div className="flex items-center gap-1.5">
     <span style={{ color: "#9aa1ad" }}>{icon}</span>
@@ -155,7 +116,6 @@ const Spec = ({ icon, label }: { icon: React.ReactNode; label: string }) => (
 );
 
 const Card = ({ car }: { car: Car }) => {
-  const [saved, setSaved] = useState(false);
   const days = useDaysLeft(car.date);
   const formatted = DATE_FMT.format(new Date(car.date));
   const isUpcoming = days > 0;
@@ -197,15 +157,7 @@ const Card = ({ car }: { car: Car }) => {
             )}
           </div>
 
-          <button
-            type="button"
-            onClick={() => setSaved((s) => !s)}
-            aria-label="Save to wishlist"
-            className="flex size-8 shrink-0 items-center justify-center rounded-full bg-white/95 backdrop-blur-sm transition-transform hover:scale-105"
-            style={{ color: saved ? ORANGE : "#374151" }}
-          >
-            <HeartIcon filled={saved} />
-          </button>
+          <WishlistButton size="sm" />
         </div>
 
         {isUpcoming && (
@@ -224,7 +176,7 @@ const Card = ({ car }: { car: Car }) => {
           className="absolute bottom-3 right-3 inline-flex items-center gap-1 rounded-full bg-white/95 px-2 py-1 text-[10.5px] font-bold backdrop-blur-sm"
           style={{ color: DARK }}
         >
-          <StarIcon />
+          <StarIcon filled className="size-3 text-amber-400" />
           {car.rating}
         </span>
       </div>
@@ -252,8 +204,8 @@ const Card = ({ car }: { car: Car }) => {
         </div>
 
         <div className="flex items-center gap-3 border-t pt-3" style={{ borderColor: "#f0f1f4" }}>
-          <Spec icon={<FuelIcon />} label={car.fuel} />
-          <Spec icon={<GearIcon />} label={car.transmission} />
+          <Spec icon={<FuelIcon className="size-4" />} label={car.fuel} />
+          <Spec icon={<GearIcon className="size-4" />} label={car.transmission} />
         </div>
       </div>
 
@@ -264,7 +216,6 @@ const Card = ({ car }: { car: Car }) => {
           style={{ border: `1.5px solid ${ORANGE}`, color: ORANGE }}
         >
           {isUpcoming ? "Notify me at launch" : "Check Offers"}
-          <ChevronIcon />
         </button>
       </div>
     </div>
@@ -272,77 +223,26 @@ const Card = ({ car }: { car: Car }) => {
 };
 
 export default function UpcomingLaunches() {
-  const trackRef = useRef<HTMLDivElement>(null);
-  const [canScrollLeft, setCanScrollLeft] = useState(false);
-  const [canScrollRight, setCanScrollRight] = useState(true);
-
-  const updateArrows = () => {
-    const el = trackRef.current;
-    if (!el) return;
-    setCanScrollLeft(el.scrollLeft > 4);
-    setCanScrollRight(el.scrollLeft + el.clientWidth < el.scrollWidth - 4);
-  };
-
-  useEffect(() => {
-    updateArrows();
-  }, []);
-
-  const scrollBy = (dir: "left" | "right") => {
-    const el = trackRef.current;
-    if (!el) return;
-    const amount = el.clientWidth * 0.8;
-    el.scrollBy({ left: dir === "left" ? -amount : amount, behavior: "smooth" });
-  };
+  const { trackRef, canScrollLeft, canScrollRight, updateArrows, scrollBy } = useScrollRail<HTMLDivElement>();
 
   return (
     <section className="py-12 sm:py-16" style={{ background: SURFACE }}>
       <div className="mx-auto max-w-7xl px-4">
-        <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-          <div>
-            <p className="mb-1.5 text-[11px] font-bold uppercase tracking-[0.14em]" style={{ color: ORANGE }}>
-              Latest Launches
-            </p>
-            <h2 className="text-2xl sm:text-[28px] font-bold tracking-tight" style={{ color: DARK }}>
-              Upcoming cars in India
-            </h2>
-            <p className="mt-1 text-[13px] font-medium" style={{ color: MUTED }}>
-              Real-time countdowns for the most anticipated launches
-            </p>
-          </div>
-
-          <div className="flex items-center gap-3">
-            <a
-              href="#"
-              className="inline-flex items-center gap-1.5 text-[12.5px] font-bold"
-              style={{ color: DARK }}
-            >
-              View all launches
-              <ChevronIcon />
-            </a>
-            <div className="hidden items-center gap-1.5 sm:flex">
-              <button
-                type="button"
-                aria-label="Scroll left"
-                onClick={() => scrollBy("left")}
-                disabled={!canScrollLeft}
-                className="flex size-8 items-center justify-center rounded-full bg-white transition-colors disabled:opacity-30"
-                style={{ border: `1px solid ${BORDER}`, color: DARK }}
-              >
-                <ChevronIcon dir="left" />
-              </button>
-              <button
-                type="button"
-                aria-label="Scroll right"
-                onClick={() => scrollBy("right")}
-                disabled={!canScrollRight}
-                className="flex size-8 items-center justify-center rounded-full bg-white transition-colors disabled:opacity-30"
-                style={{ border: `1px solid ${BORDER}`, color: DARK }}
-              >
-                <ChevronIcon />
-              </button>
-            </div>
-          </div>
-        </div>
+        <SectionHeader
+          eyebrow="Latest Launches"
+          title="Upcoming cars in India"
+          subtitle="Real-time countdowns for the most anticipated launches"
+          href="#"
+          linkLabel="View all launches"
+          after={
+            <ScrollArrows
+              canScrollLeft={canScrollLeft}
+              canScrollRight={canScrollRight}
+              onLeft={() => scrollBy("left")}
+              onRight={() => scrollBy("right")}
+            />
+          }
+        />
 
         <div
           ref={trackRef}

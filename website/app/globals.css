@@ -8,7 +8,8 @@
  * border-brand, ...), so every component should reach for these
  * (text-ink, bg-page, border-border, text-muted, bg-brand, ...) instead
  * of raw Tailwind grays or inline hex. Values here match what
- * Header.tsx/Footer.tsx/HeroSection.tsx already use.
+ * Header.tsx/Footer.tsx/HeroSection.tsx/PopularBrands.tsx already use —
+ * that flat orange + slate palette is the current live site design.
  *
  * Dark mode needs NO `dark:` prefix on every usage — the tokens
  * themselves flip inside the `.dark { }` block below, so `text-ink` (etc)
@@ -19,23 +20,23 @@
   --font-body: var(--font-body), system-ui, sans-serif;
   --font-head: var(--font-head), var(--font-body), system-ui, sans-serif;
 
-  --color-brand: #d4300f;
-  --color-brand-hover: #b82a0c;
-  --color-brand-soft: #fef2f0;
+  --color-brand: #f2650f;
+  --color-brand-hover: #d9560a;
+  --color-brand-soft: #fde3d3;
 
-  --color-ev: #3ddc97;
-  --color-ev-hover: #33c787;
+  --color-ev: #0d9488;
+  --color-ev-hover: #0b7d73;
 
-  --color-ink: #1c1a17;
-  --color-muted: #7a7670;
-  --color-subtle: #a39e96;
-  --color-faint: #b0ab9f;
+  --color-ink: #111827;
+  --color-muted: #6b7280;
+  --color-subtle: #9ca3af;
+  --color-faint: #c2c7d0;
 
-  --color-border: #e8e4dc;
-  --color-border-soft: #f0ece5;
+  --color-border: #e5e7eb;
+  --color-border-soft: #f0f1f4;
 
   --color-surface: #ffffff;
-  --color-page: #f7f5f1;
+  --color-page: #f4f5f9;
 }
 
 .dark {

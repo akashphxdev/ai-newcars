@@ -16,7 +16,8 @@ export default function ScrollArrows({
   onRight: () => void;
   dark?: boolean;
 }) {
-  const base = "flex size-8 items-center justify-center rounded-full border transition-colors disabled:opacity-30";
+  const base =
+    "flex size-8 items-center justify-center rounded-full border cursor-pointer transition-colors disabled:opacity-30 disabled:cursor-not-allowed";
   const theme = dark ? "border-white/15 text-white" : "border-border text-ink";
 
   return (

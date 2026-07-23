@@ -1,5 +1,9 @@
 "use client";
-import { useRef, useState, useEffect } from "react";
+import SectionHeader from "@/components/common/SectionHeader";
+import ScrollArrows from "@/components/common/ScrollArrows";
+import { useScrollRail } from "@/components/common/useScrollRail";
+import { WishlistButton } from "@/components/common/CardBits";
+import { BoltIcon, ClockIcon, GaugeIcon, StarIcon } from "@/components/common/icons";
 
 type EVCar = {
   name: string;
@@ -103,7 +107,6 @@ const RAW_CARS: EVCar[] = [
 
 // Curated order: longest range first, feels like a ranked, data-driven list
 const CARS = [...RAW_CARS].sort((a, b) => b.range - a.range);
-const MAX_RANGE = Math.max(...CARS.map((c) => c.range));
 
 const longestRangeCar = CARS.reduce((a, b) => (a.range > b.range ? a : b));
 const fastestChargingCar = CARS.reduce((a, b) => (a.chargeMinutes < b.chargeMinutes ? a : b));
@@ -123,62 +126,15 @@ const BORDER = "#e5e7eb";
 const SURFACE = "#f4f5f9";
 const TEAL = "#0d9488";
 const TEAL_SOFT = "#e6f6f4";
-const STAR = "#f5a623";
 
-const ChevronIcon = ({ dir = "right" }: { dir?: "left" | "right" }) => (
-  <svg
-    className="size-3.5"
-    viewBox="0 0 12 12"
-    fill="none"
-    style={{ transform: dir === "left" ? "rotate(180deg)" : "none" }}
-  >
-    <path d="M2 6h8M8 2l4 4-4 4" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />
-  </svg>
-);
-
-const HeartIcon = ({ filled }: { filled: boolean }) => (
-  <svg className="size-4" viewBox="0 0 24 24" fill={filled ? ORANGE : "none"}>
-    <path
-      d="M12 20.5s-7.5-4.6-10-9.4C.5 7.6 2.4 4 6 4c2.1 0 3.7 1.2 6 3.6C14.3 5.2 15.9 4 18 4c3.6 0 5.5 3.6 4 7.1-2.5 4.8-10 9.4-10 9.4Z"
-      stroke={filled ? ORANGE : "currentColor"}
-      strokeWidth="1.8"
-      strokeLinejoin="round"
-    />
-  </svg>
-);
-
-const StarIcon = () => (
-  <svg className="size-3" viewBox="0 0 24 24" fill={STAR}>
-    <path d="m12 2 2.9 6.6 7.1.6-5.4 4.8 1.7 7-6.3-3.9L5.7 21l1.7-7-5.4-4.8 7.1-.6L12 2Z" />
-  </svg>
-);
-
-const BoltIcon = () => (
-  <svg className="size-3.5" viewBox="0 0 24 24" fill="none">
-    <path d="M13 2 4 14h6l-1 8 9-12h-6l1-8Z" stroke="currentColor" strokeWidth="1.9" strokeLinejoin="round" />
-  </svg>
-);
-
+// Distinctive lightning-bolt-cutout battery icon, unique to this section's
+// spec chips — not consolidated into common/icons.tsx since it's visually
+// different from the generic BatteryIcon used elsewhere.
 const BatteryIcon = () => (
   <svg className="size-4" viewBox="0 0 24 24" fill="none">
     <rect x="2.5" y="7" width="16" height="10" rx="2" stroke="currentColor" strokeWidth="1.6" />
     <path d="M20.5 10v4" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
     <path d="M6 10.5h4l-1.5 3H10l-2.5 3 .8-2.5H6.8L6 10.5Z" fill="currentColor" />
-  </svg>
-);
-
-const ClockIcon = () => (
-  <svg className="size-4" viewBox="0 0 24 24" fill="none">
-    <circle cx="12" cy="12" r="8" stroke="currentColor" strokeWidth="1.6" />
-    <path d="M12 7.5v4.7l3.2 1.9" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
-  </svg>
-);
-
-const SpeedIcon = () => (
-  <svg className="size-4" viewBox="0 0 24 24" fill="none">
-    <path d="M4 14.5a8 8 0 1 1 16 0" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
-    <path d="M12 14.5 16.2 9.3" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
-    <circle cx="12" cy="14.5" r="1" fill="currentColor" />
   </svg>
 );
 
@@ -202,8 +158,6 @@ const MiniSpec = ({ icon, value, label }: { icon: React.ReactNode; value: string
 );
 
 const Card = ({ car }: { car: EVCar }) => {
-  const [saved, setSaved] = useState(false);
-  const pct = Math.round((car.range / MAX_RANGE) * 100);
   const badge = smartBadge(car);
 
   return (
@@ -219,19 +173,11 @@ const Card = ({ car }: { car: EVCar }) => {
             className="inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-white"
             style={{ background: TEAL }}
           >
-            <BoltIcon />
+            <BoltIcon className="size-3.5" />
             Electric
           </span>
 
-          <button
-            type="button"
-            onClick={() => setSaved((s) => !s)}
-            aria-label="Save to wishlist"
-            className="flex size-8 items-center justify-center rounded-full bg-white"
-            style={{ color: saved ? ORANGE : "#374151" }}
-          >
-            <HeartIcon filled={saved} />
-          </button>
+          <WishlistButton size="md" />
         </div>
 
         {badge && (
@@ -255,7 +201,7 @@ const Card = ({ car }: { car: EVCar }) => {
             </h3>
           </div>
           <div className="flex shrink-0 items-center gap-1 pt-0.5">
-            <StarIcon />
+            <StarIcon filled className="size-3 text-amber-400" />
             <span className="text-[12.5px] font-bold" style={{ color: DARK }}>
               {car.rating}
             </span>
@@ -264,9 +210,9 @@ const Card = ({ car }: { car: EVCar }) => {
 
         <div className="grid grid-cols-2 gap-2">
           <MiniSpec icon={<BatteryIcon />} value={car.battery} label="Battery" />
-          <MiniSpec icon={<ClockIcon />} value={car.chargeTime.replace("0–80% in ", "")} label="0–80% Charge" />
-          <MiniSpec icon={<SpeedIcon />} value={car.topSpeed} label="Top Speed" />
-          <MiniSpec icon={<BoltIcon />} value={`₹${car.price}L`} label="Starting Price" />
+          <MiniSpec icon={<ClockIcon className="size-4" />} value={car.chargeTime.replace("0–80% in ", "")} label="0–80% Charge" />
+          <MiniSpec icon={<GaugeIcon className="size-4" />} value={car.topSpeed} label="Top Speed" />
+          <MiniSpec icon={<BoltIcon className="size-3.5" />} value={`₹${car.price}L`} label="Starting Price" />
         </div>
       </div>
 
@@ -284,7 +230,6 @@ const Card = ({ car }: { car: EVCar }) => {
           style={{ border: `1.5px solid ${ORANGE}`, color: ORANGE }}
         >
           Check Offers
-          <ChevronIcon />
         </button>
       </div>
     </div>
@@ -292,81 +237,29 @@ const Card = ({ car }: { car: EVCar }) => {
 };
 
 export default function ElectricCars() {
-  const trackRef = useRef<HTMLDivElement>(null);
-  const [canScrollLeft, setCanScrollLeft] = useState(false);
-  const [canScrollRight, setCanScrollRight] = useState(true);
-
-  const updateArrows = () => {
-    const el = trackRef.current;
-    if (!el) return;
-    setCanScrollLeft(el.scrollLeft > 4);
-    setCanScrollRight(el.scrollLeft + el.clientWidth < el.scrollWidth - 4);
-  };
-
-  useEffect(() => {
-    updateArrows();
-  }, []);
-
-  const scrollBy = (dir: "left" | "right") => {
-    const el = trackRef.current;
-    if (!el) return;
-    const amount = el.clientWidth * 0.8;
-    el.scrollBy({ left: dir === "left" ? -amount : amount, behavior: "smooth" });
-  };
+  const { trackRef, canScrollLeft, canScrollRight, updateArrows, scrollBy } = useScrollRail<HTMLDivElement>();
 
   return (
     <section className="py-14 sm:py-16" style={{ background: "#fff" }}>
       <div className="mx-auto max-w-7xl px-4">
-        <div className="mb-8 flex flex-col gap-4 border-b pb-8 sm:flex-row sm:items-end sm:justify-between" style={{ borderColor: BORDER }}>
-          <div>
-            <div className="mb-2 flex items-center gap-2">
-              <span
-                className="flex size-6 items-center justify-center rounded-full"
-                style={{ background: TEAL_SOFT, color: TEAL }}
-              >
-                <BoltIcon />
-              </span>
-              <span className="text-[11.5px] font-bold uppercase tracking-[0.14em]" style={{ color: TEAL }}>
-                Zero Emissions
-              </span>
-            </div>
-            <h2 className="text-2xl sm:text-[30px] font-bold tracking-tight" style={{ color: DARK }}>
-              Electric cars, ranked by range
-            </h2>
-            <p className="mt-1.5 max-w-lg text-[13.5px] font-medium leading-relaxed" style={{ color: MUTED }}>
-              Real-world tested range, battery, and charging specs — updated today so you can compare with confidence.
-            </p>
-          </div>
-
-          <div className="flex items-center gap-3">
-            <a href="#" className="inline-flex items-center gap-1.5 text-[12.5px] font-bold" style={{ color: DARK }}>
-              View all EVs
-              <ChevronIcon />
-            </a>
-            <div className="hidden items-center gap-1.5 sm:flex">
-              <button
-                type="button"
-                aria-label="Scroll left"
-                onClick={() => scrollBy("left")}
-                disabled={!canScrollLeft}
-                className="flex size-9 items-center justify-center rounded-full border bg-white transition-colors disabled:opacity-30"
-                style={{ borderColor: BORDER, color: DARK }}
-              >
-                <ChevronIcon dir="left" />
-              </button>
-              <button
-                type="button"
-                aria-label="Scroll right"
-                onClick={() => scrollBy("right")}
-                disabled={!canScrollRight}
-                className="flex size-9 items-center justify-center rounded-full border bg-white transition-colors disabled:opacity-30"
-                style={{ borderColor: BORDER, color: DARK }}
-              >
-                <ChevronIcon />
-              </button>
-            </div>
-          </div>
-        </div>
+        <SectionHeader
+          icon={<BoltIcon className="size-3.5" />}
+          tone="ev"
+          divider
+          eyebrow="Zero Emissions"
+          title="Electric cars, ranked by range"
+          subtitle="Real-world tested range, battery, and charging specs — updated today so you can compare with confidence."
+          href="#"
+          linkLabel="View all EVs"
+          after={
+            <ScrollArrows
+              canScrollLeft={canScrollLeft}
+              canScrollRight={canScrollRight}
+              onLeft={() => scrollBy("left")}
+              onRight={() => scrollBy("right")}
+            />
+          }
+        />
 
         <div
           ref={trackRef}

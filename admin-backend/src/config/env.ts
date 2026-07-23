@@ -59,4 +59,8 @@ export const env = {
     .map((url) => url.trim())
     .filter(Boolean),
   isProd,
+  // Used only by the public API's response cache (src/core/cache). Not
+  // required — if Redis is unreachable, publicCache just skips caching
+  // and requests fall through to the DB, see redisClient.ts.
+  redisUrl: process.env.REDIS_URL || 'redis://localhost:6379',
 };
