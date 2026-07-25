@@ -23,7 +23,7 @@ export interface LoginInput {
 export interface LoginStep1Response {
   adminId: number;
   email: string;
-  maskedMobile: string;
+  maskedEmail: string;
   message: string;
 }
 

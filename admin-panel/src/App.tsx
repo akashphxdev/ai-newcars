@@ -11,7 +11,6 @@ import AllAdminLogs from "./pages/AdminUsers/AdminLogs/AllAdminLogs";
 import { AuthProvider } from "./context/AuthContext";
 import AllCountries from "./pages/Locations/Countries/AllCountries";
 import AllStates from "./pages/Locations/States/AllStates";
-import AllDistricts from "./pages/Locations/Districts/AllDistricts";
 import AllCities from "./pages/Locations/Cities/AllCities";
 import AllBrands from "./pages/newCars/Brands/AllBrands";
 import AllCarModels from "./pages/newCars/carModels/AllCarModels";
@@ -85,7 +84,6 @@ export default function App() {
           
           <Route path="countries" element={<AllCountries />} />
           <Route path="states" element={<AllStates />} />
-          <Route path="districts" element={<AllDistricts />} />
           <Route path="cities" element={<AllCities />} />
 
           <Route path ="/new-cars/brands" element={<AllBrands/>}/>

@@ -1,5 +1,6 @@
 "use client";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 
 const ORANGE = "#f2650f";
 const DARK = "#111827";
@@ -141,7 +142,7 @@ const FOOTER_COLS: FooterCol[] = [
       { label: "New Cars", href: "#" },
       { label: "Used Cars", href: "#" },
       { label: "Sell Your Car", href: "#" },
-      { label: "Compare Cars", href: "/compare" },
+      { label: "Compare Cars", href: "/compare-cars" },
       { label: "Upcoming Cars", href: "#" },
     ],
   },
@@ -174,6 +175,9 @@ const LEGAL_LINKS = [
 /* ---------------- Component ---------------- */
 
 export default function Footer() {
+  const pathname = usePathname();
+  if (pathname === "/maintenance") return null;
+
   return (
     <footer className="font-body" style={{ background: SURFACE, borderTop: `1px solid ${BORDER}` }}>
       {/* Trust strip */}

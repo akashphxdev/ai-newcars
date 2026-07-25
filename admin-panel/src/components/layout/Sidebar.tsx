@@ -307,7 +307,6 @@ const NAV: NavGroup[] = [
         children: [
           { label: "Countries", href: "/countries" },
           { label: "States", href: "/states" },
-          { label: "Districts", href: "/districts" },
           { label: "Cities", href: "/cities" },
         ],
       },

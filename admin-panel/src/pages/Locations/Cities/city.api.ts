@@ -1,26 +1,22 @@
 // src/pages/Locations/city.api.ts
 //
-// RTK Query version, same pattern as district.api.ts.
+// RTK Query version, same pattern as state.api.ts.
 
 import { api } from "../../../store/baseApi";
 
 export interface CityRecord {
   id: number;
-  districtId: number;
+  stateId: number;
   name: string;
   slug: string;
   isMetro: boolean;
   isTopCity: boolean;
   isSellCarEnabled: boolean;
   logoUrl: string | null;
-  district: {
+  state: {
     id: number;
     name: string;
-    state: {
-      id: number;
-      name: string;
-      country: { id: number; name: string } | null;
-    } | null;
+    country: { id: number; name: string } | null;
   } | null;
 }
 
@@ -35,7 +31,6 @@ export interface ListCitiesParams {
   page?: number;
   limit?: number;
   search?: string;
-  districtId?: number;
   stateId?: number;
   isMetro?: boolean;
   sortBy?: "name" | "id";
@@ -43,7 +38,7 @@ export interface ListCitiesParams {
 }
 
 export interface CreateCityInput {
-  districtId: number;
+  stateId: number;
   name: string;
   slug?: string;
   isMetro?: boolean;
@@ -53,7 +48,7 @@ export interface CreateCityInput {
 }
 
 export interface UpdateCityInput {
-  districtId?: number;
+  stateId?: number;
   name?: string;
   slug?: string;
   isMetro?: boolean;
@@ -127,7 +122,7 @@ export const cityApi = api.injectEndpoints({
     createCity: builder.mutation<CityRecord, CreateCityInput>({
       query: ({ logo, ...fields }) => {
         const formData = new FormData();
-        formData.append("districtId", String(fields.districtId));
+        formData.append("stateId", String(fields.stateId));
         formData.append("name", fields.name);
         if (fields.slug) formData.append("slug", fields.slug);
         formData.append("isMetro", String(fields.isMetro ?? false));

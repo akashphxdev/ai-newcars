@@ -10,34 +10,27 @@ import type { CityUploadLogoResult } from './city.types';
 
 const CITY_SELECT = {
   id: true,
-  districtId: true,
+  stateId: true,
   name: true,
   slug: true,
   isMetro: true,
   isTopCity: true,
   isSellCarEnabled: true,
   logoUrl: true,
-  district: {
+  state: {
     select: {
       id: true,
       name: true,
-      state: {
-        select: {
-          id: true,
-          name: true,
-          country: { select: { id: true, name: true } },
-        },
-      },
+      country: { select: { id: true, name: true } },
     },
   },
 } as const;
 
 export async function listCities(query: CityListQueryParsed) {
-  const { page, limit, search, districtId, stateId, isMetro, sortBy, sortOrder } = query;
+  const { page, limit, search, stateId, isMetro, sortBy, sortOrder } = query;
 
   const where: Prisma.CityWhereInput = {
-    ...(districtId ? { districtId } : {}),
-    ...(stateId ? { district: { stateId } } : {}),
+    ...(stateId ? { stateId } : {}),
     ...(typeof isMetro === 'boolean' ? { isMetro } : {}),
     ...(search
       ? {
@@ -93,10 +86,10 @@ export async function getCityById(id: number) {
   return city;
 }
 
-async function assertDistrictExists(districtId: number) {
-  const district = await prisma.district.findUnique({ where: { id: districtId }, select: { id: true } });
-  if (!district) {
-    throw ApiError.badRequest('Invalid districtId — district does not exist');
+async function assertStateExists(stateId: number) {
+  const state = await prisma.state.findUnique({ where: { id: stateId }, select: { id: true } });
+  if (!state) {
+    throw ApiError.badRequest('Invalid stateId — state does not exist');
   }
 }
 
@@ -116,13 +109,13 @@ export async function createCity(
   actorId: number,
   ipAddress?: string | null,
 ) {
-  await assertDistrictExists(input.districtId);
+  await assertStateExists(input.stateId);
 
   await assertSlugAvailable(input.slug);
 
   const city = await prisma.city.create({
     data: {
-      districtId: input.districtId,
+      stateId: input.stateId,
       name: input.name,
       slug: input.slug,
       isMetro: input.isMetro ?? false,
@@ -135,7 +128,7 @@ export async function createCity(
 
   await createLog({
     adminId: actorId,
-    description: `Created city "${city.name}" (id ${city.id}, slug "${city.slug}") under district "${city.district.name}"`,
+    description: `Created city "${city.name}" (id ${city.id}, slug "${city.slug}") under state "${city.state.name}"`,
     ipAddress,
   });
 
@@ -150,8 +143,8 @@ export async function updateCity(
 ) {
   const existing = await getCityById(id);
 
-  if (input.districtId) {
-    await assertDistrictExists(input.districtId);
+  if (input.stateId) {
+    await assertStateExists(input.stateId);
   }
   if (input.slug !== existing.slug) {
     await assertSlugAvailable(input.slug, id);

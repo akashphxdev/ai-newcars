@@ -4,8 +4,8 @@ import bcrypt from 'bcrypt';
 import { prisma } from '@/prisma/client';
 import { ApiError } from '@/core/errors/ApiError';
 import { signToken } from '@/core/middleware/auth';
-import { logger } from '@/core/utils/logger';
 import { createLog } from '@/core/utils/createLog';
+import { sendMail } from '@/core/utils/mailer';
 import type { AdminLoginParsed } from './auth.validation';
 import type {
   AdminSafe,
@@ -27,8 +27,20 @@ function sanitizeAdmin(admin: { passwordHash: string | null; [key: string]: unkn
   return safe as unknown as AdminSafe;
 }
 
-function maskMobile(mobile: string): string {
-  return mobile.replace(/^(\d{2})\d+(\d{2})$/, '$1XXXXXX$2');
+// e.g. "aakash.meena@gmail.com" -> "aa***na@gmail.com" — enough for an
+// admin to recognize their own inbox without showing the full address
+// on screen.
+function maskEmail(email: string): string {
+  const [local, domain] = email.split('@');
+  if (!domain || local.length <= 4) return `${local.slice(0, 1)}***@${domain ?? ''}`;
+  return `${local.slice(0, 2)}***${local.slice(-2)}@${domain}`;
+}
+
+function buildOtpEmailHtml(otpCode: string): string {
+  return `
+  <p>Your login OTP is <b>${otpCode}</b>.</p>
+  <p>It expires in ${OTP_EXPIRY_MINUTES} minutes.</p>
+  <p>Do not share this code with anyone.</p>`;
 }
 
 function assertAccountAccessible(admin: {
@@ -128,15 +140,17 @@ export const adminAuthService = {
       },
     });
 
-    logger.info(
-      `[AdminAuth] OTP for "${admin.email}" (id ${admin.id}): ${otpCode} — expires in ${OTP_EXPIRY_MINUTES} min`,
-    );
+    await sendMail({
+      to: admin.email,
+      subject: 'Your TimesAuto Admin login OTP',
+      html: buildOtpEmailHtml(otpCode),
+    });
 
     return {
       adminId: admin.id,
       email: admin.email,
-      maskedMobile: maskMobile(admin.mobile),
-      message: 'OTP sent. Check the server terminal for the code (no SMS gateway connected yet).',
+      maskedEmail: maskEmail(admin.email),
+      message: 'OTP sent to your registered email.',
     };
   },
 
@@ -216,11 +230,13 @@ export const adminAuthService = {
       },
     });
 
-    logger.info(
-      `[AdminAuth] Resent OTP for "${admin.email}" (id ${admin.id}): ${otpCode}`,
-    );
+    await sendMail({
+      to: admin.email,
+      subject: 'Your TimesAuto Admin login OTP',
+      html: buildOtpEmailHtml(otpCode),
+    });
 
-    return { message: 'A new OTP has been sent. Check the server terminal.' };
+    return { message: 'A new OTP has been sent to your email.' };
   },
 
   async me(adminId: number): Promise<AdminSafe> {

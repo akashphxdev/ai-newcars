@@ -58,7 +58,7 @@ function SubmitButton({ loading, label, loadingLabel }: {
 // ─── Step 1: Login Form ───────────────────────────────────────────────────────
 
 interface LoginFormProps {
-  onSuccess: (adminId: number, maskedMobile: string) => void;
+  onSuccess: (adminId: number, maskedEmail: string) => void;
 }
 
 function LoginForm({ onSuccess }: LoginFormProps) {
@@ -80,7 +80,7 @@ function LoginForm({ onSuccess }: LoginFormProps) {
 
     try {
       const data = await login({ email: email.trim().toLowerCase(), password }).unwrap();
-      onSuccess(data.adminId, data.maskedMobile);
+      onSuccess(data.adminId, data.maskedEmail);
     } catch (err) {
       setError(getErrorMessage(err));
     }
@@ -161,12 +161,12 @@ function LoginForm({ onSuccess }: LoginFormProps) {
 
 interface OtpFormProps {
   adminId: number;
-  maskedMobile: string;
+  maskedEmail: string;
   onBack: () => void;
   onSuccess: () => void;
 }
 
-function OtpForm({ adminId, maskedMobile, onBack, onSuccess }: OtpFormProps) {
+function OtpForm({ adminId, maskedEmail, onBack, onSuccess }: OtpFormProps) {
   const [otp, setOtp] = useState(["", "", "", "", "", ""]);
   const [error, setError] = useState("");
   const [resendTimer, setResendTimer] = useState(30);
@@ -257,7 +257,7 @@ function OtpForm({ adminId, maskedMobile, onBack, onSuccess }: OtpFormProps) {
       <div className="mb-6">
         <h2 className="text-[#1c1a17] text-lg font-black">Verify OTP</h2>
         <p className="text-[#a39e96] text-xs mt-1">
-          6-digit code sent to <span className="font-semibold text-[#7a7670]">{maskedMobile}</span>
+          6-digit code sent to <span className="font-semibold text-[#7a7670]">{maskedEmail}</span>
         </p>
       </div>
       <form onSubmit={(e) => { e.preventDefault(); handleVerify(otp.join("")); }} className="space-y-5">
@@ -315,11 +315,11 @@ function OtpForm({ adminId, maskedMobile, onBack, onSuccess }: OtpFormProps) {
 export default function LoginPage() {
   const [step, setStep] = useState<"login" | "otp">("login");
   const [adminId, setAdminId] = useState<number | null>(null);
-  const [maskedMobile, setMaskedMobile] = useState("");
+  const [maskedEmail, setMaskedEmail] = useState("");
 
-  const handleLoginSuccess = (id: number, mobile: string) => {
+  const handleLoginSuccess = (id: number, email: string) => {
     setAdminId(id);
-    setMaskedMobile(mobile);
+    setMaskedEmail(email);
     setStep("otp");
   };
 
@@ -354,7 +354,7 @@ export default function LoginPage() {
           {step === "otp" && adminId !== null && (
             <OtpForm
               adminId={adminId}
-              maskedMobile={maskedMobile}
+              maskedEmail={maskedEmail}
               onBack={() => setStep("login")}
               onSuccess={handleOtpSuccess}
             />

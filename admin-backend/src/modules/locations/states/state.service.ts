@@ -168,12 +168,12 @@ export async function updateState(
 export async function deleteState(id: number, actorId: number, ipAddress?: string | null) {
   const state = await getStateById(id);
 
-  // Same "protect referenced parent rows" rule as country.service.ts's
-  // deleteCountry — a state with districts under it can't be deleted.
-  const districtCount = await prisma.district.count({ where: { stateId: id } });
-  if (districtCount > 0) {
+  // Same "protect referenced child rows" rule as country.service.ts's
+  // deleteCountry — a state with cities under it can't be deleted.
+  const cityCount = await prisma.city.count({ where: { stateId: id } });
+  if (cityCount > 0) {
     throw ApiError.badRequest(
-      `Cannot delete this state — ${districtCount} district(s) are linked to it. Delete or reassign them first.`,
+      `Cannot delete this state — ${cityCount} city(s) are linked to it. Delete or reassign them first.`,
     );
   }
 

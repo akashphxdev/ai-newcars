@@ -63,4 +63,8 @@ export const env = {
   // required — if Redis is unreachable, publicCache just skips caching
   // and requests fall through to the DB, see redisClient.ts.
   redisUrl: process.env.REDIS_URL || 'redis://localhost:6379',
+  // Gmail SMTP (app password) — used by core/utils/mailer.ts to send
+  // OTP emails. Required: admin login has no other OTP delivery channel.
+  gmailUser: required('GMAIL_USER'),
+  gmailAppPassword: required('GMAIL_APP_PASSWORD'),
 };

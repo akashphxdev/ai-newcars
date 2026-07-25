@@ -7,7 +7,6 @@ import {
   useUploadCityLogoMutation,
   type CityRecord,
 } from "./city.api";
-import { useGetDistrictOptionsQuery } from "../Districts/district.api";
 import { useGetStateOptionsQuery } from "../States/state.api";
 import { useGetCountryOptionsQuery } from "../Countries/country.api";
 import { extractApiError, getUploadUrl } from "../../../lib/apiClient";
@@ -16,7 +15,7 @@ import { slugify } from "../../../lib/slugify";
 const ACCENT = "#D4300F";
 
 interface FieldErrors {
-  districtId?: string;
+  stateId?: string;
   name?: string;
   slug?: string;
   logo?: string;
@@ -48,10 +47,9 @@ export default function CityModal({
   const { data: countries = [] } = useGetCountryOptionsQuery();
 
   const [countryId, setCountryId] = useState<number | "">(
-    city?.district?.state?.country?.id ?? ""
+    city?.state?.country?.id ?? ""
   );
-  const [stateId, setStateId] = useState<number | "">(city?.district?.state?.id ?? "");
-  const [districtId, setDistrictId] = useState<number | "">(city ? city.districtId : "");
+  const [stateId, setStateId] = useState<number | "">(city ? city.stateId : "");
   const [name, setName] = useState(city ? city.name : "");
   const [slug, setSlug] = useState(city ? city.slug : "");
   // Once true, typing in Name no longer auto-regenerates Slug. Starts
@@ -66,8 +64,6 @@ export default function CityModal({
   const nameRef = useRef<HTMLInputElement>(null);
 
   const { data: states = [] } = useGetStateOptionsQuery({ countryId: countryId || undefined });
-
-  const { data: districts = [] } = useGetDistrictOptionsQuery({ stateId: stateId || undefined });
 
   const [createCity, { isLoading: creating }] = useCreateCityMutation();
   const [updateCity, { isLoading: updating }] = useUpdateCityMutation();
@@ -114,7 +110,6 @@ export default function CityModal({
     if (logoPreview) URL.revokeObjectURL(logoPreview);
     setCountryId("");
     setStateId("");
-    setDistrictId("");
     setName("");
     setSlug("");
     setSlugTouched(false);
@@ -149,7 +144,7 @@ export default function CityModal({
 
   const validate = (): boolean => {
     const next: FieldErrors = {};
-    if (!districtId) next.districtId = "Please select a district.";
+    if (!stateId) next.stateId = "Please select a state.";
     if (name.trim().length < 2) next.name = "Name must be at least 2 characters.";
     if (!slug.trim()) {
       next.slug = "Slug is required.";
@@ -171,7 +166,7 @@ export default function CityModal({
     if (!validate()) return;
 
     const payload = {
-      districtId: Number(districtId),
+      stateId: Number(stateId),
       name: name.trim(),
       // Always the literal value shown on screen — whether it came from
       // auto-sync or a manual edit — so what's displayed is exactly what
@@ -269,14 +264,13 @@ export default function CityModal({
             </div>
           </div>
 
-          <div className="grid grid-cols-3 gap-3">
+          <div className="grid grid-cols-2 gap-3">
             <Field label="Country">
               <select
                 value={countryId}
                 onChange={(e) => {
                   setCountryId(e.target.value ? Number(e.target.value) : "");
                   setStateId("");
-                  setDistrictId("");
                 }}
                 className="cursor-pointer w-full text-sm font-medium text-[#1c1a17] bg-[#f7f5f1] border border-[#e2ddd5] rounded-xl px-3 py-2.5 outline-none transition-all focus:bg-white"
               >
@@ -292,12 +286,13 @@ export default function CityModal({
             <Field label="State">
               <select
                 value={stateId}
-                onChange={(e) => {
-                  setStateId(e.target.value ? Number(e.target.value) : "");
-                  setDistrictId("");
-                }}
+                onChange={(e) => setStateId(e.target.value ? Number(e.target.value) : "")}
                 disabled={!countryId}
-                className="cursor-pointer w-full text-sm font-medium text-[#1c1a17] bg-[#f7f5f1] border border-[#e2ddd5] rounded-xl px-3 py-2.5 outline-none transition-all focus:bg-white disabled:opacity-60"
+                className="cursor-pointer w-full text-sm font-medium text-[#1c1a17] bg-[#f7f5f1] border rounded-xl px-3 py-2.5 outline-none transition-all focus:bg-white disabled:opacity-60"
+                style={{
+                  borderColor: errors.stateId ? "#f0997b" : "#e2ddd5",
+                  boxShadow: errors.stateId ? "0 0 0 2px rgba(216,90,48,0.1)" : "none",
+                }}
               >
                 <option value="">{countryId ? "Select" : "—"}</option>
                 {states.map((s) => (
@@ -306,28 +301,8 @@ export default function CityModal({
                   </option>
                 ))}
               </select>
-            </Field>
-
-            <Field label="District">
-              <select
-                value={districtId}
-                onChange={(e) => setDistrictId(e.target.value ? Number(e.target.value) : "")}
-                disabled={!stateId}
-                className="cursor-pointer w-full text-sm font-medium text-[#1c1a17] bg-[#f7f5f1] border rounded-xl px-3 py-2.5 outline-none transition-all focus:bg-white disabled:opacity-60"
-                style={{
-                  borderColor: errors.districtId ? "#f0997b" : "#e2ddd5",
-                  boxShadow: errors.districtId ? "0 0 0 2px rgba(216,90,48,0.1)" : "none",
-                }}
-              >
-                <option value="">{stateId ? "Select" : "—"}</option>
-                {districts.map((d) => (
-                  <option key={d.id} value={d.id}>
-                    {d.name}
-                  </option>
-                ))}
-              </select>
-              {errors.districtId && (
-                <p className="text-[11px] font-medium text-[#D4300F] mt-1">{errors.districtId}</p>
+              {errors.stateId && (
+                <p className="text-[11px] font-medium text-[#D4300F] mt-1">{errors.stateId}</p>
               )}
             </Field>
           </div>

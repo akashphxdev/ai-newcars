@@ -6,6 +6,8 @@ import CarRoute from '@/modules/public/home/car/car.routes';
 import CityRoute from '@/modules/public/home/city/city.routes';
 import ArticleRoute from '@/modules/public/home/article/article.routes';
 import TestimonialRoute from '@/modules/public/home/testimonial/testimonial.routes';
+import StoryRoute from '@/modules/public/home/story/story.routes';
+import BodyTypeRoute from '@/modules/public/home/bodyType/bodyType.routes';
 
 const router = Router();
 
@@ -15,5 +17,7 @@ router.use('/cars', CarRoute);
 router.use('/cities', CityRoute);
 router.use('/articles', ArticleRoute);
 router.use('/testimonials', TestimonialRoute);
+router.use('/stories', StoryRoute);
+router.use('/body-types', BodyTypeRoute);
 
 export default router;

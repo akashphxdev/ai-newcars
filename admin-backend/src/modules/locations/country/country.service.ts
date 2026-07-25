@@ -51,7 +51,7 @@ export async function listCountries(query: CountryListQueryParsed) {
 // (no pagination) with just the fields a <select> needs. The regular
 // listCountries() above stays paginated for the Countries list page;
 // this is for every other screen that just needs "all countries" to
-// populate a dropdown (State/District/City/Brand forms & filters).
+// populate a dropdown (State/City/Brand forms & filters).
 export async function listCountryOptions(query: CountryOptionsQueryParsed) {
   const { isActive } = query;
 

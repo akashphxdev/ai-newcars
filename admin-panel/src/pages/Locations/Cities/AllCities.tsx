@@ -9,7 +9,6 @@ import {
   type UpdateCityFlagsInput,
 } from "./city.api";
 import { useGetStateOptionsQuery } from "../States/state.api";
-import { useGetDistrictOptionsQuery } from "../Districts/district.api";
 import { useGetCountryOptionsQuery } from "../Countries/country.api";
 import { extractApiError, getUploadUrl } from "../../../lib/apiClient";
 import CityModal from "./CityModal";
@@ -59,7 +58,6 @@ export default function AllCities() {
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [filterCountryId, setFilterCountryId] = useState<number | "">("");
   const [filterStateId, setFilterStateId] = useState<number | "">("");
-  const [filterDistrictId, setFilterDistrictId] = useState<number | "">("");
 
   useEffect(() => {
     const timer = setTimeout(() => setDebouncedSearch(search), search ? 400 : 0);
@@ -70,8 +68,6 @@ export default function AllCities() {
 
   const { data: filterStates = [] } = useGetStateOptionsQuery({ countryId: filterCountryId || undefined });
 
-  const { data: filterDistricts = [] } = useGetDistrictOptionsQuery({ stateId: filterStateId || undefined });
-
   const {
     data: citiesData,
     isLoading,
@@ -81,8 +77,7 @@ export default function AllCities() {
     page,
     limit,
     search: debouncedSearch || undefined,
-    districtId: filterDistrictId || undefined,
-    stateId: !filterDistrictId ? filterStateId || undefined : undefined,
+    stateId: filterStateId || undefined,
   });
 
   const cities = citiesData?.data ?? [];
@@ -166,8 +161,7 @@ export default function AllCities() {
     },
     { header: "Name", render: (c) => <span className="font-semibold text-[#1c1a17]">{c.name}</span> },
     { header: "Slug", render: (c) => <span className="text-[#7a7670]">{c.slug}</span> },
-    { header: "District", render: (c) => <span className="text-[#7a7670]">{c.district?.name ?? "—"}</span> },
-    { header: "State", render: (c) => <span className="text-[#7a7670]">{c.district?.state?.name ?? "—"}</span> },
+    { header: "State", render: (c) => <span className="text-[#7a7670]">{c.state?.name ?? "—"}</span> },
     {
       header: "Metro",
       render: (c) => (
@@ -227,7 +221,7 @@ export default function AllCities() {
         <div>
           <h1 className="text-[18px] font-black text-[#1c1a17]">Cities</h1>
           <p className="text-[12px] text-[#a39e96] mt-0.5">
-            Manage cities, each linked to a district. Slug is auto-generated from the name if left blank.
+            Manage cities, each linked to a state. Slug is auto-generated from the name if left blank.
           </p>
         </div>
         <button
@@ -284,7 +278,6 @@ export default function AllCities() {
           onChange={(v) => {
             setFilterCountryId(v ? Number(v) : "");
             setFilterStateId("");
-            setFilterDistrictId("");
             setPage(1);
           }}
           options={countries.map((c) => ({ value: c.id, label: c.name }))}
@@ -294,22 +287,11 @@ export default function AllCities() {
           value={filterStateId}
           onChange={(v) => {
             setFilterStateId(v ? Number(v) : "");
-            setFilterDistrictId("");
             setPage(1);
           }}
           options={filterStates.map((s) => ({ value: s.id, label: s.name }))}
           placeholder="All states"
           disabled={!filterCountryId}
-        />
-        <FilterSelect
-          value={filterDistrictId}
-          onChange={(v) => {
-            setFilterDistrictId(v ? Number(v) : "");
-            setPage(1);
-          }}
-          options={filterDistricts.map((d) => ({ value: d.id, label: d.name }))}
-          placeholder="All districts"
-          disabled={!filterStateId}
         />
       </SearchFilterBar>
 

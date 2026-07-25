@@ -1,5 +1,6 @@
 "use client";
 import { useState } from "react";
+import Image from "next/image";
 import SectionHeader from "@/components/common/SectionHeader";
 import ScrollArrows from "@/components/common/ScrollArrows";
 import { useScrollRail } from "@/components/common/useScrollRail";
@@ -73,7 +74,9 @@ const PlayIcon = () => (
 
 const Thumb = ({ src, alt, className }: { src: string; alt: string; className: string }) => {
   const [imgSrc, setImgSrc] = useState(src);
-  return <img src={imgSrc} alt={alt} loading="lazy" onError={() => setImgSrc(FALLBACK_IMG)} className={className} />;
+  return (
+    <Image src={imgSrc} alt={alt} fill sizes="260px" onError={() => setImgSrc(FALLBACK_IMG)} className={className} />
+  );
 };
 
 const Card = ({ video }: { video: Video }) => (

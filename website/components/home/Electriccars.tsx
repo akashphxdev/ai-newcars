@@ -1,123 +1,12 @@
 "use client";
+import Image from "next/image";
 import SectionHeader from "@/components/common/SectionHeader";
 import ScrollArrows from "@/components/common/ScrollArrows";
 import { useScrollRail } from "@/components/common/useScrollRail";
 import { WishlistButton } from "@/components/common/CardBits";
-import { BoltIcon, ClockIcon, GaugeIcon, StarIcon } from "@/components/common/icons";
-
-type EVCar = {
-  name: string;
-  brand: string;
-  price: number; // in Lakh
-  range: number; // km
-  battery: string;
-  chargeTime: string;
-  chargeMinutes: number;
-  topSpeed: string;
-  rating: number;
-  img: string;
-};
-
-const RAW_CARS: EVCar[] = [
-  {
-    name: "e-Vitara",
-    brand: "Maruti Suzuki",
-    price: 17,
-    range: 500,
-    battery: "61 kWh",
-    chargeTime: "0–80% in 45 min",
-    chargeMinutes: 45,
-    topSpeed: "160 km/h",
-    rating: 4.4,
-    img: "https://stimg.cardekho.com/images/carexteriorimages/630x420/Maruti/e-Vitara/13326/1771560398854/front-left-side-47.jpg?tr=w-300",
-  },
-  {
-    name: "Sierra EV",
-    brand: "Tata",
-    price: 19.85,
-    range: 502,
-    battery: "65 kWh",
-    chargeTime: "0–80% in 40 min",
-    chargeMinutes: 40,
-    topSpeed: "170 km/h",
-    rating: 4.5,
-    img: "https://stimg.cardekho.com/images/carexteriorimages/630x420/Tata/Sierra-EV/7515/1782837409488/front-left-side-47.jpg?tr=w-300",
-  },
-  {
-    name: "Punch EV",
-    brand: "Tata",
-    price: 10.99,
-    range: 421,
-    battery: "35 kWh",
-    chargeTime: "0–80% in 56 min",
-    chargeMinutes: 56,
-    topSpeed: "150 km/h",
-    rating: 4.2,
-    img: "https://stimg.cardekho.com/images/carexteriorimages/630x420/Tata/Punch-EV/13330/1772693950592/front-left-side-47.jpg?tr=w-300",
-  },
-  {
-    name: "Tiago EV",
-    brand: "Tata",
-    price: 7.99,
-    range: 315,
-    battery: "24 kWh",
-    chargeTime: "0–80% in 58 min",
-    chargeMinutes: 58,
-    topSpeed: "120 km/h",
-    rating: 4.1,
-    img: "https://stimg.cardekho.com/images/carexteriorimages/630x420/Tata/Tiago-EV/13563/1779961723416/front-left-side-47.jpg?tr=w-300",
-  },
-  {
-    name: "XEV 9e",
-    brand: "Mahindra",
-    price: 21.90,
-    range: 542,
-    battery: "79 kWh",
-    chargeTime: "0–80% in 20 min",
-    chargeMinutes: 20,
-    topSpeed: "200 km/h",
-    rating: 4.6,
-    img: "https://stimg.cardekho.com/images/carexteriorimages/630x420/Mahindra/XEV-9e/9262/1755776058045/front-left-side-47.jpg?tr=w-300",
-  },
-  {
-    name: "AMG E 53 Hybrid",
-    brand: "Mercedes-Benz",
-    price: 111,
-    range: 33,
-    battery: "17.8 kWh",
-    chargeTime: "0–100% in 90 min",
-    chargeMinutes: 90,
-    topSpeed: "250 km/h",
-    rating: 4.5,
-    img: "https://stimg.cardekho.com/images/carexteriorimages/630x420/Mercedes-Benz/AMG-E-53/13668/1784012657850/front-left-side-47.jpg?tr=w-300",
-  },
-  {
-    name: "EQE 500 4MATIC",
-    brand: "Mercedes-Benz",
-    price: 140,
-    range: 550,
-    battery: "90 kWh",
-    chargeTime: "0–80% in 32 min",
-    chargeMinutes: 32,
-    topSpeed: "210 km/h",
-    rating: 4.6,
-    img: "https://stimg.cardekho.com/images/carexteriorimages/630x420/Mercedes-Benz/AMG-E-53/13668/1784012657850/front-left-side-47.jpg?tr=w-300", // ⚠️ same image reused — replace with actual EQE photo
-  },
-];
-
-// Curated order: longest range first, feels like a ranked, data-driven list
-const CARS = [...RAW_CARS].sort((a, b) => b.range - a.range);
-
-const longestRangeCar = CARS.reduce((a, b) => (a.range > b.range ? a : b));
-const fastestChargingCar = CARS.reduce((a, b) => (a.chargeMinutes < b.chargeMinutes ? a : b));
-const bestValueCar = CARS.reduce((a, b) => (a.price < b.price ? a : b));
-
-const smartBadge = (car: EVCar): string | null => {
-  if (car.name === longestRangeCar.name) return "Longest Range";
-  if (car.name === fastestChargingCar.name) return "Fastest Charging";
-  if (car.name === bestValueCar.name) return "Best Value";
-  return null;
-};
+import { BoltIcon, ClockIcon, GaugeIcon, StarIcon, BatteryIcon } from "@/components/common/icons";
+import { formatSinglePrice } from "@/lib/format";
+import type { HomeCar } from "@/features/cars/car.types";
 
 const ORANGE = "#f2650f";
 const DARK = "#0f172a";
@@ -126,17 +15,8 @@ const BORDER = "#e5e7eb";
 const SURFACE = "#f4f5f9";
 const TEAL = "#0d9488";
 const TEAL_SOFT = "#e6f6f4";
-
-// Distinctive lightning-bolt-cutout battery icon, unique to this section's
-// spec chips — not consolidated into common/icons.tsx since it's visually
-// different from the generic BatteryIcon used elsewhere.
-const BatteryIcon = () => (
-  <svg className="size-4" viewBox="0 0 24 24" fill="none">
-    <rect x="2.5" y="7" width="16" height="10" rx="2" stroke="currentColor" strokeWidth="1.6" />
-    <path d="M20.5 10v4" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
-    <path d="M6 10.5h4l-1.5 3H10l-2.5 3 .8-2.5H6.8L6 10.5Z" fill="currentColor" />
-  </svg>
-);
+const FALLBACK_IMG =
+  "data:image/svg+xml;charset=UTF-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='320' height='200' viewBox='0 0 320 200'%3E%3Crect width='320' height='200' fill='%23e5e7eb'/%3E%3Ctext x='50%25' y='50%25' text-anchor='middle' dy='.3em' font-family='sans-serif' font-size='13' fill='%239ca3af'%3EImage unavailable%3C/text%3E%3C/svg%3E";
 
 const MiniSpec = ({ icon, value, label }: { icon: React.ReactNode; value: string; label: string }) => (
   <div className="flex items-center gap-2 rounded-xl px-2.5 py-2" style={{ background: SURFACE }}>
@@ -157,25 +37,51 @@ const MiniSpec = ({ icon, value, label }: { icon: React.ReactNode; value: string
   </div>
 );
 
-const Card = ({ car }: { car: EVCar }) => {
-  const badge = smartBadge(car);
+// Two data-driven highlights — "longest range" and "best value" — computed
+// from whatever's in the list. "Fastest charging" was dropped: the backend's
+// chargeTime is free text (e.g. "0-80% in 45 min"), not a clean number, so
+// it can't be reliably compared across cars.
+function useSmartBadge(cars: HomeCar[]) {
+  const withRange = cars.filter((c) => c.specs?.range);
+  const withPrice = cars.filter((c) => c.priceMin);
+  const longestRangeId = withRange.length
+    ? withRange.reduce((a, b) => ((b.specs!.range ?? 0) > (a.specs!.range ?? 0) ? b : a)).id
+    : null;
+  const bestValueId = withPrice.length
+    ? withPrice.reduce((a, b) => (Number(b.priceMin) < Number(a.priceMin) ? b : a)).id
+    : null;
 
+  return (car: HomeCar): string | null => {
+    if (car.id === longestRangeId) return "Longest Range";
+    if (car.id === bestValueId) return "Best Value";
+    return null;
+  };
+}
+
+const Card = ({ car, badge }: { car: HomeCar; badge: string | null }) => {
   return (
     <div
       className="flex h-full w-[320px] shrink-0 snap-start flex-col overflow-hidden rounded-2xl bg-white transition-all duration-300 hover:-translate-y-1"
       style={{ border: `1px solid ${BORDER}`, boxShadow: "0 1px 2px rgba(15,23,42,0.04)" }}
     >
       <div className="relative aspect-[16/10] overflow-hidden" style={{ background: SURFACE }}>
-        <img src={car.img} alt={`${car.brand} ${car.name}`} className="size-full object-cover" />
+        <Image src={car.coverImageUrl ?? FALLBACK_IMG} alt={`${car.brand.name} ${car.name}`} fill sizes="320px" className="object-cover" />
 
         <div className="absolute inset-x-0 top-0 flex items-start justify-between p-3">
-          <span
-            className="inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-white"
-            style={{ background: TEAL }}
-          >
-            <BoltIcon className="size-3.5" />
-            Electric
-          </span>
+          <div className="flex flex-wrap items-center gap-1.5">
+            <span
+              className="inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-white"
+              style={{ background: TEAL }}
+            >
+              <BoltIcon className="size-3.5" />
+              Electric
+            </span>
+            {car.bodyType && (
+              <span className="inline-flex items-center rounded-full bg-white/90 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide" style={{ color: DARK }}>
+                {car.bodyType.name}
+              </span>
+            )}
+          </div>
 
           <WishlistButton size="md" />
         </div>
@@ -194,36 +100,38 @@ const Card = ({ car }: { car: EVCar }) => {
         <div className="flex items-start justify-between gap-2">
           <div>
             <p className="text-[10.5px] font-semibold uppercase tracking-[0.08em]" style={{ color: MUTED }}>
-              {car.brand}
+              {car.brand.name}
             </p>
             <h3 className="text-[17px] font-bold leading-tight" style={{ color: DARK }}>
               {car.name}
             </h3>
           </div>
-          <div className="flex shrink-0 items-center gap-1 pt-0.5">
-            <StarIcon filled className="size-3 text-amber-400" />
-            <span className="text-[12.5px] font-bold" style={{ color: DARK }}>
-              {car.rating}
-            </span>
-          </div>
+          {car.ratingAvg && (
+            <div className="flex shrink-0 items-center gap-1 pt-0.5">
+              <StarIcon filled className="size-3 text-amber-400" />
+              <span className="text-[12.5px] font-bold" style={{ color: DARK }}>
+                {car.ratingAvg}
+              </span>
+            </div>
+          )}
         </div>
 
         <div className="grid grid-cols-2 gap-2">
-          <MiniSpec icon={<BatteryIcon />} value={car.battery} label="Battery" />
-          <MiniSpec icon={<ClockIcon className="size-4" />} value={car.chargeTime.replace("0–80% in ", "")} label="0–80% Charge" />
-          <MiniSpec icon={<GaugeIcon className="size-4" />} value={car.topSpeed} label="Top Speed" />
-          <MiniSpec icon={<BoltIcon className="size-3.5" />} value={`₹${car.price}L`} label="Starting Price" />
+          <MiniSpec icon={<BatteryIcon className="size-4" />} value={car.specs?.batteryCapacity ? `${car.specs.batteryCapacity} kWh` : "-"} label="Battery" />
+          <MiniSpec icon={<ClockIcon className="size-4" />} value={car.specs?.chargeTime ?? "-"} label="Charging" />
+          <MiniSpec icon={<GaugeIcon className="size-4" />} value={car.specs?.topSpeedKmph ? `${car.specs.topSpeedKmph} km/h` : "-"} label="Top Speed" />
+          <MiniSpec icon={<BoltIcon className="size-3.5" />} value={formatSinglePrice(car.priceMin)} label="Starting Price" />
         </div>
       </div>
 
       <div className="mt-auto flex items-center gap-2 px-4 pb-4 pt-3.5">
-        <button
-          type="button"
+        <a
+          href={`/new-cars/${car.slug}`}
           className="flex h-11 flex-1 items-center justify-center rounded-xl px-3 text-[12.5px] font-bold"
           style={{ border: `1px solid ${BORDER}`, color: DARK }}
         >
           View Details
-        </button>
+        </a>
         <button
           type="button"
           className="flex h-11 flex-1 items-center justify-center gap-1.5 whitespace-nowrap rounded-xl px-3 text-[12.5px] font-bold transition-colors hover:bg-orange-50"
@@ -236,8 +144,11 @@ const Card = ({ car }: { car: EVCar }) => {
   );
 };
 
-export default function ElectricCars() {
+export default function ElectricCars({ cars }: { cars: HomeCar[] }) {
   const { trackRef, canScrollLeft, canScrollRight, updateArrows, scrollBy } = useScrollRail<HTMLDivElement>();
+  const getBadge = useSmartBadge(cars);
+
+  if (cars.length === 0) return null;
 
   return (
     <section className="py-14 sm:py-16" style={{ background: "#fff" }}>
@@ -249,7 +160,7 @@ export default function ElectricCars() {
           eyebrow="Zero Emissions"
           title="Electric cars, ranked by range"
           subtitle="Real-world tested range, battery, and charging specs — updated today so you can compare with confidence."
-          href="#"
+          href="/electric-cars"
           linkLabel="View all EVs"
           after={
             <ScrollArrows
@@ -266,8 +177,8 @@ export default function ElectricCars() {
           onScroll={updateArrows}
           className="flex snap-x snap-mandatory gap-5 overflow-x-auto pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
         >
-          {CARS.map((car) => (
-            <Card key={car.name} car={car} />
+          {cars.map((car) => (
+            <Card key={car.id} car={car} badge={getBadge(car)} />
           ))}
         </div>
       </div>

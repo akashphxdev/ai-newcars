@@ -1,29 +1,21 @@
 "use client";
+import Image from "next/image";
 import SectionHeader from "@/components/common/SectionHeader";
 import ScrollArrows from "@/components/common/ScrollArrows";
 import { useScrollRail } from "@/components/common/useScrollRail";
-
-type Brand = {
-  name: string;
-  logo: string;
-};
-
-const BRANDS: Brand[] = [
-  { name: "Audi", logo: "/logo/audi.jfif" },
-  { name: "BMW", logo: "/logo/bmw.png" },
-  { name: "Kia", logo: "/logo/kia.png" },
-  { name: "Lamborghini", logo: "/logo/lamborghini.jfif" },
-  { name: "Mercedes", logo: "/logo/merceds.jfif" },
-  { name: "Mustang", logo: "/logo/mustang.png" },
-  { name: "Toyota", logo: "/logo/toyoto.jfif" },
-];
+import type { Brand } from "@/features/brands/brand.types";
 
 const DARK = "#111827";
+const FALLBACK_LOGO =
+  "data:image/svg+xml;charset=UTF-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='96' height='96' viewBox='0 0 96 96'%3E%3Crect width='96' height='96' rx='16' fill='%23e5e7eb'/%3E%3C/svg%3E";
 
 const BrandCard = ({ brand }: { brand: Brand }) => (
-  <a href="#" className="flex cursor-pointer flex-col items-center gap-2 p-2 text-center sm:gap-3 sm:p-4">
-    <div className="flex size-14 items-center justify-center rounded-2xl p-2 sm:size-20 sm:p-3 md:size-24">
-      <img src={brand.logo} alt={brand.name} className="size-full object-contain" />
+  <a
+    href={`/brands/${brand.slug}`}
+    className="flex cursor-pointer flex-col items-center gap-2 p-2 text-center sm:gap-3 sm:p-4"
+  >
+    <div className="relative flex size-14 items-center justify-center rounded-2xl p-2 sm:size-20 sm:p-3 md:size-24">
+      <Image src={brand.logoUrl ?? FALLBACK_LOGO} alt={brand.name} fill sizes="96px" className="object-contain" />
     </div>
     <h3 className="text-[13px] font-bold" style={{ color: DARK }}>
       {brand.name}
@@ -31,8 +23,10 @@ const BrandCard = ({ brand }: { brand: Brand }) => (
   </a>
 );
 
-export default function PopularBrands() {
+export default function PopularBrands({ brands }: { brands: Brand[] }) {
   const { trackRef, canScrollLeft, canScrollRight, updateArrows, scrollBy } = useScrollRail<HTMLDivElement>();
+
+  if (brands.length === 0) return null;
 
   return (
     <section style={{ background: "#fff" }} className="py-12 sm:py-16">
@@ -40,8 +34,8 @@ export default function PopularBrands() {
         <SectionHeader
           eyebrow="Browse Manufacturers"
           title="Popular brands"
-          subtitle={`Explore top manufacturers across ${BRANDS.length} brands. Find your perfect car today.`}
-          href="#"
+          subtitle={`Explore top manufacturers across ${brands.length} brands. Find your perfect car today.`}
+          href="/brands"
           linkLabel="View all brands"
           after={
             <ScrollArrows
@@ -62,8 +56,8 @@ export default function PopularBrands() {
           onScroll={updateArrows}
           className="scrollbar-none grid grid-flow-col auto-cols-[110px] gap-1 overflow-x-auto pb-2 sm:auto-cols-[171px] sm:gap-2"
         >
-          {BRANDS.map((brand) => (
-            <BrandCard key={brand.name} brand={brand} />
+          {brands.map((brand) => (
+            <BrandCard key={brand.id} brand={brand} />
           ))}
         </div>
       </div>

@@ -13,6 +13,12 @@ export const ChevronIcon = ({ className = "size-3.5", dir = "right" }: IconProps
   </svg>
 );
 
+export const ChevronDownIcon = ({ className = "size-4" }: IconProps) => (
+  <svg className={className} viewBox="0 0 24 24" fill="none">
+    <path d="m6 9 6 6 6-6" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+  </svg>
+);
+
 export const HeartIcon = ({ className = "size-3.5", filled = false }: IconProps & { filled?: boolean }) => (
   <svg className={className} viewBox="0 0 24 24" fill={filled ? "currentColor" : "none"}>
     <path
@@ -78,8 +84,28 @@ export const ClockIcon = ({ className = "size-3" }: IconProps) => (
   </svg>
 );
 
+export const BatteryIcon = ({ className = "size-3" }: IconProps) => (
+  <svg className={className} viewBox="0 0 24 24" fill="none">
+    <rect x="2.5" y="7" width="16" height="10" rx="2" stroke="currentColor" strokeWidth="1.6" />
+    <path d="M20.5 10v4" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+    <path d="M6 10.5h4l-1.5 3H10l-2.5 3 .8-2.5H6.8L6 10.5Z" fill="currentColor" />
+  </svg>
+);
+
 export const CloseIcon = ({ className = "size-5" }: IconProps) => (
   <svg className={className} viewBox="0 0 24 24" fill="none">
     <path d="M6 6l12 12M18 6 6 18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+  </svg>
+);
+
+export const CheckIcon = ({ className = "size-4" }: IconProps) => (
+  <svg className={className} viewBox="0 0 24 24" fill="none">
+    <path d="M5 13l4 4L19 7" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" />
+  </svg>
+);
+
+export const MinusIcon = ({ className = "size-4" }: IconProps) => (
+  <svg className={className} viewBox="0 0 24 24" fill="none">
+    <path d="M5 12h14" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" />
   </svg>
 );

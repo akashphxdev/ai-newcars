@@ -16,3 +16,8 @@ export interface PublicBannerRecord {
   ctaLink: string;
   displayOrder: number;
 }
+
+export interface BannerClickResult {
+  id: number;
+  clickCount: number;
+}

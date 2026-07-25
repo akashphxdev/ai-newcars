@@ -8,7 +8,11 @@ import type { PublicHomeCarRecord } from './car.types';
 // Only one variant per car is needed for a homepage card — top-seller
 // first, else cheapest — so it's picked in the query itself (take: 1)
 // rather than fetching every variant and filtering in JS.
-const HOME_CAR_SELECT = {
+//
+// Exported (along with shapeHomeCarModel below) so modules/public/cars'
+// paginated "view all" listing can reuse the exact same select + shaping
+// instead of re-deriving it.
+export const HOME_CAR_SELECT = {
   id: true,
   name: true,
   slug: true,
@@ -53,9 +57,9 @@ const HOME_CAR_SELECT = {
   },
 } satisfies Prisma.CarModelSelect;
 
-type RawHomeCarModel = Prisma.CarModelGetPayload<{ select: typeof HOME_CAR_SELECT }>;
+export type RawHomeCarModel = Prisma.CarModelGetPayload<{ select: typeof HOME_CAR_SELECT }>;
 
-function shapeHomeCarModel(car: RawHomeCarModel): PublicHomeCarRecord {
+export function shapeHomeCarModel(car: RawHomeCarModel): PublicHomeCarRecord {
   const variant = car.variants[0];
   const ice = variant?.icePowertrains[0];
   const electric = variant?.electricPowertrains[0];
@@ -92,31 +96,35 @@ function shapeHomeCarModel(car: RawHomeCarModel): PublicHomeCarRecord {
 // "popular" has no dedicated ranking field on CarModel yet — ratingAvg is
 // used as a proxy (nulls sorted last so unrated models don't crowd out
 // rated ones). Revisit once real search/view analytics feed ranking.
-export async function listHomeCars(query: HomeCarListQueryParsed): Promise<PublicHomeCarRecord[]> {
-  const { type, limit } = query;
-
-  let where: Prisma.CarModelWhereInput;
-  let orderBy: Prisma.CarModelOrderByWithRelationInput | Prisma.CarModelOrderByWithRelationInput[];
-
+//
+// Exported so modules/public/cars' paginated "view all" listing filters
+// by the same rules as the homepage rails instead of re-deriving them.
+export function buildHomeCarWhereAndOrderBy(type: HomeCarListQueryParsed['type']): {
+  where: Prisma.CarModelWhereInput;
+  orderBy: Prisma.CarModelOrderByWithRelationInput | Prisma.CarModelOrderByWithRelationInput[];
+} {
   switch (type) {
     case 'upcoming':
-      where = { launchStatus: 'upcoming' };
-      orderBy = { expectedLaunchDate: 'asc' };
-      break;
+      return { where: { launchStatus: 'upcoming' }, orderBy: { expectedLaunchDate: 'asc' } };
     case 'electric':
-      where = { launchStatus: 'available', variants: { some: { electricPowertrains: { some: {} } } } };
-      orderBy = { createdAt: 'desc' };
-      break;
+      return {
+        where: { launchStatus: 'available', variants: { some: { electricPowertrains: { some: {} } } } },
+        orderBy: { createdAt: 'desc' },
+      };
     case 'popular':
-      where = { launchStatus: 'available' };
-      orderBy = [{ ratingAvg: { sort: 'desc', nulls: 'last' } }, { createdAt: 'desc' }];
-      break;
+      return {
+        where: { launchStatus: 'available' },
+        orderBy: [{ ratingAvg: { sort: 'desc', nulls: 'last' } }, { createdAt: 'desc' }],
+      };
     case 'latest':
     default:
-      where = { launchStatus: 'available' };
-      orderBy = { createdAt: 'desc' };
-      break;
+      return { where: { launchStatus: 'available' }, orderBy: { createdAt: 'desc' } };
   }
+}
+
+export async function listHomeCars(query: HomeCarListQueryParsed): Promise<PublicHomeCarRecord[]> {
+  const { type, limit } = query;
+  const { where, orderBy } = buildHomeCarWhereAndOrderBy(type);
 
   const cars = await prisma.carModel.findMany({
     where,

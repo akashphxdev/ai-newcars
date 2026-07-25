@@ -12,7 +12,6 @@ export const cityListQuerySchema = z.object({
   page: z.coerce.number().int().min(1).default(1),
   limit: z.coerce.number().int().min(1).max(100).default(20),
   search: z.string().trim().min(1).optional(),
-  districtId: z.coerce.number().int().positive().optional(),
   stateId: z.coerce.number().int().positive().optional(),
   isMetro: z.coerce.boolean().optional(),
   sortBy: z.enum(['name', 'id']).default('name'),
@@ -24,7 +23,7 @@ export const cityIdParamSchema = z.object({
 });
 
 export const createCitySchema = z.object({
-  districtId: z.coerce.number().int().positive('districtId is required'),
+  stateId: z.coerce.number().int().positive('stateId is required'),
   name: z.string().trim().min(2, 'Name must be at least 2 characters').max(100),
   // Required — the frontend always generates/edits this and sends the
   // literal value; the backend no longer auto-generates slugs.
@@ -42,7 +41,7 @@ export const createCitySchema = z.object({
 
 export const updateCitySchema = z
   .object({
-    districtId: z.coerce.number().int().positive().optional(),
+    stateId: z.coerce.number().int().positive().optional(),
     name: z.string().trim().min(2).max(100).optional(),
     slug: z.string().trim().toLowerCase().min(2, 'Slug is required').max(100).regex(slugRegex),
     isMetro: booleanish.optional(),

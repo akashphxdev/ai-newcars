@@ -1,7 +1,7 @@
 // src/modules/public/home/city/city.types.ts
 //
-// Public-safe shape — no district/state/country chain, only what the
-// website's TrustedUsedCars section needs.
+// Public-safe shape — no state/country chain, only what the website's
+// TrustedUsedCars section needs.
 
 export interface PublicHomeCityRecord {
   id: number;

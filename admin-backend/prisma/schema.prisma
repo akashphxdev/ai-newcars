@@ -34,36 +34,29 @@ model Country {
 }
 
 model State {
-  id        Int        @id @default(autoincrement())
-  countryId Int        @map("country_id")
-  name      String     @db.VarChar(100)
-  code      String?    @db.VarChar(10)
-  country   Country    @relation(fields: [countryId], references: [id])
-  districts District[]
+  id        Int      @id @default(autoincrement())
+  countryId Int      @map("country_id")
+  name      String   @db.VarChar(100)
+  code      String?  @db.VarChar(10)
+  country   Country  @relation(fields: [countryId], references: [id])
+  cities    City[]
 
   @@map("states")
 }
 
-model District {
-  id      Int    @id @default(autoincrement())
-  stateId Int    @map("state_id")
-  name    String @db.VarChar(100)
-  state   State  @relation(fields: [stateId], references: [id])
-  cities  City[]
-
-  @@map("districts")
-}
-
+// District removed — City now links directly to State (was
+// State -> District -> City, District has been dropped from the
+// hierarchy entirely per 2026-07-24 decision).
 model City {
   id                Int      @id @default(autoincrement())
-  districtId        Int      @map("district_id")
+  stateId           Int      @map("state_id")
   name              String   @db.VarChar(100)
   slug              String   @unique @db.VarChar(100)
   isMetro           Boolean  @default(false) @map("is_metro")
   isTopCity         Boolean  @default(false) @map("is_top_city")
   isSellCarEnabled  Boolean  @default(false) @map("is_sell_car_enabled")
   logoUrl           String?  @map("logo_url") @db.VarChar(255)
-  district          District @relation(fields: [districtId], references: [id])
+  state             State    @relation(fields: [stateId], references: [id])
 
   users           User[]
   usedCarListings UsedCarListing[]

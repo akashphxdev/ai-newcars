@@ -28,7 +28,7 @@ const NAV_ITEMS: NavItem[] = [
   },
   {
     label: "Compare",
-    href: "#",
+    href: "/compare-cars",
   },
   {
     label: "Tools",
@@ -182,6 +182,8 @@ export default function Header() {
     document.body.style.overflow = "hidden";
     return () => { document.body.style.overflow = ""; };
   }, [mobileOpen]);
+
+  if (pathname === "/maintenance") return null;
 
   return (
     <header className="sticky top-0 z-50 w-full" style={{ background: SURFACE, borderBottom: `1px solid ${BORDER}` }}>

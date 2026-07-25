@@ -90,7 +90,7 @@ export const stateApi = api.injectEndpoints({
 
     // Dropdown-only source — every matching state in one shot, no
     // pagination. Use this (not getStates) wherever State is just a
-    // <select>: District/City forms & filters.
+    // <select>: City forms & filters.
     getStateOptions: builder.query<StateOption[], ListStateOptionsParams | void>({
       query: (params) => ({ url: "/locations/states/options", method: "GET", params: params ?? {} }),
       transformResponse: (res: StateOptionsRawResponse) => res.data,

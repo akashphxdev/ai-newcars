@@ -203,7 +203,7 @@ export default function AllCountries() {
         <div>
           <h1 className="text-[18px] font-black text-[#1c1a17]">Countries</h1>
           <p className="text-[12px] text-[#a39e96] mt-0.5">
-            Manage countries, their currency, and units used across states, districts, and cities.
+            Manage countries, their currency, and units used across states and cities.
           </p>
         </div>
         <button

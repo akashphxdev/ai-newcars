@@ -1,71 +1,25 @@
 "use client";
+import Image from "next/image";
 import SectionHeader from "@/components/common/SectionHeader";
 import ScrollArrows from "@/components/common/ScrollArrows";
 import { useScrollRail } from "@/components/common/useScrollRail";
-
-type City = {
-  name: string;
-  icon: "gate" | "dome" | "tower" | "fort" | "beach" | "skyline" | "arch" | "minar" | "temple";
-};
+import type { HomeCity } from "@/features/cities/city.types";
 
 const SURFACE = "#f4f5f9";
 const BORDER = "#e5e7eb";
+// No per-city icon field on the City table — every city falls back to this
+// generic building icon unless it has its own logoUrl.
+const FALLBACK_ICON = "https://api.iconify.design/mdi:city.svg";
 
-const CITIES: City[] = [
-  { name: "Ahmedabad", icon: "tower" },
-  { name: "Bangalore", icon: "dome" },
-  { name: "Chennai", icon: "temple" },
-  { name: "Delhi NCR", icon: "minar" },
-  { name: "Gurgaon", icon: "skyline" },
-  { name: "Hyderabad", icon: "fort" },
-  { name: "Jaipur", icon: "tower" },
-  { name: "Kolkata", icon: "beach" },
-  { name: "Mumbai", icon: "gate" },
-  { name: "New Delhi", icon: "arch" },
-  
-];
-
-// Verified, guaranteed-existing Iconify (mdi set) icon names
-const ICON_MAP: Record<City["icon"], string> = {
-  gate: "mdi:domain",
-  dome: "mdi:mosque",
-  tower: "mdi:office-building",
-  fort: "mdi:castle",
-  beach: "mdi:beach",
-  skyline: "mdi:city",
-  arch: "mdi:bank",
-  minar: "mdi:office-building-outline",
-  temple: "mdi:temple-hindu",
-};
-
-const CityIcon = ({ type }: { type: City["icon"] }) => {
-  const iconName = ICON_MAP[type];
-  const src = `https://api.iconify.design/${iconName}.svg`;
-
-  return (
-    <img
-      src={src}
-      alt={type}
-      width={36}
-      height={36}
-      loading="lazy"
-      className="size-7 sm:size-9"
-    />
-  );
-};
-
-const CityCard = ({ city }: { city: City }) => (
+const CityCard = ({ city }: { city: HomeCity }) => (
   <a
-    href="#"
+    href={`/used-cars/${city.slug}`}
     className="relative flex min-h-[130px] flex-col items-center justify-center gap-2 rounded-2xl bg-white p-3 text-center sm:min-h-[160px] sm:gap-3 sm:p-5"
     style={{ border: "1px solid " + BORDER, boxShadow: "0 1px 2px rgba(17,24,39,0.04)" }}
   >
-    <CityIcon type={city.icon} />
+    <Image src={city.logoUrl ?? FALLBACK_ICON} alt={city.name} width={56} height={56} className="size-10 sm:size-14" />
 
-    <div>
-      <p className="text-[10px] font-semibold text-muted">Used cars in</p>
-      <p className="text-sm font-bold text-ink">{city.name}</p>
-    </div>
+    <p className="text-sm font-bold text-ink">{city.name}</p>
   </a>
 );
 
@@ -74,8 +28,10 @@ const CityCard = ({ city }: { city: City }) => (
 // scrollable unit instead of two separately-scrolling rows.
 const ROWS = 2;
 
-export default function TrustedUsedCars() {
+export default function TrustedUsedCars({ cities }: { cities: HomeCity[] }) {
   const { trackRef, canScrollLeft, canScrollRight, updateArrows } = useScrollRail<HTMLDivElement>();
+
+  if (cities.length === 0) return null;
 
   const scrollByColumn = (dir: "left" | "right") => {
     const el = trackRef.current;
@@ -112,10 +68,10 @@ export default function TrustedUsedCars() {
         <div
           ref={trackRef}
           onScroll={updateArrows}
-          className="scrollbar-none grid grid-flow-col grid-rows-2 auto-cols-[130px] gap-2 overflow-x-auto pb-2 sm:auto-cols-[240px] sm:gap-3"
+          className="scrollbar-none grid grid-flow-col grid-rows-2 auto-cols-[130px] gap-2 overflow-x-auto pb-2 sm:auto-cols-[236px] sm:gap-4"
         >
-          {CITIES.map((city) => (
-            <CityCard key={city.name} city={city} />
+          {cities.map((city) => (
+            <CityCard key={city.id} city={city} />
           ))}
         </div>
       </div>

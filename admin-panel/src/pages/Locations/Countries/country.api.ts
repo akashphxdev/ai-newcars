@@ -110,7 +110,7 @@ export const countryApi = api.injectEndpoints({
 
     // Dropdown-only source — every country in one shot, no pagination.
     // Use this (not getCountries) wherever Country is just a <select>:
-    // State/District/City/Brand forms & filters.
+    // State/City/Brand forms & filters.
     getCountryOptions: builder.query<CountryOption[], ListCountryOptionsParams | void>({
       query: (params) => ({ url: "/locations/countries/options", method: "GET", params: params ?? {} }),
       transformResponse: (res: CountryOptionsRawResponse) => res.data,

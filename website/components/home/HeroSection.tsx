@@ -1,57 +1,8 @@
 "use client";
 import { useState, useEffect, useRef } from "react";
-
-const heroSlides = [
-  // {
-  //   type: "video",
-  //   src: "/video/herovideo.mp4",
-  //   headline: "YOUR NEXT DRIVE\nSTARTS HERE.",
-  //   model: "CARS_BEST_SEEKER",
-  //   sub: "Exclusive deep-dive previews, performance analyses, and bespoke early access. Elevate your drive.",
-  // },
-  {
-    type: "image",
-    src: "https://s7ap1.scene7.com/is/image/tatamotors/new-punch-inner-banner-new?$B-1920-667-D$&fit=crop&fmt=webp",
-    headline: "DISCOVER YOUR PRIME,\nEXPERIENTIAL DRIVE.",
-    model: "AETHEL_EV S1.",
-    sub: "Exclusive deep-dive previews, performance analyses, and bespoke early access. Elevate your drive.",
-  },
-  // {
-  //   type: "image",
-  //   src: "https://www.hyundai.com/content/dam/hyundai/in/en/images/home/banner/exter-home-newpc-banner.jpg",
-  //   headline: "POWER MEETS\nELEGANCE.",
-  //   model: "NOVA_GT PRO.",
-  //   sub: "Zero-emission performance redefined. Book your exclusive test drive today in Jaipur.",
-  // },
-  {
-    type: "image",
-    src: "https://s7ap1.scene7.com/is/image/tatamotors/desktop-tiago-new?$BA-1920-925-D$&fit=crop&fmt=avif-alpha",
-    headline: "THE FUTURE\nARRIVES NOW.",
-    model: "SOLARIS X7.",
-    sub: "Autonomous-ready, AI-integrated, and crafted for tomorrow's roads. Experience it first.",
-  },
-  // {
-  //   type: "image",
-  //   src: "https://www.hyundai.com/content/dam/hyundai/in/en/data/find-a-car/Creta/Highlights/home/cretakingknightinnerkv-pc.jpg",
-  //   headline: "BUILT FOR THE\nOPEN ROAD.",
-  //   model: "TERRAIN_X OFFROAD.",
-  //   sub: "All-terrain capability meets refined comfort. Engineered for every journey, on or off the map.",
-  // },
-  {
-    type: "image",
-    src: "https://images.unsplash.com/photo-1555215695-3004980ad54e?q=80&w=1920&auto=format&fit=crop",
-    headline: "SPEED HAS A\nNEW SIGNATURE.",
-    model: "VELOCE_R TURBO.",
-    sub: "Track-tuned performance with everyday drivability. Feel every horsepower the moment you press start.",
-  },
-  {
-    type: "image",
-    src: "https://www.kia.com/content/dam/kia2/in/en/images/our-vehicles/syros_ev/main_d.png",
-    headline: "LUXURY,\nREIMAGINED.",
-    model: "AURELIA GRAND.",
-    sub: "Handcrafted interiors, whisper-quiet cabins, and effortless power. This is what arriving feels like.",
-  },
-];
+import Image from "next/image";
+import type { Banner } from "@/features/banners/banner.types";
+import { recordBannerClick } from "@/features/banners/banner.api";
 
 const budgetOptions = [
   { value: "", label: "Select Budget" },
@@ -77,7 +28,7 @@ const ORANGE = "#f2650f";
 const ORANGE_HOVER = "#d9560a";
 const DARK = "#111827";
 
-export default function HeroSection() {
+export default function HeroSection({ banners }: { banners: Banner[] }) {
   const [current, setCurrent] = useState(0);
   const [fade, setFade] = useState(true);
   const [budget, setBudget] = useState("");
@@ -87,36 +38,38 @@ export default function HeroSection() {
   const videoRef = useRef<HTMLVideoElement>(null);
   const timer = useRef<ReturnType<typeof setInterval> | undefined>(undefined);
 
-  const slide = heroSlides[current];
+  const slide = banners[current];
 
   const advance = () => {
     clearInterval(timer.current);
     setFade(false);
     setTimeout(() => {
-      setCurrent((p) => (p + 1) % heroSlides.length);
+      setCurrent((p) => (p + 1) % banners.length);
       setFade(true);
     }, 350);
   };
 
   const startTimer = (idx: number) => {
     clearInterval(timer.current);
-    if (heroSlides[idx].type === "image") {
+    if (banners[idx]?.mediaType !== 2) {
       timer.current = setInterval(advance, 4500);
     }
   };
 
   useEffect(() => {
+    if (banners.length === 0) return;
     startTimer(0);
     return () => clearInterval(timer.current);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [banners.length]);
 
   useEffect(() => {
-    if (slide.type === "video" && videoRef.current) {
+    if (banners.length === 0) return;
+    if (slide.mediaType === 2 && videoRef.current) {
       videoRef.current.currentTime = 0;
       videoRef.current.play().catch(() => {});
     }
-    if (slide.type === "image") {
+    if (slide.mediaType !== 2) {
       startTimer(current);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -135,34 +88,41 @@ export default function HeroSection() {
     console.log("Search:", { budget, bodyType });
   };
 
+  if (banners.length === 0) return null;
+
   return (
     <section className="relative w-full overflow-hidden font-body" style={{ minHeight: 560, background: DARK }}>
       <div className="h-160 sm:h-[88vh]" />
       {/* BACKGROUNDS */}
       <div className={`absolute inset-0 z-0 transition-opacity duration-400 ${fade ? "opacity-100" : "opacity-0"}`}>
-        {heroSlides.map((s, i) =>
-          s.type === "video" ? (
+        {banners.map((b, i) =>
+          b.mediaType === 2 ? (
             <video
-              key={i}
+              key={b.id}
               ref={i === 0 ? videoRef : null}
               className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-400 ${
                 i === current ? "opacity-100" : "opacity-0 pointer-events-none"
               }`}
-              src={s.src}
+              src={b.videoUrl ?? undefined}
               autoPlay
               muted
               playsInline
               onEnded={advance}
             />
           ) : (
-            <img
-              key={i}
-              src={s.src}
-              alt={s.model}
-              className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-400 ${
-                i === current ? "opacity-100" : "opacity-0"
-              }`}
-            />
+            b.imageUrl && (
+              <Image
+                key={b.id}
+                src={b.imageUrl}
+                alt={b.heading}
+                fill
+                sizes="100vw"
+                priority={i === 0}
+                className={`object-cover transition-opacity duration-400 ${
+                  i === current ? "opacity-100" : "opacity-0"
+                }`}
+              />
+            )
           )
         )}
         <div className="absolute inset-0" style={{ background: `linear-gradient(90deg, ${DARK}eb, ${DARK}73, transparent)` }} />
@@ -177,23 +137,41 @@ export default function HeroSection() {
         />
       </div>
 
+      {/* CTA — pinned to the very top-right corner of the hero, above the
+          background but independent of the left column's layout. */}
+      {slide.ctaText && slide.ctaLink && (
+        <div className={`absolute right-4 top-4 z-20 sm:right-6 sm:top-6 transition-opacity duration-400 ${fade ? "opacity-100" : "opacity-0"}`}>
+          <a
+            href={slide.ctaLink}
+            onClick={() => {
+              // Fire-and-forget — never block navigation on this call.
+              recordBannerClick(slide.id).catch(() => {});
+            }}
+            className="inline-flex items-center gap-2 rounded-xl bg-transparent px-5 py-2.5 text-sm font-bold tracking-wide transition-colors hover:bg-orange-500/10"
+            style={{ border: `1.5px solid ${ORANGE}`, color: ORANGE }}
+          >
+            {slide.ctaText}
+          </a>
+        </div>
+      )}
+
       {/* LEFT COLUMN */}
       <div className="absolute left-0 top-0 h-full w-full md:w-[58%] flex flex-col justify-center z-10 px-4 sm:px-4 md:px-[max(1rem,calc((100vw-80rem)/2+1rem))]">
         <div className={`transition-opacity duration-400 mb-8 ${fade ? "opacity-100" : "opacity-0"}`}>
           <p className="text-[10px] tracking-[0.4em] uppercase mb-3 font-semibold" style={{ color: ORANGE }}>
-            AI Integrated Experience
+            {slide.tagLabel}
           </p>
           <h1 className="font-head text-3xl md:text-[2.4rem] lg:text-[2.8rem] font-bold text-white leading-tight mb-1 tracking-tight">
-            {slide.headline.split("\n").map((line, i) => (
+            {slide.heading.split("\n").map((line, i) => (
               <span key={i} className="block">
                 {line}
               </span>
             ))}
           </h1>
           <h2 className="font-head text-lg md:text-xl font-extrabold mb-3" style={{ color: ORANGE }}>
-            {slide.model}
+            {slide.highlightText}
           </h2>
-          <p className="text-[13px] text-[#c7ccd6] leading-relaxed mb-6 max-w-lg">{slide.sub}</p>
+          <p className="text-[13px] text-[#c7ccd6] leading-relaxed mb-6 max-w-lg">{slide.description}</p>
         </div>
 
         <div className="flex flex-col gap-3 w-full max-w-2xl">
@@ -301,9 +279,9 @@ export default function HeroSection() {
 
       {/* SLIDE DOTS */}
       <div className="absolute bottom-5 left-1/2 -translate-x-1/2 flex gap-2 z-20">
-        {heroSlides.map((_, i) => (
+        {banners.map((b, i) => (
           <button
-            key={i}
+            key={b.id}
             onClick={() => jumpTo(i)}
             className={`rounded-full transition-all duration-300 ${
               i === current ? "w-6 h-2" : "w-2 h-2 bg-white/30 hover:bg-white/60"

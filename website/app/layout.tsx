@@ -5,6 +5,7 @@ import { Inter, Plus_Jakarta_Sans } from "next/font/google";
 import "./globals.css";
 import Navbar from "@/components/common/Header";
 import Footer from "@/components/common/Footer";
+import DevLoadTimeBadge from "@/components/common/DevLoadTimeBadge";
 
 const inter = Inter({
   variable: "--font-body",
@@ -36,8 +37,15 @@ export default function RootLayout({
     >
       <body className="min-h-full flex flex-col">
         <Navbar />
-        {children}
+        {/* w-full is required here: body is a column flex container, and a
+            page's own top-level element (unless it happens to be wrapped in
+            something like the homepage's min-h-screen div) doesn't reliably
+            stretch to full width as a direct flex item — it was collapsing
+            to a much narrower auto/content-based width instead. This one
+            fix applies to every page, current and future. */}
+        <main className="w-full flex-1">{children}</main>
         <Footer />
+        <DevLoadTimeBadge />
       </body>
     </html>
   );
