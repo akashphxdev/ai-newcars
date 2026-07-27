@@ -1,6 +1,7 @@
 "use client";
 import { useState } from "react";
 import Image from "next/image";
+import Link from "next/link";
 import SectionHeader from "@/components/common/SectionHeader";
 import ScrollArrows from "@/components/common/ScrollArrows";
 import { useScrollRail } from "@/components/common/useScrollRail";
@@ -57,23 +58,27 @@ const Spec = ({ icon, value, label }: { icon: React.ReactNode; value: string; la
 );
 
 const Card = ({ car }: { car: HomeCar }) => {
+  const modelUrl = `/${car.brand.slug}-cars/${car.slug}`;
+
   return (
     <div
       className="flex h-full w-[290px] shrink-0 snap-start flex-col overflow-hidden rounded-2xl bg-white"
       style={{ border: `1px solid ${BORDER}` }}
     >
       <div className="relative aspect-[4/3] overflow-hidden" style={{ background: PAGE_BG }}>
-        <Image src={car.coverImageUrl ?? FALLBACK_IMG} alt={car.name} fill sizes="290px" className="object-cover" />
+        <Link href={modelUrl} className="absolute inset-0 z-0" aria-label={`View ${car.brand.name} ${car.name} details`}>
+          <Image src={car.coverImageUrl ?? FALLBACK_IMG} alt={car.name} fill sizes="290px" className="object-cover" />
+        </Link>
 
         {car.bodyType && (
-          <div className="absolute left-3 top-3">
+          <div className="absolute left-3 top-3 z-10">
             <span className="inline-flex items-center rounded-md bg-white px-2.5 py-1 text-[10.5px] font-bold uppercase tracking-wide" style={{ color: DARK }}>
               {car.bodyType.name}
             </span>
           </div>
         )}
 
-        <div className="absolute right-3 top-3">
+        <div className="absolute right-3 top-3 z-10">
           <WishlistButton size="md" />
         </div>
       </div>
@@ -110,20 +115,20 @@ const Card = ({ car }: { car: HomeCar }) => {
       </div>
 
       <div className="mt-auto flex items-center gap-2.5 px-4 pb-4 pt-3.5">
-        <a
-          href={`/new-cars/${car.slug}`}
+        <Link
+          href={modelUrl}
           className="flex-1 rounded-xl px-4 py-2.5 text-center text-[13px] font-bold"
           style={{ border: `1px solid ${BORDER}`, color: DARK }}
         >
           View Details
-        </a>
-        <button
-          type="button"
-          className="flex-1 whitespace-nowrap rounded-xl px-4 py-2.5 text-[13px] font-bold transition-colors hover:bg-orange-50"
+        </Link>
+        <Link
+          href={modelUrl}
+          className="flex-1 whitespace-nowrap rounded-xl px-4 py-2.5 text-center text-[13px] font-bold transition-colors hover:bg-orange-50"
           style={{ border: `1.5px solid ${ORANGE}`, color: ORANGE }}
         >
           Check Price
-        </button>
+        </Link>
       </div>
     </div>
   );

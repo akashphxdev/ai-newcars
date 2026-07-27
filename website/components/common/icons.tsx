@@ -109,3 +109,12 @@ export const MinusIcon = ({ className = "size-4" }: IconProps) => (
     <path d="M5 12h14" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" />
   </svg>
 );
+
+export const ShareIcon = ({ className = "size-4" }: IconProps) => (
+  <svg className={className} viewBox="0 0 24 24" fill="none">
+    <circle cx="18" cy="5" r="2.5" stroke="currentColor" strokeWidth="1.8" />
+    <circle cx="6" cy="12" r="2.5" stroke="currentColor" strokeWidth="1.8" />
+    <circle cx="18" cy="19" r="2.5" stroke="currentColor" strokeWidth="1.8" />
+    <path d="M8.2 10.7 15.8 6.3M8.2 13.3l7.6 4.4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+  </svg>
+);

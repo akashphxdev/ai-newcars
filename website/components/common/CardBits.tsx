@@ -22,7 +22,7 @@ export function WishlistButton({ size = "sm", dark = false }: { size?: "sm" | "m
         setSaved((s) => !s);
       }}
       aria-label="Save to wishlist"
-      className={`flex shrink-0 items-center justify-center rounded-full transition-colors ${sizing} ${
+      className={`flex shrink-0 cursor-pointer items-center justify-center rounded-full transition-colors ${sizing} ${
         saved ? "text-brand" : idle
       }`}
     >

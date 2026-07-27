@@ -61,6 +61,14 @@ body {
   color: var(--color-ink);
 }
 
+/* In-page anchor links (e.g. the model page's tabs) animate the scroll
+   instead of jumping instantly, so it's clear a navigation happened. */
+@media (prefers-reduced-motion: no-preference) {
+  html {
+    scroll-behavior: smooth;
+  }
+}
+
 @layer base {
   ::-webkit-scrollbar {
     @apply w-2 h-2;

@@ -22,7 +22,7 @@ export const HOME_CAR_SELECT = {
   priceMax: true,
   ratingAvg: true,
   coverImageUrl: true,
-  brand: { select: { id: true, name: true } },
+  brand: { select: { id: true, name: true, slug: true } },
   bodyType: { select: { id: true, name: true } },
   variants: {
     orderBy: [{ isTopSeller: 'desc' }, { price: 'asc' }],

@@ -21,7 +21,7 @@ export interface PublicHomeCarRecord {
   id: number;
   name: string;
   slug: string;
-  brand: { id: number; name: string };
+  brand: { id: number; name: string; slug: string };
   bodyType: { id: number; name: string } | null;
   launchStatus: string;
   expectedLaunchDate: string | null;

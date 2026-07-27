@@ -11,7 +11,7 @@ const FALLBACK_LOGO =
 
 const BrandCard = ({ brand }: { brand: Brand }) => (
   <a
-    href={`/brands/${brand.slug}`}
+    href={`/${brand.slug}-cars`}
     className="flex flex-col items-center gap-3 rounded-2xl bg-surface p-5 text-center transition-colors hover:border-brand"
     style={{ border: `1px solid ${BORDER}` }}
   >

@@ -44,6 +44,7 @@ export interface RandomPairsFilters {
   fuelType?: FuelFilter;
   minPrice?: number;
   maxPrice?: number;
+  brandSlug?: string;
 }
 
 export async function getRandomPairs(filters: RandomPairsFilters = {}): Promise<{ pairs: RandomComparisonPair[]; pagination: Pagination }> {
@@ -54,6 +55,7 @@ export async function getRandomPairs(filters: RandomPairsFilters = {}): Promise<
   if (filters.fuelType) params.set("fuelType", filters.fuelType);
   if (filters.minPrice != null) params.set("minPrice", String(filters.minPrice));
   if (filters.maxPrice != null) params.set("maxPrice", String(filters.maxPrice));
+  if (filters.brandSlug) params.set("brandSlug", filters.brandSlug);
 
   const { data, pagination } = await apiFetchPaginated<RandomComparisonPair>(`/compare/random-pairs?${params.toString()}`, {
     next: { revalidate: 180 },
@@ -63,4 +65,25 @@ export async function getRandomPairs(filters: RandomPairsFilters = {}): Promise<
     pairs: data.map((pair) => ({ carA: withResolvedImage(pair.carA), carB: withResolvedImage(pair.carB) })),
     pagination,
   };
+}
+
+// Cross-brand match-ups (this brand vs every other brand) — distinct
+// from getRandomPairs({ brandSlug }), which pairs cars WITHIN one brand.
+export async function getBrandCrossPairs(brandSlug: string, count = 5): Promise<RandomComparisonPair[]> {
+  const pairs = await apiFetch<RandomComparisonPair[]>(
+    `/compare/brand-cross-pairs?brandSlug=${encodeURIComponent(brandSlug)}&count=${count}`,
+    { next: { revalidate: 180 } },
+  );
+  return pairs.map((pair) => ({ carA: withResolvedImage(pair.carA), carB: withResolvedImage(pair.carB) }));
+}
+
+// Model page's "Comparison" section — this exact model vs `count` random
+// other models (always this car on one side, never two other cars paired
+// together).
+export async function getModelCrossPairs(brandSlug: string, modelSlug: string, count = 5): Promise<RandomComparisonPair[]> {
+  const pairs = await apiFetch<RandomComparisonPair[]>(
+    `/compare/model-cross-pairs?brandSlug=${encodeURIComponent(brandSlug)}&modelSlug=${encodeURIComponent(modelSlug)}&count=${count}`,
+    { next: { revalidate: 180 } },
+  );
+  return pairs.map((pair) => ({ carA: withResolvedImage(pair.carA), carB: withResolvedImage(pair.carB) }));
 }

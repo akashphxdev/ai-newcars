@@ -78,7 +78,6 @@ const NAV: NavGroup[] = [
         children: [
           { label: "All Users", href: "/users" },
           { label: "Notifications", href: "/users/notifications" },
-          { label: "OTP Verifications", href: "/users/otp" },
         ],
       },
       {

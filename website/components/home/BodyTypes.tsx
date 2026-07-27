@@ -12,7 +12,7 @@ const FALLBACK_ICON =
 
 const BodyTypeCard = ({ bodyType }: { bodyType: BodyType }) => (
   <a
-    href={`/new-cars/body-type/${bodyType.slug}`}
+    href={`/${bodyType.slug}-cars`}
     className="flex w-38.75 shrink-0 flex-col items-center gap-3 rounded-2xl bg-surface p-4 text-center transition-colors hover:border-brand"
     style={{ border: `1px solid ${BORDER}` }}
   >

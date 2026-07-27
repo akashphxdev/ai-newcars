@@ -1,8 +1,10 @@
 "use client";
 import { useState, useEffect, useRef } from "react";
+import { useRouter } from "next/navigation";
 import Image from "next/image";
 import type { Banner } from "@/features/banners/banner.types";
 import { recordBannerClick } from "@/features/banners/banner.api";
+import type { BodyType } from "@/features/bodyTypes/bodyType.types";
 
 const budgetOptions = [
   { value: "", label: "Select Budget" },
@@ -13,22 +15,21 @@ const budgetOptions = [
   { value: "a100", label: "Above Rs.1 Crore" },
 ];
 
-const bodyOptions = [
-  { value: "", label: "Select Body Type" },
-  { value: "sedan", label: "Sedan" },
-  { value: "suv", label: "SUV" },
-  { value: "hatchback", label: "Hatchback" },
-  { value: "coupe", label: "Coupe" },
-  { value: "mpv", label: "MPV" },
-  { value: "convertible", label: "Convertible" },
-  { value: "pickup", label: "Pickup Truck" },
-];
+// value -> { minPrice?, maxPrice? } in plain rupees, for the search redirect.
+const BUDGET_RANGES: Record<string, { minPrice?: number; maxPrice?: number }> = {
+  u10: { maxPrice: 1_000_000 },
+  "10-25": { minPrice: 1_000_000, maxPrice: 2_500_000 },
+  "25-50": { minPrice: 2_500_000, maxPrice: 5_000_000 },
+  "50-100": { minPrice: 5_000_000, maxPrice: 10_000_000 },
+  a100: { minPrice: 10_000_000 },
+};
 
 const ORANGE = "#f2650f";
 const ORANGE_HOVER = "#d9560a";
 const DARK = "#111827";
 
-export default function HeroSection({ banners }: { banners: Banner[] }) {
+export default function HeroSection({ banners, bodyTypes }: { banners: Banner[]; bodyTypes: BodyType[] }) {
+  const router = useRouter();
   const [current, setCurrent] = useState(0);
   const [fade, setFade] = useState(true);
   const [budget, setBudget] = useState("");
@@ -84,8 +85,21 @@ export default function HeroSection({ banners }: { banners: Banner[] }) {
     }, 300);
   };
 
+  // Used-car search isn't wired up yet — only "New Car" navigates for now.
   const handleSearch = () => {
-    console.log("Search:", { budget, bodyType });
+    if (carTab !== "new") return;
+
+    const range = BUDGET_RANGES[budget];
+    const params = new URLSearchParams();
+    if (range?.minPrice != null) params.set("minPrice", String(range.minPrice));
+    if (range?.maxPrice != null) params.set("maxPrice", String(range.maxPrice));
+    const qs = params.toString();
+
+    // A body type takes you straight to that type's own filtered page;
+    // without one, /new-cars (unscoped, brand+body-type+price filters)
+    // is the only page that can show "all cars under this budget".
+    const basePath = bodyType ? `/${bodyType}-cars` : "/new-cars";
+    router.push(qs ? `${basePath}?${qs}` : basePath);
   };
 
   if (banners.length === 0) return null;
@@ -253,9 +267,12 @@ export default function HeroSection({ banners }: { banners: Banner[] }) {
                   backgroundImage: "none",
                 }}
               >
-                {bodyOptions.map((o) => (
-                  <option key={o.value} value={o.value} style={{ background: DARK, color: "#fff" }}>
-                    {o.label}
+                <option value="" style={{ background: DARK, color: "#fff" }}>
+                  Select Body Type
+                </option>
+                {bodyTypes.map((bt) => (
+                  <option key={bt.id} value={bt.slug} style={{ background: DARK, color: "#fff" }}>
+                    {bt.name}
                   </option>
                 ))}
               </select>

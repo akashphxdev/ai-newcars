@@ -1,6 +1,7 @@
 "use client";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { isChromelessRoute } from "@/lib/routes";
 
 const ORANGE = "#f2650f";
 const DARK = "#111827";
@@ -176,7 +177,7 @@ const LEGAL_LINKS = [
 
 export default function Footer() {
   const pathname = usePathname();
-  if (pathname === "/maintenance") return null;
+  if (isChromelessRoute(pathname)) return null;
 
   return (
     <footer className="font-body" style={{ background: SURFACE, borderTop: `1px solid ${BORDER}` }}>

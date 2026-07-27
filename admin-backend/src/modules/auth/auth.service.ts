@@ -6,6 +6,8 @@ import { ApiError } from '@/core/errors/ApiError';
 import { signToken } from '@/core/middleware/auth';
 import { createLog } from '@/core/utils/createLog';
 import { sendMail } from '@/core/utils/mailer';
+import { generateOtp } from '@/core/utils/otp';
+import { maskEmail } from '@/core/utils/mask';
 import type { AdminLoginParsed } from './auth.validation';
 import type {
   AdminSafe,
@@ -17,23 +19,10 @@ import type {
 const OTP_EXPIRY_MINUTES = 5;
 const MAX_FAILED_ATTEMPTS = 5;
 
-function generateOtp(): string {
-  return Math.floor(100000 + Math.random() * 900000).toString();
-}
-
 function sanitizeAdmin(admin: { passwordHash: string | null; [key: string]: unknown }): AdminSafe {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const { passwordHash, ...safe } = admin;
   return safe as unknown as AdminSafe;
-}
-
-// e.g. "aakash.meena@gmail.com" -> "aa***na@gmail.com" — enough for an
-// admin to recognize their own inbox without showing the full address
-// on screen.
-function maskEmail(email: string): string {
-  const [local, domain] = email.split('@');
-  if (!domain || local.length <= 4) return `${local.slice(0, 1)}***@${domain ?? ''}`;
-  return `${local.slice(0, 2)}***${local.slice(-2)}@${domain}`;
 }
 
 function buildOtpEmailHtml(otpCode: string): string {

@@ -30,8 +30,10 @@ import { getRandomPairs } from "@/features/compare/compare.api";
 // the whole page waiting on the slowest fetch.
 
 async function HeroSectionData() {
-  const banners = await getBanners();
-  return <HeroSection banners={banners} />;
+  // getBodyTypes() is called again in BodyTypesData below — same URL/
+  // revalidate window, so Next.js dedupes it into one request, not two.
+  const [banners, bodyTypes] = await Promise.all([getBanners(), getBodyTypes()]);
+  return <HeroSection banners={banners} bodyTypes={bodyTypes} />;
 }
 
 async function PopularBrandsData() {

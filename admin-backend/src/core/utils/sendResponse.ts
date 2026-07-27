@@ -21,11 +21,13 @@ export function sendPaginated<T>(
   items: T[],
   pagination: { page: number; limit: number; total: number; totalPages: number },
   message = 'Fetched successfully',
+  extra?: Record<string, unknown>,
 ) {
   return res.status(200).json({
     success: true,
     message,
     data: items,
     pagination,
+    ...extra,
   });
 }

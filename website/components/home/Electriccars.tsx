@@ -1,5 +1,6 @@
 "use client";
 import Image from "next/image";
+import Link from "next/link";
 import SectionHeader from "@/components/common/SectionHeader";
 import ScrollArrows from "@/components/common/ScrollArrows";
 import { useScrollRail } from "@/components/common/useScrollRail";
@@ -59,15 +60,19 @@ function useSmartBadge(cars: HomeCar[]) {
 }
 
 const Card = ({ car, badge }: { car: HomeCar; badge: string | null }) => {
+  const modelUrl = `/${car.brand.slug}-cars/${car.slug}`;
+
   return (
     <div
       className="flex h-full w-[320px] shrink-0 snap-start flex-col overflow-hidden rounded-2xl bg-white transition-all duration-300 hover:-translate-y-1"
       style={{ border: `1px solid ${BORDER}`, boxShadow: "0 1px 2px rgba(15,23,42,0.04)" }}
     >
       <div className="relative aspect-[16/10] overflow-hidden" style={{ background: SURFACE }}>
-        <Image src={car.coverImageUrl ?? FALLBACK_IMG} alt={`${car.brand.name} ${car.name}`} fill sizes="320px" className="object-cover" />
+        <Link href={modelUrl} className="absolute inset-0 z-0" aria-label={`View ${car.brand.name} ${car.name} details`}>
+          <Image src={car.coverImageUrl ?? FALLBACK_IMG} alt={`${car.brand.name} ${car.name}`} fill sizes="320px" className="object-cover" />
+        </Link>
 
-        <div className="absolute inset-x-0 top-0 flex items-start justify-between p-3">
+        <div className="absolute inset-x-0 top-0 z-10 flex items-start justify-between p-3">
           <div className="flex flex-wrap items-center gap-1.5">
             <span
               className="inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-white"
@@ -88,7 +93,7 @@ const Card = ({ car, badge }: { car: HomeCar; badge: string | null }) => {
 
         {badge && (
           <span
-            className="absolute bottom-3 left-3 rounded-md bg-white px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide"
+            className="absolute bottom-3 left-3 z-10 rounded-md bg-white px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide"
             style={{ color: DARK }}
           >
             {badge}
@@ -125,26 +130,40 @@ const Card = ({ car, badge }: { car: HomeCar; badge: string | null }) => {
       </div>
 
       <div className="mt-auto flex items-center gap-2 px-4 pb-4 pt-3.5">
-        <a
-          href={`/new-cars/${car.slug}`}
+        <Link
+          href={modelUrl}
           className="flex h-11 flex-1 items-center justify-center rounded-xl px-3 text-[12.5px] font-bold"
           style={{ border: `1px solid ${BORDER}`, color: DARK }}
         >
           View Details
-        </a>
-        <button
-          type="button"
+        </Link>
+        <Link
+          href={modelUrl}
           className="flex h-11 flex-1 items-center justify-center gap-1.5 whitespace-nowrap rounded-xl px-3 text-[12.5px] font-bold transition-colors hover:bg-orange-50"
           style={{ border: `1.5px solid ${ORANGE}`, color: ORANGE }}
         >
           Check Offers
-        </button>
+        </Link>
       </div>
     </div>
   );
 };
 
-export default function ElectricCars({ cars }: { cars: HomeCar[] }) {
+export default function ElectricCars({
+  cars,
+  eyebrow = "Zero Emissions",
+  title = "Electric cars, ranked by range",
+  subtitle = "Real-world tested range, battery, and charging specs — updated today so you can compare with confidence.",
+  href = "/electric-cars",
+  linkLabel = "View all EVs",
+}: {
+  cars: HomeCar[];
+  eyebrow?: string;
+  title?: string;
+  subtitle?: string;
+  href?: string;
+  linkLabel?: string;
+}) {
   const { trackRef, canScrollLeft, canScrollRight, updateArrows, scrollBy } = useScrollRail<HTMLDivElement>();
   const getBadge = useSmartBadge(cars);
 
@@ -157,11 +176,11 @@ export default function ElectricCars({ cars }: { cars: HomeCar[] }) {
           icon={<BoltIcon className="size-3.5" />}
           tone="ev"
           divider
-          eyebrow="Zero Emissions"
-          title="Electric cars, ranked by range"
-          subtitle="Real-world tested range, battery, and charging specs — updated today so you can compare with confidence."
-          href="/electric-cars"
-          linkLabel="View all EVs"
+          eyebrow={eyebrow}
+          title={title}
+          subtitle={subtitle}
+          href={href}
+          linkLabel={linkLabel}
           after={
             <ScrollArrows
               canScrollLeft={canScrollLeft}

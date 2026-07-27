@@ -18,7 +18,7 @@ function stripLeadingDuplicateHeading(html: string): string {
 
 const RelatedCard = ({ item }: { item: HomeArticle }) => (
   <a
-    href={`/${item.category.slug}/${item.slug}`}
+    href={`/news/${item.category.slug}/${item.slug}`}
     className="group flex flex-col overflow-hidden rounded-2xl border border-border bg-page transition-colors hover:border-brand"
   >
     <div className="relative aspect-[16/10] w-full overflow-hidden bg-surface">
@@ -81,7 +81,7 @@ export default async function ArticlePage({ params }: Props) {
       <div className="mx-auto max-w-6xl px-4 py-10 sm:py-14">
         <div className="grid grid-cols-1 gap-10 lg:grid-cols-[1fr_340px]">
           <article className="min-w-0">
-            <a href={`/${article.category.slug}`} className="text-[11px] font-bold uppercase tracking-wide text-brand">
+            <a href={`/news/${article.category.slug}`} className="text-[11px] font-bold uppercase tracking-wide text-brand">
               {article.category.name}
             </a>
 

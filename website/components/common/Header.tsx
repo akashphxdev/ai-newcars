@@ -2,6 +2,8 @@
 import { useState, useEffect } from "react";
 import { usePathname } from "next/navigation";
 import Link from "next/link";
+import AuthModal from "./AuthModal";
+import { isChromelessRoute } from "@/lib/routes";
 
 type NavItem = {
   label: string;
@@ -13,10 +15,10 @@ const NAV_ITEMS: NavItem[] = [
   {
     label: "New Cars",
     dropdown: [
-      { label: "SUV", href: "#" },
-      { label: "Sedan", href: "#" },
-      { label: "Hatchback", href: "#" },
-      { label: "Electric", href: "#" },
+      { label: "SUV", href: "/suv-cars" },
+      { label: "Sedan", href: "/sedan-cars" },
+      { label: "Hatchback", href: "/hatchback-cars" },
+      { label: "Electric", href: "/electric-cars" },
     ],
   },
   {
@@ -64,108 +66,6 @@ const PinIcon = () => (
   </svg>
 );
 
-/* ---------------- Auth modal ---------------- */
-
-type AuthStep = "mobile" | "otp";
-
-const AuthModal = ({ onClose }: { onClose: () => void }) => {
-  const [step, setStep] = useState<AuthStep>("mobile");
-  const [mobile, setMobile] = useState("");
-  const [otp, setOtp] = useState("");
-
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => e.key === "Escape" && onClose();
-    document.addEventListener("keydown", onKey);
-    return () => document.removeEventListener("keydown", onKey);
-  }, [onClose]);
-
-  return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
-      onClick={onClose}
-      role="dialog"
-      aria-modal="true"
-    >
-      <div
-        className="w-full max-w-sm rounded-xl p-6"
-        style={{ background: SURFACE }}
-        onClick={(e) => e.stopPropagation()}
-      >
-        <div className="mb-5 flex items-center justify-between">
-          <h2 className="text-base font-bold" style={{ color: DARK }}>
-            Log in
-          </h2>
-          <button onClick={onClose} aria-label="Close" style={{ color: FAINT }}>
-            <svg className="size-5" viewBox="0 0 24 24" fill="none">
-              <path d="M6 6l12 12M18 6 6 18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-            </svg>
-          </button>
-        </div>
-
-        {step === "mobile" ? (
-          <div className="flex flex-col gap-3">
-            <div
-              className="flex items-center gap-2 rounded-lg px-3 py-2.5"
-              style={{ border: `1px solid ${BORDER}` }}
-            >
-              <span className="text-sm font-medium" style={{ color: MUTED }}>
-                +91
-              </span>
-              <input
-                type="tel"
-                inputMode="numeric"
-                maxLength={10}
-                value={mobile}
-                onChange={(e) => setMobile(e.target.value.replace(/\D/g, ""))}
-                placeholder="Mobile number"
-                autoFocus
-                className="flex-1 bg-transparent text-sm outline-none"
-                style={{ color: DARK }}
-              />
-            </div>
-            <button
-              onClick={() => setStep("otp")}
-              disabled={mobile.length !== 10}
-              className="rounded-lg py-2.5 text-sm font-semibold text-white transition-opacity disabled:opacity-40"
-              style={{ background: ORANGE }}
-            >
-              Send OTP
-            </button>
-          </div>
-        ) : (
-          <div className="flex flex-col gap-3">
-            <p className="text-xs" style={{ color: MUTED }}>
-              OTP sent to +91 {mobile}{" "}
-              <button onClick={() => setStep("mobile")} className="font-semibold" style={{ color: ORANGE }}>
-                Change
-              </button>
-            </p>
-            <input
-              type="text"
-              inputMode="numeric"
-              maxLength={6}
-              value={otp}
-              onChange={(e) => setOtp(e.target.value.replace(/\D/g, ""))}
-              placeholder="Enter OTP"
-              autoFocus
-              className="w-full rounded-lg px-3 py-2.5 text-center text-sm tracking-[0.3em] outline-none"
-              style={{ border: `1px solid ${BORDER}`, color: DARK }}
-            />
-            <button
-              onClick={onClose}
-              disabled={otp.length !== 6}
-              className="rounded-lg py-2.5 text-sm font-semibold text-white transition-opacity disabled:opacity-40"
-              style={{ background: ORANGE }}
-            >
-              Verify
-            </button>
-          </div>
-        )}
-      </div>
-    </div>
-  );
-};
-
 /* ---------------- Header ---------------- */
 
 export default function Header() {
@@ -183,7 +83,7 @@ export default function Header() {
     return () => { document.body.style.overflow = ""; };
   }, [mobileOpen]);
 
-  if (pathname === "/maintenance") return null;
+  if (isChromelessRoute(pathname)) return null;
 
   return (
     <header className="sticky top-0 z-50 w-full" style={{ background: SURFACE, borderBottom: `1px solid ${BORDER}` }}>

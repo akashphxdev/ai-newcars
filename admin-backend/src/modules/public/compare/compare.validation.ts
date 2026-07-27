@@ -40,5 +40,22 @@ export const randomPairsQuerySchema = z.object({
   fuelType: z.enum(FUEL_FILTER_VALUES).optional(),
   minPrice: z.coerce.number().min(0).optional(),
   maxPrice: z.coerce.number().min(0).optional(),
+  // Scopes BOTH cars in every pair to this brand — e.g. the brand-cars
+  // page's "Compare {Brand} Cars" section, which only makes sense as
+  // same-brand match-ups (Tata vs Tata), not Tata vs anything.
+  brandSlug: z.string().trim().optional(),
 });
 export type RandomPairsQueryParsed = z.infer<typeof randomPairsQuerySchema>;
+
+export const brandCrossPairsQuerySchema = z.object({
+  brandSlug: z.string().trim().min(1),
+  count: z.coerce.number().int().min(1).max(12).default(5),
+});
+export type BrandCrossPairsQueryParsed = z.infer<typeof brandCrossPairsQuerySchema>;
+
+export const modelCrossPairsQuerySchema = z.object({
+  brandSlug: z.string().trim().min(1),
+  modelSlug: z.string().trim().min(1),
+  count: z.coerce.number().int().min(1).max(12).default(5),
+});
+export type ModelCrossPairsQueryParsed = z.infer<typeof modelCrossPairsQuerySchema>;

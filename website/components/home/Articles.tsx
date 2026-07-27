@@ -30,7 +30,7 @@ const ArticleImage = ({ src, alt, className }: { src: string; alt: string; class
 
 const Card = ({ article }: { article: HomeArticle }) => (
   <a
-    href={`/${article.category.slug}/${article.slug}`}
+    href={`/news/${article.category.slug}/${article.slug}`}
     className="group flex w-[280px] shrink-0 snap-start flex-col overflow-hidden rounded-2xl bg-white transition-all duration-300 hover:-translate-y-1 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 motion-reduce:hover:translate-y-0"
     style={{ border: "1px solid " + BORDER, boxShadow: "0 1px 2px rgba(17,24,39,0.04)", outlineColor: ORANGE }}
     onMouseEnter={(e) => (e.currentTarget.style.boxShadow = "0 14px 30px rgba(17,24,39,0.12)")}

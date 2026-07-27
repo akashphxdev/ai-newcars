@@ -235,6 +235,10 @@ export async function listCarVariantOptions(slug: string): Promise<CompareVarian
 function buildRandomPairsWhere(query: RandomPairsQueryParsed): Prisma.CarModelWhereInput {
   const where: Prisma.CarModelWhereInput = { launchStatus: 'available' };
 
+  if (query.brandSlug) {
+    where.brand = { slug: query.brandSlug };
+  }
+
   if (query.bodyTypeSlug) {
     where.bodyType = { slug: query.bodyTypeSlug };
   }
@@ -328,4 +332,101 @@ export async function getRandomComparisonPairs(query: RandomPairsQueryParsed): P
     items: idPairs.map(([a, b]) => ({ carA: shapeCar(a), carB: shapeCar(b) })),
     pagination: { page, limit: count, total: totalPairs, totalPages: Math.ceil(totalPairs / count) || 1 },
   };
+}
+
+// Brand-page "vs other brands" section — unlike getRandomComparisonPairs
+// (which pairs candidates from ONE filtered pool, so a brandSlug filter
+// there produces same-brand pairs), this deliberately draws carA from
+// the given brand and carB from every OTHER brand, so every pair is a
+// genuine cross-brand match-up.
+export async function getBrandCrossBrandPairs(
+  brandSlug: string,
+  count: number,
+): Promise<RandomComparisonPair[]> {
+  const brand = await prisma.brand.findFirst({ where: { slug: brandSlug, isActive: true }, select: { id: true } });
+  if (!brand) return [];
+
+  const [brandCars, otherCars] = await Promise.all([
+    prisma.carModel.findMany({ where: { brandId: brand.id, launchStatus: 'available' }, select: { id: true }, orderBy: { id: 'asc' } }),
+    prisma.carModel.findMany({ where: { brandId: { not: brand.id }, launchStatus: 'available' }, select: { id: true }, orderBy: { id: 'asc' } }),
+  ]);
+
+  const shuffledBrand = seededShuffle(brandCars.map((c) => c.id), daySeed());
+  const shuffledOther = seededShuffle(otherCars.map((c) => c.id), daySeed() + 1);
+  const n = Math.min(count, shuffledBrand.length, shuffledOther.length);
+  const idPairs: [number, number][] = Array.from({ length: n }, (_, i) => [shuffledBrand[i], shuffledOther[i]]);
+
+  const cars = await prisma.carModel.findMany({
+    where: { id: { in: idPairs.flat() } },
+    select: {
+      id: true,
+      name: true,
+      slug: true,
+      coverImageUrl: true,
+      priceMin: true,
+      brand: { select: { id: true, name: true } },
+    },
+  });
+  const carById = new Map(cars.map((c) => [c.id, c]));
+
+  const shapeCar = (id: number): RandomPairCar => {
+    const c = carById.get(id)!;
+    return {
+      id: c.id,
+      name: c.name,
+      slug: c.slug,
+      brand: c.brand,
+      coverImageUrl: c.coverImageUrl,
+      priceMin: c.priceMin?.toString() ?? null,
+    };
+  };
+
+  return idPairs.map(([a, b]) => ({ carA: shapeCar(a), carB: shapeCar(b) }));
+}
+
+// Model page's "Comparison" section — this exact model (carA, fixed) vs
+// `count` different random other models (carB), so it's always this car
+// being compared, never two other cars paired with each other.
+export async function getModelCrossPairs(brandSlug: string, modelSlug: string, count: number): Promise<RandomComparisonPair[]> {
+  const model = await prisma.carModel.findFirst({
+    where: { slug: modelSlug, brand: { slug: brandSlug, isActive: true } },
+    select: { id: true },
+  });
+  if (!model) return [];
+
+  const others = await prisma.carModel.findMany({
+    where: { id: { not: model.id }, launchStatus: 'available' },
+    select: { id: true },
+    orderBy: { id: 'asc' },
+  });
+
+  const shuffledOthers = seededShuffle(others.map((c) => c.id), daySeed());
+  const otherIds = shuffledOthers.slice(0, count);
+
+  const cars = await prisma.carModel.findMany({
+    where: { id: { in: [model.id, ...otherIds] } },
+    select: {
+      id: true,
+      name: true,
+      slug: true,
+      coverImageUrl: true,
+      priceMin: true,
+      brand: { select: { id: true, name: true } },
+    },
+  });
+  const carById = new Map(cars.map((c) => [c.id, c]));
+
+  const shapeCar = (id: number): RandomPairCar => {
+    const c = carById.get(id)!;
+    return {
+      id: c.id,
+      name: c.name,
+      slug: c.slug,
+      brand: c.brand,
+      coverImageUrl: c.coverImageUrl,
+      priceMin: c.priceMin?.toString() ?? null,
+    };
+  };
+
+  return otherIds.map((otherId) => ({ carA: shapeCar(model.id), carB: shapeCar(otherId) }));
 }

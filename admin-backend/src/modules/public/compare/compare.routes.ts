@@ -8,12 +8,21 @@
 import { Router } from 'express';
 import { asyncHandler } from '@/core/utils/asyncHandler';
 import { publicCache } from '@/core/cache/publicCache';
-import { getCompareData, getCarOptions, getCarVariantOptions, getRandomPairs } from './compare.controller';
+import {
+  getCompareData,
+  getCarOptions,
+  getCarVariantOptions,
+  getRandomPairs,
+  getBrandCrossPairs,
+  getModelCrossPairs,
+} from './compare.controller';
 
 const router = Router();
 
 router.get('/', publicCache(300), asyncHandler(getCompareData));
 router.get('/random-pairs', publicCache(180), asyncHandler(getRandomPairs));
+router.get('/brand-cross-pairs', publicCache(180), asyncHandler(getBrandCrossPairs));
+router.get('/model-cross-pairs', publicCache(180), asyncHandler(getModelCrossPairs));
 router.get('/car-options', publicCache(300), asyncHandler(getCarOptions));
 router.get('/car-options/:slug/variants', publicCache(300), asyncHandler(getCarVariantOptions));
 

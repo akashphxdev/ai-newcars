@@ -7,17 +7,21 @@ import { Router } from 'express';
 import HomeRoutes from './home';
 import ArticlesRoutes from './articles';
 import BrandsRoutes from './brands';
+import BodyTypesRoutes from './body-types';
 import CarsRoutes from './cars';
 import SiteSettingRoutes from './site-setting';
 import CompareRoutes from './compare';
+import AuthRoutes from './auth';
 
 const router = Router();
 
 router.use('/home', HomeRoutes);
 router.use('/articles', ArticlesRoutes);
 router.use('/brands', BrandsRoutes);
+router.use('/body-types', BodyTypesRoutes);
 router.use('/cars', CarsRoutes);
 router.use('/site-settings', SiteSettingRoutes);
 router.use('/compare', CompareRoutes);
+router.use('/auth', AuthRoutes);
 
 export default router;

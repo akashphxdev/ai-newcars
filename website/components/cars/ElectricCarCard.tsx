@@ -1,4 +1,5 @@
 import Image from "next/image";
+import Link from "next/link";
 import { StarIcon, BoltIcon, ClockIcon, GaugeIcon, BatteryIcon } from "@/components/common/icons";
 import { formatSinglePrice } from "@/lib/format";
 import type { HomeCar } from "@/features/cars/car.types";
@@ -30,15 +31,19 @@ const MiniSpec = ({ icon, value, label }: { icon: React.ReactNode; value: string
 );
 
 export default function ElectricCarCard({ car }: { car: HomeCar }) {
+  const modelUrl = `/${car.brand.slug}-cars/${car.slug}`;
+
   return (
     <div
       className="flex h-full w-[320px] shrink-0 flex-col overflow-hidden rounded-2xl bg-white transition-all duration-300 hover:-translate-y-1"
       style={{ border: `1px solid ${BORDER}`, boxShadow: "0 1px 2px rgba(15,23,42,0.04)" }}
     >
       <div className="relative aspect-[16/10] overflow-hidden" style={{ background: SURFACE }}>
-        <Image src={car.coverImageUrl ?? FALLBACK_IMG} alt={`${car.brand.name} ${car.name}`} fill sizes="320px" className="object-cover" />
+        <Link href={modelUrl} className="absolute inset-0 z-0" aria-label={`View ${car.brand.name} ${car.name} details`}>
+          <Image src={car.coverImageUrl ?? FALLBACK_IMG} alt={`${car.brand.name} ${car.name}`} fill sizes="320px" className="object-cover" />
+        </Link>
         <span
-          className="absolute left-3 top-3 inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-white"
+          className="absolute left-3 top-3 z-10 inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-white"
           style={{ background: TEAL }}
         >
           <BoltIcon className="size-3.5" />
@@ -75,20 +80,20 @@ export default function ElectricCarCard({ car }: { car: HomeCar }) {
       </div>
 
       <div className="mt-auto flex items-center gap-2 px-4 pb-4 pt-3.5">
-        <a
-          href={`/new-cars/${car.slug}`}
+        <Link
+          href={modelUrl}
           className="flex h-11 flex-1 items-center justify-center rounded-xl px-3 text-[12.5px] font-bold"
           style={{ border: `1px solid ${BORDER}`, color: DARK }}
         >
           View Details
-        </a>
-        <button
-          type="button"
+        </Link>
+        <Link
+          href={modelUrl}
           className="flex h-11 flex-1 items-center justify-center gap-1.5 whitespace-nowrap rounded-xl px-3 text-[12.5px] font-bold transition-colors hover:bg-orange-50"
           style={{ border: `1.5px solid ${ORANGE}`, color: ORANGE }}
         >
           Check Offers
-        </button>
+        </Link>
       </div>
     </div>
   );
