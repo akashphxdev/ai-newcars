@@ -31,7 +31,6 @@ import AllArticleCategories from "./pages/Articles/ArticleCategories/AllArticleC
 import AllArticleComments from "./pages/Articles/ArticleComments/AllArticleComments";
 import AllArticles from "./pages/Articles/Articles/AllArticles";
 import AllReviews from "./pages/Reviews/AllReviews/AllReviews";
-import AllHelpfulVotes from "./pages/Reviews/HelpfulVotes/AllHelpfulVotes";
 import AllStoryGroups from "./pages/Stories/StoryGroups/AllStoryGroups";
 import AllStoryItems from "./pages/Stories/StoryItems/AllStoryItems";
 import AllPlacements from "./pages/Ads/Placements/AllPlacements";
@@ -108,7 +107,6 @@ export default function App() {
           <Route path ="/stories/story-groups" element={<AllStoryGroups/>}/>
           <Route path ="/stories/story-items" element={<AllStoryItems/>}/>
           <Route path ="/reviews/all-reviews" element={<AllReviews/>}/>
-          <Route path ="/reviews/votes" element={<AllHelpfulVotes/>}/>
 
           <Route path ="/ads/placements" element={<AllPlacements/>}/>
           <Route path ="/ads/advertisers" element={<AllAdvertisers/>}/>

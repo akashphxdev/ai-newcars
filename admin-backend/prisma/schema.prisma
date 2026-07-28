@@ -216,6 +216,7 @@ model AdminUser {
 
   testimonialsCreated  Testimonial[] @relation("TestimonialCreatedBy")
   testimonialsReviewed Testimonial[] @relation("TestimonialReviewedBy")  
+  reviewRepliesPosted ReviewReply[]
 
   @@map("admin_users")
 }
@@ -277,6 +278,7 @@ model User {
   softLeads           SoftLead[]
   priceDropAlertLeads PriceDropAlertLead[]
   reviews             Review[]
+  reviewReplies       ReviewReply[]
   reviewHelpfulVotes  ReviewHelpfulVote[]
   articleComments     ArticleComment[]
   mileageLogs         MileageLog[]
@@ -890,7 +892,9 @@ model Review {
   categoryScores ReviewCategoryScore[]
   images         ReviewImage[]
   helpfulVotes   ReviewHelpfulVote[]
+  replies        ReviewReply[]
 
+  @@index([modelId, status])
   @@map("reviews")
 }
 
@@ -923,6 +927,21 @@ model ReviewHelpfulVote {
 
   @@unique([reviewId, userId])
   @@map("review_helpful_votes")
+}
+
+model ReviewReply {
+  id        Int        @id @default(autoincrement())
+  reviewId  Int        @map("review_id")
+  review    Review     @relation(fields: [reviewId], references: [id])
+  userId    Int?       @map("user_id")
+  user      User?      @relation(fields: [userId], references: [id])
+  adminId   Int?       @map("admin_id")
+  admin     AdminUser? @relation(fields: [adminId], references: [id])
+  body      String
+  status    String     @default("visible") @db.VarChar(20)
+  createdAt DateTime   @default(now()) @map("created_at")
+
+  @@map("review_replies")
 }
 
 // ============================================================

@@ -13,6 +13,7 @@ import SiteSettingRoutes from './site-setting';
 import CompareRoutes from './compare';
 import AuthRoutes from './auth';
 import SearchRoutes from './search';
+import ReviewsRoutes from './reviews';
 
 const router = Router();
 
@@ -25,5 +26,6 @@ router.use('/site-settings', SiteSettingRoutes);
 router.use('/compare', CompareRoutes);
 router.use('/auth', AuthRoutes);
 router.use('/search', SearchRoutes);
+router.use('/reviews', ReviewsRoutes);
 
 export default router;

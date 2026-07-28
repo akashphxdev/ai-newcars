@@ -231,7 +231,6 @@ const NAV: NavGroup[] = [
         ),
         children: [
           { label: "All Reviews", href: "/reviews/all-reviews" },
-          { label: "Helpful Votes", href: "/reviews/votes" },
         ],
       },
     ],

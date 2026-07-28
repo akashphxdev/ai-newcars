@@ -13,6 +13,7 @@ import AiRoutes from './ai'
 import HomeRoutes from './home'
 import SiteSettingRoutes from './site-setting'
 import AnalyticsRoutes from './analytics'
+import ReviewsRoutes from './reviews'
 
 const router = Router();
 
@@ -29,6 +30,7 @@ router.use('/ai', AiRoutes)
 router.use('/home', HomeRoutes)
 router.use('/site-settings',SiteSettingRoutes)
 router.use('/analytics', AnalyticsRoutes)
+router.use('/reviews', ReviewsRoutes)
 
 
 export default router;

@@ -3,10 +3,9 @@
 // Sub-navigation strip for a car model detail page (app/car-model/[brandSlug]/[modelSlug]).
 // Sits below the hero/gallery block (not pinned to the very top) — it only
 // starts sticking once scrolled up to the main Header's bottom edge.
-// "Reviews" is a placeholder (href="#") until that feature has real data/a
-// page behind it. "Photos" is a full navigation (its own page); everything
-// else is an in-page anchor, and the active tab tracks whichever section
-// is actually in view (IntersectionObserver) rather than always showing
+// "Photos" is a full navigation (its own page); everything else is an
+// in-page anchor, and the active tab tracks whichever section is
+// actually in view (IntersectionObserver) rather than always showing
 // the first tab as active.
 
 "use client";
@@ -22,6 +21,7 @@ const ANCHOR_TABS = [
   { label: "Safety", id: "safety" },
   { label: "Comparison", id: "comparison" },
   { label: "News", id: "news" },
+  { label: "Reviews", id: "reviews" },
 ] as const;
 
 export default function ModelDetailTabs({ brandSlug, modelSlug }: { brandSlug: string; modelSlug: string }) {
@@ -48,11 +48,7 @@ export default function ModelDetailTabs({ brandSlug, modelSlug }: { brandSlug: s
     return () => observer.disconnect();
   }, []);
 
-  const tabs = [
-    ...ANCHOR_TABS,
-    { label: "Photos", href: `/${brandSlug}-cars/${modelSlug}/photos` },
-    { label: "Reviews", href: "#" },
-  ];
+  const tabs = [...ANCHOR_TABS, { label: "Photos", href: `/${brandSlug}-cars/${modelSlug}/photos` }];
 
   return (
     <div ref={tabsRef} className="sticky top-16 z-40 w-full rounded-xl border border-border bg-orange-50">

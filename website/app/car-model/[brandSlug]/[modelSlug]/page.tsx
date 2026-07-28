@@ -10,6 +10,7 @@ import CarModelSidebar from "@/components/cars/CarModelSidebar";
 import CarModelColours from "@/components/cars/CarModelColours";
 import Articles from "@/components/home/Articles";
 import BrandComparisonsSection from "@/components/brands/BrandComparisonsSection";
+import ReviewsSection from "@/components/cars/reviews/ReviewsSection";
 import { PowerIcon, TorqueIcon, CheckIcon, GaugeIcon, BoltIcon, GearIcon, ChevronDownIcon } from "@/components/common/icons";
 import type { CarDetailResult, CarDetailFeatures, CarFaq } from "@/features/cars/car.types";
 import type { HomeArticle } from "@/features/articles/article.types";
@@ -381,6 +382,13 @@ export default async function CarModelPage(props: Props) {
           />
         </div>
       )}
+
+      {/* Reviews — last tab, full-width like Comparison/News. Client-fetched
+          (see ReviewsSection) so it can carry the logged-in viewer's own
+          helpful/reply state straight away. */}
+      <div id="reviews" className="scroll-mt-32">
+        <ReviewsSection modelId={car.id} variantOptions={car.variantOptions} />
+      </div>
     </div>
   );
 }
