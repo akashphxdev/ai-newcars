@@ -2,6 +2,12 @@
 //
 // Mirrors admin-backend's PublicHomeArticleRecord (modules/public/home/article).
 
+export interface ArticleCategory {
+  id: number;
+  name: string;
+  slug: string;
+}
+
 export interface HomeArticle {
   id: number;
   title: string;

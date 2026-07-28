@@ -1,11 +1,16 @@
 // features/articles/article.api.ts
 
-import { apiFetch, getUploadUrl, ApiError } from "@/lib/apiClient";
-import type { HomeArticle, ArticleDetail } from "./article.types";
+import { apiFetch, apiFetchPaginated, getUploadUrl, ApiError, type Pagination } from "@/lib/apiClient";
+import type { HomeArticle, ArticleDetail, ArticleCategory } from "./article.types";
 
 export async function getHomeArticles(limit = 6): Promise<HomeArticle[]> {
   const articles = await apiFetch<HomeArticle[]>(`/home/articles?limit=${limit}`, { next: { revalidate: 120 } });
   return articles.map((a) => ({ ...a, coverImageUrl: getUploadUrl(a.coverImageUrl) }));
+}
+
+// Powers the header's News dropdown and the /news/[categorySlug] listing page.
+export async function getArticleCategories(): Promise<ArticleCategory[]> {
+  return apiFetch<ArticleCategory[]>("/articles/categories", { next: { revalidate: 300 } });
 }
 
 // Returns null (not a thrown error) when the article/category doesn't
@@ -38,4 +43,18 @@ export async function getRelatedArticles(categorySlug: string, excludeSlug: stri
 export async function getArticlesByCategory(categorySlug: string, limit = 6): Promise<HomeArticle[]> {
   const articles = await apiFetch<HomeArticle[]>(`/articles/${categorySlug}?limit=${limit}`, { next: { revalidate: 120 } });
   return articles.map((a) => ({ ...a, coverImageUrl: getUploadUrl(a.coverImageUrl) }));
+}
+
+// Page-based version of the above — powers /news/[categorySlug]'s "Load
+// more" button, so the whole category never loads in one shot.
+export async function getArticlesByCategoryPaginated(
+  categorySlug: string,
+  page = 1,
+  limit = 8,
+): Promise<{ articles: HomeArticle[]; pagination: Pagination }> {
+  const { data, pagination } = await apiFetchPaginated<HomeArticle>(
+    `/articles/${categorySlug}?page=${page}&limit=${limit}`,
+    { next: { revalidate: 120 } },
+  );
+  return { articles: data.map((a) => ({ ...a, coverImageUrl: getUploadUrl(a.coverImageUrl) })), pagination };
 }

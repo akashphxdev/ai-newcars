@@ -1107,8 +1107,12 @@ model SearchLog {
   deviceType   String?  @map("device_type") @db.VarChar(20)
   ipAddress    String?  @map("ip_address") @db.VarChar(45)
   createdAt    DateTime @default(now()) @map("created_at")
+  sessionId    String?  @map("session_id") @db.VarChar(100)
+  userAgent    String?  @map("user_agent") @db.VarChar(255)
 
   @@map("search_logs")
+  @@index([createdAt])
+  @@index([userId])
 }
 
 // ============================================================

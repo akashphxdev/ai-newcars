@@ -12,6 +12,7 @@ import CarsRoutes from './cars';
 import SiteSettingRoutes from './site-setting';
 import CompareRoutes from './compare';
 import AuthRoutes from './auth';
+import SearchRoutes from './search';
 
 const router = Router();
 
@@ -23,5 +24,6 @@ router.use('/cars', CarsRoutes);
 router.use('/site-settings', SiteSettingRoutes);
 router.use('/compare', CompareRoutes);
 router.use('/auth', AuthRoutes);
+router.use('/search', SearchRoutes);
 
 export default router;

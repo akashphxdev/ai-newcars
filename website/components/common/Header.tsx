@@ -1,9 +1,15 @@
 "use client"
 import { useState, useEffect } from "react";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import Link from "next/link";
 import AuthModal from "./AuthModal";
 import { isChromelessRoute } from "@/lib/routes";
+import { getCurrentUser, getUserInitials } from "@/features/auth/currentUser";
+import { searchCars } from "@/features/search/search.api";
+import type { AuthUser } from "@/features/auth/auth.types";
+import type { SearchCarResult } from "@/features/search/search.types";
+import type { BodyType } from "@/features/bodyTypes/bodyType.types";
+import type { ArticleCategory } from "@/features/articles/article.types";
 
 type NavItem = {
   label: string;
@@ -11,23 +17,9 @@ type NavItem = {
   dropdown?: { label: string; href: string }[];
 };
 
-const NAV_ITEMS: NavItem[] = [
-  {
-    label: "New Cars",
-    dropdown: [
-      { label: "SUV", href: "/suv-cars" },
-      { label: "Sedan", href: "/sedan-cars" },
-      { label: "Hatchback", href: "/hatchback-cars" },
-      { label: "Electric", href: "/electric-cars" },
-    ],
-  },
-  {
-    label: "Used Cars",
-    dropdown: [
-      { label: "Buy used cars", href: "#" },
-      { label: "Sell your car", href: "#" },
-    ],
-  },
+// Compare/Tools never change — "New Cars" and "News" are both data-driven
+// (body types / article categories come from the DB, see buildNavItems).
+const STATIC_NAV_ITEMS: NavItem[] = [
   {
     label: "Compare",
     href: "/compare-cars",
@@ -38,10 +30,30 @@ const NAV_ITEMS: NavItem[] = [
       { label: "EMI Calculator", href: "/emi-calculator" },
       { label: "Fuel Cost Calculator", href: "/fuel-cost-calculator" },
       { label: "Mileage Calculator", href: "/mileage-calculator" },
+      { label: "On-Road Price Calculator", href: "/on-road-price-calculator" },
     ],
   },
-  { label: "Reviews", href: "#" },
 ];
+
+// "Electric" is a fuel-type page, not a body type, but it's kept in this
+// same dropdown (matches how the site already groups "browse by new car
+// category") — appended after whatever body types the DB has right now.
+function buildNavItems(bodyTypes: BodyType[], articleCategories: ArticleCategory[]): NavItem[] {
+  return [
+    {
+      label: "New Cars",
+      dropdown: [
+        ...bodyTypes.map((bt) => ({ label: bt.name, href: `/${bt.slug}-cars` })),
+        { label: "Electric", href: "/electric-cars" },
+      ],
+    },
+    ...STATIC_NAV_ITEMS,
+    {
+      label: "News",
+      dropdown: articleCategories.map((c) => ({ label: c.name, href: `/news/${c.slug}` })),
+    },
+  ];
+}
 
 const ORANGE = "#f2650f";
 const ORANGE_SOFT = "rgba(242,101,15,0.08)";
@@ -66,22 +78,122 @@ const PinIcon = () => (
   </svg>
 );
 
+/* ---------------- Search results dropdown ---------------- */
+
+function SearchResultsList({
+  results,
+  searching,
+  onSelect,
+}: {
+  results: SearchCarResult[];
+  searching: boolean;
+  onSelect: (car: SearchCarResult) => void;
+}) {
+  if (!searching && results.length === 0) return null;
+
+  return (
+    <div
+      // Prevents the input from blurring before a result's click fires —
+      // without this, onBlur closes the dropdown first and the click
+      // never lands (classic blur-vs-click race).
+      onMouseDown={(e) => e.preventDefault()}
+      className="absolute left-0 top-full z-50 mt-1.5 max-h-96 w-full min-w-70 overflow-y-auto rounded-xl py-1.5"
+      style={{ background: SURFACE, border: `1px solid ${BORDER}`, boxShadow: "0 12px 28px rgba(17,24,39,0.12)" }}
+    >
+      {searching && results.length === 0 && (
+        <p className="px-3.5 py-3 text-[12.5px] font-medium" style={{ color: MUTED }}>
+          Searching...
+        </p>
+      )}
+      {results.map((car) => (
+        <button
+          key={car.id}
+          type="button"
+          onClick={() => onSelect(car)}
+          className="flex w-full cursor-pointer items-center gap-2.5 px-3.5 py-2 text-left transition-colors hover:bg-orange-50"
+        >
+          <span className="relative size-10 shrink-0 overflow-hidden rounded-lg" style={{ background: PAGE_BG }}>
+            {car.coverImageUrl && (
+              // eslint-disable-next-line @next/next/no-img-element -- tiny result thumb, not worth next/image's overhead here
+              <img src={car.coverImageUrl} alt={car.name} className="size-full object-cover" />
+            )}
+          </span>
+          <span className="min-w-0 flex-1">
+            <span className="block truncate text-[10.5px] font-semibold uppercase tracking-wide" style={{ color: MUTED }}>
+              {car.brand.name}
+            </span>
+            <span className="block truncate text-[13px] font-bold" style={{ color: DARK }}>
+              {car.name}
+            </span>
+          </span>
+        </button>
+      ))}
+    </div>
+  );
+}
+
 /* ---------------- Header ---------------- */
 
-export default function Header() {
+export default function Header({ bodyTypes, articleCategories }: { bodyTypes: BodyType[]; articleCategories: ArticleCategory[] }) {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [mobileExpanded, setMobileExpanded] = useState<string | null>(null);
   const [authOpen, setAuthOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
+  const [user, setUser] = useState<AuthUser | null>(null);
   const pathname = usePathname();
+  const router = useRouter();
+
+  const NAV_ITEMS = buildNavItems(bodyTypes, articleCategories);
 
   const isActive = (href?: string) => !!href && href !== "#" && pathname === href;
+
+  // Client-only — no cookie/SSR session, so this can only resolve after
+  // hydration (a one-frame "Login / Signup" flash for already-logged-in
+  // users on a fresh page load is the accepted tradeoff of that).
+  useEffect(() => {
+    setUser(getCurrentUser());
+  }, []);
 
   useEffect(() => {
     if (!mobileOpen) return;
     document.body.style.overflow = "hidden";
     return () => { document.body.style.overflow = ""; };
   }, [mobileOpen]);
+
+  /* ---- search ---- */
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchResults, setSearchResults] = useState<SearchCarResult[]>([]);
+  const [searching, setSearching] = useState(false);
+
+  useEffect(() => {
+    const q = searchQuery.trim();
+    if (q.length < 2) {
+      setSearchResults([]);
+      setSearching(false);
+      return;
+    }
+    setSearching(true);
+    const handle = setTimeout(async () => {
+      try {
+        const deviceType = typeof window !== "undefined" && window.innerWidth < 768 ? "mobile" : "desktop";
+        const res = await searchCars(q, { pageUrl: pathname, deviceType });
+        setSearchResults(res.results);
+      } catch {
+        setSearchResults([]);
+      } finally {
+        setSearching(false);
+      }
+    }, 300);
+    return () => clearTimeout(handle);
+  }, [searchQuery, pathname]);
+
+  const selectSearchResult = (car: SearchCarResult) => {
+    setSearchQuery("");
+    setSearchResults([]);
+    setSearchOpen(false);
+    setMobileOpen(false);
+    router.push(`/${car.brand.slug}-cars/${car.slug}`);
+  };
 
   if (isChromelessRoute(pathname)) return null;
 
@@ -127,14 +239,14 @@ export default function Header() {
 
                   {item.dropdown && (
                     <div
-                      className="invisible absolute left-0 top-full z-50 mt-1 min-w-[180px] rounded-lg py-1.5 opacity-0 transition-opacity duration-150 group-hover:visible group-hover:opacity-100"
+                      className="invisible absolute left-0 top-full z-50 mt-1 max-h-[70vh] min-w-45 overflow-y-auto rounded-lg py-1.5 opacity-0 transition-opacity duration-150 group-hover:visible group-hover:opacity-100"
                       style={{ background: SURFACE, border: `1px solid ${BORDER}`, boxShadow: "0 12px 28px rgba(17,24,39,0.10)" }}
                     >
                       {item.dropdown.map((link) => (
                         <Link
                           key={link.label}
                           href={link.href}
-                          className="block px-3.5 py-2 text-[13px] font-medium no-underline transition-colors"
+                          className="block px-3.5 py-2 text-[13px] font-medium capitalize no-underline transition-colors"
                           style={{ color: MUTED }}
                           onMouseEnter={(e) => {
                             e.currentTarget.style.background = ORANGE_SOFT;
@@ -158,12 +270,12 @@ export default function Header() {
 
         {/* Right group: search + location + login + hamburger */}
         <div className="flex items-center gap-5">
-          <div className="hidden items-center md:flex">
+          <div className="relative hidden items-center md:flex">
             <div
               className="flex items-center gap-2 rounded-full px-3.5 py-2 transition-all"
               style={{
                 background: PAGE_BG,
-                width: searchOpen ? 220 : 38,
+                width: searchOpen ? 260 : 38,
                 cursor: searchOpen ? "text" : "pointer",
               }}
               onClick={() => !searchOpen && setSearchOpen(true)}
@@ -174,6 +286,8 @@ export default function Header() {
               {searchOpen && (
                 <input
                   autoFocus
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
                   onBlur={() => setSearchOpen(false)}
                   placeholder="Search cars..."
                   className="w-full bg-transparent text-[13px] outline-none"
@@ -181,6 +295,10 @@ export default function Header() {
                 />
               )}
             </div>
+
+            {searchOpen && (
+              <SearchResultsList results={searchResults} searching={searching} onSelect={selectSearchResult} />
+            )}
           </div>
 
           <button
@@ -193,13 +311,24 @@ export default function Header() {
             Jaipur
           </button>
 
-          <button
-            onClick={() => setAuthOpen(true)}
-            className="hidden whitespace-nowrap rounded-full px-4 py-2 text-[13px] font-semibold transition-colors hover:bg-orange-50 sm:block"
-            style={{ border: `1.5px solid ${ORANGE}`, color: ORANGE, background: "transparent" }}
-          >
-            Login / Signup
-          </button>
+          {user ? (
+            <Link
+              href="/profile"
+              aria-label="View profile"
+              className="hidden shrink-0 items-center justify-center rounded-full text-[13px] font-bold text-white sm:flex"
+              style={{ background: ORANGE, width: 36, height: 36 }}
+            >
+              {getUserInitials(user)}
+            </Link>
+          ) : (
+            <button
+              onClick={() => setAuthOpen(true)}
+              className="hidden whitespace-nowrap rounded-full px-4 py-2 text-[13px] font-semibold transition-colors hover:bg-orange-50 sm:block"
+              style={{ border: `1.5px solid ${ORANGE}`, color: ORANGE, background: "transparent" }}
+            >
+              Login / Signup
+            </button>
+          )}
 
           <button
             className="flex size-9 items-center justify-center rounded-md lg:hidden"
@@ -228,18 +357,23 @@ export default function Header() {
           className="absolute inset-x-0 top-full z-40 max-h-[calc(100vh-4rem)] overflow-y-auto px-6 py-2 shadow-lg lg:hidden"
           style={{ borderTop: `1px solid ${BORDER}`, background: SURFACE }}
         >
-          <div
-            className="mb-2 flex items-center gap-2 rounded-full px-3.5 py-2.5"
-            style={{ background: PAGE_BG }}
-          >
-            <span style={{ color: MUTED }}>
-              <SearchIcon />
-            </span>
-            <input
-              placeholder="Search cars..."
-              className="w-full bg-transparent text-[13px] outline-none"
-              style={{ color: DARK }}
-            />
+          <div className="relative mb-2">
+            <div
+              className="flex items-center gap-2 rounded-full px-3.5 py-2.5"
+              style={{ background: PAGE_BG }}
+            >
+              <span style={{ color: MUTED }}>
+                <SearchIcon />
+              </span>
+              <input
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Search cars..."
+                className="w-full bg-transparent text-[13px] outline-none"
+                style={{ color: DARK }}
+              />
+            </div>
+            <SearchResultsList results={searchResults} searching={searching} onSelect={selectSearchResult} />
           </div>
 
           {NAV_ITEMS.map((item) => (
@@ -267,7 +401,7 @@ export default function Header() {
                           key={link.label}
                           href={link.href}
                           onClick={() => setMobileOpen(false)}
-                          className="block py-1.5 text-[13px] no-underline"
+                          className="block py-1.5 text-[13px] capitalize no-underline"
                           style={{ color: MUTED }}
                         >
                           {link.label}
@@ -299,13 +433,30 @@ export default function Header() {
             Jaipur
           </button>
 
-          <button
-            onClick={() => setAuthOpen(true)}
-            className="my-2 w-full rounded-full py-2.5 text-sm font-semibold transition-colors hover:bg-orange-50"
-            style={{ border: `1.5px solid ${ORANGE}`, color: ORANGE, background: "transparent" }}
-          >
-            Login / Signup
-          </button>
+          {user ? (
+            <Link
+              href="/profile"
+              onClick={() => setMobileOpen(false)}
+              className="my-2 flex w-full items-center gap-2 rounded-full py-2.5 pl-1 text-sm font-semibold"
+              style={{ color: DARK }}
+            >
+              <span
+                className="flex shrink-0 items-center justify-center rounded-full text-[13px] font-bold text-white"
+                style={{ background: ORANGE, width: 32, height: 32 }}
+              >
+                {getUserInitials(user)}
+              </span>
+              View profile
+            </Link>
+          ) : (
+            <button
+              onClick={() => setAuthOpen(true)}
+              className="my-2 w-full rounded-full py-2.5 text-sm font-semibold transition-colors hover:bg-orange-50"
+              style={{ border: `1.5px solid ${ORANGE}`, color: ORANGE, background: "transparent" }}
+            >
+              Login / Signup
+            </button>
+          )}
         </div>
       )}
 

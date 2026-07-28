@@ -8,7 +8,6 @@ import PopularCars from "@/components/home/Popularcars";
 import ElectricCars from "@/components/home/Electriccars";
 import CompareCars from "@/components/home/Comparecars";
 import Stories from "@/components/home/Stories";
-import Videos from "@/components/home/Videos";
 import Articles from "@/components/home/Articles";
 import TrustedUsedCars from "@/components/home/Trustedusedcars";
 import Reviews from "@/components/home/Reviews";
@@ -121,9 +120,6 @@ export default function HomePage() {
       <Suspense fallback={<SectionSkeleton />}>
         <TrustedUsedCarsData />
       </Suspense>
-      {/* Videos stays static for now — skipped per current scope, to be
-          wired up in a later pass. */}
-      <Videos />
       <Suspense fallback={<SectionSkeleton />}>
         <StoriesData />
       </Suspense>

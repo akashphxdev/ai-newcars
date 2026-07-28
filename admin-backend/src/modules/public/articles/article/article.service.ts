@@ -1,10 +1,16 @@
 // src/modules/public/articles/article/article.service.ts
 
+import { Prisma } from '@prisma/client';
 import { prisma } from '@/prisma/client';
 import { ApiError } from '@/core/errors/ApiError';
-import type { PublicArticleDetail } from './article.types';
+import type { PublicArticleDetail, PublicArticleCategory } from './article.types';
 import type { PublicHomeArticleRecord } from '@/modules/public/home/article/article.types';
 import type { RelatedArticlesQueryParsed } from './article.validation';
+
+export interface PaginatedArticles {
+  items: PublicHomeArticleRecord[];
+  pagination: { page: number; limit: number; total: number; totalPages: number };
+}
 
 const PUBLIC_ARTICLE_SUMMARY_SELECT = {
   id: true,
@@ -35,6 +41,15 @@ const PUBLIC_ARTICLE_DETAIL_SELECT = {
   ogImageUrl: true,
 } as const;
 
+// Powers the News nav dropdown — every active category, alphabetical.
+export async function listArticleCategories(): Promise<PublicArticleCategory[]> {
+  return prisma.articleCategory.findMany({
+    where: { isActive: true },
+    select: { id: true, name: true, slug: true },
+    orderBy: { name: 'asc' },
+  });
+}
+
 // Matches only when ALL of these hold: the article itself is
 // published+active, AND its category is active — a de-activated category
 // hides every article under it from the public site even if the article
@@ -60,25 +75,34 @@ export async function getPublicArticleBySlug(
   return { ...article, publishedAt: article.publishedAt?.toISOString() ?? null };
 }
 
-// "More from this category" — same category, active, published, and
+// "More from this category" widget AND the /news/[categorySlug] listing
+// page both go through here — same category, active, published, and
 // (when reading a specific article) excludes that one via its slug.
-export async function listRelatedArticles(
-  categorySlug: string,
-  query: RelatedArticlesQueryParsed,
-): Promise<PublicHomeArticleRecord[]> {
-  const { exclude, limit } = query;
+// Page-based pagination (skip/take + a total count) so the listing page
+// can offer "Load more" without ever pulling the whole category at once.
+export async function listRelatedArticles(categorySlug: string, query: RelatedArticlesQueryParsed): Promise<PaginatedArticles> {
+  const { exclude, limit, page } = query;
 
-  const articles = await prisma.article.findMany({
-    where: {
-      status: 'published',
-      isActive: true,
-      category: { slug: categorySlug, isActive: true },
-      ...(exclude ? { slug: { not: exclude } } : {}),
-    },
-    select: PUBLIC_ARTICLE_SUMMARY_SELECT,
-    orderBy: { publishedAt: 'desc' },
-    take: limit,
-  });
+  const where: Prisma.ArticleWhereInput = {
+    status: 'published',
+    isActive: true,
+    category: { slug: categorySlug, isActive: true },
+    ...(exclude ? { slug: { not: exclude } } : {}),
+  };
 
-  return articles.map((article) => ({ ...article, publishedAt: article.publishedAt?.toISOString() ?? null }));
+  const [articles, total] = await Promise.all([
+    prisma.article.findMany({
+      where,
+      select: PUBLIC_ARTICLE_SUMMARY_SELECT,
+      orderBy: { publishedAt: 'desc' },
+      skip: (page - 1) * limit,
+      take: limit,
+    }),
+    prisma.article.count({ where }),
+  ]);
+
+  return {
+    items: articles.map((article) => ({ ...article, publishedAt: article.publishedAt?.toISOString() ?? null })),
+    pagination: { page, limit, total, totalPages: Math.ceil(total / limit) || 1 },
+  };
 }

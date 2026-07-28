@@ -1,6 +1,8 @@
 "use client";
 import { useEffect, useRef, useState, useCallback } from "react";
 import { signupRequestOtp, signupVerifyOtp, loginRequestOtp, loginVerifyOtp, resendOtp } from "@/features/auth/auth.api";
+import { saveCurrentUser } from "@/features/auth/currentUser";
+import type { AuthUser } from "@/features/auth/auth.types";
 
 const ORANGE = "#f2650f";
 const DARK = "#111827";
@@ -42,7 +44,7 @@ const SubmitButton = ({ loading, label, loadingLabel }: { loading: boolean; labe
 // the OTP itself always goes to email (see admin-backend's auth.service
 // for why the OTP row binds mobile+email together rather than trusting
 // whatever email a verify request claims).
-function LoginPane({ onSuccess }: { onSuccess: (token: string) => void }) {
+function LoginPane({ onSuccess }: { onSuccess: (token: string, user: AuthUser) => void }) {
   const [step, setStep] = useState<Step>("form");
   const [mobile, setMobile] = useState("");
   const [otp, setOtp] = useState("");
@@ -89,7 +91,7 @@ function LoginPane({ onSuccess }: { onSuccess: (token: string) => void }) {
     setLoading(true);
     try {
       const res = await loginVerifyOtp({ mobile, otp });
-      onSuccess(res.token);
+      onSuccess(res.token, res.user);
     } catch (err) {
       setError(getErrorMessage(err));
       setOtp("");
@@ -166,7 +168,7 @@ function LoginPane({ onSuccess }: { onSuccess: (token: string) => void }) {
   );
 }
 
-function SignupPane({ onSuccess }: { onSuccess: (token: string) => void }) {
+function SignupPane({ onSuccess }: { onSuccess: (token: string, user: AuthUser) => void }) {
   const [step, setStep] = useState<Step>("form");
   const [name, setName] = useState("");
   const [mobile, setMobile] = useState("");
@@ -217,7 +219,7 @@ function SignupPane({ onSuccess }: { onSuccess: (token: string) => void }) {
     setLoading(true);
     try {
       const res = await signupVerifyOtp({ name: name.trim(), mobile, otp });
-      onSuccess(res.token);
+      onSuccess(res.token, res.user);
     } catch (err) {
       setError(getErrorMessage(err));
       setOtp("");
@@ -320,8 +322,8 @@ export default function AuthModal({ onClose }: { onClose: () => void }) {
     return () => document.removeEventListener("keydown", onKey);
   }, [onClose]);
 
-  const handleSuccess = (token: string) => {
-    localStorage.setItem("user_token", token);
+  const handleSuccess = (token: string, user: AuthUser) => {
+    saveCurrentUser(user, token);
     onClose();
     window.location.reload();
   };

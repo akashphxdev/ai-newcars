@@ -4,6 +4,12 @@
 // createdBy/updatedBy/viewCount, only what the article detail page
 // renders (content + SEO meta).
 
+export interface PublicArticleCategory {
+  id: number;
+  name: string;
+  slug: string;
+}
+
 export interface PublicArticleDetail {
   id: number;
   title: string;
