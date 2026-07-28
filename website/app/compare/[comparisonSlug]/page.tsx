@@ -2,41 +2,37 @@ import { Suspense } from "react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { getCompareData, getRandomPairs } from "@/features/compare/compare.api";
-import { getHomeCars } from "@/features/cars/car.api";
-import CompareCarHeader from "@/components/compare/CompareCarHeader";
-import SpecComparison from "@/components/compare/SpecComparison";
-import RandomPairRow from "@/components/compare/RandomPairRow";
+import { getCompareData, getCarOptions, getRandomPairs, getModelCrossPairs } from "@/features/compare/compare.api";
+import { getHomeCars, getCarsBrowse } from "@/features/cars/car.api";
+import { getAllBrands } from "@/features/brands/brand.api";
+import CompareResults from "@/components/compare/CompareResults";
+import BrandComparisonsSection from "@/components/brands/BrandComparisonsSection";
 import RecordRecentComparison from "@/components/compare/RecordRecentComparison";
 import PopularCars from "@/components/home/Popularcars";
+import BrandsGrid from "@/components/brands/BrandsGrid";
+import SectionHeader from "@/components/common/SectionHeader";
 import SectionSkeleton from "@/components/common/SectionSkeleton";
+import type { CompareCarResult } from "@/features/compare/compare.types";
 
 const MIN_CARS = 2;
 const MAX_CARS = 4;
 
 type Props = {
   params: Promise<{ comparisonSlug: string }>;
-  // v0..v3 — variant override per car, aligned by position with the
-  // slugs in comparisonSlug.
-  searchParams: Promise<Record<string, string | undefined>>;
 };
 
 // URL shape: /compare/{car1-slug}-vs-{car2-slug}[-vs-{car3-slug}...] —
-// "-vs-" is the reserved separator between 2-4 car slugs. Deliberately a
-// sibling of /compare-cars (the listing page) rather than nested under
-// it, so the result page keeps the shorter /compare/... URL.
+// "-vs-" is the reserved separator between 2-4 car slugs, and that's ALL
+// the URL ever carries (no variant/powertrain query params — same clean,
+// canonical shape as CarDekho's /compare/model-a-and-model-b.htm). Each
+// car defaults to its top-seller variant + default powertrain; switching
+// either happens client-side in CompareResults without touching the URL.
+// Deliberately a sibling of /compare-cars (the listing page) rather than
+// nested under it, so the result page keeps the shorter /compare/... URL.
 function splitComparisonSlug(comparisonSlug: string): string[] | null {
   const slugs = comparisonSlug.split("-vs-").filter(Boolean);
   if (slugs.length < MIN_CARS || slugs.length > MAX_CARS) return null;
   return slugs;
-}
-
-function readVariantIds(searchParams: Record<string, string | undefined>, count: number): (number | undefined)[] {
-  return Array.from({ length: count }, (_, i) => {
-    const raw = searchParams[`v${i}`];
-    const n = raw ? Number(raw) : undefined;
-    return n && Number.isFinite(n) ? n : undefined;
-  });
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
@@ -56,36 +52,92 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 // Below-the-fold, non-critical — each fetches independently and streams
 // in via its own <Suspense> below, so a slow call here never holds up
 // the core comparison content (getCompareData) from rendering first.
+// Same card treatment as the home page's Compare section (BrandComparisonsSection
+// already matches it — built for the brand-cars page's "compare with"
+// rail, reused here as-is).
 async function LatestComparisonsSection() {
-  const { pairs: latestPairs } = await getRandomPairs({ count: 5 });
-  if (latestPairs.length === 0) return null;
-
+  const { pairs } = await getRandomPairs({ count: 8 });
   return (
-    <div className="mt-10">
-      <h2 className="mb-3 text-[16px] font-bold text-ink">Latest Comparisons</h2>
-      <div className="overflow-hidden rounded-2xl border border-border bg-surface">
-        {latestPairs.map((pair, i) => (
-          <RandomPairRow key={`${pair.carA.id}-${pair.carB.id}-${i}`} pair={pair} />
-        ))}
-      </div>
-    </div>
+    <BrandComparisonsSection
+      pairs={pairs}
+      eyebrow="Fresh Match-Ups"
+      title="Latest Comparisons"
+      subtitle="A running feed of the comparisons people are building right now — browse them for inspiration, or start your own above."
+      titleSize="lg"
+      cardWidthClass="w-64 sm:w-1/2 lg:w-1/4"
+    />
   );
 }
 
-async function PopularCarsSection() {
-  const popularCars = await getHomeCars("popular");
-  return <PopularCars cars={popularCars} />;
+// One section per car actually in this comparison — "{car} vs other cars"
+// — each car pinned on one side, paired against random other models
+// (getModelCrossPairs, same fetcher the model detail page's own
+// "Comparison" section uses).
+async function PerCarComparisonsSection({ cars }: { cars: CompareCarResult[] }) {
+  const pairsList = await Promise.all(cars.map((car) => getModelCrossPairs(car.brand.slug, car.slug, 6)));
+
+  return (
+    <>
+      {cars.map((car, i) => (
+        <BrandComparisonsSection
+          key={car.id}
+          pairs={pairsList[i]}
+          eyebrow="Explore More"
+          title={`${car.name} vs other cars`}
+          subtitle={`Not sure the ${car.name} is the one? See how it measures up against other popular models on price, performance, and features.`}
+          titleSize="lg"
+          cardWidthClass="w-64 sm:w-1/2 lg:w-1/4"
+        />
+      ))}
+    </>
+  );
 }
 
-export default async function ComparisonResultPage({ params, searchParams }: Props) {
+// Cars sharing the first compared car's body type (e.g. more SUVs), minus
+// whichever of them are already in this comparison — falls back to the
+// generic "popular" list when the first car has no body type or the
+// body-type browse comes back empty (e.g. a body type with very few cars).
+async function SimilarCarsSection({ cars }: { cars: CompareCarResult[] }) {
+  const bodyTypeSlug = cars[0]?.bodyType?.slug;
+  const comparedSlugs = new Set(cars.map((c) => c.slug));
+
+  const similarCars = bodyTypeSlug
+    ? (await getCarsBrowse({ bodyType: [bodyTypeSlug], limit: 8, sort: "popularity" })).cars.filter((c) => !comparedSlugs.has(c.slug))
+    : [];
+
+  const fallback = similarCars.length === 0 ? await getHomeCars("popular") : [];
+
+  return (
+    <PopularCars
+      cars={similarCars.length > 0 ? similarCars : fallback}
+      eyebrow="You May Also Like"
+      title="Similar cars"
+      href="/new-cars"
+      linkLabel="View all cars"
+    />
+  );
+}
+
+async function ExploreOtherBrandsSection() {
+  const brands = await getAllBrands();
+  if (brands.length === 0) return null;
+
+  return (
+    <section className="py-12 sm:py-14">
+      <div className="mx-auto max-w-7xl px-4">
+        <SectionHeader eyebrow="All Brands" title="Explore other brands" subtitle="Browse every car brand available on TimesAuto." />
+        <BrandsGrid brands={brands} />
+      </div>
+    </section>
+  );
+}
+
+export default async function ComparisonResultPage({ params }: Props) {
   const { comparisonSlug } = await params;
   const slugs = splitComparisonSlug(comparisonSlug);
   if (!slugs) notFound();
 
-  const sp = await searchParams;
-  const variantIds = readVariantIds(sp, slugs.length);
-
-  const data = await getCompareData(slugs, variantIds);
+  const [data, carOptions] = await Promise.all([getCompareData(slugs), getCarOptions()]);
   if (!data) notFound();
 
   const { cars } = data;
@@ -95,7 +147,7 @@ export default async function ComparisonResultPage({ params, searchParams }: Pro
     <div className="bg-page">
       <RecordRecentComparison comparisonSlug={comparisonSlug} cars={cars} />
 
-      <div className="mx-auto max-w-6xl px-4 py-8 sm:py-12">
+      <div className="mx-auto max-w-7xl px-4 py-8 sm:py-12">
         <nav className="mb-6 flex flex-wrap items-center gap-1.5 text-[13px] font-semibold" aria-label="Breadcrumb">
           <Link href="/" className="text-ink">
             Home
@@ -108,29 +160,23 @@ export default async function ComparisonResultPage({ params, searchParams }: Pro
           <span className="text-brand">{names}</span>
         </nav>
 
-        <div className="relative grid grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-6 lg:grid-cols-[repeat(auto-fit,minmax(240px,1fr))]">
-          {cars.map((car, i) => (
-            <CompareCarHeader key={car.id} car={car} paramKey={`v${i}`} />
-          ))}
-
-          {cars.length === 2 && (
-            <span className="absolute left-1/2 top-1/2 hidden size-11 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border-2 border-page bg-brand text-[12px] font-bold text-white sm:flex">
-              VS
-            </span>
-          )}
-        </div>
-
-        <div className="mt-6">
-          <SpecComparison cars={cars} />
-        </div>
-
-        <Suspense fallback={<div className="mt-10 h-48 animate-pulse rounded-2xl bg-black/5" />}>
-          <LatestComparisonsSection />
-        </Suspense>
+        <CompareResults initialCars={cars} slugs={slugs} carOptions={carOptions} />
       </div>
 
       <Suspense fallback={<SectionSkeleton />}>
-        <PopularCarsSection />
+        <PerCarComparisonsSection cars={cars} />
+      </Suspense>
+
+      <Suspense fallback={<SectionSkeleton />}>
+        <LatestComparisonsSection />
+      </Suspense>
+
+      <Suspense fallback={<SectionSkeleton />}>
+        <SimilarCarsSection cars={cars} />
+      </Suspense>
+
+      <Suspense fallback={<SectionSkeleton />}>
+        <ExploreOtherBrandsSection />
       </Suspense>
     </div>
   );

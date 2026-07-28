@@ -14,11 +14,17 @@ export default function BrandComparisonsSection({
   eyebrow,
   title,
   subtitle,
+  titleSize = "md",
+  cardWidthClass = "w-full sm:w-1/2 lg:w-1/3",
 }: {
   pairs: RandomComparisonPair[];
   eyebrow: string;
   title: string;
   subtitle: string;
+  /** "lg" for a bigger, more prominent section title — default matches every other use of this component. */
+  titleSize?: "md" | "lg";
+  /** Full responsive width spec for each card, including the mobile default — default shows 3 at a time on desktop, full-width per swipe on mobile; pass e.g. "w-64 sm:w-1/2 lg:w-1/4" for a smaller fixed mobile card. */
+  cardWidthClass?: string;
 }) {
   const { trackRef, canScrollLeft, canScrollRight, updateArrows, scrollBy } = useScrollRail<HTMLDivElement>();
 
@@ -30,6 +36,7 @@ export default function BrandComparisonsSection({
         <SectionHeader
           eyebrow={eyebrow}
           title={title}
+          titleSize={titleSize}
           subtitle={subtitle}
           href="/compare-cars"
           linkLabel="Compare any cars"
@@ -49,7 +56,7 @@ export default function BrandComparisonsSection({
           className="flex snap-x snap-mandatory gap-4 overflow-x-auto pb-2 scrollbar-none"
         >
           {pairs.map((pair, i) => (
-            <div key={`${pair.carA.id}-${pair.carB.id}-${i}`} className="w-full shrink-0 snap-start sm:w-1/2 lg:w-1/3">
+            <div key={`${pair.carA.id}-${pair.carB.id}-${i}`} className={`shrink-0 snap-start ${cardWidthClass}`}>
               <BrandCompareCard pair={pair} />
             </div>
           ))}

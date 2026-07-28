@@ -1,7 +1,14 @@
 // features/compare/compare.api.ts
 
 import { apiFetch, apiFetchPaginated, getUploadUrl, ApiError, type Pagination } from "@/lib/apiClient";
-import type { CompareResult, CarOption, CompareVariantOption, RandomComparisonPair, FuelFilter } from "./compare.types";
+import type {
+  CompareResult,
+  CarOption,
+  CompareVariantOption,
+  CompareVariantPowertrainOption,
+  RandomComparisonPair,
+  FuelFilter,
+} from "./compare.types";
 
 function withResolvedImage<T extends { coverImageUrl: string | null }>(car: T): T {
   return { ...car, coverImageUrl: getUploadUrl(car.coverImageUrl) };
@@ -11,12 +18,19 @@ function withResolvedImage<T extends { coverImageUrl: string | null }>(car: T): 
 // that case rather than handling an exception (same pattern as
 // features/articles/article.api.ts's getArticleBySlug).
 //
-// `variantIds` is positional with `carSlugs` — undefined at an index
-// means "use that car's default variant".
-export async function getCompareData(carSlugs: string[], variantIds?: (number | undefined)[]): Promise<CompareResult | null> {
+// `variantIds`/`powertrainIds` are positional with `carSlugs` — undefined
+// at an index means "use that car's default variant/powertrain".
+export async function getCompareData(
+  carSlugs: string[],
+  variantIds?: (number | undefined)[],
+  powertrainIds?: (number | undefined)[],
+): Promise<CompareResult | null> {
   const params = new URLSearchParams({ cars: carSlugs.join(",") });
   if (variantIds?.some((v) => v != null)) {
     params.set("variants", carSlugs.map((_, i) => variantIds[i] ?? "").join(","));
+  }
+  if (powertrainIds?.some((p) => p != null)) {
+    params.set("powertrains", carSlugs.map((_, i) => powertrainIds[i] ?? "").join(","));
   }
 
   try {
@@ -35,6 +49,12 @@ export async function getCarOptions(): Promise<CarOption[]> {
 
 export async function getCarVariantOptions(slug: string): Promise<CompareVariantOption[]> {
   return apiFetch<CompareVariantOption[]>(`/compare/car-options/${slug}/variants`, { next: { revalidate: 300 } });
+}
+
+export async function getVariantPowertrainOptions(slug: string, variantId: number): Promise<CompareVariantPowertrainOption[]> {
+  return apiFetch<CompareVariantPowertrainOption[]>(`/compare/car-options/${slug}/variants/${variantId}/powertrains`, {
+    next: { revalidate: 300 },
+  });
 }
 
 export interface RandomPairsFilters {

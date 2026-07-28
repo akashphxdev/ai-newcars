@@ -12,6 +12,7 @@ import {
   getCompareData,
   getCarOptions,
   getCarVariantOptions,
+  getVariantPowertrainOptions,
   getRandomPairs,
   getBrandCrossPairs,
   getModelCrossPairs,
@@ -25,5 +26,6 @@ router.get('/brand-cross-pairs', publicCache(180), asyncHandler(getBrandCrossPai
 router.get('/model-cross-pairs', publicCache(180), asyncHandler(getModelCrossPairs));
 router.get('/car-options', publicCache(300), asyncHandler(getCarOptions));
 router.get('/car-options/:slug/variants', publicCache(300), asyncHandler(getCarVariantOptions));
+router.get('/car-options/:slug/variants/:variantId/powertrains', publicCache(300), asyncHandler(getVariantPowertrainOptions));
 
 export default router;

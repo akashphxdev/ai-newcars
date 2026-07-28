@@ -111,7 +111,19 @@ const Card = ({ car }: { car: HomeCar }) => {
   );
 };
 
-export default function PopularCars({ cars }: { cars: HomeCar[] }) {
+export default function PopularCars({
+  cars,
+  eyebrow = "Most Searched",
+  title = "Popular cars",
+  href = "#",
+  linkLabel = "View all popular cars",
+}: {
+  cars: HomeCar[];
+  eyebrow?: string;
+  title?: string;
+  href?: string;
+  linkLabel?: string;
+}) {
   const { trackRef, canScrollLeft, canScrollRight, updateArrows, scrollBy } = useScrollRail<HTMLDivElement>();
 
   if (cars.length === 0) return null;
@@ -120,10 +132,10 @@ export default function PopularCars({ cars }: { cars: HomeCar[] }) {
     <section className="py-12 sm:py-16" style={{ background: SURFACE }}>
       <div className="mx-auto max-w-7xl px-4">
         <SectionHeader
-          eyebrow="Most Searched"
-          title="Popular cars"
-          href="#"
-          linkLabel="View all popular cars"
+          eyebrow={eyebrow}
+          title={title}
+          href={href}
+          linkLabel={linkLabel}
           after={
             <ScrollArrows
               canScrollLeft={canScrollLeft}

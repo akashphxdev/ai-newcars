@@ -1,15 +1,15 @@
 "use client";
-import type { CompareVariantOption } from "@/features/compare/compare.types";
+import type { CompareVariantPowertrainOption } from "@/features/compare/compare.types";
 
-export default function VariantPicker({
+export default function PowertrainPicker({
   options,
   selectedId,
   onChange,
   disabled,
 }: {
-  options: CompareVariantOption[];
+  options: CompareVariantPowertrainOption[];
   selectedId: number | null;
-  onChange: (variantId: number) => void;
+  onChange: (powertrainId: number) => void;
   disabled?: boolean;
 }) {
   if (options.length <= 1) return null;
@@ -21,9 +21,9 @@ export default function VariantPicker({
       onChange={(e) => onChange(Number(e.target.value))}
       className="w-full max-w-55 cursor-pointer rounded-lg border border-border bg-surface px-2.5 py-1.5 text-[12.5px] font-semibold text-ink outline-none disabled:cursor-wait disabled:opacity-60"
     >
-      {options.map((v) => (
-        <option key={v.id} value={v.id}>
-          {v.variantName}
+      {options.map((p) => (
+        <option key={p.id} value={p.id}>
+          {p.label}
         </option>
       ))}
     </select>

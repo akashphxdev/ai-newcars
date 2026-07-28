@@ -4,6 +4,8 @@ import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { CloseIcon } from "@/components/common/icons";
 import { formatSinglePrice } from "@/lib/format";
+import { savePendingCompareSelection } from "@/features/compare/comparePendingSelection";
+import AddCarSlot, { type SelectedCompareCar } from "./AddCarSlot";
 import type { CarOption } from "@/features/compare/compare.types";
 
 const MAX_CARS = 4;
@@ -12,58 +14,7 @@ const MIN_CARS = 2;
 const FALLBACK_IMG =
   "data:image/svg+xml;charset=UTF-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='96' height='96' viewBox='0 0 96 96'%3E%3Crect width='96' height='96' rx='12' fill='%23e5e7eb'/%3E%3C/svg%3E";
 
-const AddCarSlot = ({
-  brands,
-  byBrand,
-  excludeSlugs,
-  onPick,
-}: {
-  brands: string[];
-  byBrand: Map<string, CarOption[]>;
-  excludeSlugs: Set<string>;
-  onPick: (car: CarOption) => void;
-}) => {
-  const [brand, setBrand] = useState("");
-  const models = (brand ? byBrand.get(brand) ?? [] : []).filter((m) => !excludeSlugs.has(m.slug));
-
-  return (
-    <div className="flex flex-col items-center gap-2 rounded-2xl border border-dashed border-border bg-surface p-3 text-center">
-      <div className="flex aspect-4/3 w-full items-center justify-center rounded-xl border border-dashed border-border bg-page">
-        <span className="flex size-9 items-center justify-center rounded-full bg-brand/10 text-xl font-bold leading-none text-brand">+</span>
-      </div>
-      <select
-        value={brand}
-        onChange={(e) => setBrand(e.target.value)}
-        className="w-full cursor-pointer rounded-lg border border-border bg-page px-2.5 py-2 text-[12.5px] font-semibold text-ink outline-none"
-      >
-        <option value="">Select Brand</option>
-        {brands.map((b) => (
-          <option key={b} value={b}>
-            {b}
-          </option>
-        ))}
-      </select>
-      <select
-        value=""
-        disabled={!brand}
-        onChange={(e) => {
-          const car = models.find((m) => m.slug === e.target.value);
-          if (car) onPick(car);
-        }}
-        className="w-full cursor-pointer rounded-lg border border-border bg-page px-2.5 py-2 text-[12.5px] font-semibold text-ink outline-none disabled:cursor-not-allowed disabled:opacity-50"
-      >
-        <option value="">{brand ? "Select Model" : "Pick a brand first"}</option>
-        {models.map((m) => (
-          <option key={m.id} value={m.slug}>
-            {m.name}
-          </option>
-        ))}
-      </select>
-    </div>
-  );
-};
-
-const FilledSlot = ({ car, onRemove }: { car: CarOption; onRemove: () => void }) => (
+const FilledSlot = ({ car, onRemove }: { car: SelectedCompareCar; onRemove: () => void }) => (
   <div className="relative flex flex-col items-center gap-2 rounded-2xl border border-border bg-surface p-3 text-center">
     <button
       type="button"
@@ -76,9 +27,11 @@ const FilledSlot = ({ car, onRemove }: { car: CarOption; onRemove: () => void })
     <div className="relative aspect-4/3 w-full overflow-hidden rounded-xl bg-page">
       <Image src={car.coverImageUrl ?? FALLBACK_IMG} alt={car.name} fill sizes="200px" className="object-cover" />
     </div>
-    <div className="min-w-0">
+    <div className="w-full min-w-0">
       <p className="truncate text-[10.5px] font-semibold uppercase tracking-wide text-muted">{car.brand.name}</p>
       <p className="truncate text-[13.5px] font-bold text-ink">{car.name}</p>
+      <p className="truncate text-[11px] font-medium text-muted">{car.variantName}</p>
+      <p className="truncate text-[11px] font-medium text-muted">{car.powertrainLabel}</p>
       <p className="truncate text-[12px] font-bold text-brand">{formatSinglePrice(car.priceMin)}</p>
     </div>
   </div>
@@ -86,8 +39,10 @@ const FilledSlot = ({ car, onRemove }: { car: CarOption; onRemove: () => void })
 
 // The "compare any cars" entry point — the random-pairs list below only
 // ever shows already-available cars paired up two at a time, this is
-// what lets a visitor build their own 2-4 car comparison from scratch,
-// brand first then model, same as picking a car anywhere else on the site.
+// what lets a visitor build their own 2-4 car comparison from scratch.
+// Brand -> Model -> Variant -> Powertrain, since the actual spec numbers
+// being compared come from a specific variant's specific powertrain, not
+// the model as a whole.
 //
 // Selected cars are packed to the front of the grid (rather than staying
 // pinned to whichever slot they were added in) — keeps the empty "add"
@@ -96,7 +51,7 @@ const FilledSlot = ({ car, onRemove }: { car: CarOption; onRemove: () => void })
 // never has to guess a position.
 export default function ComparePicker({ options }: { options: CarOption[] }) {
   const router = useRouter();
-  const [selected, setSelected] = useState<CarOption[]>([]);
+  const [selected, setSelected] = useState<SelectedCompareCar[]>([]);
 
   const byBrand = useMemo(() => {
     const map = new Map<string, CarOption[]>();
@@ -112,7 +67,7 @@ export default function ComparePicker({ options }: { options: CarOption[] }) {
   const excludeSlugs = new Set(selected.map((c) => c.slug));
   const emptySlotCount = MAX_CARS - selected.length;
 
-  const addCar = (car: CarOption) => {
+  const addCar = (car: SelectedCompareCar) => {
     if (selected.length >= MAX_CARS) return;
     setSelected((prev) => [...prev, car]);
   };
@@ -123,7 +78,17 @@ export default function ComparePicker({ options }: { options: CarOption[] }) {
 
   const handleCompare = () => {
     if (selected.length < MIN_CARS) return;
-    router.push(`/compare/${selected.map((c) => c.slug).join("-vs-")}`);
+    const slugPath = selected.map((c) => c.slug).join("-vs-");
+    // The URL stays clean ("/compare/a-vs-b", no variant/powertrain query
+    // params — same canonical shape as CarDekho's comparison URLs). The
+    // exact variant+powertrain chosen here is handed off via sessionStorage
+    // and applied client-side once the result page mounts.
+    savePendingCompareSelection({
+      slugPath,
+      variantIds: selected.map((c) => c.variantId),
+      powertrainIds: selected.map((c) => c.powertrainId),
+    });
+    router.push(`/compare/${slugPath}`);
   };
 
   return (
@@ -150,8 +115,13 @@ export default function ComparePicker({ options }: { options: CarOption[] }) {
         {selected.map((car) => (
           <FilledSlot key={car.slug} car={car} onRemove={() => removeCar(car.slug)} />
         ))}
+        {/* Keyed on selected.length + position, not just position — every
+            empty slot must remount (fresh brand/model/variant/powertrain
+            state) whenever a car is added/removed, otherwise a slot that
+            shifts to a new visual position keeps whatever the previous
+            slot at that index had already picked. */}
         {Array.from({ length: emptySlotCount }, (_, i) => (
-          <AddCarSlot key={i} brands={brands} byBrand={byBrand} excludeSlugs={excludeSlugs} onPick={addCar} />
+          <AddCarSlot key={`${selected.length}-${i}`} brands={brands} byBrand={byBrand} excludeSlugs={excludeSlugs} onPick={addCar} />
         ))}
 
         {selected.length === 2 && (

@@ -8,31 +8,77 @@ export interface CompareVariantOption {
   price: string;
 }
 
+export interface CompareVariantPowertrainOption {
+  id: number;
+  label: string;
+  isDefault: boolean;
+}
+
 export interface CompareCarFeatures {
+  // Safety
   airbagsCount: number | null;
-  ncapRating: string | null;
-  sunroof: boolean;
+  absWithEbd: boolean;
+  esc: boolean;
+  hillAssist: boolean;
   rearParkingCamera: boolean;
-  cruiseControl: boolean;
-  climateControl: boolean;
+  frontParkingSensors: boolean;
+  tpms: boolean;
+  isofixMounts: boolean;
+  ncapRating: string | null;
+  // Comfort & convenience
+  sunroof: boolean;
   keylessEntry: boolean;
   pushButtonStart: boolean;
+  cruiseControl: boolean;
+  climateControl: boolean;
+  rearAcVents: boolean;
+  autoDimmingMirror: boolean;
+  powerWindows: boolean;
+  upholsteryType: string | null;
+  adjustableSeats: boolean;
+  ventilatedSeats: boolean;
+  rearArmrest: boolean;
+  // Exterior
+  ledHeadlamps: boolean;
+  ledDrls: boolean;
+  alloyWheels: boolean;
+  roofRails: boolean;
+  fogLamps: boolean;
+  // Technology
+  touchscreenSizeInch: string | null;
   androidAuto: boolean;
   appleCarplay: boolean;
-  ledHeadlamps: boolean;
-  alloyWheels: boolean;
+  connectedCarTech: boolean;
+  numberOfSpeakers: number | null;
   wirelessCharging: boolean;
 }
 
 export interface CompareCarSpecs {
   seatingCapacity: number;
   transmission: string | null;
+  drivetrain: string | null;
   fuelType: string | null;
+  fuelTypeSubCategory: string | null;
   engineDisplacementCc: number | null;
+  cylinders: number | null;
+  gearboxType: string | null;
+  numGears: number | null;
+  isFourByFour: boolean;
+  fuelTankCapacity: string | null;
+  cngTankCapacity: string | null;
+  kerbWeight: number | null;
   mileage: string | null;
+  cityMileage: string | null;
+  highwayMileage: string | null;
   batteryCapacity: string | null;
+  batteryChemistry: string | null;
+  claimedRange: number | null;
+  realWorldRange: number | null;
   range: number | null;
   chargeTime: string | null;
+  acChargingTime: string | null;
+  powertrainBootspace: number | null;
+  batteryWarrantyYears: number | null;
   powerPs: number | null;
   torqueNm: number | null;
   topSpeedKmph: number | null;
@@ -43,8 +89,8 @@ export interface CompareCarResult {
   id: number;
   name: string;
   slug: string;
-  brand: { id: number; name: string };
-  bodyType: { id: number; name: string } | null;
+  brand: { id: number; name: string; slug: string };
+  bodyType: { id: number; name: string; slug: string } | null;
   coverImageUrl: string | null;
   priceMin: string | null;
   priceMax: string | null;
@@ -52,6 +98,8 @@ export interface CompareCarResult {
   isElectric: boolean;
   selectedVariant: CompareVariantOption | null;
   variantOptions: CompareVariantOption[];
+  selectedPowertrain: CompareVariantPowertrainOption | null;
+  powertrainOptions: CompareVariantPowertrainOption[];
   specs: CompareCarSpecs | null;
 }
 

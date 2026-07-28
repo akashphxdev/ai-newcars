@@ -5,6 +5,7 @@ import { sendSuccess, sendPaginated } from '@/core/utils/sendResponse';
 import {
   compareQuerySchema,
   carVariantOptionsParamsSchema,
+  variantPowertrainOptionsParamsSchema,
   randomPairsQuerySchema,
   brandCrossPairsQuerySchema,
   modelCrossPairsQuerySchema,
@@ -29,6 +30,13 @@ export async function getCarVariantOptions(req: Request, res: Response) {
   const { slug } = carVariantOptionsParamsSchema.parse(req.params);
   const options = await compareService.listCarVariantOptions(slug);
   return sendSuccess(res, options, 'Variant options fetched successfully');
+}
+
+// GET /api/public/v1/compare/car-options/:slug/variants/:variantId/powertrains
+export async function getVariantPowertrainOptions(req: Request, res: Response) {
+  const { slug, variantId } = variantPowertrainOptionsParamsSchema.parse(req.params);
+  const options = await compareService.listVariantPowertrainOptions(slug, variantId);
+  return sendSuccess(res, options, 'Powertrain options fetched successfully');
 }
 
 // GET /api/public/v1/compare/random-pairs

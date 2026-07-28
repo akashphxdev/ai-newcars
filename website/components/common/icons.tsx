@@ -110,6 +110,18 @@ export const MinusIcon = ({ className = "size-4" }: IconProps) => (
   </svg>
 );
 
+export const EditIcon = ({ className = "size-3.5" }: IconProps) => (
+  <svg className={className} viewBox="0 0 24 24" fill="none">
+    <path
+      d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+  </svg>
+);
+
 export const ShareIcon = ({ className = "size-4" }: IconProps) => (
   <svg className={className} viewBox="0 0 24 24" fill="none">
     <circle cx="18" cy="5" r="2.5" stroke="currentColor" strokeWidth="1.8" />

@@ -14,6 +14,10 @@ export const compareQuerySchema = z
       .min(1, 'cars is required')
       .transform((s) => s.split(',').map((slug) => slug.trim()).filter(Boolean)),
     variants: z.string().trim().optional(),
+    // Same same-length-comma-list convention as `variants` — which
+    // specific powertrain row (of possibly several under that variant)
+    // to use, empty segment meaning "use the variant's default".
+    powertrains: z.string().trim().optional(),
   })
   .refine((v) => v.cars.length >= 2 && v.cars.length <= 4, {
     message: 'Provide between 2 and 4 car slugs',
@@ -25,6 +29,12 @@ export const carVariantOptionsParamsSchema = z.object({
   slug: z.string().trim().min(1),
 });
 export type CarVariantOptionsParamsParsed = z.infer<typeof carVariantOptionsParamsSchema>;
+
+export const variantPowertrainOptionsParamsSchema = z.object({
+  slug: z.string().trim().min(1),
+  variantId: z.coerce.number().int().positive(),
+});
+export type VariantPowertrainOptionsParamsParsed = z.infer<typeof variantPowertrainOptionsParamsSchema>;
 
 // Matches the fuel-type filter chips the compare hub page's sidebar
 // shows — "electric" isn't an ICE fuelType code, it's cars that have an

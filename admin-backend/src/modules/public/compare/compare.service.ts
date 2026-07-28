@@ -9,6 +9,7 @@ import type {
   CompareResult,
   CompareCarSpecs,
   CompareVariantOption,
+  CompareVariantPowertrainOption,
   RandomComparisonPair,
   RandomPairCar,
   CarOption,
@@ -41,11 +42,11 @@ const CAR_BASE_SELECT = {
   priceMax: true,
   ratingAvg: true,
   coverImageUrl: true,
-  brand: { select: { id: true, name: true } },
-  bodyType: { select: { id: true, name: true } },
+  brand: { select: { id: true, name: true, slug: true } },
+  bodyType: { select: { id: true, name: true, slug: true } },
 } satisfies Prisma.CarModelSelect;
 
-async function getCarWithVariant(slug: string, variantId?: number): Promise<CompareCarResult> {
+async function getCarWithVariant(slug: string, variantId?: number, powertrainId?: number): Promise<CompareCarResult> {
   const car = await prisma.carModel.findUnique({
     where: { slug },
     select: {
@@ -80,7 +81,7 @@ async function getCarWithVariant(slug: string, variantId?: number): Promise<Comp
   };
 
   if (!chosenVariantId) {
-    return { ...base, isElectric: false, selectedVariant: null, specs: null };
+    return { ...base, isElectric: false, selectedVariant: null, selectedPowertrain: null, powertrainOptions: [], specs: null };
   }
 
   const variant = await prisma.carVariant.findFirst({
@@ -94,12 +95,24 @@ async function getCarWithVariant(slug: string, variantId?: number): Promise<Comp
       icePowertrains: {
         where: { isDeleted: false },
         orderBy: { isDefault: 'desc' },
-        take: 1,
         select: {
+          id: true,
+          isDefault: true,
           fuelType: true,
+          fuelTypeSubCategory: true,
           cubicCapacity: true,
+          cylinders: true,
+          fuelTankCapacity: true,
+          cngTankCapacity: true,
+          kerbWeight: true,
+          transmissionType: { select: { name: true } },
+          numGears: true,
+          isFourByFour: true,
+          drivetrain: { select: { name: true } },
           realWorldMileage: true,
           claimedFe: true,
+          cityMileage: true,
+          highwayMileage: true,
           powerPs: true,
           torqueNm: true,
           topSpeedKmph: true,
@@ -108,12 +121,19 @@ async function getCarWithVariant(slug: string, variantId?: number): Promise<Comp
       electricPowertrains: {
         where: { isDeleted: false },
         orderBy: { isDefault: 'desc' },
-        take: 1,
         select: {
+          id: true,
+          isDefault: true,
+          motorType: true,
           batteryCapacity: true,
+          batteryChemistry: true,
+          drivetrain: { select: { name: true } },
           claimedRange: true,
           realWorldRange: true,
           dcFastChargingTime: true,
+          acChargingTime: true,
+          powertrainBootspace: true,
+          batteryWarrantyYears: true,
           powerPs: true,
           torqueNm: true,
           topSpeedKmph: true,
@@ -123,17 +143,36 @@ async function getCarWithVariant(slug: string, variantId?: number): Promise<Comp
         take: 1,
         select: {
           airbagsCount: true,
+          absWithEbd: true,
+          esc: true,
+          hillAssist: true,
+          rearParkingCamera: true,
+          frontParkingSensors: true,
+          tpms: true,
+          isofixMounts: true,
           ncapRating: true,
           sunroof: true,
-          rearParkingCamera: true,
-          cruiseControl: true,
-          climateControl: true,
           keylessEntry: true,
           pushButtonStart: true,
+          cruiseControl: true,
+          climateControl: true,
+          rearAcVents: true,
+          autoDimmingMirror: true,
+          powerWindows: true,
+          upholsteryType: true,
+          adjustableSeats: true,
+          ventilatedSeats: true,
+          rearArmrest: true,
+          ledHeadlamps: true,
+          ledDrls: true,
+          alloyWheels: true,
+          roofRails: true,
+          fogLamps: true,
+          touchscreenSizeInch: true,
           androidAuto: true,
           appleCarplay: true,
-          ledHeadlamps: true,
-          alloyWheels: true,
+          connectedCarTech: true,
+          numberOfSpeakers: true,
           wirelessCharging: true,
         },
       },
@@ -142,35 +181,92 @@ async function getCarWithVariant(slug: string, variantId?: number): Promise<Comp
 
   if (!variant) throw ApiError.badRequest('Invalid variant for this car');
 
-  const ice = variant.icePowertrains[0];
-  const electric = variant.electricPowertrains[0];
+  // A variant can have more than one powertrain row (e.g. same trim in
+  // Petrol and CNG) — pick the one explicitly requested, else whichever
+  // is flagged isDefault, else just the first.
+  const pickPowertrain = <T extends { id: number; isDefault: boolean }>(rows: T[]): T | undefined =>
+    (powertrainId ? rows.find((r) => r.id === powertrainId) : undefined) ?? rows.find((r) => r.isDefault) ?? rows[0];
+
+  const ice = pickPowertrain(variant.icePowertrains);
+  const electric = ice ? undefined : pickPowertrain(variant.electricPowertrains);
   const feat = variant.features[0];
+
+  const selectedPowertrain: CompareVariantPowertrainOption | null = ice
+    ? { id: ice.id, label: [FUEL_TYPE_LABELS[ice.fuelType], ice.fuelTypeSubCategory].filter(Boolean).join(' '), isDefault: ice.isDefault }
+    : electric
+      ? { id: electric.id, label: electric.motorType ?? 'Electric', isDefault: electric.isDefault }
+      : null;
+
+  const powertrainOptions: CompareVariantPowertrainOption[] =
+    variant.icePowertrains.length > 0
+      ? variant.icePowertrains.map((p) => ({
+          id: p.id,
+          label: [FUEL_TYPE_LABELS[p.fuelType], p.fuelTypeSubCategory].filter(Boolean).join(' '),
+          isDefault: p.isDefault,
+        }))
+      : variant.electricPowertrains.map((p) => ({ id: p.id, label: p.motorType ?? 'Electric', isDefault: p.isDefault }));
 
   const specs: CompareCarSpecs = {
     seatingCapacity: variant.seatingCapacity,
     transmission: variant.transmission?.name ?? null,
+    drivetrain: ice?.drivetrain?.name ?? electric?.drivetrain?.name ?? null,
     fuelType: ice ? FUEL_TYPE_LABELS[ice.fuelType] ?? null : null,
+    fuelTypeSubCategory: ice?.fuelTypeSubCategory ?? null,
     engineDisplacementCc: ice?.cubicCapacity ?? null,
+    cylinders: ice?.cylinders ?? null,
+    gearboxType: ice?.transmissionType?.name ?? null,
+    numGears: ice?.numGears ?? null,
+    isFourByFour: ice?.isFourByFour ?? false,
+    fuelTankCapacity: ice?.fuelTankCapacity?.toString() ?? null,
+    cngTankCapacity: ice?.cngTankCapacity?.toString() ?? null,
+    kerbWeight: ice?.kerbWeight ?? null,
     mileage: (ice?.realWorldMileage ?? ice?.claimedFe)?.toString() ?? null,
+    cityMileage: ice?.cityMileage?.toString() ?? null,
+    highwayMileage: ice?.highwayMileage?.toString() ?? null,
     batteryCapacity: electric?.batteryCapacity?.toString() ?? null,
+    batteryChemistry: electric?.batteryChemistry ?? null,
+    claimedRange: electric?.claimedRange ?? null,
+    realWorldRange: electric?.realWorldRange ?? null,
     range: electric ? electric.realWorldRange ?? electric.claimedRange : null,
     chargeTime: electric?.dcFastChargingTime ?? null,
+    acChargingTime: electric?.acChargingTime?.toString() ?? null,
+    powertrainBootspace: electric?.powertrainBootspace ?? null,
+    batteryWarrantyYears: electric?.batteryWarrantyYears ?? null,
     powerPs: ice?.powerPs ?? electric?.powerPs ?? null,
     torqueNm: ice?.torqueNm ?? electric?.torqueNm ?? null,
     topSpeedKmph: ice?.topSpeedKmph ?? electric?.topSpeedKmph ?? null,
     features: {
       airbagsCount: feat?.airbagsCount ?? null,
+      absWithEbd: feat?.absWithEbd ?? false,
+      esc: feat?.esc ?? false,
+      hillAssist: feat?.hillAssist ?? false,
+      rearParkingCamera: feat?.rearParkingCamera ?? false,
+      frontParkingSensors: feat?.frontParkingSensors ?? false,
+      tpms: feat?.tpms ?? false,
+      isofixMounts: feat?.isofixMounts ?? false,
       ncapRating: feat?.ncapRating?.toString() ?? null,
       sunroof: feat?.sunroof ?? false,
-      rearParkingCamera: feat?.rearParkingCamera ?? false,
-      cruiseControl: feat?.cruiseControl ?? false,
-      climateControl: feat?.climateControl ?? false,
       keylessEntry: feat?.keylessEntry ?? false,
       pushButtonStart: feat?.pushButtonStart ?? false,
+      cruiseControl: feat?.cruiseControl ?? false,
+      climateControl: feat?.climateControl ?? false,
+      rearAcVents: feat?.rearAcVents ?? false,
+      autoDimmingMirror: feat?.autoDimmingMirror ?? false,
+      powerWindows: feat?.powerWindows ?? false,
+      upholsteryType: feat?.upholsteryType ?? null,
+      adjustableSeats: feat?.adjustableSeats ?? false,
+      ventilatedSeats: feat?.ventilatedSeats ?? false,
+      rearArmrest: feat?.rearArmrest ?? false,
+      ledHeadlamps: feat?.ledHeadlamps ?? false,
+      ledDrls: feat?.ledDrls ?? false,
+      alloyWheels: feat?.alloyWheels ?? false,
+      roofRails: feat?.roofRails ?? false,
+      fogLamps: feat?.fogLamps ?? false,
+      touchscreenSizeInch: feat?.touchscreenSizeInch?.toString() ?? null,
       androidAuto: feat?.androidAuto ?? false,
       appleCarplay: feat?.appleCarplay ?? false,
-      ledHeadlamps: feat?.ledHeadlamps ?? false,
-      alloyWheels: feat?.alloyWheels ?? false,
+      connectedCarTech: feat?.connectedCarTech ?? false,
+      numberOfSpeakers: feat?.numberOfSpeakers ?? null,
       wirelessCharging: feat?.wirelessCharging ?? false,
     },
   };
@@ -179,13 +275,15 @@ async function getCarWithVariant(slug: string, variantId?: number): Promise<Comp
     ...base,
     isElectric: Boolean(electric),
     selectedVariant: { id: variant.id, variantName: variant.variantName, price: variant.price.toString() },
+    selectedPowertrain,
+    powertrainOptions,
     specs,
   };
 }
 
-// variants is a same-length comma list aligned with `cars` by position —
-// "" for a given index means "use that car's default variant".
-function parseVariantIds(raw: string | undefined, count: number): (number | undefined)[] {
+// variants/powertrains are same-length comma lists aligned with `cars` by
+// position — "" for a given index means "use that car's default".
+function parseIds(raw: string | undefined, count: number): (number | undefined)[] {
   const parts = raw ? raw.split(',') : [];
   return Array.from({ length: count }, (_, i) => {
     const n = Number(parts[i]);
@@ -194,9 +292,41 @@ function parseVariantIds(raw: string | undefined, count: number): (number | unde
 }
 
 export async function getCompareData(query: CompareQueryParsed): Promise<CompareResult> {
-  const variantIds = parseVariantIds(query.variants, query.cars.length);
-  const cars = await Promise.all(query.cars.map((slug, i) => getCarWithVariant(slug, variantIds[i])));
+  const variantIds = parseIds(query.variants, query.cars.length);
+  const powertrainIds = parseIds(query.powertrains, query.cars.length);
+  const cars = await Promise.all(query.cars.map((slug, i) => getCarWithVariant(slug, variantIds[i], powertrainIds[i])));
   return { cars };
+}
+
+// "Pick variant" step's follow-up — every powertrain row under one
+// variant (a variant can have more than one: same trim in Petrol/CNG,
+// or MT/AMT), for the compare picker's 4th cascading select.
+export async function listVariantPowertrainOptions(slug: string, variantId: number): Promise<CompareVariantPowertrainOption[]> {
+  const variant = await prisma.carVariant.findFirst({
+    where: { id: variantId, model: { slug } },
+    select: {
+      icePowertrains: {
+        where: { isDeleted: false },
+        orderBy: { isDefault: 'desc' },
+        select: { id: true, isDefault: true, fuelType: true, fuelTypeSubCategory: true },
+      },
+      electricPowertrains: {
+        where: { isDeleted: false },
+        orderBy: { isDefault: 'desc' },
+        select: { id: true, isDefault: true, motorType: true },
+      },
+    },
+  });
+  if (!variant) throw ApiError.notFound(`Variant ${variantId} not found for car "${slug}"`);
+
+  if (variant.icePowertrains.length > 0) {
+    return variant.icePowertrains.map((p) => ({
+      id: p.id,
+      label: [FUEL_TYPE_LABELS[p.fuelType], p.fuelTypeSubCategory].filter(Boolean).join(' '),
+      isDefault: p.isDefault,
+    }));
+  }
+  return variant.electricPowertrains.map((p) => ({ id: p.id, label: p.motorType ?? 'Electric', isDefault: p.isDefault }));
 }
 
 export async function listCarOptions(): Promise<CarOption[]> {
