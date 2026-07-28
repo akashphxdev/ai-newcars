@@ -12,6 +12,7 @@ import AdsRoutes from './ads'
 import AiRoutes from './ai'
 import HomeRoutes from './home'
 import SiteSettingRoutes from './site-setting'
+import AnalyticsRoutes from './analytics'
 
 const router = Router();
 
@@ -27,6 +28,7 @@ router.use('/ads' , AdsRoutes)
 router.use('/ai', AiRoutes)
 router.use('/home', HomeRoutes)
 router.use('/site-settings',SiteSettingRoutes)
+router.use('/analytics', AnalyticsRoutes)
 
 
 export default router;

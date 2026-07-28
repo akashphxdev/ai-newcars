@@ -10,6 +10,7 @@ import AllNotifications from "./pages/Users/Notifications/AllNotifications";
 import AllPermissions from "./pages/AdminUsers/Permission/AllPermissions";
 import AllRoles from "./pages/AdminUsers/Roles/AllRoles";
 import AllAdminLogs from "./pages/AdminUsers/AdminLogs/AllAdminLogs";
+import AllSearchLogs from "./pages/Analytics/SearchLogs/AllSearchLogs";
 import { AuthProvider } from "./context/AuthContext";
 import AllCountries from "./pages/Locations/Countries/AllCountries";
 import AllStates from "./pages/Locations/States/AllStates";
@@ -114,6 +115,8 @@ export default function App() {
           <Route path ="/ads/campaigns" element={<AllCampaigns/>}/>
           <Route path ="/ads/impressions" element={<AllImpressions/>}/>
           <Route path ="/ads/clicks" element={<AllClicks/>}/>
+
+          <Route path="/analytics/search-logs" element={<AllSearchLogs />} />
 
           <Route path="/ai/dashboard" element={<AIDashboard />} />
           <Route path="/ai/car-faqs/review" element={<AllAiFaqs />} />

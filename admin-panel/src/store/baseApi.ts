@@ -52,6 +52,6 @@ export const api = createApi({
              "Offer", "BodyType", "AttributeOption", "Article", "ArticleCategory", "ArticleComment",
              "StoryGroup", "StoryItem", "Advertiser", "AdPlacement", "AdCampaign", "AiFaq", "AiSetting", "AiAutomationRule",
              "AiLog", "AiImagePool", "AiArticle", "AiStoryItem", "Banner", "Testimonial", "AdClick", "AdImpression",
-             "SiteSetting"],
+             "SiteSetting", "SearchLog"],
   endpoints: () => ({}),
 });
