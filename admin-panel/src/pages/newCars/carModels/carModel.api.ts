@@ -120,7 +120,7 @@ export const carModelApi = api.injectEndpoints({
 
     // Dropdown-only source — every matching car model in one shot, no
     // pagination. Use this (not getCarModels) wherever CarModel is just
-    // a <select>: Variant/Powertrain/Offer/Faq/Video/Article forms & filters.
+    // a <select>: Variant/Powertrain/Offer/Faq/Article forms & filters.
     getCarModelOptions: builder.query<CarModelOption[], ListCarModelOptionsParams | void>({
       query: (params) => ({ url: "/new-cars/car-models/options", method: "GET", params: params ?? {} }),
       transformResponse: (res: CarModelOptionsRawResponse) => res.data,

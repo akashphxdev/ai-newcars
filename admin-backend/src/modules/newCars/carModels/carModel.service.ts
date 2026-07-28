@@ -89,7 +89,7 @@ export async function listCarModelOptions(query: CarModelOptionsQueryParsed) {
   return prisma.carModel.findMany({
     where,
     // brand.name is included because nearly every consumer renders this
-    // dropdown as "Brand — Model" (Variant/Powertrain/Offer/Faq/Video
+    // dropdown as "Brand — Model" (Variant/Powertrain/Offer/Faq
     // forms & filters) — without it those labels can't be built.
     select: { id: true, name: true, brandId: true, brand: { select: { name: true } } },
     orderBy: { name: 'asc' },
@@ -328,7 +328,6 @@ export async function deleteCarModel(id: number, actorId: number, ipAddress?: st
     variantCount,
     imageCount,
     faqCount,
-    videoCount,
     colorCount,
     offerCount,
     usedListingCount,
@@ -337,7 +336,6 @@ export async function deleteCarModel(id: number, actorId: number, ipAddress?: st
     prisma.carVariant.count({ where: { modelId: id } }),
     prisma.carImage.count({ where: { modelId: id } }),
     prisma.carFaq.count({ where: { modelId: id } }),
-    prisma.carVideo.count({ where: { modelId: id } }),
     prisma.carColor.count({ where: { modelId: id } }),
     prisma.newCarOffer.count({ where: { modelId: id } }),
     prisma.usedCarListing.count({ where: { modelId: id } }),
@@ -348,7 +346,6 @@ export async function deleteCarModel(id: number, actorId: number, ipAddress?: st
   if (variantCount > 0) linkedParts.push(`${variantCount} variant(s)`);
   if (imageCount > 0) linkedParts.push(`${imageCount} image(s)`);
   if (faqCount > 0) linkedParts.push(`${faqCount} FAQ(s)`);
-  if (videoCount > 0) linkedParts.push(`${videoCount} video(s)`);
   if (colorCount > 0) linkedParts.push(`${colorCount} color(s)`);
   if (offerCount > 0) linkedParts.push(`${offerCount} offer(s)`);
   if (usedListingCount > 0) linkedParts.push(`${usedListingCount} used-car listing(s)`);

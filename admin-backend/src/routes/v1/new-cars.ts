@@ -10,7 +10,6 @@ import imageRoute from '@/modules/newCars/image/image.routes'
 import featureRoute from '@/modules/newCars/feature/feature.routes'
 import faqRoute from '@/modules/newCars/faq/faq.routes'
 import offerRoute from '@/modules/newCars/offer/offer.routes'
-import videoRoute from '@/modules/newCars/video/video.routes'
 import bodyTypeRoute from '@/modules/newCars/bodyType/bodyType.routes'
 import attributeOptionRoute from '@/modules/newCars/attributeOption/attributeOption.routes'
 
@@ -29,6 +28,5 @@ router.use('/images', imageRoute)
 router.use('/features', featureRoute )
 router.use('/faqs', faqRoute )
 router.use('/offers', offerRoute )
-router.use('/videos', videoRoute )
 
 export default router;

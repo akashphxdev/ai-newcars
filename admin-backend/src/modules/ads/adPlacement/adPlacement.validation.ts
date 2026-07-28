@@ -7,8 +7,7 @@ const dimensionsRegex = /^\d+x\d+$/;
 
 // Numeric codes only — labels live on the frontend
 // (front/src/lib/lookups.ts's PAGE_TYPE_OPTIONS). Backend just needs to
-// know which codes are currently valid. Same convention as
-// video.validation.ts's VIDEO_TYPE_CODES.
+// know which codes are currently valid.
 //   1 = Home, 2 = Car, 3 = Article
 export const PAGE_TYPE_CODES = [1, 2, 3] as const;
 

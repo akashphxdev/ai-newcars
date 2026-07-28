@@ -352,7 +352,6 @@ model CarModel {
   variants            CarVariant[]
   images              CarImage[]
   faqs                CarFaq[]
-  videos              CarVideo[]
   colors              CarColor[]
   newCarOffers        NewCarOffer[]
   usedCarListings     UsedCarListing[]
@@ -562,23 +561,6 @@ model CarFaq {
   @@map("car_faqs")
 }
 
-model CarVideo {
-  id              Int       @id @default(autoincrement())
-  modelId         Int       @map("model_id")
-  model           CarModel  @relation(fields: [modelId], references: [id])
-  title           String    @db.VarChar(200)
-  videoType       Int       @map("video_type")
-  videoUrl        String    @map("video_url") @db.VarChar(255)
-  thumbnailUrl    String    @map("thumbnail_url") @db.VarChar(255)
-  durationSeconds Int       @map("duration_seconds")
-  viewCount       Int       @default(0) @map("view_count")
-  publishedAt     DateTime  @map("published_at")
-  createdAt       DateTime  @default(now()) @map("created_at")
-  isActive        Boolean   @default(true) @map("is_active")
-
-  @@map("car_videos")
-}
-
 model CarColor {
   id             Int      @id @default(autoincrement())
   modelId        Int      @map("model_id")
@@ -586,10 +568,7 @@ model CarColor {
   colorName      String   @map("color_name") @db.VarChar(50)
   imageUrl       String?  @map("image_url") @db.VarChar(255)
   additionalCost Decimal? @map("additional_cost") @db.Decimal(8, 2)
-
-  // A color can be a mix of 2+ shades ("dual tone" and beyond) — modeled
-  // as a proper child table instead of a fixed isDualTone flag + single
-  // colorHex, since the number of shades is now open-ended.
+  
   shades CarColorShade[]
   images CarImage[]
 

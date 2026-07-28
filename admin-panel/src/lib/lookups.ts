@@ -18,23 +18,6 @@ export function getOfferTypeLabel(code: number | null | undefined): string {
   return OFFER_TYPE_OPTIONS.find((o) => o.value === code)?.label ?? "—";
 }
 
-// ===== Video types =====
-// Mirrors VIDEO_TYPE_CODES in backend/src/modules/newCars/video/video.validation.ts —
-// keep both in sync if a code is ever added/removed.
-export const VIDEO_TYPE_OPTIONS: LookupOption[] = [
-  { value: 1, label: "Review" },
-  { value: 2, label: "Teaser" },
-  { value: 3, label: "Walkaround" },
-  { value: 4, label: "Comparison" },
-  { value: 5, label: "Launch" },
-  { value: 6, label: "Other" },
-];
-
-export function getVideoTypeLabel(code: number | null | undefined): string {
-  if (code == null) return "—";
-  return VIDEO_TYPE_OPTIONS.find((o) => o.value === code)?.label ?? "—";
-}
-
 // ===== Fuel types =====
 // Mirrors FUEL_TYPE_CODES in backend/src/modules/newCars/powertrainIce/powertrainIce.validation.ts —
 // keep both in sync if a code is ever added/removed.
