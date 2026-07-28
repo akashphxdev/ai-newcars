@@ -18,13 +18,11 @@ export type CarImageAngle =
 export interface CarImageRecord {
   id: number;
   modelId: number;
-  variantId: number | null;
   colorId: number | null;
   imageUrl: string;
   isPrimary: boolean;
   angle: CarImageAngle | null;
   model: { id: number; name: string };
-  variant: { id: number; variantName: string } | null;
   color: { id: number; colorName: string } | null;
 }
 
@@ -39,7 +37,6 @@ export interface ListImagesParams {
   page?: number;
   limit?: number;
   modelId?: number;
-  variantId?: number;
   colorId?: number;
   angle?: CarImageAngle;
   isPrimary?: boolean;
@@ -49,7 +46,6 @@ export interface ListImagesParams {
 
 export interface CreateImageInput {
   modelId: number;
-  variantId?: number;
   colorId?: number;
   isPrimary?: boolean;
   angle?: CarImageAngle;
@@ -59,7 +55,6 @@ export interface CreateImageInput {
 
 export interface BulkCreateImagesInput {
   modelId: number;
-  variantId?: number;
   colorId?: number;
   angle?: CarImageAngle;
   // Multiple files in one call — none are marked primary (see backend
@@ -69,7 +64,6 @@ export interface BulkCreateImagesInput {
 
 export interface UpdateImageInput {
   modelId?: number;
-  variantId?: number | null;
   colorId?: number | null;
   isPrimary?: boolean;
   angle?: CarImageAngle | null;
@@ -117,7 +111,6 @@ export const imageApi = api.injectEndpoints({
       query: ({ image, ...fields }) => {
         const formData = new FormData();
         formData.append("modelId", String(fields.modelId));
-        if (fields.variantId) formData.append("variantId", String(fields.variantId));
         if (fields.colorId) formData.append("colorId", String(fields.colorId));
         formData.append("isPrimary", String(fields.isPrimary ?? false));
         if (fields.angle) formData.append("angle", fields.angle);
@@ -134,7 +127,6 @@ export const imageApi = api.injectEndpoints({
       query: ({ images, ...fields }) => {
         const formData = new FormData();
         formData.append("modelId", String(fields.modelId));
-        if (fields.variantId) formData.append("variantId", String(fields.variantId));
         if (fields.colorId) formData.append("colorId", String(fields.colorId));
         if (fields.angle) formData.append("angle", fields.angle);
         for (const file of images) formData.append("images", file);

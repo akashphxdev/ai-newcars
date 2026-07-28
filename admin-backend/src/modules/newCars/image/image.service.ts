@@ -16,16 +16,12 @@ import type { ImageReplaceFileResult } from './image.types';
 const IMAGE_SELECT = {
   id: true,
   modelId: true,
-  variantId: true,
   colorId: true,
   imageUrl: true,
   isPrimary: true,
   angle: true,
   model: {
     select: { id: true, name: true },
-  },
-  variant: {
-    select: { id: true, variantName: true },
   },
   color: {
     select: { id: true, colorName: true },
@@ -36,19 +32,6 @@ async function assertModelExists(modelId: number) {
   const model = await prisma.carModel.findUnique({ where: { id: modelId }, select: { id: true } });
   if (!model) {
     throw ApiError.badRequest('Invalid modelId — car model does not exist');
-  }
-}
-
-async function assertVariantBelongsToModel(variantId: number, modelId: number) {
-  const variant = await prisma.carVariant.findUnique({
-    where: { id: variantId },
-    select: { id: true, modelId: true },
-  });
-  if (!variant) {
-    throw ApiError.badRequest('Invalid variantId — variant does not exist');
-  }
-  if (variant.modelId !== modelId) {
-    throw ApiError.badRequest('This variant does not belong to the given modelId');
   }
 }
 
@@ -66,11 +49,10 @@ async function assertColorBelongsToModel(colorId: number, modelId: number) {
 }
 
 export async function listImages(query: ImageListQueryParsed) {
-  const { page, limit, modelId, variantId, colorId, angle, isPrimary, sortBy, sortOrder } = query;
+  const { page, limit, modelId, colorId, angle, isPrimary, sortBy, sortOrder } = query;
 
   const where: Prisma.CarImageWhereInput = {
     ...(modelId ? { modelId } : {}),
-    ...(variantId ? { variantId } : {}),
     ...(colorId ? { colorId } : {}),
     ...(angle ? { angle } : {}),
     ...(typeof isPrimary === 'boolean' ? { isPrimary } : {}),
@@ -118,9 +100,6 @@ export async function createImage(
   ipAddress?: string | null,
 ) {
   await assertModelExists(input.modelId);
-  if (input.variantId) {
-    await assertVariantBelongsToModel(input.variantId, input.modelId);
-  }
   if (input.colorId) {
     await assertColorBelongsToModel(input.colorId, input.modelId);
   }
@@ -136,7 +115,6 @@ export async function createImage(
     return tx.carImage.create({
       data: {
         modelId: input.modelId,
-        variantId: input.variantId,
         colorId: input.colorId,
         angle: input.angle,
         isPrimary: input.isPrimary ?? false,
@@ -170,9 +148,6 @@ export async function createImagesBulk(
   }
 
   await assertModelExists(input.modelId);
-  if (input.variantId) {
-    await assertVariantBelongsToModel(input.variantId, input.modelId);
-  }
   if (input.colorId) {
     await assertColorBelongsToModel(input.colorId, input.modelId);
   }
@@ -183,7 +158,6 @@ export async function createImagesBulk(
         tx.carImage.create({
           data: {
             modelId: input.modelId,
-            variantId: input.variantId,
             colorId: input.colorId,
             angle: input.angle,
             isPrimary: false,
@@ -219,22 +193,15 @@ export async function updateImage(
     await assertModelExists(input.modelId);
   }
 
-  if (typeof input.variantId === 'number') {
-    await assertVariantBelongsToModel(input.variantId, targetModelId);
-  } else if (input.variantId === undefined && modelIsChanging && existing.variantId != null) {
-    // modelId is changing but variantId wasn't touched in this request —
-    // the existing variant link would now point at a variant under the
-    // OLD model, which is inconsistent. Re-validate it against the new
-    // model instead of silently leaving stale/mismatched data; if it
-    // doesn't belong, the caller must explicitly pass a new variantId
-    // (or null to clear it).
-    await assertVariantBelongsToModel(existing.variantId, targetModelId);
-  }
-
   if (typeof input.colorId === 'number') {
     await assertColorBelongsToModel(input.colorId, targetModelId);
   } else if (input.colorId === undefined && modelIsChanging && existing.colorId != null) {
-    // Same reasoning as variantId above.
+    // modelId is changing but colorId wasn't touched in this request —
+    // the existing color link would now point at a color under the OLD
+    // model, which is inconsistent. Re-validate it against the new model
+    // instead of silently leaving stale/mismatched data; if it doesn't
+    // belong, the caller must explicitly pass a new colorId (or null to
+    // clear it).
     await assertColorBelongsToModel(existing.colorId, targetModelId);
   }
 

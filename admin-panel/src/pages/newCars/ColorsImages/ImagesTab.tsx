@@ -130,7 +130,6 @@ export default function ImagesTab({ modelId }: { modelId: number }) {
                 <div className="p-2 space-y-1.5">
                   <p className="text-[10px] text-[#7a7670] truncate">
                     {img.angle ?? "No angle"}
-                    {img.variant ? ` · ${img.variant.variantName}` : ""}
                     {img.color ? ` · ${img.color.colorName}` : ""}
                   </p>
                   <div className="flex items-center gap-1">

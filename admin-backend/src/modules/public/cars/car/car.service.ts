@@ -333,7 +333,6 @@ export interface CarDetailImage {
   imageUrl: string;
   isPrimary: boolean;
   angle: string | null;
-  variantId: number | null;
   colorId: number | null;
 }
 
@@ -383,7 +382,7 @@ export async function getCarDetail(brandSlug: string, modelSlug: string, variant
         orderBy: [{ isTopSeller: 'desc' }, { price: 'asc' }],
       },
       images: {
-        select: { id: true, imageUrl: true, isPrimary: true, angle: true, variantId: true, colorId: true },
+        select: { id: true, imageUrl: true, isPrimary: true, angle: true, colorId: true },
         orderBy: { isPrimary: 'desc' },
       },
       colors: {
@@ -669,7 +668,7 @@ export async function getCarImages(brandSlug: string, modelSlug: string): Promis
       name: true,
       brand: { select: { name: true, slug: true } },
       images: {
-        select: { id: true, imageUrl: true, isPrimary: true, angle: true, variantId: true, colorId: true },
+        select: { id: true, imageUrl: true, isPrimary: true, angle: true, colorId: true },
         orderBy: { isPrimary: 'desc' },
       },
       colors: {

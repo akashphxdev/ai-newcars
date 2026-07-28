@@ -118,7 +118,7 @@ export async function setPrimaryImage(req: Request, res: Response) {
 }
 
 // PATCH /images/:id/file
-// Replace the underlying image file without touching modelId/variantId/
+// Replace the underlying image file without touching modelId/colorId/
 // angle/isPrimary metadata.
 export async function replaceImageFile(req: Request, res: Response) {
   const { id } = imageIdParamSchema.parse(req.params);

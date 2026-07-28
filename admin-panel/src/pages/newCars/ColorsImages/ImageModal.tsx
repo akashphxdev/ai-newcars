@@ -8,7 +8,6 @@ import {
   type CarImageRecord,
   type CarImageAngle,
 } from "./image.api";
-import { useGetVariantOptionsQuery } from "../Variants/variant.api";
 import { useGetColorsQuery } from "./color.api";
 import { extractApiError, getUploadUrl } from "../../../lib/apiClient";
 
@@ -57,16 +56,11 @@ export default function ImageModal({
 }) {
   const isEditMode = !!image;
 
-  // Variants belonging to this model — lets the admin optionally pin a
-  // gallery photo to one specific variant instead of the model at large.
-  const { data: variants = [] } = useGetVariantOptionsQuery({ modelId });
-
   // Colors belonging to this model — lets the admin optionally tag a
   // gallery photo as belonging to one specific color option.
   const { data: colorsData } = useGetColorsQuery({ modelId, limit: 100, sortBy: "colorName", sortOrder: "asc" });
   const colors = colorsData?.data ?? [];
 
-  const [variantId, setVariantId] = useState<number | "">(image?.variantId ?? "");
   const [colorId, setColorId] = useState<number | "">(image?.colorId ?? "");
   const [angle, setAngle] = useState<CarImageAngle | "">(image?.angle ?? "");
   const [isPrimary, setIsPrimary] = useState(image ? image.isPrimary : false);
@@ -143,7 +137,6 @@ export default function ImageModal({
   const resetForm = () => {
     pendingFiles.forEach((p) => URL.revokeObjectURL(p.previewUrl));
     if (editPreview) URL.revokeObjectURL(editPreview);
-    setVariantId("");
     setColorId("");
     setAngle("");
     setIsPrimary(false);
@@ -180,7 +173,6 @@ export default function ImageModal({
         await updateImage({
           id: image.id,
           input: {
-            variantId: variantId === "" ? null : Number(variantId),
             colorId: colorId === "" ? null : Number(colorId),
             angle: angle === "" ? null : angle,
             isPrimary,
@@ -191,19 +183,17 @@ export default function ImageModal({
         // primary" is still respected.
         await createImage({
           modelId,
-          variantId: variantId === "" ? undefined : Number(variantId),
           colorId: colorId === "" ? undefined : Number(colorId),
           angle: angle === "" ? undefined : angle,
           isPrimary,
           image: pendingFiles[0].file,
         }).unwrap();
       } else {
-        // Multiple files — same variant/color/angle scoping applied to
-        // every image in the batch. "Primary" isn't offered here since
-        // it wouldn't make sense to mark every upload as the cover shot.
+        // Multiple files — same color/angle scoping applied to every
+        // image in the batch. "Primary" isn't offered here since it
+        // wouldn't make sense to mark every upload as the cover shot.
         await createImagesBulk({
           modelId,
-          variantId: variantId === "" ? undefined : Number(variantId),
           colorId: colorId === "" ? undefined : Number(colorId),
           angle: angle === "" ? undefined : angle,
           images: pendingFiles.map((p) => p.file),
@@ -365,21 +355,6 @@ export default function ImageModal({
                 {ANGLES.map((a) => (
                   <option key={a.value} value={a.value}>
                     {a.label}
-                  </option>
-                ))}
-              </select>
-            </Field>
-
-            <Field label="Variant (optional)">
-              <select
-                value={variantId}
-                onChange={(e) => setVariantId(e.target.value ? Number(e.target.value) : "")}
-                className="cursor-pointer w-full text-sm font-medium text-[#1c1a17] bg-[#f7f5f1] border border-[#e2ddd5] rounded-xl px-3 py-2.5 outline-none transition-all focus:bg-white"
-              >
-                <option value="">Applies to whole model</option>
-                {variants.map((v) => (
-                  <option key={v.id} value={v.id}>
-                    {v.variantName}
                   </option>
                 ))}
               </select>

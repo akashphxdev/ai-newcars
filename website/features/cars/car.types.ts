@@ -184,7 +184,6 @@ export interface CarDetailImage {
   imageUrl: string;
   isPrimary: boolean;
   angle: string | null;
-  variantId: number | null;
   colorId: number | null;
 }
 

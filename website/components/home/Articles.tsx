@@ -66,10 +66,10 @@ const Card = ({ article }: { article: HomeArticle }) => (
 export default function Articles({
   articles,
   eyebrow = "Guides & Explainers",
-  title = "Latest articles",
+  title = "Latest news",
   subtitle = "Buying guides, explainers, and ownership tips from the TimesAuto team",
   href = "#",
-  linkLabel = "View all articles",
+  linkLabel = "View all news",
 }: {
   articles: HomeArticle[];
   eyebrow?: string;

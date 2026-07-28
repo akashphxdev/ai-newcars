@@ -13,12 +13,11 @@ const DATE_FMT = new Intl.DateTimeFormat("en-IN", { day: "2-digit", month: "long
 // everything else here is the same static shell for every model.
 export default function CarModelHero({ car, variant }: { car: CarDetailResult; variant: CarDetailSelectedVariant | null }) {
   const isUpcoming = car.launchStatus !== "available";
-  const galleryImages = car.images.filter((img) => img.variantId == null || img.variantId === variant?.id);
 
   return (
     <div className="grid grid-cols-1 gap-5 lg:grid-cols-[1fr_420px]">
       <CarModelGallery
-        images={galleryImages}
+        images={car.images}
         colors={car.colors}
         fallbackImage={car.coverImageUrl}
         alt={`${car.brand.name} ${car.name}`}

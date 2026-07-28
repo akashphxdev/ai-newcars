@@ -29,10 +29,6 @@ export const imageListQuerySchema = z.object({
   // Images are always scoped to a car model — required for the admin
   // panel's "select a model, then manage its gallery" workflow.
   modelId: z.coerce.number().int().positive().optional(),
-  // Optionally narrow further to images belonging to one specific
-  // variant (a CarImage's variantId is nullable — null means "applies
-  // to the model generally, not one particular variant").
-  variantId: z.coerce.number().int().positive().optional(),
   // Or narrow to images tagged with one specific color (colorId is
   // nullable the same way — null means "not tied to a particular color").
   colorId: z.coerce.number().int().positive().optional(),
@@ -48,7 +44,6 @@ export const imageIdParamSchema = z.object({
 
 export const createImageSchema = z.object({
   modelId: z.coerce.number().int().positive('modelId is required'),
-  variantId: z.coerce.number().int().positive().optional(),
   colorId: z.coerce.number().int().positive().optional(),
   isPrimary: booleanish.optional(),
   angle: z.enum(ANGLES).optional(),
@@ -57,7 +52,6 @@ export const createImageSchema = z.object({
 export const updateImageSchema = z
   .object({
     modelId: z.coerce.number().int().positive().optional(),
-    variantId: z.coerce.number().int().positive().nullable().optional(),
     colorId: z.coerce.number().int().positive().nullable().optional(),
     isPrimary: booleanish.optional(),
     angle: z.enum(ANGLES).nullable().optional(),
@@ -76,7 +70,6 @@ export const setPrimaryImageSchema = z.object({
 // choice made afterwards, not implied by upload order.
 export const bulkCreateImagesSchema = z.object({
   modelId: z.coerce.number().int().positive('modelId is required'),
-  variantId: z.coerce.number().int().positive().optional(),
   colorId: z.coerce.number().int().positive().optional(),
   angle: z.enum(ANGLES).optional(),
 });
