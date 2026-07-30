@@ -2,6 +2,9 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { isChromelessRoute } from "@/lib/routes";
+import type { PublicSiteSetting } from "@/features/siteSettings/siteSetting.types";
+import type { BodyType } from "@/features/bodyTypes/bodyType.types";
+import type { ArticleCategory } from "@/features/articles/article.types";
 
 const ORANGE = "#f2650f";
 const DARK = "#111827";
@@ -66,61 +69,84 @@ const PhoneIcon = () => (
   </svg>
 );
 
-const SOCIALS = [
-  {
-    label: "Facebook",
-    href: "#",
-    brand: "#1877F2",
-    icon: (
-      <svg viewBox="0 0 24 24" fill="currentColor">
-        <path d="M13.5 21v-7.6h2.6l.4-3h-3v-1.9c0-.87.24-1.46 1.5-1.46h1.6V4.35A21.4 21.4 0 0 0 13.9 4.2c-2.24 0-3.77 1.37-3.77 3.87v2.16H7.5v3h2.63V21h3.37Z" />
-      </svg>
-    ),
-  },
-  {
-    label: "Instagram",
-    href: "#",
-    brand: "linear-gradient(135deg,#f9ce34,#ee2a7b,#6228d7)",
-    icon: (
-      <svg viewBox="0 0 24 24" fill="none">
-        <rect x="3.5" y="3.5" width="17" height="17" rx="5" stroke="currentColor" strokeWidth="1.6" />
-        <circle cx="12" cy="12" r="4" stroke="currentColor" strokeWidth="1.6" />
-        <circle cx="17.2" cy="6.8" r="1.1" fill="currentColor" />
-      </svg>
-    ),
-  },
-  {
-    label: "X",
-    href: "#",
-    brand: "#000000",
-    icon: (
-      <svg viewBox="0 0 24 24" fill="currentColor">
-        <path d="M17.5 3h3l-7.3 8.3L21.5 21h-6.7l-5.2-6.6L3.6 21H.6l7.8-8.9L2.5 3h6.9l4.7 6.1L17.5 3Zm-1.2 16h1.6L7.9 4.9H6.2L16.3 19Z" />
-      </svg>
-    ),
-  },
-  {
-    label: "YouTube",
-    href: "#",
-    brand: "#FF0000",
-    icon: (
-      <svg viewBox="0 0 24 24" fill="none">
-        <rect x="2.5" y="5.5" width="19" height="13" rx="4" stroke="currentColor" strokeWidth="1.6" />
-        <path d="M10.5 9.5v5l4.3-2.5-4.3-2.5Z" fill="currentColor" />
-      </svg>
-    ),
-  },
-  {
-    label: "LinkedIn",
-    href: "#",
-    brand: "#0A66C2",
-    icon: (
-      <svg viewBox="0 0 24 24" fill="currentColor">
-        <path d="M6.94 8.5H3.56V20h3.38V8.5ZM5.25 3.5a1.96 1.96 0 1 0 0 3.92 1.96 1.96 0 0 0 0-3.92ZM20.5 20v-6.4c0-3.43-1.83-5.02-4.27-5.02-1.97 0-2.85 1.08-3.34 1.84V8.5H9.5c.04.96 0 11.5 0 11.5h3.39v-6.42c0-.34.02-.68.12-.93.27-.68.9-1.38 1.94-1.38 1.37 0 1.92 1.04 1.92 2.57V20h3.63Z" />
-      </svg>
-    ),
-  },
-];
+const WhatsAppIcon = () => (
+  <svg width="15" height="15" viewBox="0 0 24 24" fill="none">
+    <path
+      d="M12 3.5a8.4 8.4 0 0 0-7.2 12.7L3.5 20.5l4.4-1.3A8.4 8.4 0 1 0 12 3.5Z"
+      stroke={MUTED}
+      strokeWidth="1.7"
+      strokeLinejoin="round"
+    />
+    <path
+      d="M8.7 8.3c.3-.6.6-.6.9-.6h.6c.2 0 .4 0 .6.5.2.5.7 1.6.7 1.7.1.1.1.3 0 .4-.1.2-.1.3-.3.4-.1.2-.3.3-.4.5-.1.1-.3.3-.1.6.2.3.8 1.2 1.6 1.9 1.1 1 2 1.2 2.3 1.4.3.1.5.1.6-.1.2-.2.7-.8.9-1.1.2-.2.4-.2.6-.1l1.5.7c.2.1.4.2.4.4 0 .2 0 1-.5 1.5-.4.6-1.5 1-2.4.9-2.4-.3-4.5-1.6-5.9-3.4-.6-.7-1.6-2-1.7-3.1-.1-1 .3-1.5.5-1.8Z"
+      stroke={MUTED}
+      strokeWidth="1"
+      strokeLinejoin="round"
+    />
+  </svg>
+);
+
+type SocialDef = { label: string; href: string; brand: string; icon: React.ReactNode };
+
+function buildSocials(s: PublicSiteSetting): SocialDef[] {
+  const defs: { label: string; href: string | null; brand: string; icon: React.ReactNode }[] = [
+    {
+      label: "Facebook",
+      href: s.facebookUrl,
+      brand: "#1877F2",
+      icon: (
+        <svg viewBox="0 0 24 24" fill="currentColor">
+          <path d="M13.5 21v-7.6h2.6l.4-3h-3v-1.9c0-.87.24-1.46 1.5-1.46h1.6V4.35A21.4 21.4 0 0 0 13.9 4.2c-2.24 0-3.77 1.37-3.77 3.87v2.16H7.5v3h2.63V21h3.37Z" />
+        </svg>
+      ),
+    },
+    {
+      label: "Instagram",
+      href: s.instagramUrl,
+      brand: "linear-gradient(135deg,#f9ce34,#ee2a7b,#6228d7)",
+      icon: (
+        <svg viewBox="0 0 24 24" fill="none">
+          <rect x="3.5" y="3.5" width="17" height="17" rx="5" stroke="currentColor" strokeWidth="1.6" />
+          <circle cx="12" cy="12" r="4" stroke="currentColor" strokeWidth="1.6" />
+          <circle cx="17.2" cy="6.8" r="1.1" fill="currentColor" />
+        </svg>
+      ),
+    },
+    {
+      label: "X",
+      href: s.twitterUrl,
+      brand: "#000000",
+      icon: (
+        <svg viewBox="0 0 24 24" fill="currentColor">
+          <path d="M17.5 3h3l-7.3 8.3L21.5 21h-6.7l-5.2-6.6L3.6 21H.6l7.8-8.9L2.5 3h6.9l4.7 6.1L17.5 3Zm-1.2 16h1.6L7.9 4.9H6.2L16.3 19Z" />
+        </svg>
+      ),
+    },
+    {
+      label: "YouTube",
+      href: s.youtubeUrl,
+      brand: "#FF0000",
+      icon: (
+        <svg viewBox="0 0 24 24" fill="none">
+          <rect x="2.5" y="5.5" width="19" height="13" rx="4" stroke="currentColor" strokeWidth="1.6" />
+          <path d="M10.5 9.5v5l4.3-2.5-4.3-2.5Z" fill="currentColor" />
+        </svg>
+      ),
+    },
+    {
+      label: "LinkedIn",
+      href: s.linkedinUrl,
+      brand: "#0A66C2",
+      icon: (
+        <svg viewBox="0 0 24 24" fill="currentColor">
+          <path d="M6.94 8.5H3.56V20h3.38V8.5ZM5.25 3.5a1.96 1.96 0 1 0 0 3.92 1.96 1.96 0 0 0 0-3.92ZM20.5 20v-6.4c0-3.43-1.83-5.02-4.27-5.02-1.97 0-2.85 1.08-3.34 1.84V8.5H9.5c.04.96 0 11.5 0 11.5h3.39v-6.42c0-.34.02-.68.12-.93.27-.68.9-1.38 1.94-1.38 1.37 0 1.92 1.04 1.92 2.57V20h3.63Z" />
+        </svg>
+      ),
+    },
+  ];
+
+  return defs.filter((d): d is SocialDef => !!d.href);
+}
 
 /* ---------------- Data ---------------- */
 
@@ -136,38 +162,37 @@ type FooterCol = {
   links: { label: string; href: string }[];
 };
 
-const FOOTER_COLS: FooterCol[] = [
-  {
-    title: "Explore",
-    links: [
-      { label: "New Cars", href: "#" },
-      { label: "Used Cars", href: "#" },
-      { label: "Sell Your Car", href: "#" },
-      { label: "Compare Cars", href: "/compare-cars" },
-      { label: "Upcoming Cars", href: "#" },
-    ],
-  },
-  {
-    title: "Tools",
-    links: [
-      { label: "EMI Calculator", href: "/emi-calculator" },
-      { label: "Fuel Cost Calculator", href: "/fuel-cost-calculator" },
-      { label: "Mileage Calculator", href: "/mileage-calculator" },
-      { label: "On-Road Price", href: "#" },
-    ],
-  },
-  {
-    title: "Company",
-    links: [
-      { label: "About Us", href: "#" },
-      { label: "Careers", href: "#" },
-      { label: "Advertise With Us", href: "#" },
-      { label: "Contact Us", href: "#" },
-    ],
-  },
-];
+const TOOLS_COL: FooterCol = {
+  title: "Tools",
+  links: [
+    { label: "EMI Calculator", href: "/emi-calculator" },
+    { label: "Fuel Cost Calculator", href: "/fuel-cost-calculator" },
+    { label: "Mileage Calculator", href: "/mileage-calculator" },
+    { label: "On-Road Price", href: "#" },
+  ],
+};
+
+// "New Cars" and "News" mirror the exact same data Header's nav dropdowns
+// use (body types / article categories) — same labels, same routes.
+function buildFooterCols(bodyTypes: BodyType[], articleCategories: ArticleCategory[]): FooterCol[] {
+  return [
+    {
+      title: "News",
+      links: articleCategories.map((c) => ({ label: c.name, href: `/news/${c.slug}` })),
+    },
+    {
+      title: "New Cars",
+      links: [
+        ...bodyTypes.map((bt) => ({ label: bt.name, href: `/${bt.slug}-cars` })),
+        { label: "Electric", href: "/electric-cars" },
+      ],
+    },
+    TOOLS_COL,
+  ];
+}
 
 const LEGAL_LINKS = [
+  { label: "About Us", href: "#" },
   { label: "Privacy Policy", href: "#" },
   { label: "Terms of Use", href: "#" },
   { label: "Sitemap", href: "#" },
@@ -175,9 +200,21 @@ const LEGAL_LINKS = [
 
 /* ---------------- Component ---------------- */
 
-export default function Footer() {
+export default function Footer({
+  siteSettings,
+  bodyTypes,
+  articleCategories,
+}: {
+  siteSettings: PublicSiteSetting;
+  bodyTypes: BodyType[];
+  articleCategories: ArticleCategory[];
+}) {
   const pathname = usePathname();
   if (isChromelessRoute(pathname)) return null;
+
+  const socials = buildSocials(siteSettings);
+  const whatsappHref = siteSettings.whatsappNumber ? `https://wa.me/${siteSettings.whatsappNumber.replace(/\D/g, "")}` : null;
+  const footerCols = buildFooterCols(bodyTypes, articleCategories);
 
   return (
     <footer className="font-body" style={{ background: SURFACE, borderTop: `1px solid ${BORDER}` }}>
@@ -204,9 +241,9 @@ export default function Footer() {
 
       {/* Main columns */}
       <div className="mx-auto max-w-7xl px-6 py-12">
-        <div className="grid grid-cols-1 gap-10 sm:grid-cols-2 lg:grid-cols-5">
-          {/* Brand + about */}
-          <div className="lg:col-span-2">
+        <div className="grid grid-cols-2 gap-x-6 gap-y-8 sm:gap-10 lg:grid-cols-5">
+          {/* Brand + about — spans both mobile columns, then 2 of 5 at desktop */}
+          <div className="col-span-2">
             <Link href="/" className="inline-flex items-center gap-1.5 no-underline">
               <span className="text-xl font-black tracking-tight" style={{ color: DARK }}>
                 Times<span style={{ color: ORANGE }}>Auto</span>
@@ -218,23 +255,41 @@ export default function Footer() {
             </p>
 
             <div className="mt-5 flex flex-col gap-2.5">
-              <div className="flex items-center gap-2 text-[13px]" style={{ color: MUTED }}>
-                <PinIcon />
-                JMD Megapolis, Sector 48, Jaipur, Rajasthan
-              </div>
-              <a href="mailto:support@timesauto.in" className="flex items-center gap-2 text-[13px] no-underline" style={{ color: MUTED }}>
-                <MailIcon />
-                support@timesauto.in
-              </a>
-              <a href="tel:+911800123456" className="flex items-center gap-2 text-[13px] no-underline" style={{ color: MUTED }}>
-                <PhoneIcon />
-                1800-123-4567
-              </a>
+              {siteSettings.address && (
+                <div className="flex items-center gap-2 text-[13px]" style={{ color: MUTED }}>
+                  <PinIcon />
+                  {siteSettings.address}
+                </div>
+              )}
+              {siteSettings.contactEmail && (
+                <a href={`mailto:${siteSettings.contactEmail}`} className="flex items-center gap-2 text-[13px] no-underline" style={{ color: MUTED }}>
+                  <MailIcon />
+                  {siteSettings.contactEmail}
+                </a>
+              )}
+              {siteSettings.supportEmail && siteSettings.supportEmail !== siteSettings.contactEmail && (
+                <a href={`mailto:${siteSettings.supportEmail}`} className="flex items-center gap-2 text-[13px] no-underline" style={{ color: MUTED }}>
+                  <MailIcon />
+                  Support: {siteSettings.supportEmail}
+                </a>
+              )}
+              {siteSettings.contactNumber && (
+                <a href={`tel:${siteSettings.contactNumber}`} className="flex items-center gap-2 text-[13px] no-underline" style={{ color: MUTED }}>
+                  <PhoneIcon />
+                  {siteSettings.contactNumber}
+                </a>
+              )}
+              {whatsappHref && (
+                <a href={whatsappHref} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-[13px] no-underline" style={{ color: MUTED }}>
+                  <WhatsAppIcon />
+                  WhatsApp: {siteSettings.whatsappNumber}
+                </a>
+              )}
             </div>
           </div>
 
           {/* Link columns */}
-          {FOOTER_COLS.map((col) => (
+          {footerCols.map((col) => (
             <div key={col.title}>
               <p className="mb-4 text-[13px] font-bold uppercase tracking-wide" style={{ color: DARK }}>
                 {col.title}
@@ -264,7 +319,7 @@ export default function Footer() {
       <div style={{ borderTop: `1px solid ${BORDER}` }}>
         <div className="mx-auto flex max-w-7xl flex-col-reverse items-center justify-between gap-4 px-6 py-6 sm:flex-row">
           <p className="text-[12px]" style={{ color: FAINT }}>
-            © {new Date().getFullYear()} TimesAuto, a Girnar Software Pvt. Ltd. brand. All rights reserved.
+            © {new Date().getFullYear()} TimesAuto. All rights reserved.
           </p>
 
           <div className="flex items-center gap-5">
@@ -283,31 +338,37 @@ export default function Footer() {
               ))}
             </nav>
 
-            <div className="hidden h-4 w-px sm:block" style={{ background: BORDER }} />
+            {socials.length > 0 && (
+              <>
+                <div className="hidden h-4 w-px sm:block" style={{ background: BORDER }} />
 
-            <div className="flex items-center gap-2">
-              {SOCIALS.map((s) => (
-                <a
-                  key={s.label}
-                  href={s.href}
-                  aria-label={s.label}
-                  className="flex size-8 items-center justify-center rounded-full transition-colors [&_svg]:size-3.5"
-                  style={{ color: MUTED, border: `1px solid ${BORDER}` }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.color = "#fff";
-                    e.currentTarget.style.background = s.brand;
-                    e.currentTarget.style.borderColor = "transparent";
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.color = MUTED;
-                    e.currentTarget.style.background = "transparent";
-                    e.currentTarget.style.borderColor = BORDER;
-                  }}
-                >
-                  {s.icon}
-                </a>
-              ))}
-            </div>
+                <div className="flex items-center gap-2">
+                  {socials.map((s) => (
+                    <a
+                      key={s.label}
+                      href={s.href}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      aria-label={s.label}
+                      className="flex size-8 items-center justify-center rounded-full transition-colors [&_svg]:size-3.5"
+                      style={{ color: MUTED, border: `1px solid ${BORDER}` }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.color = "#fff";
+                        e.currentTarget.style.background = s.brand;
+                        e.currentTarget.style.borderColor = "transparent";
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.color = MUTED;
+                        e.currentTarget.style.background = "transparent";
+                        e.currentTarget.style.borderColor = BORDER;
+                      }}
+                    >
+                      {s.icon}
+                    </a>
+                  ))}
+                </div>
+              </>
+            )}
           </div>
         </div>
       </div>

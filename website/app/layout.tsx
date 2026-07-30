@@ -8,6 +8,7 @@ import Footer from "@/components/common/Footer";
 import DevLoadTimeBadge from "@/components/common/DevLoadTimeBadge";
 import { getBodyTypes } from "@/features/bodyTypes/bodyType.api";
 import { getArticleCategories } from "@/features/articles/article.api";
+import { getSiteSettings } from "@/features/siteSettings/siteSetting.api";
 
 const inter = Inter({
   variable: "--font-body",
@@ -35,7 +36,11 @@ export default async function RootLayout({
   // Fetched once here (not inside Header, which is a Client Component)
   // and passed down — every page's header shows the same, cached-server-side
   // list of body types instead of each page re-fetching it client-side.
-  const [bodyTypes, articleCategories] = await Promise.all([getBodyTypes(20), getArticleCategories()]);
+  const [bodyTypes, articleCategories, siteSettings] = await Promise.all([
+    getBodyTypes(20),
+    getArticleCategories(),
+    getSiteSettings(),
+  ]);
 
   return (
     <html
@@ -51,7 +56,7 @@ export default async function RootLayout({
             to a much narrower auto/content-based width instead. This one
             fix applies to every page, current and future. */}
         <main className="w-full flex-1">{children}</main>
-        <Footer />
+        <Footer siteSettings={siteSettings} bodyTypes={bodyTypes} articleCategories={articleCategories} />
         <DevLoadTimeBadge />
       </body>
     </html>
