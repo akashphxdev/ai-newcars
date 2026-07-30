@@ -1,52 +1,12 @@
 // src/pages/newCars/Features/feature.api.ts
 import { api } from "../../../store/baseApi";
 
-export interface FeatureVariantSummary {
-  id: number;
-  variantName: string;
-  model: { id: number; name: string; brand: { id: number; name: string } };
-}
-
 export interface FeatureRecord {
   id: number;
-  variantId: number;
-  airbagsCount: number | null;
-  absWithEbd: boolean;
-  esc: boolean;
-  hillAssist: boolean;
-  rearParkingCamera: boolean;
-  frontParkingSensors: boolean;
-  tpms: boolean;
-  isofixMounts: boolean;
-  // Decimal fields come back from Prisma serialized as strings — same
-  // convention as VariantRecord's price / PowertrainIceRecord's specs.
-  ncapRating: string | null;
-  sunroof: boolean;
-  keylessEntry: boolean;
-  pushButtonStart: boolean;
-  cruiseControl: boolean;
-  climateControl: boolean;
-  rearAcVents: boolean;
-  autoDimmingMirror: boolean;
-  powerWindows: boolean;
-  upholsteryType: string | null;
-  adjustableSeats: boolean;
-  ventilatedSeats: boolean;
-  rearArmrest: boolean;
-  ledHeadlamps: boolean;
-  ledDrls: boolean;
-  alloyWheels: boolean;
-  roofRails: boolean;
-  fogLamps: boolean;
-  touchscreenSizeInch: string | null;
-  androidAuto: boolean;
-  appleCarplay: boolean;
-  connectedCarTech: boolean;
-  numberOfSpeakers: number | null;
-  wirelessCharging: boolean;
-  extraFeatures: string | null;
+  name: string;
+  categoryId: number | null;
+  category: { id: number; name: string } | null;
   createdAt: string;
-  variant: FeatureVariantSummary;
 }
 
 export interface Pagination {
@@ -59,50 +19,18 @@ export interface Pagination {
 export interface ListFeaturesParams {
   page?: number;
   limit?: number;
-  variantId?: number;
-  sortBy?: "id" | "createdAt";
-  sortOrder?: "asc" | "desc";
+  search?: string;
+  categoryId?: number;
 }
 
-// Only variantId is mandatory — every safety/comfort/tech field is
-// optional and filled in progressively, same reasoning as
-// PowertrainIceFormInput. Update is a partial patch (subset of this
-// shape).
-export interface FeatureFormInput {
-  variantId: number;
-  airbagsCount?: number | null;
-  absWithEbd?: boolean;
-  esc?: boolean;
-  hillAssist?: boolean;
-  rearParkingCamera?: boolean;
-  frontParkingSensors?: boolean;
-  tpms?: boolean;
-  isofixMounts?: boolean;
-  ncapRating?: number | null;
-  sunroof?: boolean;
-  keylessEntry?: boolean;
-  pushButtonStart?: boolean;
-  cruiseControl?: boolean;
-  climateControl?: boolean;
-  rearAcVents?: boolean;
-  autoDimmingMirror?: boolean;
-  powerWindows?: boolean;
-  upholsteryType?: string | null;
-  adjustableSeats?: boolean;
-  ventilatedSeats?: boolean;
-  rearArmrest?: boolean;
-  ledHeadlamps?: boolean;
-  ledDrls?: boolean;
-  alloyWheels?: boolean;
-  roofRails?: boolean;
-  fogLamps?: boolean;
-  touchscreenSizeInch?: number | null;
-  androidAuto?: boolean;
-  appleCarplay?: boolean;
-  connectedCarTech?: boolean;
-  numberOfSpeakers?: number | null;
-  wirelessCharging?: boolean;
-  extraFeatures?: string | null;
+export interface CreateFeatureInput {
+  name: string;
+  categoryId: number;
+}
+
+export interface UpdateFeatureInput {
+  name?: string;
+  categoryId?: number;
 }
 
 interface FeatureListRawResponse {
@@ -114,6 +42,17 @@ interface FeatureListRawResponse {
 interface FeatureSingleRawResponse {
   success: true;
   data: FeatureRecord;
+}
+
+export interface FeatureOption {
+  id: number;
+  name: string;
+  categoryId: number | null;
+}
+
+interface FeatureOptionsRawResponse {
+  success: true;
+  data: FeatureOption[];
 }
 
 export interface FeatureListResult {
@@ -137,20 +76,20 @@ export const featureApi = api.injectEndpoints({
           : [FEATURE_LIST_TAG],
     }),
 
-    getFeatureById: builder.query<FeatureRecord, number>({
-      query: (id) => ({ url: `/new-cars/features/${id}`, method: "GET" }),
-      transformResponse: (res: FeatureSingleRawResponse) => res.data,
-      providesTags: (_result, _error, id) => [{ type: "Feature", id }],
+    // Dropdown-only source — every feature in one shot, no pagination.
+    getFeatureOptions: builder.query<FeatureOption[], void>({
+      query: () => ({ url: "/new-cars/features/options", method: "GET" }),
+      transformResponse: (res: FeatureOptionsRawResponse) => res.data,
+      providesTags: [FEATURE_LIST_TAG],
     }),
 
-    createFeature: builder.mutation<FeatureRecord, FeatureFormInput>({
-      query: (body) => ({ url: "/new-cars/features", method: "POST", data: body }),
+    createFeature: builder.mutation<FeatureRecord, CreateFeatureInput>({
+      query: (input) => ({ url: "/new-cars/features", method: "POST", data: input }),
       transformResponse: (res: FeatureSingleRawResponse) => res.data,
       invalidatesTags: [FEATURE_LIST_TAG],
     }),
 
-    // Partial update — only the fields present in `input` are sent.
-    updateFeature: builder.mutation<FeatureRecord, { id: number; input: Partial<FeatureFormInput> }>({
+    updateFeature: builder.mutation<FeatureRecord, { id: number; input: UpdateFeatureInput }>({
       query: ({ id, input }) => ({ url: `/new-cars/features/${id}`, method: "PATCH", data: input }),
       transformResponse: (res: FeatureSingleRawResponse) => res.data,
       invalidatesTags: (_result, _error, { id }) => [{ type: "Feature", id }, FEATURE_LIST_TAG],
@@ -165,7 +104,7 @@ export const featureApi = api.injectEndpoints({
 
 export const {
   useGetFeaturesQuery,
-  useGetFeatureByIdQuery,
+  useGetFeatureOptionsQuery,
   useCreateFeatureMutation,
   useUpdateFeatureMutation,
   useDeleteFeatureMutation,

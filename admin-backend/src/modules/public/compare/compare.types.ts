@@ -1,9 +1,11 @@
 // src/modules/public/compare/compare.types.ts
 //
 // Public-safe shapes for the Compare feature — a curated subset of
-// CarVariant/CarPowertrainIce/CarPowertrainElectric/CarFeature (not every
-// column the admin panel edits), the same "pick what the reader actually
-// compares" curation the home/car module already does for cards.
+// CarVariant/CarPowertrainIce/CarPowertrainElectric (not every column the
+// admin panel edits), the same "pick what the reader actually compares"
+// curation the home/car module already does for cards.
+
+import type { CarDetailFeatureGroup } from '@/modules/public/cars/car/car.service';
 
 export interface CompareVariantOption {
   id: number;
@@ -18,45 +20,6 @@ export interface CompareVariantPowertrainOption {
   id: number;
   label: string;
   isDefault: boolean;
-}
-
-export interface CompareCarFeatures {
-  // Safety
-  airbagsCount: number | null;
-  absWithEbd: boolean;
-  esc: boolean;
-  hillAssist: boolean;
-  rearParkingCamera: boolean;
-  frontParkingSensors: boolean;
-  tpms: boolean;
-  isofixMounts: boolean;
-  ncapRating: string | null;
-  // Comfort & convenience
-  sunroof: boolean;
-  keylessEntry: boolean;
-  pushButtonStart: boolean;
-  cruiseControl: boolean;
-  climateControl: boolean;
-  rearAcVents: boolean;
-  autoDimmingMirror: boolean;
-  powerWindows: boolean;
-  upholsteryType: string | null;
-  adjustableSeats: boolean;
-  ventilatedSeats: boolean;
-  rearArmrest: boolean;
-  // Exterior
-  ledHeadlamps: boolean;
-  ledDrls: boolean;
-  alloyWheels: boolean;
-  roofRails: boolean;
-  fogLamps: boolean;
-  // Technology
-  touchscreenSizeInch: string | null;
-  androidAuto: boolean;
-  appleCarplay: boolean;
-  connectedCarTech: boolean;
-  numberOfSpeakers: number | null;
-  wirelessCharging: boolean;
 }
 
 export interface CompareCarSpecs {
@@ -91,7 +54,7 @@ export interface CompareCarSpecs {
   powerPs: number | null;
   torqueNm: number | null;
   topSpeedKmph: number | null;
-  features: CompareCarFeatures;
+  features: CarDetailFeatureGroup[];
 }
 
 export interface CompareCarResult {

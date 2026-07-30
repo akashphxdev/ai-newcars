@@ -8,6 +8,8 @@ import powertrainice from '@/modules/newCars/powertrainIce/powertrainIce.routes'
 import colorRoute from '@/modules/newCars/color/color.routes'
 import imageRoute from '@/modules/newCars/image/image.routes'
 import featureRoute from '@/modules/newCars/feature/feature.routes'
+import featureCategoryRoute from '@/modules/newCars/featureCategory/featureCategory.routes'
+import variantFeatureRoute from '@/modules/newCars/variantFeature/variantFeature.routes'
 import faqRoute from '@/modules/newCars/faq/faq.routes'
 import offerRoute from '@/modules/newCars/offer/offer.routes'
 import bodyTypeRoute from '@/modules/newCars/bodyType/bodyType.routes'
@@ -26,6 +28,8 @@ router.use('/powertrains/ice', powertrainice)
 router.use('/colors', colorRoute)
 router.use('/images', imageRoute)
 router.use('/features', featureRoute )
+router.use('/feature-categories', featureCategoryRoute )
+router.use('/variant-features', variantFeatureRoute )
 router.use('/faqs', faqRoute )
 router.use('/offers', offerRoute )
 

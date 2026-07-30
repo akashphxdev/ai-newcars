@@ -12,7 +12,7 @@ import Articles from "@/components/home/Articles";
 import BrandComparisonsSection from "@/components/brands/BrandComparisonsSection";
 import ReviewsSection from "@/components/cars/reviews/ReviewsSection";
 import { PowerIcon, TorqueIcon, CheckIcon, GaugeIcon, BoltIcon, GearIcon, ChevronDownIcon } from "@/components/common/icons";
-import type { CarDetailResult, CarDetailFeatures, CarFaq } from "@/features/cars/car.types";
+import type { CarDetailResult, CarDetailFeatureGroup, CarFaq } from "@/features/cars/car.types";
 import type { HomeArticle } from "@/features/articles/article.types";
 import type { RandomComparisonPair } from "@/features/compare/compare.types";
 
@@ -89,93 +89,48 @@ function SpecRow({ label, value, icon }: { label: string; value: string; icon?: 
   );
 }
 
-// Overview cards use only real feature flags off the selected variant —
-// grouped under generic category headers rather than per-car marketing
-// copy (which the backend has no field for).
-function buildOverviewCards(feat: CarDetailFeatures | null): { icon: React.ReactNode; title: string; items: string[] }[] {
-  if (!feat) return [];
-  const cards = [
-    {
-      icon: <BoltIcon className="size-4" />,
-      title: "Exterior & Design",
-      items: [
-        feat.ledHeadlamps && "LED headlamps",
-        feat.ledDrls && "LED DRLs",
-        feat.alloyWheels && "Alloy wheels",
-        feat.sunroof && "Sunroof",
-        feat.roofRails && "Roof rails",
-        feat.fogLamps && "Fog lamps",
-      ].filter((x): x is string => Boolean(x)),
-    },
-    {
-      icon: <GearIcon className="size-4" />,
-      title: "Comfort & Convenience",
-      items: [
-        feat.climateControl && "Climate control",
-        feat.ventilatedSeats && "Ventilated seats",
-        feat.rearAcVents && "Rear AC vents",
-        feat.cruiseControl && "Cruise control",
-        feat.keylessEntry && "Keyless entry",
-        feat.pushButtonStart && "Push button start",
-        feat.adjustableSeats && "Adjustable seats",
-      ].filter((x): x is string => Boolean(x)),
-    },
-    {
-      icon: <GaugeIcon className="size-4" />,
-      title: "Technology",
-      items: [
-        feat.touchscreenSizeInch && `${feat.touchscreenSizeInch}" touchscreen`,
-        feat.androidAuto && "Android Auto",
-        feat.appleCarplay && "Apple CarPlay",
-        feat.connectedCarTech && "Connected car tech",
-        feat.wirelessCharging && "Wireless charging",
-        feat.numberOfSpeakers && `${feat.numberOfSpeakers}-speaker audio`,
-      ].filter((x): x is string => Boolean(x)),
-    },
-  ];
-  return cards.filter((c) => c.items.length > 0);
+// Features are now fully admin-defined (Feature + FeatureCategory), so
+// "Safety" is singled out by category name for its own dedicated section
+// below — every other category becomes an Overview card, named exactly
+// as the admin set it up, rather than a fixed Exterior/Comfort/Tech set.
+function featureLabel(item: { name: string; value: string | null }): string {
+  return item.value ? `${item.name}: ${item.value}` : item.name;
 }
 
-function buildSafetyItems(feat: CarDetailFeatures | null): string[] {
-  if (!feat) return [];
-  return [
-    feat.airbagsCount ? `${feat.airbagsCount} Airbags` : "",
-    feat.absWithEbd && "ABS with EBD",
-    feat.esc && "Electronic Stability Control",
-    feat.hillAssist && "Hill Hold Assist",
-    feat.rearParkingCamera && "Rear Parking Camera",
-    feat.frontParkingSensors && "Front Parking Sensors",
-    feat.tpms && "Tyre Pressure Monitoring (TPMS)",
-    feat.isofixMounts && "ISOFIX Child Seat Mounts",
-    feat.ncapRating && `${feat.ncapRating} NCAP Rating`,
-  ].filter((x): x is string => Boolean(x));
+function categoryIcon(categoryName: string): React.ReactNode {
+  const n = categoryName.toLowerCase();
+  if (n.includes("exterior")) return <BoltIcon className="size-4" />;
+  if (n.includes("comfort")) return <GearIcon className="size-4" />;
+  if (n.includes("tech") || n.includes("infotainment")) return <GaugeIcon className="size-4" />;
+  return <CheckIcon className="size-4" />;
+}
+
+function buildOverviewCards(groups: CarDetailFeatureGroup[]): { icon: React.ReactNode; title: string; items: string[] }[] {
+  return groups
+    .filter((g) => g.categoryName.toLowerCase() !== "safety")
+    .map((g) => ({ icon: categoryIcon(g.categoryName), title: g.categoryName, items: g.items.map(featureLabel) }))
+    .filter((c) => c.items.length > 0);
+}
+
+function buildSafetyItems(groups: CarDetailFeatureGroup[]): string[] {
+  const safety = groups.find((g) => g.categoryName.toLowerCase() === "safety");
+  return safety ? safety.items.map(featureLabel) : [];
+}
+
+function buildKeyFeatureItems(groups: CarDetailFeatureGroup[]): string[] {
+  return groups
+    .filter((g) => g.categoryName.toLowerCase() !== "safety")
+    .flatMap((g) => g.items)
+    .map(featureLabel);
 }
 
 export default async function CarModelPage(props: Props) {
   const { car, variantId, faqs, articles, comparisonPairs } = await loadCar(props);
   const v = car.selectedVariant;
 
-  const overviewCards = buildOverviewCards(v?.features ?? null);
-  const safetyItems = buildSafetyItems(v?.features ?? null);
-
-  const featureList: { label: string; on: boolean }[] = v?.features
-    ? [
-        { label: "Sunroof", on: v.features.sunroof },
-        { label: "Keyless Entry", on: v.features.keylessEntry },
-        { label: "Push Button Start", on: v.features.pushButtonStart },
-        { label: "Cruise Control", on: v.features.cruiseControl },
-        { label: "Climate Control", on: v.features.climateControl },
-        { label: "Rear AC Vents", on: v.features.rearAcVents },
-        { label: "Power Windows", on: v.features.powerWindows },
-        { label: "Ventilated Seats", on: v.features.ventilatedSeats },
-        { label: "LED Headlamps", on: v.features.ledHeadlamps },
-        { label: "Alloy Wheels", on: v.features.alloyWheels },
-        { label: "Rear Parking Camera", on: v.features.rearParkingCamera },
-        { label: "Android Auto", on: v.features.androidAuto },
-        { label: "Apple CarPlay", on: v.features.appleCarplay },
-        { label: "Wireless Charging", on: v.features.wirelessCharging },
-      ].filter((f) => f.on)
-    : [];
+  const overviewCards = buildOverviewCards(v?.features ?? []);
+  const safetyItems = buildSafetyItems(v?.features ?? []);
+  const keyFeatureItems = buildKeyFeatureItems(v?.features ?? []);
 
   return (
     <div className="bg-page">
@@ -297,12 +252,12 @@ export default async function CarModelPage(props: Props) {
             )}
 
             {/* Features */}
-            {featureList.length > 0 && (
+            {keyFeatureItems.length > 0 && (
               <section id="features" className="mt-12 scroll-mt-32">
                 <h2 className="font-head text-lg font-extrabold text-ink">Key Features</h2>
                 <div className="mt-4 grid grid-cols-1 gap-x-8 rounded-2xl border border-border bg-white p-5 sm:grid-cols-2">
-                  {featureList.map((f) => (
-                    <FeatureRow key={f.label} label={f.label} />
+                  {keyFeatureItems.map((label) => (
+                    <FeatureRow key={label} label={label} />
                   ))}
                 </div>
               </section>

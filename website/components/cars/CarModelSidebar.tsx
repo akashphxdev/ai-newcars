@@ -29,17 +29,13 @@ export default function CarModelSidebar({ variant }: { variant: CarDetailSelecte
   highlights.push({ icon: <GearIcon className="size-4" />, label: "Seating Capacity", value: `${variant.seatingCapacity} Seater` });
   if (variant.transmission) highlights.push({ icon: <GearIcon className="size-4" />, label: "Transmission", value: variant.transmission });
 
-  const feat = variant.features;
-  const safetyItems: string[] = feat
-    ? [
-        feat.airbagsCount ? `${feat.airbagsCount} Airbags` : "",
-        feat.absWithEbd ? "ABS with EBD" : "",
-        feat.esc ? "Electronic Stability Control" : "",
-        feat.hillAssist ? "Hill Hold Assist" : "",
-        feat.rearParkingCamera ? "Rear Parking Camera" : "",
-        feat.isofixMounts ? "ISOFIX Child Seat Mounts" : "",
-      ].filter(Boolean)
-    : [];
+  // Safety is singled out by category name — same convention the
+  // car-model page uses for its dedicated Safety section — capped to a
+  // handful of items since this is a sidebar teaser, not the full list.
+  const safety = variant.features.find((g) => g.categoryName.toLowerCase() === "safety");
+  const safetyItems: string[] = (safety?.items ?? [])
+    .slice(0, 6)
+    .map((item) => (item.value ? `${item.name}: ${item.value}` : item.name));
 
   return (
     <div className="flex flex-col gap-4 lg:sticky lg:top-20">

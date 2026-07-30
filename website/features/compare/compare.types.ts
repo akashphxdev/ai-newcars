@@ -14,43 +14,19 @@ export interface CompareVariantPowertrainOption {
   isDefault: boolean;
 }
 
-export interface CompareCarFeatures {
-  // Safety
-  airbagsCount: number | null;
-  absWithEbd: boolean;
-  esc: boolean;
-  hillAssist: boolean;
-  rearParkingCamera: boolean;
-  frontParkingSensors: boolean;
-  tpms: boolean;
-  isofixMounts: boolean;
-  ncapRating: string | null;
-  // Comfort & convenience
-  sunroof: boolean;
-  keylessEntry: boolean;
-  pushButtonStart: boolean;
-  cruiseControl: boolean;
-  climateControl: boolean;
-  rearAcVents: boolean;
-  autoDimmingMirror: boolean;
-  powerWindows: boolean;
-  upholsteryType: string | null;
-  adjustableSeats: boolean;
-  ventilatedSeats: boolean;
-  rearArmrest: boolean;
-  // Exterior
-  ledHeadlamps: boolean;
-  ledDrls: boolean;
-  alloyWheels: boolean;
-  roofRails: boolean;
-  fogLamps: boolean;
-  // Technology
-  touchscreenSizeInch: string | null;
-  androidAuto: boolean;
-  appleCarplay: boolean;
-  connectedCarTech: boolean;
-  numberOfSpeakers: number | null;
-  wirelessCharging: boolean;
+// Mirrors car.types.ts's CarDetailFeatureItem/Group — features are now
+// fully admin-defined (Feature + FeatureCategory), not a fixed set of
+// named columns. `items` only lists features the variant actually has.
+export interface CompareCarFeatureItem {
+  id: number;
+  name: string;
+  value: string | null;
+}
+
+export interface CompareCarFeatureGroup {
+  categoryId: number | null;
+  categoryName: string;
+  items: CompareCarFeatureItem[];
 }
 
 export interface CompareCarSpecs {
@@ -82,7 +58,7 @@ export interface CompareCarSpecs {
   powerPs: number | null;
   torqueNm: number | null;
   topSpeedKmph: number | null;
-  features: CompareCarFeatures;
+  features: CompareCarFeatureGroup[];
 }
 
 export interface CompareCarResult {

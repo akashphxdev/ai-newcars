@@ -23,6 +23,8 @@ import AllPowertrainIce from "./pages/newCars/PowertrainIce/AllPowertrainIce";
 import NotFound from "./pages/NotFound";
 import AllColorsImages from "./pages/newCars/ColorsImages/AllColorsImages";
 import AllFeatures from "./pages/newCars/Features/AllFeatures";
+import AllFeatureCategories from "./pages/newCars/FeatureCategories/AllFeatureCategories";
+import AllVariantFeatures from "./pages/newCars/VariantFeatures/AllVariantFeatures";
 import AllFaqs from "./pages/newCars/Faqs/AllFaqs";
 import AllOffers from "./pages/newCars/Offers/AllOffers";
 import AllBodyTypes from "./pages/newCars/BodyTypes/AllBodyTypes";
@@ -95,7 +97,9 @@ export default function App() {
           <Route path ="/new-cars/powertrain-eletric" element={<AllPowertrainElectric/>}/>
           <Route path ="/new-cars/powertrain-ice" element={<AllPowertrainIce/>}/>
           <Route path ="/new-cars/colors" element={<AllColorsImages/>}/>
+          <Route path ="/new-cars/feature-categories" element={<AllFeatureCategories/>}/>
           <Route path ="/new-cars/features" element={<AllFeatures/>}/>
+          <Route path ="/new-cars/variant-features" element={<AllVariantFeatures/>}/>
           <Route path ="/new-cars/offers" element={<AllOffers/>}/>
           <Route path ="/new-cars/faqs" element={<AllFaqs/>}/>
           <Route path ="/new-cars/body-types" element={<AllBodyTypes/>}/>

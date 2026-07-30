@@ -212,13 +212,13 @@ export async function deleteVariant(id: number, actorId: number, ipAddress?: str
   // a raw foreign-key error, so check up front and tell the user exactly
   // what's still attached, same pattern as attributeOption.service.ts's
   // deleteAttributeOption usage check.
-  // CarFeature is also a RESTRICT FK on variantId (car_images, new_car_offers,
+  // VariantFeature is also a RESTRICT FK on variantId (car_images, new_car_offers,
   // used_car_listings, and reviews are SET NULL there and so don't block
-  // deletion — only the powertrains and features do).
+  // deletion — only the powertrains and assigned features do).
   const [icePowertrainCount, electricPowertrainCount, featureCount] = await Promise.all([
     prisma.carPowertrainIce.count({ where: { variantId: id } }),
     prisma.carPowertrainElectric.count({ where: { variantId: id } }),
-    prisma.carFeature.count({ where: { variantId: id } }),
+    prisma.variantFeature.count({ where: { variantId: id } }),
   ]);
 
   const linkedParts: string[] = [];
@@ -229,7 +229,7 @@ export async function deleteVariant(id: number, actorId: number, ipAddress?: str
     linkedParts.push(`${electricPowertrainCount} electric powertrain${electricPowertrainCount > 1 ? 's' : ''}`);
   }
   if (featureCount > 0) {
-    linkedParts.push(`${featureCount} feature record${featureCount > 1 ? 's' : ''}`);
+    linkedParts.push(`${featureCount} assigned feature${featureCount > 1 ? 's' : ''}`);
   }
 
   if (linkedParts.length > 0) {

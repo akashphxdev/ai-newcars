@@ -25,6 +25,51 @@ const FUEL_FILTER_CODES: Record<'petrol' | 'diesel' | 'cng', number> = {
   cng: 3,
 };
 
+// Select shape for a variant's assigned features — reused by
+// compare.service.ts (imported from here) so both public endpoints stay
+// in sync with the VariantFeature schema.
+export const VARIANT_FEATURES_SELECT = {
+  select: {
+    value: true,
+    feature: {
+      select: {
+        id: true,
+        name: true,
+        category: { select: { id: true, name: true, sortOrder: true } },
+      },
+    },
+  },
+} as const;
+
+type VariantFeatureRow = {
+  value: string | null;
+  feature: { id: number; name: string; category: { id: number; name: string; sortOrder: number } | null };
+};
+
+// Groups a variant's flat VariantFeature rows by category, sorted by
+// each category's sortOrder — uncategorized features land in a
+// trailing "Other" bucket instead of being dropped.
+export function shapeVariantFeatures(rows: VariantFeatureRow[]): CarDetailFeatureGroup[] {
+  const groups = new Map<string, CarDetailFeatureGroup & { sortOrder: number }>();
+
+  for (const row of rows) {
+    const key = row.feature.category ? String(row.feature.category.id) : 'other';
+    if (!groups.has(key)) {
+      groups.set(key, {
+        categoryId: row.feature.category?.id ?? null,
+        categoryName: row.feature.category?.name ?? 'Other',
+        sortOrder: row.feature.category?.sortOrder ?? Number.MAX_SAFE_INTEGER,
+        items: [],
+      });
+    }
+    groups.get(key)!.items.push({ id: row.feature.id, name: row.feature.name, value: row.value });
+  }
+
+  return Array.from(groups.values())
+    .sort((a, b) => a.sortOrder - b.sortOrder)
+    .map(({ categoryId, categoryName, items }) => ({ categoryId, categoryName, items }));
+}
+
 // "View all [type] cars" page — same filter/sort rules as the homepage
 // rail for that type (modules/public/home/car), just paginated instead
 // of a fixed take: N.
@@ -280,40 +325,16 @@ export interface CarDetailElectricSpecs {
   standardWarrantyYears: number | null;
 }
 
-export interface CarDetailFeatures {
-  airbagsCount: number | null;
-  absWithEbd: boolean;
-  esc: boolean;
-  hillAssist: boolean;
-  rearParkingCamera: boolean;
-  frontParkingSensors: boolean;
-  tpms: boolean;
-  isofixMounts: boolean;
-  ncapRating: string | null;
-  sunroof: boolean;
-  keylessEntry: boolean;
-  pushButtonStart: boolean;
-  cruiseControl: boolean;
-  climateControl: boolean;
-  rearAcVents: boolean;
-  autoDimmingMirror: boolean;
-  powerWindows: boolean;
-  upholsteryType: string | null;
-  adjustableSeats: boolean;
-  ventilatedSeats: boolean;
-  rearArmrest: boolean;
-  ledHeadlamps: boolean;
-  ledDrls: boolean;
-  alloyWheels: boolean;
-  roofRails: boolean;
-  fogLamps: boolean;
-  touchscreenSizeInch: string | null;
-  androidAuto: boolean;
-  appleCarplay: boolean;
-  connectedCarTech: boolean;
-  numberOfSpeakers: number | null;
-  wirelessCharging: boolean;
-  extraFeatures: string | null;
+export interface CarDetailFeatureItem {
+  id: number;
+  name: string;
+  value: string | null;
+}
+
+export interface CarDetailFeatureGroup {
+  categoryId: number | null;
+  categoryName: string;
+  items: CarDetailFeatureItem[];
 }
 
 export interface CarDetailSelectedVariant {
@@ -325,7 +346,7 @@ export interface CarDetailSelectedVariant {
   isElectric: boolean;
   ice: CarDetailIceSpecs | null;
   electric: CarDetailElectricSpecs | null;
-  features: CarDetailFeatures | null;
+  features: CarDetailFeatureGroup[];
 }
 
 export interface CarDetailImage {
@@ -475,44 +496,7 @@ export async function getCarDetail(brandSlug: string, modelSlug: string, variant
             standardWarrantyYears: true,
           },
         },
-        features: {
-          take: 1,
-          select: {
-            airbagsCount: true,
-            absWithEbd: true,
-            esc: true,
-            hillAssist: true,
-            rearParkingCamera: true,
-            frontParkingSensors: true,
-            tpms: true,
-            isofixMounts: true,
-            ncapRating: true,
-            sunroof: true,
-            keylessEntry: true,
-            pushButtonStart: true,
-            cruiseControl: true,
-            climateControl: true,
-            rearAcVents: true,
-            autoDimmingMirror: true,
-            powerWindows: true,
-            upholsteryType: true,
-            adjustableSeats: true,
-            ventilatedSeats: true,
-            rearArmrest: true,
-            ledHeadlamps: true,
-            ledDrls: true,
-            alloyWheels: true,
-            roofRails: true,
-            fogLamps: true,
-            touchscreenSizeInch: true,
-            androidAuto: true,
-            appleCarplay: true,
-            connectedCarTech: true,
-            numberOfSpeakers: true,
-            wirelessCharging: true,
-            extraFeatures: true,
-          },
-        },
+        features: VARIANT_FEATURES_SELECT,
       },
     });
 
@@ -520,7 +504,6 @@ export async function getCarDetail(brandSlug: string, modelSlug: string, variant
 
     const ice = variant.icePowertrains[0];
     const electric = variant.electricPowertrains[0];
-    const feat = variant.features[0];
 
     selectedVariant = {
       id: variant.id,
@@ -587,43 +570,7 @@ export async function getCarDetail(brandSlug: string, modelSlug: string, variant
             standardWarrantyYears: electric.standardWarrantyYears,
           }
         : null,
-      features: feat
-        ? {
-            airbagsCount: feat.airbagsCount,
-            absWithEbd: feat.absWithEbd,
-            esc: feat.esc,
-            hillAssist: feat.hillAssist,
-            rearParkingCamera: feat.rearParkingCamera,
-            frontParkingSensors: feat.frontParkingSensors,
-            tpms: feat.tpms,
-            isofixMounts: feat.isofixMounts,
-            ncapRating: feat.ncapRating?.toString() ?? null,
-            sunroof: feat.sunroof,
-            keylessEntry: feat.keylessEntry,
-            pushButtonStart: feat.pushButtonStart,
-            cruiseControl: feat.cruiseControl,
-            climateControl: feat.climateControl,
-            rearAcVents: feat.rearAcVents,
-            autoDimmingMirror: feat.autoDimmingMirror,
-            powerWindows: feat.powerWindows,
-            upholsteryType: feat.upholsteryType,
-            adjustableSeats: feat.adjustableSeats,
-            ventilatedSeats: feat.ventilatedSeats,
-            rearArmrest: feat.rearArmrest,
-            ledHeadlamps: feat.ledHeadlamps,
-            ledDrls: feat.ledDrls,
-            alloyWheels: feat.alloyWheels,
-            roofRails: feat.roofRails,
-            fogLamps: feat.fogLamps,
-            touchscreenSizeInch: feat.touchscreenSizeInch?.toString() ?? null,
-            androidAuto: feat.androidAuto,
-            appleCarplay: feat.appleCarplay,
-            connectedCarTech: feat.connectedCarTech,
-            numberOfSpeakers: feat.numberOfSpeakers,
-            wirelessCharging: feat.wirelessCharging,
-            extraFeatures: feat.extraFeatures,
-          }
-        : null,
+      features: shapeVariantFeatures(variant.features),
     };
   }
 

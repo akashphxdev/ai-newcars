@@ -131,40 +131,21 @@ export interface CarDetailElectricSpecs {
   standardWarrantyYears: number | null;
 }
 
-export interface CarDetailFeatures {
-  airbagsCount: number | null;
-  absWithEbd: boolean;
-  esc: boolean;
-  hillAssist: boolean;
-  rearParkingCamera: boolean;
-  frontParkingSensors: boolean;
-  tpms: boolean;
-  isofixMounts: boolean;
-  ncapRating: string | null;
-  sunroof: boolean;
-  keylessEntry: boolean;
-  pushButtonStart: boolean;
-  cruiseControl: boolean;
-  climateControl: boolean;
-  rearAcVents: boolean;
-  autoDimmingMirror: boolean;
-  powerWindows: boolean;
-  upholsteryType: string | null;
-  adjustableSeats: boolean;
-  ventilatedSeats: boolean;
-  rearArmrest: boolean;
-  ledHeadlamps: boolean;
-  ledDrls: boolean;
-  alloyWheels: boolean;
-  roofRails: boolean;
-  fogLamps: boolean;
-  touchscreenSizeInch: string | null;
-  androidAuto: boolean;
-  appleCarplay: boolean;
-  connectedCarTech: boolean;
-  numberOfSpeakers: number | null;
-  wirelessCharging: boolean;
-  extraFeatures: string | null;
+// A variant's features are now fully admin-defined (Feature +
+// FeatureCategory tables) rather than a fixed set of named columns —
+// `items` only ever lists features this variant actually has (presence
+// implies "on"); `value` is set for value-bearing features (e.g. "6"
+// for Airbags), null for plain toggles (e.g. Sunroof).
+export interface CarDetailFeatureItem {
+  id: number;
+  name: string;
+  value: string | null;
+}
+
+export interface CarDetailFeatureGroup {
+  categoryId: number | null;
+  categoryName: string;
+  items: CarDetailFeatureItem[];
 }
 
 export interface CarDetailSelectedVariant {
@@ -176,7 +157,7 @@ export interface CarDetailSelectedVariant {
   isElectric: boolean;
   ice: CarDetailIceSpecs | null;
   electric: CarDetailElectricSpecs | null;
-  features: CarDetailFeatures | null;
+  features: CarDetailFeatureGroup[];
 }
 
 export interface CarDetailImage {

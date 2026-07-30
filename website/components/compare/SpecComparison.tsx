@@ -2,8 +2,54 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { formatSinglePrice } from "@/lib/format";
-import { GaugeIcon, PowerIcon, FuelIcon, BatteryIcon, CheckIcon, GearIcon, BoltIcon, ClockIcon } from "@/components/common/icons";
+import { GaugeIcon, PowerIcon, FuelIcon, BatteryIcon, CheckIcon } from "@/components/common/icons";
 import type { CompareCarResult, CompareCarSpecs } from "@/features/compare/compare.types";
+
+// Merged view of one feature across every compared car — matched by
+// featureId (stable across variants, since Feature is a shared master
+// table), not by name string.
+type MergedFeature = { id: number; name: string; hasValue: boolean };
+type MergedCategory = { categoryId: number | null; categoryName: string; features: MergedFeature[] };
+
+// Builds the union of categories/features present across whichever real
+// (non-blank) cars are selected, preserving each category's backend sort
+// order (first-seen wins) and de-duping features by id.
+function mergeFeatureCategories(specsList: (CompareCarSpecs | null)[]): MergedCategory[] {
+  const categories = new Map<string, MergedCategory>();
+
+  for (const specs of specsList) {
+    if (!specs) continue;
+    for (const group of specs.features) {
+      const key = group.categoryId != null ? String(group.categoryId) : `name:${group.categoryName}`;
+      const category = categories.get(key) ?? { categoryId: group.categoryId, categoryName: group.categoryName, features: [] };
+      if (!categories.has(key)) categories.set(key, category);
+
+      for (const item of group.items) {
+        const existing = category.features.find((f) => f.id === item.id);
+        if (!existing) {
+          category.features.push({ id: item.id, name: item.name, hasValue: item.value != null });
+        } else if (item.value != null) {
+          existing.hasValue = true;
+        }
+      }
+    }
+  }
+
+  return Array.from(categories.values());
+}
+
+function findFeatureValue(specs: CompareCarSpecs | null, featureId: number): string | null | undefined {
+  if (!specs) return undefined;
+  for (const group of specs.features) {
+    const item = group.items.find((i) => i.id === featureId);
+    if (item) return item.value;
+  }
+  return undefined;
+}
+
+function hasFeature(specs: CompareCarSpecs | null, featureId: number): boolean {
+  return findFeatureValue(specs, featureId) !== undefined;
+}
 
 const TOTAL_SLOTS = 4;
 
@@ -104,16 +150,17 @@ const FeatureRow = ({ label, values, activeCount, hidden }: { label: string; val
 const NA = "N/A";
 const num = (v: string | number | null | undefined) => (v == null ? null : Number(v));
 
+// Feature-category nav items (Safety, Comfort & Convenience, ...) are
+// appended dynamically below, once the compared cars' actual categories
+// are known — unlike these, which always apply regardless of data.
 const NAV_ITEMS = [
   { id: "overview", label: "Overview" },
   { id: "performance", label: "Performance" },
   { id: "engine", label: "Engine & Fuel", iceOnly: true },
   { id: "battery", label: "Battery", electricOnly: true },
-  { id: "safety", label: "Safety" },
-  { id: "comfort", label: "Comfort" },
-  { id: "exterior", label: "Exterior" },
-  { id: "technology", label: "Technology" },
 ];
+
+const categorySectionId = (categoryId: number | null, categoryName: string) => `cat-${categoryId ?? categoryName}`;
 
 // The card grid above always shows TOTAL_SLOTS (4) cards — 2 real + 2
 // "Add car" — so this table always has 4 columns too, blank past however
@@ -137,10 +184,13 @@ export default function SpecComparison({ cars }: { cars: CompareCarResult[] }) {
     <FeatureRow label={label} values={values} activeCount={activeCount} hidden={hideCommon && isCommonRow(values, activeCount)} />
   );
 
-  const navItems = useMemo(
-    () => NAV_ITEMS.filter((n) => (!n.iceOnly || anyIce) && (!n.electricOnly || anyElectric)),
-    [anyIce, anyElectric],
-  );
+  const mergedCategories = useMemo(() => mergeFeatureCategories(specsList), [specsList]);
+
+  const navItems = useMemo(() => {
+    const fixed = NAV_ITEMS.filter((n) => (!n.iceOnly || anyIce) && (!n.electricOnly || anyElectric));
+    const dynamic = mergedCategories.map((c) => ({ id: categorySectionId(c.categoryId, c.categoryName), label: c.categoryName }));
+    return [...fixed, ...dynamic];
+  }, [anyIce, anyElectric, mergedCategories]);
 
   useEffect(() => {
     const sections = navItems.map((n) => document.getElementById(n.id)).filter((el): el is HTMLElement => el !== null);
@@ -260,49 +310,20 @@ export default function SpecComparison({ cars }: { cars: CompareCarResult[] }) {
         </Section>
       )}
 
-      <Section id="safety" title="Safety" icon={<CheckIcon className="size-4" />}>
-        {row("NCAP Rating", specsList.map((s) => (s?.features.ncapRating ? `${s.features.ncapRating}★` : NA)))}
-        {row("Airbags", specsList.map((s) => s?.features.airbagsCount ?? NA))}
-        {featureRow("ABS with EBD", specsList.map((s) => s?.features.absWithEbd ?? false))}
-        {featureRow("Electronic Stability Control", specsList.map((s) => s?.features.esc ?? false))}
-        {featureRow("Hill Hold Assist", specsList.map((s) => s?.features.hillAssist ?? false))}
-        {featureRow("Rear Parking Camera", specsList.map((s) => s?.features.rearParkingCamera ?? false))}
-        {featureRow("Front Parking Sensors", specsList.map((s) => s?.features.frontParkingSensors ?? false))}
-        {featureRow("Tyre Pressure Monitor", specsList.map((s) => s?.features.tpms ?? false))}
-        {featureRow("ISOFIX Mounts", specsList.map((s) => s?.features.isofixMounts ?? false))}
-      </Section>
-
-      <Section id="comfort" title="Comfort & Convenience" icon={<GearIcon className="size-4" />}>
-        {featureRow("Sunroof", specsList.map((s) => s?.features.sunroof ?? false))}
-        {featureRow("Cruise Control", specsList.map((s) => s?.features.cruiseControl ?? false))}
-        {featureRow("Climate Control", specsList.map((s) => s?.features.climateControl ?? false))}
-        {featureRow("Rear AC Vents", specsList.map((s) => s?.features.rearAcVents ?? false))}
-        {featureRow("Keyless Entry", specsList.map((s) => s?.features.keylessEntry ?? false))}
-        {featureRow("Push Button Start", specsList.map((s) => s?.features.pushButtonStart ?? false))}
-        {featureRow("Power Windows", specsList.map((s) => s?.features.powerWindows ?? false))}
-        {featureRow("Auto Dimming Mirror", specsList.map((s) => s?.features.autoDimmingMirror ?? false))}
-        {featureRow("Adjustable Seats", specsList.map((s) => s?.features.adjustableSeats ?? false))}
-        {featureRow("Ventilated Seats", specsList.map((s) => s?.features.ventilatedSeats ?? false))}
-        {featureRow("Rear Armrest", specsList.map((s) => s?.features.rearArmrest ?? false))}
-        {row("Upholstery", specsList.map((s) => s?.features.upholsteryType ?? NA))}
-      </Section>
-
-      <Section id="exterior" title="Exterior" icon={<BoltIcon className="size-4" />}>
-        {featureRow("LED Headlamps", specsList.map((s) => s?.features.ledHeadlamps ?? false))}
-        {featureRow("LED DRLs", specsList.map((s) => s?.features.ledDrls ?? false))}
-        {featureRow("Alloy Wheels", specsList.map((s) => s?.features.alloyWheels ?? false))}
-        {featureRow("Roof Rails", specsList.map((s) => s?.features.roofRails ?? false))}
-        {featureRow("Fog Lamps", specsList.map((s) => s?.features.fogLamps ?? false))}
-      </Section>
-
-      <Section id="technology" title="Technology" icon={<ClockIcon className="size-4" />}>
-        {row("Touchscreen Size", specsList.map((s) => (s?.features.touchscreenSizeInch ? `${s.features.touchscreenSizeInch}"` : NA)))}
-        {featureRow("Android Auto", specsList.map((s) => s?.features.androidAuto ?? false))}
-        {featureRow("Apple CarPlay", specsList.map((s) => s?.features.appleCarplay ?? false))}
-        {featureRow("Connected Car Tech", specsList.map((s) => s?.features.connectedCarTech ?? false))}
-        {row("Speakers", specsList.map((s) => s?.features.numberOfSpeakers ?? NA))}
-        {featureRow("Wireless Charging", specsList.map((s) => s?.features.wirelessCharging ?? false))}
-      </Section>
+      {mergedCategories.map((cat) => (
+        <Section
+          key={cat.categoryId ?? cat.categoryName}
+          id={categorySectionId(cat.categoryId, cat.categoryName)}
+          title={cat.categoryName}
+          icon={<CheckIcon className="size-4" />}
+        >
+          {cat.features.map((f) =>
+            f.hasValue
+              ? row(f.name, specsList.map((s) => findFeatureValue(s, f.id) ?? NA))
+              : featureRow(f.name, specsList.map((s) => hasFeature(s, f.id))),
+          )}
+        </Section>
+      ))}
     </div>
   );
 }

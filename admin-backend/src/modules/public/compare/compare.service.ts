@@ -3,6 +3,7 @@
 import { Prisma } from '@prisma/client';
 import { prisma } from '@/prisma/client';
 import { ApiError } from '@/core/errors/ApiError';
+import { VARIANT_FEATURES_SELECT, shapeVariantFeatures } from '@/modules/public/cars/car/car.service';
 import type { CompareQueryParsed, RandomPairsQueryParsed, FuelFilter } from './compare.validation';
 import type {
   CompareCarResult,
@@ -139,43 +140,7 @@ async function getCarWithVariant(slug: string, variantId?: number, powertrainId?
           topSpeedKmph: true,
         },
       },
-      features: {
-        take: 1,
-        select: {
-          airbagsCount: true,
-          absWithEbd: true,
-          esc: true,
-          hillAssist: true,
-          rearParkingCamera: true,
-          frontParkingSensors: true,
-          tpms: true,
-          isofixMounts: true,
-          ncapRating: true,
-          sunroof: true,
-          keylessEntry: true,
-          pushButtonStart: true,
-          cruiseControl: true,
-          climateControl: true,
-          rearAcVents: true,
-          autoDimmingMirror: true,
-          powerWindows: true,
-          upholsteryType: true,
-          adjustableSeats: true,
-          ventilatedSeats: true,
-          rearArmrest: true,
-          ledHeadlamps: true,
-          ledDrls: true,
-          alloyWheels: true,
-          roofRails: true,
-          fogLamps: true,
-          touchscreenSizeInch: true,
-          androidAuto: true,
-          appleCarplay: true,
-          connectedCarTech: true,
-          numberOfSpeakers: true,
-          wirelessCharging: true,
-        },
-      },
+      features: VARIANT_FEATURES_SELECT,
     },
   });
 
@@ -189,7 +154,6 @@ async function getCarWithVariant(slug: string, variantId?: number, powertrainId?
 
   const ice = pickPowertrain(variant.icePowertrains);
   const electric = ice ? undefined : pickPowertrain(variant.electricPowertrains);
-  const feat = variant.features[0];
 
   const selectedPowertrain: CompareVariantPowertrainOption | null = ice
     ? { id: ice.id, label: [FUEL_TYPE_LABELS[ice.fuelType], ice.fuelTypeSubCategory].filter(Boolean).join(' '), isDefault: ice.isDefault }
@@ -235,40 +199,7 @@ async function getCarWithVariant(slug: string, variantId?: number, powertrainId?
     powerPs: ice?.powerPs ?? electric?.powerPs ?? null,
     torqueNm: ice?.torqueNm ?? electric?.torqueNm ?? null,
     topSpeedKmph: ice?.topSpeedKmph ?? electric?.topSpeedKmph ?? null,
-    features: {
-      airbagsCount: feat?.airbagsCount ?? null,
-      absWithEbd: feat?.absWithEbd ?? false,
-      esc: feat?.esc ?? false,
-      hillAssist: feat?.hillAssist ?? false,
-      rearParkingCamera: feat?.rearParkingCamera ?? false,
-      frontParkingSensors: feat?.frontParkingSensors ?? false,
-      tpms: feat?.tpms ?? false,
-      isofixMounts: feat?.isofixMounts ?? false,
-      ncapRating: feat?.ncapRating?.toString() ?? null,
-      sunroof: feat?.sunroof ?? false,
-      keylessEntry: feat?.keylessEntry ?? false,
-      pushButtonStart: feat?.pushButtonStart ?? false,
-      cruiseControl: feat?.cruiseControl ?? false,
-      climateControl: feat?.climateControl ?? false,
-      rearAcVents: feat?.rearAcVents ?? false,
-      autoDimmingMirror: feat?.autoDimmingMirror ?? false,
-      powerWindows: feat?.powerWindows ?? false,
-      upholsteryType: feat?.upholsteryType ?? null,
-      adjustableSeats: feat?.adjustableSeats ?? false,
-      ventilatedSeats: feat?.ventilatedSeats ?? false,
-      rearArmrest: feat?.rearArmrest ?? false,
-      ledHeadlamps: feat?.ledHeadlamps ?? false,
-      ledDrls: feat?.ledDrls ?? false,
-      alloyWheels: feat?.alloyWheels ?? false,
-      roofRails: feat?.roofRails ?? false,
-      fogLamps: feat?.fogLamps ?? false,
-      touchscreenSizeInch: feat?.touchscreenSizeInch?.toString() ?? null,
-      androidAuto: feat?.androidAuto ?? false,
-      appleCarplay: feat?.appleCarplay ?? false,
-      connectedCarTech: feat?.connectedCarTech ?? false,
-      numberOfSpeakers: feat?.numberOfSpeakers ?? null,
-      wirelessCharging: feat?.wirelessCharging ?? false,
-    },
+    features: shapeVariantFeatures(variant.features),
   };
 
   return {

@@ -8,95 +8,46 @@ import type { FeatureListQueryParsed, CreateFeatureParsed, UpdateFeatureParsed }
 
 const FEATURE_SELECT = {
   id: true,
-  variantId: true,
-  airbagsCount: true,
-  absWithEbd: true,
-  esc: true,
-  hillAssist: true,
-  rearParkingCamera: true,
-  frontParkingSensors: true,
-  tpms: true,
-  isofixMounts: true,
-  ncapRating: true,
-  sunroof: true,
-  keylessEntry: true,
-  pushButtonStart: true,
-  cruiseControl: true,
-  climateControl: true,
-  rearAcVents: true,
-  autoDimmingMirror: true,
-  powerWindows: true,
-  upholsteryType: true,
-  adjustableSeats: true,
-  ventilatedSeats: true,
-  rearArmrest: true,
-  ledHeadlamps: true,
-  ledDrls: true,
-  alloyWheels: true,
-  roofRails: true,
-  fogLamps: true,
-  touchscreenSizeInch: true,
-  androidAuto: true,
-  appleCarplay: true,
-  connectedCarTech: true,
-  numberOfSpeakers: true,
-  wirelessCharging: true,
-  extraFeatures: true,
+  name: true,
+  categoryId: true,
+  category: { select: { id: true, name: true } },
   createdAt: true,
-  variant: {
-    select: {
-      id: true,
-      variantName: true,
-      model: { select: { id: true, name: true, brand: { select: { id: true, name: true } } } },
-    },
-  },
 } as const;
 
-async function assertVariantExists(variantId: number) {
-  const variant = await prisma.carVariant.findUnique({ where: { id: variantId }, select: { id: true } });
-  if (!variant) {
-    throw ApiError.badRequest('Invalid variantId — car variant does not exist');
+async function assertNameAvailable(name: string, excludeId?: number) {
+  const conflict = await prisma.feature.findFirst({
+    where: { name, id: excludeId ? { not: excludeId } : undefined },
+    select: { id: true },
+  });
+  if (conflict) {
+    throw ApiError.conflict(`A feature named "${name}" already exists`);
   }
 }
 
-// Feature sheets have no name of their own — every log line identifies
-// one by the "Brand Model — Variant" it's attached to instead.
-function describeFeatureSubject(feature: {
-  variant: { variantName: string; model: { name: string; brand: { name: string } } };
-}): string {
-  return `${feature.variant.model.brand.name} ${feature.variant.model.name} — ${feature.variant.variantName}`;
-}
-
-// A variant is expected to carry a single feature sheet — same "one
-// spec-row per variant" idea enforced elsewhere via isDefault, except
-// here there's nothing to default between, so we simply block a second
-// row from being created for the same variant.
-async function assertNoExistingFeatureForVariant(variantId: number, excludeId?: number) {
-  const existing = await prisma.carFeature.findFirst({
-    where: { variantId, ...(excludeId ? { id: { not: excludeId } } : {}) },
-    select: { id: true },
-  });
-  if (existing) {
-    throw ApiError.conflict('A feature sheet already exists for this variant — edit it instead');
+async function assertCategoryExists(categoryId: number) {
+  const category = await prisma.featureCategory.findUnique({ where: { id: categoryId }, select: { id: true } });
+  if (!category) {
+    throw ApiError.badRequest('Invalid categoryId — feature category does not exist');
   }
 }
 
 export async function listFeatures(query: FeatureListQueryParsed) {
-  const { page, limit, variantId, sortBy, sortOrder } = query;
+  const { page, limit, search, categoryId } = query;
 
-  const where: Prisma.CarFeatureWhereInput = {
-    ...(variantId ? { variantId } : {}),
+  const where: Prisma.FeatureWhereInput = {
+    ...(categoryId ? { categoryId } : {}),
+    ...(search ? { name: { contains: search, mode: 'insensitive' } } : {}),
   };
 
   const [items, total] = await Promise.all([
-    prisma.carFeature.findMany({
+    prisma.feature.findMany({
       where,
       select: FEATURE_SELECT,
-      orderBy: { [sortBy]: sortOrder },
+      orderBy: { name: 'asc' },
       skip: (page - 1) * limit,
       take: limit,
     }),
-    prisma.carFeature.count({ where }),
+    prisma.feature.count({ where }),
   ]);
 
   return {
@@ -110,35 +61,42 @@ export async function listFeatures(query: FeatureListQueryParsed) {
   };
 }
 
+// Dropdown-only source — every feature in one shot, no pagination.
+// (Category-grouped catalog for the variant-assignment checklist lives
+// in variantFeature.service.ts's getFeatureCatalog — a different shape
+// for a different screen.)
+export async function listFeatureOptions() {
+  return prisma.feature.findMany({
+    select: { id: true, name: true, categoryId: true },
+    orderBy: { name: 'asc' },
+  });
+}
+
 export async function getFeatureById(id: number) {
-  const feature = await prisma.carFeature.findUnique({
+  const feature = await prisma.feature.findUnique({
     where: { id },
     select: FEATURE_SELECT,
   });
 
   if (!feature) {
-    throw ApiError.notFound('Feature sheet not found');
+    throw ApiError.notFound('Feature not found');
   }
 
   return feature;
 }
 
-export async function createFeature(
-  input: CreateFeatureParsed,
-  actorId: number,
-  ipAddress?: string | null,
-) {
-  await assertVariantExists(input.variantId);
-  await assertNoExistingFeatureForVariant(input.variantId);
+export async function createFeature(input: CreateFeatureParsed, actorId: number, ipAddress?: string | null) {
+  await assertCategoryExists(input.categoryId);
+  await assertNameAvailable(input.name);
 
-  const feature = await prisma.carFeature.create({
+  const feature = await prisma.feature.create({
     data: input,
     select: FEATURE_SELECT,
   });
 
   await createLog({
     adminId: actorId,
-    description: `Created feature sheet for "${describeFeatureSubject(feature)}" (id ${feature.id})`,
+    description: `Created feature "${feature.name}" (id ${feature.id})`,
     ipAddress,
   });
 
@@ -151,15 +109,16 @@ export async function updateFeature(
   actorId: number,
   ipAddress?: string | null,
 ) {
-  // Existence check only — id 404s here before the update runs.
   await getFeatureById(id);
 
-  if (typeof input.variantId === 'number') {
-    await assertVariantExists(input.variantId);
-    await assertNoExistingFeatureForVariant(input.variantId, id);
+  if (input.name) {
+    await assertNameAvailable(input.name, id);
+  }
+  if (input.categoryId) {
+    await assertCategoryExists(input.categoryId);
   }
 
-  const feature = await prisma.carFeature.update({
+  const feature = await prisma.feature.update({
     where: { id },
     data: input,
     select: FEATURE_SELECT,
@@ -167,7 +126,7 @@ export async function updateFeature(
 
   await createLog({
     adminId: actorId,
-    description: `Updated feature sheet for "${describeFeatureSubject(feature)}" (id ${id})`,
+    description: `Updated feature "${feature.name}" (id ${id})`,
     ipAddress,
   });
 
@@ -177,13 +136,20 @@ export async function updateFeature(
 export async function deleteFeature(id: number, actorId: number, ipAddress?: string | null) {
   const feature = await getFeatureById(id);
 
-  await prisma.carFeature.delete({ where: { id } });
+  const assignedCount = await prisma.variantFeature.count({ where: { featureId: id } });
+  if (assignedCount > 0) {
+    throw ApiError.badRequest(
+      `Cannot delete this feature — it is currently assigned to ${assignedCount} variant(s). Remove those assignments first.`,
+    );
+  }
+
+  await prisma.feature.delete({ where: { id } });
 
   await createLog({
     adminId: actorId,
-    description: `Deleted feature sheet for "${describeFeatureSubject(feature)}" (id ${id})`,
+    description: `Deleted feature "${feature.name}" (id ${id})`,
     ipAddress,
   });
 
-  return { message: 'Feature sheet deleted successfully' };
+  return { message: 'Feature deleted successfully' };
 }

@@ -1,14 +1,17 @@
-// src/pages/newCars/Features/FeatureModal.tsx
+// src/pages/newCars/FeatureCategories/FeatureCategoryModal.tsx
 import { useState } from "react";
-import { useCreateFeatureMutation, useUpdateFeatureMutation, type FeatureRecord } from "./feature.api";
-import { useGetFeatureCategoryOptionsQuery } from "../FeatureCategories/featureCategory.api";
+import {
+  useCreateFeatureCategoryMutation,
+  useUpdateFeatureCategoryMutation,
+  type FeatureCategoryRecord,
+} from "./featureCategory.api";
 import { extractApiError } from "../../../lib/apiClient";
 
 const ACCENT = "#D4300F";
 
 interface FieldErrors {
   name?: string;
-  categoryId?: string;
+  sortOrder?: string;
 }
 
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
@@ -22,32 +25,34 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
   );
 }
 
-export default function FeatureModal({
+export default function FeatureCategoryModal({
   open,
   onClose,
-  feature,
+  category,
+  nextSortOrder = 0,
 }: {
   open: boolean;
   onClose: () => void;
-  feature?: FeatureRecord | null;
+  category?: FeatureCategoryRecord | null;
+  // Suggested default for Add mode only — one past whatever's currently
+  // highest, so categories don't all pile up at the same sort position.
+  nextSortOrder?: number;
 }) {
-  const isEditMode = !!feature;
+  const isEditMode = !!category;
 
-  const [name, setName] = useState(feature ? feature.name : "");
-  const [categoryId, setCategoryId] = useState<number | "">(feature?.categoryId ?? "");
+  const [name, setName] = useState(category ? category.name : "");
+  const [sortOrder, setSortOrder] = useState(category ? String(category.sortOrder) : String(nextSortOrder));
 
   const [errors, setErrors] = useState<FieldErrors>({});
   const [serverError, setServerError] = useState("");
 
-  const { data: categories = [] } = useGetFeatureCategoryOptionsQuery();
-
-  const [createFeature, { isLoading: creating }] = useCreateFeatureMutation();
-  const [updateFeature, { isLoading: updating }] = useUpdateFeatureMutation();
+  const [createFeatureCategory, { isLoading: creating }] = useCreateFeatureCategoryMutation();
+  const [updateFeatureCategory, { isLoading: updating }] = useUpdateFeatureCategoryMutation();
   const saving = creating || updating;
 
   const resetForm = () => {
     setName("");
-    setCategoryId("");
+    setSortOrder("0");
     setErrors({});
     setServerError("");
   };
@@ -62,7 +67,7 @@ export default function FeatureModal({
   const validate = (): boolean => {
     const next: FieldErrors = {};
     if (!name.trim()) next.name = "Name is required.";
-    if (!categoryId) next.categoryId = "Category is required.";
+    if (sortOrder.trim() && !/^\d+$/.test(sortOrder.trim())) next.sortOrder = "Must be a whole number.";
     setErrors(next);
     return Object.keys(next).length === 0;
   };
@@ -73,13 +78,16 @@ export default function FeatureModal({
     if (!validate()) return;
 
     try {
-      if (isEditMode && feature) {
-        await updateFeature({
-          id: feature.id,
-          input: { name: name.trim(), categoryId: categoryId as number },
+      if (isEditMode && category) {
+        await updateFeatureCategory({
+          id: category.id,
+          input: { name: name.trim(), sortOrder: sortOrder.trim() ? Number(sortOrder) : undefined },
         }).unwrap();
       } else {
-        await createFeature({ name: name.trim(), categoryId: categoryId as number }).unwrap();
+        await createFeatureCategory({
+          name: name.trim(),
+          sortOrder: sortOrder.trim() ? Number(sortOrder) : undefined,
+        }).unwrap();
       }
       resetForm();
       onClose();
@@ -98,9 +106,11 @@ export default function FeatureModal({
       <div className="w-full max-w-[420px] bg-white border border-[#e8e4dc] rounded-2xl shadow-xl max-h-[90vh] overflow-y-auto">
         <div className="flex items-center justify-between px-6 pt-6">
           <div>
-            <h2 className="text-[#1c1a17] text-lg font-black">{isEditMode ? "Edit feature" : "Add feature"}</h2>
+            <h2 className="text-[#1c1a17] text-lg font-black">
+              {isEditMode ? "Edit category" : "Add feature category"}
+            </h2>
             <p className="text-[#a39e96] text-xs mt-1">
-              {isEditMode ? `Update details for ${feature?.name}` : "Add a new feature (e.g. Sunroof)."}
+              {isEditMode ? `Update details for ${category?.name}` : "Add a new feature category (e.g. Safety)."}
             </p>
           </div>
           <button
@@ -122,7 +132,7 @@ export default function FeatureModal({
               type="text"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              placeholder="e.g. Sunroof"
+              placeholder="e.g. Safety"
               className="w-full text-sm font-medium text-[#1c1a17] bg-[#f7f5f1] border rounded-xl px-3 py-2.5 outline-none transition-all focus:bg-white"
               style={{
                 borderColor: errors.name ? "#f0997b" : "#e2ddd5",
@@ -132,24 +142,24 @@ export default function FeatureModal({
             {errors.name && <p className="text-[11px] font-medium text-[#D4300F] mt-1">{errors.name}</p>}
           </Field>
 
-          <Field label="Category">
-            <select
-              value={categoryId}
-              onChange={(e) => setCategoryId(e.target.value ? Number(e.target.value) : "")}
-              className="cursor-pointer w-full text-sm font-medium text-[#1c1a17] bg-[#f7f5f1] border rounded-xl px-3 py-2.5 outline-none transition-all focus:bg-white"
+          <Field label="Sort order">
+            <input
+              type="number"
+              min={0}
+              value={sortOrder}
+              onChange={(e) => setSortOrder(e.target.value)}
+              placeholder="0"
+              className="w-full text-sm font-medium text-[#1c1a17] bg-[#f7f5f1] border rounded-xl px-3 py-2.5 outline-none transition-all focus:bg-white"
               style={{
-                borderColor: errors.categoryId ? "#f0997b" : "#e2ddd5",
-                boxShadow: errors.categoryId ? "0 0 0 2px rgba(216,90,48,0.1)" : "none",
+                borderColor: errors.sortOrder ? "#f0997b" : "#e2ddd5",
+                boxShadow: errors.sortOrder ? "0 0 0 2px rgba(216,90,48,0.1)" : "none",
               }}
-            >
-              <option value="">Select a category</option>
-              {categories.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.name}
-                </option>
-              ))}
-            </select>
-            {errors.categoryId && <p className="text-[11px] font-medium text-[#D4300F] mt-1">{errors.categoryId}</p>}
+            />
+            {errors.sortOrder ? (
+              <p className="text-[11px] font-medium text-[#D4300F] mt-1">{errors.sortOrder}</p>
+            ) : (
+              <p className="text-[10px] text-[#a39e96] mt-1">Lower numbers show first.</p>
+            )}
           </Field>
 
           {serverError && (
@@ -172,7 +182,7 @@ export default function FeatureModal({
               className="cursor-pointer flex-1 py-2.5 rounded-xl text-sm font-bold text-white transition-all hover:opacity-90 active:scale-[0.98] disabled:opacity-50 flex items-center justify-center gap-2"
               style={{ background: ACCENT }}
             >
-              {saving ? "Saving..." : isEditMode ? "Save changes" : "Add feature"}
+              {saving ? "Saving..." : isEditMode ? "Save changes" : "Add category"}
             </button>
           </div>
         </form>
