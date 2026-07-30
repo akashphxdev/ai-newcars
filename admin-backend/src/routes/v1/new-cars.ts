@@ -7,6 +7,7 @@ import powertrainElectricRoute from '@/modules/newCars/powertrainElectric/powert
 import powertrainice from '@/modules/newCars/powertrainIce/powertrainIce.routes'
 import colorRoute from '@/modules/newCars/color/color.routes'
 import imageRoute from '@/modules/newCars/image/image.routes'
+import colorImageRoute from '@/modules/newCars/colorImage/colorImage.routes'
 import featureRoute from '@/modules/newCars/feature/feature.routes'
 import featureCategoryRoute from '@/modules/newCars/featureCategory/featureCategory.routes'
 import variantFeatureRoute from '@/modules/newCars/variantFeature/variantFeature.routes'
@@ -27,6 +28,7 @@ router.use('/powertrains/electric', powertrainElectricRoute)
 router.use('/powertrains/ice', powertrainice)
 router.use('/colors', colorRoute)
 router.use('/images', imageRoute)
+router.use('/color-images', colorImageRoute)
 router.use('/features', featureRoute )
 router.use('/feature-categories', featureCategoryRoute )
 router.use('/variant-features', variantFeatureRoute )
