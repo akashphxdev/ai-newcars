@@ -25,6 +25,20 @@ export interface VariantRecord {
   transmissionId: number;
   transmission: VariantTransmissionSummary;
   isTopSeller: boolean;
+  // Chassis/dimension fields — shared by ICE and Electric variants alike
+  // (not powertrain-specific), so they live here instead of being
+  // duplicated into both powertrain tables.
+  length: number | null;
+  width: number | null;
+  height: number | null;
+  wheelBase: number | null;
+  groundClearance: number | null;
+  bootSpace: number | null;
+  frontSuspension: string | null;
+  rearSuspension: string | null;
+  steeringType: string | null;
+  frontBrakeType: string | null;
+  rearBrakeType: string | null;
   createdAt: Date;
   model: VariantModelSummary;
 }

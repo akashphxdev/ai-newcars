@@ -84,10 +84,6 @@ export interface CarDetailIceSpecs {
   engineDisplacement: string | null;
   cubicCapacity: number | null;
   cylinders: number | null;
-  cylinderCapacity: string | null;
-  transmissionType: string | null;
-  transmissionSubType: string | null;
-  transmissionSpeed: number | null;
   numGears: number | null;
   isFourByFour: boolean;
   drivetrain: string | null;
@@ -99,10 +95,10 @@ export interface CarDetailIceSpecs {
   torqueMaxRpm: number | null;
   claimedFe: string | null;
   realWorldMileage: string | null;
-  cityMileage: string | null;
-  highwayMileage: string | null;
   topSpeedKmph: number | null;
   topSpeedTimeSec: string | null;
+  emissionNormCompliance: string | null;
+  turboCharger: boolean;
 }
 
 export interface CarDetailElectricSpecs {
@@ -122,13 +118,34 @@ export interface CarDetailElectricSpecs {
   acChargingTime: string | null;
   dcChargingOutput: string | null;
   dcFastChargingTime: string | null;
-  powertrainBootspace: number | null;
   batteryWarrantyKm: number | null;
   batteryWarrantyYears: number | null;
   motorWarrantyKm: number | null;
   motorWarrantyYears: number | null;
   standardWarrantyKm: string | null;
   standardWarrantyYears: number | null;
+  emissionNormCompliance: string | null;
+  motorPowerKw: string | null;
+  chargingPort: string | null;
+  chargingOptionsRaw: string | null;
+  regenerativeBraking: boolean;
+  regenerativeBrakingLevels: number | null;
+}
+
+// Shared by ICE and Electric variants alike (chassis-level, not
+// powertrain-specific) — mirrors admin-backend's CarDetailVariantDimensions.
+export interface CarDetailVariantDimensions {
+  length: number | null;
+  width: number | null;
+  height: number | null;
+  wheelBase: number | null;
+  groundClearance: number | null;
+  bootSpace: number | null;
+  frontSuspension: string | null;
+  rearSuspension: string | null;
+  steeringType: string | null;
+  frontBrakeType: string | null;
+  rearBrakeType: string | null;
 }
 
 // A variant's features are now fully admin-defined (Feature +
@@ -157,6 +174,7 @@ export interface CarDetailSelectedVariant {
   isElectric: boolean;
   ice: CarDetailIceSpecs | null;
   electric: CarDetailElectricSpecs | null;
+  dimensions: CarDetailVariantDimensions;
   features: CarDetailFeatureGroup[];
 }
 

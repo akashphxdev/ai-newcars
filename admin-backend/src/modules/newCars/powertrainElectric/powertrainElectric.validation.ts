@@ -2,13 +2,6 @@
 
 import { z } from 'zod';
 
-// Numeric codes only — labels live on the frontend
-// (front/src/lib/lookups.ts's TEST_CYCLE_TYPE_OPTIONS). Backend just
-// needs to know which codes are currently valid. Same pattern as
-// offer.validation.ts's OFFER_TYPE_CODES.
-//   1 = ARAI, 2 = WLTP, 3 = EPA, 4 = NEDC
-export const TEST_CYCLE_TYPE_CODES = [1, 2, 3, 4] as const;
-
 export const powertrainElectricListQuerySchema = z.object({
   page: z.coerce.number().int().min(1).default(1),
   limit: z.coerce.number().int().min(1).max(100).default(20),
@@ -23,46 +16,42 @@ export const powertrainElectricIdParamSchema = z.object({
   id: z.coerce.number().int().positive(),
 });
 
+// All optional fields below are .nullable() as well as .optional() — the
+// frontend sends explicit null (not an omitted key) for a blank field, and
+// .optional() alone only permits undefined, not null.
 const powertrainElectricCreateShape = {
   variantId: z.coerce.number().int().positive('variantId is required'),
-  numMotors: z.coerce.number().int().nonnegative().optional(),
-  motorType: z.string().trim().max(50).optional(),
+  numMotors: z.coerce.number().int().nonnegative().nullable().optional(),
+  motorType: z.string().trim().max(50).nullable().optional(),
   // Core spec fields — required so a powertrain row can't be saved
   // half-empty. Everything else here stays optional (varies by source /
   // may not be published yet).
   batteryCapacity: z.coerce.number().positive('Battery capacity is required'),
-  batteryChemistry: z.string().trim().max(30).optional(),
-  thermalManagementSystem: z.string().trim().max(50).optional(),
+  batteryChemistry: z.string().trim().max(30).nullable().optional(),
+  thermalManagementSystem: z.string().trim().max(50).nullable().optional(),
   drivetrainId: z.coerce.number().int().positive('Drivetrain is required'),
   powerPs: z.coerce.number().int().positive('Power (PS) is required'),
   torqueNm: z.coerce.number().int().positive('Torque (Nm) is required'),
   claimedRange: z.coerce.number().int().positive('Claimed range is required'),
-  realWorldRange: z.coerce.number().int().nonnegative().optional(),
-  testCycleType: z.coerce
-    .number()
-    .int()
-    .refine((v) => (TEST_CYCLE_TYPE_CODES as readonly number[]).includes(v), 'Invalid testCycleType code')
-    .optional(),
-  topSpeedKmph: z.coerce.number().int().nonnegative().optional(),
-  topSpeedTimeSec: z.coerce.number().nonnegative().optional(),
-  acChargingOutput: z.coerce.number().nonnegative().optional(),
-  acChargingTime: z.coerce.number().nonnegative().optional(),
-  chargerSizeAc3kwHours: z.coerce.number().int().nonnegative().optional(),
-  chargerSizeAc7kwHours: z.coerce.number().int().nonnegative().optional(),
-  chargerSizeAc11kwHours: z.coerce.number().int().nonnegative().optional(),
-  chargerSizeAc22kwHours: z.coerce.number().int().nonnegative().optional(),
-  dcChargingOutput: z.coerce.number().nonnegative().optional(),
-  dcFastChargingTime: z.string().trim().max(50).optional(),
-  powertrainBootspace: z.coerce.number().int().nonnegative().optional(),
-  batteryWarrantyKm: z.coerce.number().int().nonnegative().optional(),
-  batteryWarrantyYears: z.coerce.number().int().nonnegative().optional(),
-  motorWarrantyKm: z.coerce.number().int().nonnegative().optional(),
-  motorWarrantyYears: z.coerce.number().int().nonnegative().optional(),
-  standardWarrantyKm: z.string().trim().max(20).optional(),
-  standardWarrantyYears: z.coerce.number().int().nonnegative().optional(),
-  realWorldUrl: z.string().trim().url('Must be a valid URL').max(255).optional(),
-  cityUrl: z.string().trim().url('Must be a valid URL').max(255).optional(),
-  highwayUrl: z.string().trim().url('Must be a valid URL').max(255).optional(),
+  realWorldRange: z.coerce.number().int().nonnegative().nullable().optional(),
+  topSpeedKmph: z.coerce.number().int().nonnegative().nullable().optional(),
+  topSpeedTimeSec: z.coerce.number().nonnegative().nullable().optional(),
+  acChargingOutput: z.coerce.number().nonnegative().nullable().optional(),
+  acChargingTime: z.coerce.number().nonnegative().nullable().optional(),
+  dcChargingOutput: z.coerce.number().nonnegative().nullable().optional(),
+  dcFastChargingTime: z.string().trim().max(50).nullable().optional(),
+  batteryWarrantyKm: z.coerce.number().int().nonnegative().nullable().optional(),
+  batteryWarrantyYears: z.coerce.number().int().nonnegative().nullable().optional(),
+  motorWarrantyKm: z.coerce.number().int().nonnegative().nullable().optional(),
+  motorWarrantyYears: z.coerce.number().int().nonnegative().nullable().optional(),
+  standardWarrantyKm: z.string().trim().max(20).nullable().optional(),
+  standardWarrantyYears: z.coerce.number().int().nonnegative().nullable().optional(),
+  emissionNormCompliance: z.string().trim().max(30).nullable().optional(),
+  motorPowerKw: z.coerce.number().nonnegative().nullable().optional(),
+  chargingPort: z.string().trim().max(30).nullable().optional(),
+  chargingOptionsRaw: z.string().trim().max(255).nullable().optional(),
+  regenerativeBraking: z.boolean().default(false),
+  regenerativeBrakingLevels: z.coerce.number().int().nonnegative().nullable().optional(),
   isDefault: z.boolean().default(false),
 };
 
@@ -84,32 +73,24 @@ export const updatePowertrainElectricSchema = z
     torqueNm: z.coerce.number().int().positive('Torque (Nm) is required').optional(),
     claimedRange: z.coerce.number().int().positive('Claimed range is required').optional(),
     realWorldRange: z.coerce.number().int().nonnegative().nullable().optional(),
-    testCycleType: z.coerce
-      .number()
-      .int()
-      .refine((v) => (TEST_CYCLE_TYPE_CODES as readonly number[]).includes(v), 'Invalid testCycleType code')
-      .nullable()
-      .optional(),
     topSpeedKmph: z.coerce.number().int().nonnegative().nullable().optional(),
     topSpeedTimeSec: z.coerce.number().nonnegative().nullable().optional(),
     acChargingOutput: z.coerce.number().nonnegative().nullable().optional(),
     acChargingTime: z.coerce.number().nonnegative().nullable().optional(),
-    chargerSizeAc3kwHours: z.coerce.number().int().nonnegative().nullable().optional(),
-    chargerSizeAc7kwHours: z.coerce.number().int().nonnegative().nullable().optional(),
-    chargerSizeAc11kwHours: z.coerce.number().int().nonnegative().nullable().optional(),
-    chargerSizeAc22kwHours: z.coerce.number().int().nonnegative().nullable().optional(),
     dcChargingOutput: z.coerce.number().nonnegative().nullable().optional(),
     dcFastChargingTime: z.string().trim().max(50).nullable().optional(),
-    powertrainBootspace: z.coerce.number().int().nonnegative().nullable().optional(),
     batteryWarrantyKm: z.coerce.number().int().nonnegative().nullable().optional(),
     batteryWarrantyYears: z.coerce.number().int().nonnegative().nullable().optional(),
     motorWarrantyKm: z.coerce.number().int().nonnegative().nullable().optional(),
     motorWarrantyYears: z.coerce.number().int().nonnegative().nullable().optional(),
     standardWarrantyKm: z.string().trim().max(20).nullable().optional(),
     standardWarrantyYears: z.coerce.number().int().nonnegative().nullable().optional(),
-    realWorldUrl: z.string().trim().url().max(255).nullable().optional(),
-    cityUrl: z.string().trim().url().max(255).nullable().optional(),
-    highwayUrl: z.string().trim().url().max(255).nullable().optional(),
+    emissionNormCompliance: z.string().trim().max(30).nullable().optional(),
+    motorPowerKw: z.coerce.number().nonnegative().nullable().optional(),
+    chargingPort: z.string().trim().max(30).nullable().optional(),
+    chargingOptionsRaw: z.string().trim().max(255).nullable().optional(),
+    regenerativeBraking: z.boolean().optional(),
+    regenerativeBrakingLevels: z.coerce.number().int().nonnegative().nullable().optional(),
     isDefault: z.boolean().optional(),
   })
   .refine((data) => Object.keys(data).length > 0, {
@@ -119,4 +100,3 @@ export const updatePowertrainElectricSchema = z
 export type PowertrainElectricListQueryParsed = z.infer<typeof powertrainElectricListQuerySchema>;
 export type CreatePowertrainElectricParsed = z.infer<typeof createPowertrainElectricSchema>;
 export type UpdatePowertrainElectricParsed = z.infer<typeof updatePowertrainElectricSchema>;
-export type TestCycleType = (typeof TEST_CYCLE_TYPE_CODES)[number];

@@ -11,7 +11,6 @@ import { useGetVariantOptionsQuery } from "../Variants/variant.api";
 import { useGetCarModelOptionsQuery } from "../carModels/carModel.api";
 import { useGetBrandOptionsQuery } from "../Brands/brand.api";
 import { extractApiError } from "../../../lib/apiClient";
-import { getTestCycleTypeLabel } from "../../../lib/lookups";
 import PowertrainElectricModal from "./PowertrainElectricModal";
 import ConfirmDialog from "../../../components/common/ConfirmDialog";
 import DataTable, { type DataTableColumn } from "../../../components/common/DataTable";
@@ -61,39 +60,27 @@ function ExpandedElectricDetail({ id }: { id: number }) {
     <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-x-4 gap-y-3">
       <SpecItem label="Number of motors" value={formatInt(p.numMotors)} />
       <SpecItem label="Motor type" value={p.motorType ?? "—"} />
+      <SpecItem label="Motor power" value={formatDecimal(p.motorPowerKw, " kW")} />
       <SpecItem label="Battery chemistry" value={p.batteryChemistry ?? "—"} />
       <SpecItem label="Thermal mgmt" value={p.thermalManagementSystem ?? "—"} />
-      <SpecItem label="Bootspace" value={formatInt(p.powertrainBootspace, " L")} />
       <SpecItem label="Real world range" value={formatInt(p.realWorldRange, " km")} />
-      <SpecItem label="Test cycle" value={getTestCycleTypeLabel(p.testCycleType)} />
       <SpecItem label="Top speed" value={formatInt(p.topSpeedKmph, " km/h")} />
       <SpecItem label="0-100 time" value={formatDecimal(p.topSpeedTimeSec, " sec")} />
       <SpecItem label="AC charging output" value={formatDecimal(p.acChargingOutput, " kW")} />
       <SpecItem label="AC charging time" value={formatDecimal(p.acChargingTime, " hrs")} />
-      <SpecItem label="3 kW charger" value={formatInt(p.chargerSizeAc3kwHours, " hrs")} />
-      <SpecItem label="7 kW charger" value={formatInt(p.chargerSizeAc7kwHours, " hrs")} />
-      <SpecItem label="11 kW charger" value={formatInt(p.chargerSizeAc11kwHours, " hrs")} />
-      <SpecItem label="22 kW charger" value={formatInt(p.chargerSizeAc22kwHours, " hrs")} />
       <SpecItem label="DC charging output" value={formatDecimal(p.dcChargingOutput, " kW")} />
       <SpecItem label="DC fast charging" value={p.dcFastChargingTime ?? "—"} />
+      <SpecItem label="Charging port" value={p.chargingPort ?? "—"} />
+      <SpecItem label="Charging options" value={p.chargingOptionsRaw ?? "—"} />
+      <SpecItem label="Regenerative braking" value={p.regenerativeBraking ? "Yes" : "No"} />
+      <SpecItem label="Regen levels" value={formatInt(p.regenerativeBrakingLevels)} />
       <SpecItem label="Battery warranty" value={p.batteryWarrantyKm != null ? `${p.batteryWarrantyKm} km` : "—"} />
       <SpecItem label="Battery warranty (yrs)" value={formatInt(p.batteryWarrantyYears)} />
       <SpecItem label="Motor warranty" value={p.motorWarrantyKm != null ? `${p.motorWarrantyKm} km` : "—"} />
       <SpecItem label="Motor warranty (yrs)" value={formatInt(p.motorWarrantyYears)} />
       <SpecItem label="Standard warranty" value={p.standardWarrantyKm ?? "—"} />
       <SpecItem label="Standard warranty (yrs)" value={formatInt(p.standardWarrantyYears)} />
-      <SpecItem
-        label="Real-world test"
-        value={p.realWorldUrl ? <a href={p.realWorldUrl} target="_blank" rel="noreferrer" className="text-[#D4300F] hover:underline">Link</a> : "—"}
-      />
-      <SpecItem
-        label="City test"
-        value={p.cityUrl ? <a href={p.cityUrl} target="_blank" rel="noreferrer" className="text-[#D4300F] hover:underline">Link</a> : "—"}
-      />
-      <SpecItem
-        label="Highway test"
-        value={p.highwayUrl ? <a href={p.highwayUrl} target="_blank" rel="noreferrer" className="text-[#D4300F] hover:underline">Link</a> : "—"}
-      />
+      <SpecItem label="Emission norm" value={p.emissionNormCompliance ?? "—"} />
       <SpecItem label="Created" value={formatDate(p.createdAt)} />
     </div>
   );

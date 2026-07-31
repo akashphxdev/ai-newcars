@@ -12,8 +12,9 @@ import { extractApiError } from "../../../lib/apiClient";
 
 const ACCENT = "#D4300F";
 
-// Every field here is required, on both Add and Edit — no optional
-// fields in this module (per explicit product requirement).
+// The core fields (brand/model/name/price/seats/transmission) are
+// required on both Add and Edit, per explicit product requirement.
+// Dimension/chassis fields are optional, filled in progressively.
 interface FieldErrors {
   brandId?: string;
   modelId?: string;
@@ -32,6 +33,26 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
       {children}
     </div>
   );
+}
+
+function Section({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <div className="space-y-3 pt-1">
+      <p className="text-[11px] font-black uppercase tracking-wider text-[#1c1a17] border-b border-[#f0ece6] pb-1.5">
+        {title}
+      </p>
+      <div className="grid grid-cols-2 gap-3">{children}</div>
+    </div>
+  );
+}
+
+function numOrNull(value: string): number | null {
+  return value === "" ? null : Number(value);
+}
+
+function strOrNull(value: string): string | null {
+  const trimmed = value.trim();
+  return trimmed === "" ? null : trimmed;
 }
 
 const inputClass =
@@ -76,6 +97,21 @@ export default function VariantModal({
   // every save (same "all fields mandatory" rule as everything else here).
   const [isTopSeller, setIsTopSeller] = useState<boolean>(variant?.isTopSeller ?? false);
 
+  // Chassis/dimension fields — all optional, filled in progressively.
+  const [length, setLength] = useState(variant?.length != null ? String(variant.length) : "");
+  const [width, setWidth] = useState(variant?.width != null ? String(variant.width) : "");
+  const [height, setHeight] = useState(variant?.height != null ? String(variant.height) : "");
+  const [wheelBase, setWheelBase] = useState(variant?.wheelBase != null ? String(variant.wheelBase) : "");
+  const [groundClearance, setGroundClearance] = useState(
+    variant?.groundClearance != null ? String(variant.groundClearance) : "",
+  );
+  const [bootSpace, setBootSpace] = useState(variant?.bootSpace != null ? String(variant.bootSpace) : "");
+  const [frontSuspension, setFrontSuspension] = useState(variant?.frontSuspension ?? "");
+  const [rearSuspension, setRearSuspension] = useState(variant?.rearSuspension ?? "");
+  const [steeringType, setSteeringType] = useState(variant?.steeringType ?? "");
+  const [frontBrakeType, setFrontBrakeType] = useState(variant?.frontBrakeType ?? "");
+  const [rearBrakeType, setRearBrakeType] = useState(variant?.rearBrakeType ?? "");
+
   const [errors, setErrors] = useState<FieldErrors>({});
   const [serverError, setServerError] = useState("");
   const nameRef = useRef<HTMLInputElement>(null);
@@ -92,6 +128,17 @@ export default function VariantModal({
     setSeatingCapacity("");
     setTransmissionId("");
     setIsTopSeller(false);
+    setLength("");
+    setWidth("");
+    setHeight("");
+    setWheelBase("");
+    setGroundClearance("");
+    setBootSpace("");
+    setFrontSuspension("");
+    setRearSuspension("");
+    setSteeringType("");
+    setFrontBrakeType("");
+    setRearBrakeType("");
     setErrors({});
     setServerError("");
   };
@@ -136,6 +183,17 @@ export default function VariantModal({
       seatingCapacity: Number(seatingCapacity),
       transmissionId: Number(transmissionId),
       isTopSeller,
+      length: numOrNull(length),
+      width: numOrNull(width),
+      height: numOrNull(height),
+      wheelBase: numOrNull(wheelBase),
+      groundClearance: numOrNull(groundClearance),
+      bootSpace: numOrNull(bootSpace),
+      frontSuspension: strOrNull(frontSuspension),
+      rearSuspension: strOrNull(rearSuspension),
+      steeringType: strOrNull(steeringType),
+      frontBrakeType: strOrNull(frontBrakeType),
+      rearBrakeType: strOrNull(rearBrakeType),
     };
 
     try {
@@ -167,7 +225,7 @@ export default function VariantModal({
             <p className="text-[#a39e96] text-xs mt-1">
               {isEditMode
                 ? `Update details for ${variant?.variantName}`
-                : "All fields are required."}
+                : "Brand, model, name, price, seating and transmission are required — dimensions can be filled in later."}
             </p>
           </div>
           <button
@@ -298,6 +356,42 @@ export default function VariantModal({
               <p className="text-[11px] font-medium text-[#D4300F] mt-1">{errors.transmissionId}</p>
             )}
           </Field>
+
+          <Section title="Dimensions & chassis">
+            <Field label="Length (mm)">
+              <input type="number" min={0} value={length} onChange={(e) => setLength(e.target.value)} className={inputClass} style={{ borderColor: "#e2ddd5" }} />
+            </Field>
+            <Field label="Width (mm)">
+              <input type="number" min={0} value={width} onChange={(e) => setWidth(e.target.value)} className={inputClass} style={{ borderColor: "#e2ddd5" }} />
+            </Field>
+            <Field label="Height (mm)">
+              <input type="number" min={0} value={height} onChange={(e) => setHeight(e.target.value)} className={inputClass} style={{ borderColor: "#e2ddd5" }} />
+            </Field>
+            <Field label="Wheelbase (mm)">
+              <input type="number" min={0} value={wheelBase} onChange={(e) => setWheelBase(e.target.value)} className={inputClass} style={{ borderColor: "#e2ddd5" }} />
+            </Field>
+            <Field label="Ground clearance (mm)">
+              <input type="number" min={0} value={groundClearance} onChange={(e) => setGroundClearance(e.target.value)} className={inputClass} style={{ borderColor: "#e2ddd5" }} />
+            </Field>
+            <Field label="Boot space (litres)">
+              <input type="number" min={0} value={bootSpace} onChange={(e) => setBootSpace(e.target.value)} className={inputClass} style={{ borderColor: "#e2ddd5" }} />
+            </Field>
+            <Field label="Front suspension">
+              <input type="text" value={frontSuspension} onChange={(e) => setFrontSuspension(e.target.value)} placeholder="e.g. MacPherson strut" className={inputClass} style={{ borderColor: "#e2ddd5" }} />
+            </Field>
+            <Field label="Rear suspension">
+              <input type="text" value={rearSuspension} onChange={(e) => setRearSuspension(e.target.value)} placeholder="e.g. Torsion beam" className={inputClass} style={{ borderColor: "#e2ddd5" }} />
+            </Field>
+            <Field label="Steering type">
+              <input type="text" value={steeringType} onChange={(e) => setSteeringType(e.target.value)} placeholder="e.g. Electric power steering" className={inputClass} style={{ borderColor: "#e2ddd5" }} />
+            </Field>
+            <Field label="Front brake type">
+              <input type="text" value={frontBrakeType} onChange={(e) => setFrontBrakeType(e.target.value)} placeholder="e.g. Disc" className={inputClass} style={{ borderColor: "#e2ddd5" }} />
+            </Field>
+            <Field label="Rear brake type">
+              <input type="text" value={rearBrakeType} onChange={(e) => setRearBrakeType(e.target.value)} placeholder="e.g. Drum" className={inputClass} style={{ borderColor: "#e2ddd5" }} />
+            </Field>
+          </Section>
 
           <label className="flex items-center gap-2.5 cursor-pointer select-none pt-1">
             <input

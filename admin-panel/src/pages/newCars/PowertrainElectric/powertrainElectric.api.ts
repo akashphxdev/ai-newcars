@@ -1,10 +1,6 @@
 // src/pages/newCars/PowertrainElectric/powertrainElectric.api.ts
 import { api } from "../../../store/baseApi";
 
-// Numeric code — see TEST_CYCLE_TYPE_OPTIONS in lib/lookups.ts for the
-// label mapping. Mirrors TEST_CYCLE_TYPE_CODES in the backend.
-export type TestCycleType = 1 | 2 | 3 | 4;
-
 export interface AttributeOptionSummary {
   id: number;
   name: string;
@@ -31,27 +27,24 @@ export interface PowertrainElectricRecord {
   torqueNm: number | null;
   claimedRange: number | null;
   realWorldRange: number | null;
-  testCycleType: TestCycleType | null;
   topSpeedKmph: number | null;
   topSpeedTimeSec: string | null;
   acChargingOutput: string | null;
   acChargingTime: string | null;
-  chargerSizeAc3kwHours: number | null;
-  chargerSizeAc7kwHours: number | null;
-  chargerSizeAc11kwHours: number | null;
-  chargerSizeAc22kwHours: number | null;
   dcChargingOutput: string | null;
   dcFastChargingTime: string | null;
-  powertrainBootspace: number | null;
   batteryWarrantyKm: number | null;
   batteryWarrantyYears: number | null;
   motorWarrantyKm: number | null;
   motorWarrantyYears: number | null;
   standardWarrantyKm: string | null;
   standardWarrantyYears: number | null;
-  realWorldUrl: string | null;
-  cityUrl: string | null;
-  highwayUrl: string | null;
+  emissionNormCompliance: string | null;
+  motorPowerKw: string | null;
+  chargingPort: string | null;
+  chargingOptionsRaw: string | null;
+  regenerativeBraking: boolean;
+  regenerativeBrakingLevels: number | null;
   isDefault: boolean;
   isDeleted: boolean;
   deletedBy: number | null;
@@ -107,27 +100,24 @@ export interface PowertrainElectricFormInput {
   torqueNm?: number | null;
   claimedRange?: number | null;
   realWorldRange?: number | null;
-  testCycleType?: TestCycleType | null;
   topSpeedKmph?: number | null;
   topSpeedTimeSec?: number | null;
   acChargingOutput?: number | null;
   acChargingTime?: number | null;
-  chargerSizeAc3kwHours?: number | null;
-  chargerSizeAc7kwHours?: number | null;
-  chargerSizeAc11kwHours?: number | null;
-  chargerSizeAc22kwHours?: number | null;
   dcChargingOutput?: number | null;
   dcFastChargingTime?: string | null;
-  powertrainBootspace?: number | null;
   batteryWarrantyKm?: number | null;
   batteryWarrantyYears?: number | null;
   motorWarrantyKm?: number | null;
   motorWarrantyYears?: number | null;
   standardWarrantyKm?: string | null;
   standardWarrantyYears?: number | null;
-  realWorldUrl?: string | null;
-  cityUrl?: string | null;
-  highwayUrl?: string | null;
+  emissionNormCompliance?: string | null;
+  motorPowerKw?: number | null;
+  chargingPort?: string | null;
+  chargingOptionsRaw?: string | null;
+  regenerativeBraking?: boolean;
+  regenerativeBrakingLevels?: number | null;
   isDefault?: boolean;
 }
 

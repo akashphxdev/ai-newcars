@@ -278,10 +278,6 @@ export interface CarDetailIceSpecs {
   engineDisplacement: string | null;
   cubicCapacity: number | null;
   cylinders: number | null;
-  cylinderCapacity: string | null;
-  transmissionType: string | null;
-  transmissionSubType: string | null;
-  transmissionSpeed: number | null;
   numGears: number | null;
   isFourByFour: boolean;
   drivetrain: string | null;
@@ -293,10 +289,10 @@ export interface CarDetailIceSpecs {
   torqueMaxRpm: number | null;
   claimedFe: string | null;
   realWorldMileage: string | null;
-  cityMileage: string | null;
-  highwayMileage: string | null;
   topSpeedKmph: number | null;
   topSpeedTimeSec: string | null;
+  emissionNormCompliance: string | null;
+  turboCharger: boolean;
 }
 
 export interface CarDetailElectricSpecs {
@@ -316,13 +312,35 @@ export interface CarDetailElectricSpecs {
   acChargingTime: string | null;
   dcChargingOutput: string | null;
   dcFastChargingTime: string | null;
-  powertrainBootspace: number | null;
   batteryWarrantyKm: number | null;
   batteryWarrantyYears: number | null;
   motorWarrantyKm: number | null;
   motorWarrantyYears: number | null;
   standardWarrantyKm: string | null;
   standardWarrantyYears: number | null;
+  emissionNormCompliance: string | null;
+  motorPowerKw: string | null;
+  chargingPort: string | null;
+  chargingOptionsRaw: string | null;
+  regenerativeBraking: boolean;
+  regenerativeBrakingLevels: number | null;
+}
+
+// Shared across both ICE and Electric variants (chassis-level, not
+// powertrain-specific) — see car-detail schema notes on why these live
+// on CarVariant instead of being duplicated into both powertrain tables.
+export interface CarDetailVariantDimensions {
+  length: number | null;
+  width: number | null;
+  height: number | null;
+  wheelBase: number | null;
+  groundClearance: number | null;
+  bootSpace: number | null;
+  frontSuspension: string | null;
+  rearSuspension: string | null;
+  steeringType: string | null;
+  frontBrakeType: string | null;
+  rearBrakeType: string | null;
 }
 
 export interface CarDetailFeatureItem {
@@ -346,6 +364,7 @@ export interface CarDetailSelectedVariant {
   isElectric: boolean;
   ice: CarDetailIceSpecs | null;
   electric: CarDetailElectricSpecs | null;
+  dimensions: CarDetailVariantDimensions;
   features: CarDetailFeatureGroup[];
 }
 
@@ -432,6 +451,17 @@ export async function getCarDetail(brandSlug: string, modelSlug: string, variant
         price: true,
         seatingCapacity: true,
         transmission: { select: { name: true } },
+        length: true,
+        width: true,
+        height: true,
+        wheelBase: true,
+        groundClearance: true,
+        bootSpace: true,
+        frontSuspension: true,
+        rearSuspension: true,
+        steeringType: true,
+        frontBrakeType: true,
+        rearBrakeType: true,
         icePowertrains: {
           where: { isDeleted: false },
           orderBy: { isDefault: 'desc' },
@@ -445,10 +475,6 @@ export async function getCarDetail(brandSlug: string, modelSlug: string, variant
             engineDisplacement: true,
             cubicCapacity: true,
             cylinders: true,
-            cylinderCapacity: true,
-            transmissionType: { select: { name: true } },
-            transmissionSubType: true,
-            transmissionSpeed: true,
             numGears: true,
             isFourByFour: true,
             drivetrain: { select: { name: true } },
@@ -460,10 +486,10 @@ export async function getCarDetail(brandSlug: string, modelSlug: string, variant
             torqueMaxRpm: true,
             claimedFe: true,
             realWorldMileage: true,
-            cityMileage: true,
-            highwayMileage: true,
             topSpeedKmph: true,
             topSpeedTimeSec: true,
+            emissionNormCompliance: true,
+            turboCharger: true,
           },
         },
         electricPowertrains: {
@@ -487,13 +513,18 @@ export async function getCarDetail(brandSlug: string, modelSlug: string, variant
             acChargingTime: true,
             dcChargingOutput: true,
             dcFastChargingTime: true,
-            powertrainBootspace: true,
             batteryWarrantyKm: true,
             batteryWarrantyYears: true,
             motorWarrantyKm: true,
             motorWarrantyYears: true,
             standardWarrantyKm: true,
             standardWarrantyYears: true,
+            emissionNormCompliance: true,
+            motorPowerKw: true,
+            chargingPort: true,
+            chargingOptionsRaw: true,
+            regenerativeBraking: true,
+            regenerativeBrakingLevels: true,
           },
         },
         features: VARIANT_FEATURES_SELECT,
@@ -522,10 +553,6 @@ export async function getCarDetail(brandSlug: string, modelSlug: string, variant
             engineDisplacement: ice.engineDisplacement?.toString() ?? null,
             cubicCapacity: ice.cubicCapacity,
             cylinders: ice.cylinders,
-            cylinderCapacity: ice.cylinderCapacity?.toString() ?? null,
-            transmissionType: ice.transmissionType?.name ?? null,
-            transmissionSubType: ice.transmissionSubType,
-            transmissionSpeed: ice.transmissionSpeed,
             numGears: ice.numGears,
             isFourByFour: ice.isFourByFour,
             drivetrain: ice.drivetrain?.name ?? null,
@@ -537,10 +564,10 @@ export async function getCarDetail(brandSlug: string, modelSlug: string, variant
             torqueMaxRpm: ice.torqueMaxRpm,
             claimedFe: ice.claimedFe?.toString() ?? null,
             realWorldMileage: ice.realWorldMileage?.toString() ?? null,
-            cityMileage: ice.cityMileage?.toString() ?? null,
-            highwayMileage: ice.highwayMileage?.toString() ?? null,
             topSpeedKmph: ice.topSpeedKmph,
             topSpeedTimeSec: ice.topSpeedTimeSec?.toString() ?? null,
+            emissionNormCompliance: ice.emissionNormCompliance,
+            turboCharger: ice.turboCharger,
           }
         : null,
       electric: electric
@@ -561,15 +588,33 @@ export async function getCarDetail(brandSlug: string, modelSlug: string, variant
             acChargingTime: electric.acChargingTime?.toString() ?? null,
             dcChargingOutput: electric.dcChargingOutput?.toString() ?? null,
             dcFastChargingTime: electric.dcFastChargingTime,
-            powertrainBootspace: electric.powertrainBootspace,
             batteryWarrantyKm: electric.batteryWarrantyKm,
             batteryWarrantyYears: electric.batteryWarrantyYears,
             motorWarrantyKm: electric.motorWarrantyKm,
             motorWarrantyYears: electric.motorWarrantyYears,
             standardWarrantyKm: electric.standardWarrantyKm,
             standardWarrantyYears: electric.standardWarrantyYears,
+            emissionNormCompliance: electric.emissionNormCompliance,
+            motorPowerKw: electric.motorPowerKw?.toString() ?? null,
+            chargingPort: electric.chargingPort,
+            chargingOptionsRaw: electric.chargingOptionsRaw,
+            regenerativeBraking: electric.regenerativeBraking,
+            regenerativeBrakingLevels: electric.regenerativeBrakingLevels,
           }
         : null,
+      dimensions: {
+        length: variant.length,
+        width: variant.width,
+        height: variant.height,
+        wheelBase: variant.wheelBase,
+        groundClearance: variant.groundClearance,
+        bootSpace: variant.bootSpace,
+        frontSuspension: variant.frontSuspension,
+        rearSuspension: variant.rearSuspension,
+        steeringType: variant.steeringType,
+        frontBrakeType: variant.frontBrakeType,
+        rearBrakeType: variant.rearBrakeType,
+      },
       features: shapeVariantFeatures(variant.features),
     };
   }

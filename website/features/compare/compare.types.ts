@@ -2,6 +2,8 @@
 //
 // Mirrors admin-backend's modules/public/compare types.
 
+import type { CarDetailVariantDimensions } from "@/features/cars/car.types";
+
 export interface CompareVariantOption {
   id: number;
   variantName: string;
@@ -37,15 +39,14 @@ export interface CompareCarSpecs {
   fuelTypeSubCategory: string | null;
   engineDisplacementCc: number | null;
   cylinders: number | null;
-  gearboxType: string | null;
   numGears: number | null;
   isFourByFour: boolean;
   fuelTankCapacity: string | null;
   cngTankCapacity: string | null;
   kerbWeight: number | null;
   mileage: string | null;
-  cityMileage: string | null;
-  highwayMileage: string | null;
+  emissionNormCompliance: string | null;
+  turboCharger: boolean;
   batteryCapacity: string | null;
   batteryChemistry: string | null;
   claimedRange: number | null;
@@ -53,11 +54,16 @@ export interface CompareCarSpecs {
   range: number | null;
   chargeTime: string | null;
   acChargingTime: string | null;
-  powertrainBootspace: number | null;
   batteryWarrantyYears: number | null;
+  motorPowerKw: string | null;
+  chargingPort: string | null;
+  chargingOptionsRaw: string | null;
+  regenerativeBraking: boolean;
+  regenerativeBrakingLevels: number | null;
   powerPs: number | null;
   torqueNm: number | null;
   topSpeedKmph: number | null;
+  dimensions: CarDetailVariantDimensions;
   features: CompareCarFeatureGroup[];
 }
 

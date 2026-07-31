@@ -5,7 +5,7 @@
 // admin panel edits), the same "pick what the reader actually compares"
 // curation the home/car module already does for cards.
 
-import type { CarDetailFeatureGroup } from '@/modules/public/cars/car/car.service';
+import type { CarDetailFeatureGroup, CarDetailVariantDimensions } from '@/modules/public/cars/car/car.service';
 
 export interface CompareVariantOption {
   id: number;
@@ -31,15 +31,14 @@ export interface CompareCarSpecs {
   fuelTypeSubCategory: string | null;
   engineDisplacementCc: number | null;
   cylinders: number | null;
-  gearboxType: string | null;
   numGears: number | null;
   isFourByFour: boolean;
   fuelTankCapacity: string | null;
   cngTankCapacity: string | null;
   kerbWeight: number | null;
   mileage: string | null;
-  cityMileage: string | null;
-  highwayMileage: string | null;
+  emissionNormCompliance: string | null;
+  turboCharger: boolean;
   // Electric-only — null when the selected variant is ICE.
   batteryCapacity: string | null;
   batteryChemistry: string | null;
@@ -48,12 +47,17 @@ export interface CompareCarSpecs {
   range: number | null;
   chargeTime: string | null;
   acChargingTime: string | null;
-  powertrainBootspace: number | null;
   batteryWarrantyYears: number | null;
+  motorPowerKw: string | null;
+  chargingPort: string | null;
+  chargingOptionsRaw: string | null;
+  regenerativeBraking: boolean;
+  regenerativeBrakingLevels: number | null;
   // Shared by both powertrain kinds.
   powerPs: number | null;
   torqueNm: number | null;
   topSpeedKmph: number | null;
+  dimensions: CarDetailVariantDimensions;
   features: CarDetailFeatureGroup[];
 }
 

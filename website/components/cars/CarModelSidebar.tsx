@@ -14,7 +14,7 @@ export default function CarModelSidebar({ variant }: { variant: CarDetailSelecte
     highlights.push({ icon: <FuelIcon className="size-4" />, label: "Battery", value: e.batteryCapacity ? `${e.batteryCapacity} kWh` : "-" });
     highlights.push({ icon: <PowerIcon className="size-4" />, label: "Power", value: e.powerPs ? `${e.powerPs} PS` : "-" });
     highlights.push({ icon: <GaugeIcon className="size-4" />, label: "Range", value: e.claimedRange ? `${e.claimedRange} km` : "-" });
-    if (e.powertrainBootspace) highlights.push({ icon: <GaugeIcon className="size-4" />, label: "Boot Space", value: `${e.powertrainBootspace} L` });
+    if (variant.dimensions.bootSpace) highlights.push({ icon: <GaugeIcon className="size-4" />, label: "Boot Space", value: `${variant.dimensions.bootSpace} L` });
   } else if (variant.ice) {
     const ice = variant.ice;
     highlights.push({
@@ -23,7 +23,7 @@ export default function CarModelSidebar({ variant }: { variant: CarDetailSelecte
       value: ice.engineDisplacement ? `${Math.round(Number(ice.engineDisplacement))} cc ${ice.fuelType ?? ""}`.trim() : ice.fuelType ?? "-",
     });
     highlights.push({ icon: <PowerIcon className="size-4" />, label: "Power", value: ice.powerPs ? `${ice.powerPs} PS` : "-" });
-    highlights.push({ icon: <GaugeIcon className="size-4" />, label: "Mileage", value: ice.cityMileage ? `${ice.cityMileage} km/l` : "-" });
+    highlights.push({ icon: <GaugeIcon className="size-4" />, label: "Mileage", value: ice.claimedFe ? `${ice.claimedFe} km/l` : "-" });
   }
 
   highlights.push({ icon: <GearIcon className="size-4" />, label: "Seating Capacity", value: `${variant.seatingCapacity} Seater` });

@@ -233,7 +233,10 @@ export default async function CarModelPage(props: Props) {
                       <SpecRow label="Top Speed" value={v.electric.topSpeedKmph ? `${v.electric.topSpeedKmph} km/h` : "-"} />
                       <SpecRow label="AC Charging Time" value={v.electric.acChargingTime ? `${v.electric.acChargingTime} hrs` : "-"} />
                       <SpecRow label="Drivetrain" value={v.electric.drivetrain ?? "-"} />
-                      <SpecRow label="Boot Space" value={v.electric.powertrainBootspace ? `${v.electric.powertrainBootspace} L` : "-"} />
+                      <SpecRow label="Motor Power" value={v.electric.motorPowerKw ? `${v.electric.motorPowerKw} kW` : "-"} />
+                      <SpecRow label="Charging Port" value={v.electric.chargingPort ?? "-"} />
+                      <SpecRow label="Regenerative Braking" value={v.electric.regenerativeBraking ? (v.electric.regenerativeBrakingLevels ? `Yes, ${v.electric.regenerativeBrakingLevels} levels` : "Yes") : "No"} />
+                      <SpecRow label="Emission Norm" value={v.electric.emissionNormCompliance ?? "-"} />
                     </>
                   ) : v.ice ? (
                     <>
@@ -241,12 +244,29 @@ export default async function CarModelPage(props: Props) {
                       <SpecRow label="Engine Displacement" value={v.ice.engineDisplacement ? `${Math.round(Number(v.ice.engineDisplacement))} cc` : "-"} />
                       <SpecRow label="Power" value={v.ice.powerPs ? `${v.ice.powerPs} PS` : "-"} icon={<PowerIcon className="size-3.5" />} />
                       <SpecRow label="Torque" value={v.ice.torqueNm ? `${v.ice.torqueNm} Nm` : "-"} icon={<TorqueIcon className="size-3.5" />} />
-                      <SpecRow label="Mileage (City)" value={v.ice.cityMileage ? `${v.ice.cityMileage} km/l` : "-"} />
+                      <SpecRow label="Mileage (ARAI)" value={v.ice.claimedFe ? `${v.ice.claimedFe} km/l` : "-"} />
                       <SpecRow label="Top Speed" value={v.ice.topSpeedKmph ? `${v.ice.topSpeedKmph} km/h` : "-"} />
                       <SpecRow label="Drivetrain" value={v.ice.drivetrain ?? (v.ice.isFourByFour ? "4x4" : "-")} />
                       <SpecRow label="Fuel Tank Capacity" value={v.ice.fuelTankCapacity ? `${v.ice.fuelTankCapacity} L` : "-"} />
+                      <SpecRow label="Turbo Charger" value={v.ice.turboCharger ? "Yes" : "No"} />
+                      <SpecRow label="Emission Norm" value={v.ice.emissionNormCompliance ?? "-"} />
                     </>
                   ) : null}
+                </div>
+
+                <h3 className="mt-6 text-[13.5px] font-extrabold text-ink">Dimensions & Chassis</h3>
+                <div className="mt-2 grid grid-cols-1 gap-x-8 gap-y-2 rounded-2xl border border-border bg-white p-5 sm:grid-cols-2">
+                  <SpecRow label="Length" value={v.dimensions.length ? `${v.dimensions.length} mm` : "-"} />
+                  <SpecRow label="Width" value={v.dimensions.width ? `${v.dimensions.width} mm` : "-"} />
+                  <SpecRow label="Height" value={v.dimensions.height ? `${v.dimensions.height} mm` : "-"} />
+                  <SpecRow label="Wheelbase" value={v.dimensions.wheelBase ? `${v.dimensions.wheelBase} mm` : "-"} />
+                  <SpecRow label="Ground Clearance" value={v.dimensions.groundClearance ? `${v.dimensions.groundClearance} mm` : "-"} />
+                  <SpecRow label="Boot Space" value={v.dimensions.bootSpace ? `${v.dimensions.bootSpace} L` : "-"} />
+                  <SpecRow label="Front Suspension" value={v.dimensions.frontSuspension ?? "-"} />
+                  <SpecRow label="Rear Suspension" value={v.dimensions.rearSuspension ?? "-"} />
+                  <SpecRow label="Steering Type" value={v.dimensions.steeringType ?? "-"} />
+                  <SpecRow label="Front Brake Type" value={v.dimensions.frontBrakeType ?? "-"} />
+                  <SpecRow label="Rear Brake Type" value={v.dimensions.rearBrakeType ?? "-"} />
                 </div>
               </section>
             )}

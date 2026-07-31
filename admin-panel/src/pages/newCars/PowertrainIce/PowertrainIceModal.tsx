@@ -24,7 +24,6 @@ interface FieldErrors {
   kerbWeight?: string;
   engineDisplacement?: string;
   cylinders?: string;
-  transmissionTypeId?: string;
   powerPs?: string;
   torqueNm?: string;
 }
@@ -39,30 +38,21 @@ interface FormState {
   engineDisplacement: string;
   cubicCapacity: string;
   cylinders: string;
-  cylinderCapacity: string;
-  transmissionTypeId: number | "";
-  transmissionSubType: string;
-  transmissionSpeed: string;
   numGears: string;
   isFourByFour: boolean;
   drivetrainId: number | "";
   powerPs: string;
   powerMinRpm: string;
   powerMaxRpm: string;
-  powerWeight: string;
   torqueNm: string;
   torqueMinRpm: string;
   torqueMaxRpm: string;
-  torqueWeight: string;
   claimedFe: string;
   realWorldMileage: string;
-  cityMileage: string;
-  highwayMileage: string;
   topSpeedKmph: string;
   topSpeedTimeSec: string;
-  realWorldUrl: string;
-  cityUrl: string;
-  highwayUrl: string;
+  emissionNormCompliance: string;
+  turboCharger: boolean;
   isDefault: boolean;
 }
 
@@ -77,30 +67,21 @@ function buildInitialState(p?: PowertrainIceRecord | null): FormState {
     engineDisplacement: p?.engineDisplacement ?? "",
     cubicCapacity: p?.cubicCapacity != null ? String(p.cubicCapacity) : "",
     cylinders: p?.cylinders != null ? String(p.cylinders) : "",
-    cylinderCapacity: p?.cylinderCapacity ?? "",
-    transmissionTypeId: p?.transmissionTypeId ?? "",
-    transmissionSubType: p?.transmissionSubType ?? "",
-    transmissionSpeed: p?.transmissionSpeed != null ? String(p.transmissionSpeed) : "",
     numGears: p?.numGears != null ? String(p.numGears) : "",
     isFourByFour: p?.isFourByFour ?? false,
     drivetrainId: p?.drivetrainId ?? "",
     powerPs: p?.powerPs != null ? String(p.powerPs) : "",
     powerMinRpm: p?.powerMinRpm != null ? String(p.powerMinRpm) : "",
     powerMaxRpm: p?.powerMaxRpm != null ? String(p.powerMaxRpm) : "",
-    powerWeight: p?.powerWeight ?? "",
     torqueNm: p?.torqueNm != null ? String(p.torqueNm) : "",
     torqueMinRpm: p?.torqueMinRpm != null ? String(p.torqueMinRpm) : "",
     torqueMaxRpm: p?.torqueMaxRpm != null ? String(p.torqueMaxRpm) : "",
-    torqueWeight: p?.torqueWeight ?? "",
     claimedFe: p?.claimedFe ?? "",
     realWorldMileage: p?.realWorldMileage ?? "",
-    cityMileage: p?.cityMileage ?? "",
-    highwayMileage: p?.highwayMileage ?? "",
     topSpeedKmph: p?.topSpeedKmph != null ? String(p.topSpeedKmph) : "",
     topSpeedTimeSec: p?.topSpeedTimeSec ?? "",
-    realWorldUrl: p?.realWorldUrl ?? "",
-    cityUrl: p?.cityUrl ?? "",
-    highwayUrl: p?.highwayUrl ?? "",
+    emissionNormCompliance: p?.emissionNormCompliance ?? "",
+    turboCharger: p?.turboCharger ?? false,
     isDefault: p?.isDefault ?? false,
   };
 }
@@ -170,7 +151,6 @@ export default function PowertrainIceModal({
   const { data: brands = [] } = useGetBrandOptionsQuery();
 
   const { data: attributeOptionsGrouped } = useGetAttributeOptionsGroupedQuery();
-  const transmissionTypes = attributeOptionsGrouped?.transmission ?? [];
   const drivetrains = attributeOptionsGrouped?.drivetrain ?? [];
 
   const [brandId, setBrandId] = useState<number | "">("");
@@ -242,7 +222,6 @@ export default function PowertrainIceModal({
     if (form.engineDisplacement === "" || Number(form.engineDisplacement) <= 0)
       next.engineDisplacement = "Engine displacement is required.";
     if (form.cylinders === "" || Number(form.cylinders) <= 0) next.cylinders = "Cylinders is required.";
-    if (!form.transmissionTypeId) next.transmissionTypeId = "Transmission type is required.";
     if (form.powerPs === "" || Number(form.powerPs) <= 0) next.powerPs = "Power (PS) is required.";
     if (form.torqueNm === "" || Number(form.torqueNm) <= 0) next.torqueNm = "Torque (Nm) is required.";
     setErrors(next);
@@ -264,30 +243,21 @@ export default function PowertrainIceModal({
       engineDisplacement: numOrNull(form.engineDisplacement),
       cubicCapacity: numOrNull(form.cubicCapacity),
       cylinders: numOrNull(form.cylinders),
-      cylinderCapacity: numOrNull(form.cylinderCapacity),
-      transmissionTypeId: form.transmissionTypeId === "" ? null : Number(form.transmissionTypeId),
-      transmissionSubType: strOrNull(form.transmissionSubType),
-      transmissionSpeed: numOrNull(form.transmissionSpeed),
       numGears: numOrNull(form.numGears),
       isFourByFour: form.isFourByFour,
       drivetrainId: form.drivetrainId === "" ? null : Number(form.drivetrainId),
       powerPs: numOrNull(form.powerPs),
       powerMinRpm: numOrNull(form.powerMinRpm),
       powerMaxRpm: numOrNull(form.powerMaxRpm),
-      powerWeight: numOrNull(form.powerWeight),
       torqueNm: numOrNull(form.torqueNm),
       torqueMinRpm: numOrNull(form.torqueMinRpm),
       torqueMaxRpm: numOrNull(form.torqueMaxRpm),
-      torqueWeight: numOrNull(form.torqueWeight),
       claimedFe: numOrNull(form.claimedFe),
       realWorldMileage: numOrNull(form.realWorldMileage),
-      cityMileage: numOrNull(form.cityMileage),
-      highwayMileage: numOrNull(form.highwayMileage),
       topSpeedKmph: numOrNull(form.topSpeedKmph),
       topSpeedTimeSec: numOrNull(form.topSpeedTimeSec),
-      realWorldUrl: strOrNull(form.realWorldUrl),
-      cityUrl: strOrNull(form.cityUrl),
-      highwayUrl: strOrNull(form.highwayUrl),
+      emissionNormCompliance: strOrNull(form.emissionNormCompliance),
+      turboCharger: form.turboCharger,
       isDefault: form.isDefault,
     };
 
@@ -319,7 +289,7 @@ export default function PowertrainIceModal({
             <p className="text-[#a39e96] text-xs mt-1">
               {isEditMode
                 ? `Update spec details for "${powertrain?.variant.variantName}"`
-                : "Variant, fuel type, kerb weight, displacement, cylinders, transmission, power and torque are required — everything else can be filled in later."}
+                : "Variant, fuel type, kerb weight, displacement, cylinders, power and torque are required — everything else can be filled in later."}
             </p>
           </div>
           <button
@@ -440,30 +410,18 @@ export default function PowertrainIceModal({
             <Field label="Cylinders" error={errors.cylinders}>
               <input type="number" min={0} value={form.cylinders} onChange={(e) => set("cylinders", e.target.value)} className={inputClass} />
             </Field>
-            <Field label="Cylinder capacity (cc)">
-              <input type="number" min={0} step="0.1" value={form.cylinderCapacity} onChange={(e) => set("cylinderCapacity", e.target.value)} className={inputClass} />
+            <Field label="Emission norm compliance">
+              <input type="text" value={form.emissionNormCompliance} onChange={(e) => set("emissionNormCompliance", e.target.value)} placeholder="e.g. BS VI 2.0" className={inputClass} />
             </Field>
+            <div className="flex items-end pb-2.5">
+              <label className="flex items-center gap-2.5 cursor-pointer select-none">
+                <input type="checkbox" checked={form.turboCharger} onChange={(e) => set("turboCharger", e.target.checked)} className="w-4 h-4 rounded accent-[#D4300F] cursor-pointer" />
+                <span className="text-sm font-medium text-[#4a4640]">Turbo charger</span>
+              </label>
+            </div>
           </Section>
 
           <Section title="Transmission & drivetrain">
-            <Field label="Transmission type" error={errors.transmissionTypeId}>
-              <select
-                value={form.transmissionTypeId}
-                onChange={(e) => set("transmissionTypeId", e.target.value ? Number(e.target.value) : "")}
-                className={selectClass}
-              >
-                <option value="">Not set</option>
-                {transmissionTypes.map((t) => (
-                  <option key={t.id} value={t.id}>{t.name}</option>
-                ))}
-              </select>
-            </Field>
-            <Field label="Transmission sub-type">
-              <input type="text" value={form.transmissionSubType} onChange={(e) => set("transmissionSubType", e.target.value)} placeholder="e.g. Dual-clutch" className={inputClass} />
-            </Field>
-            <Field label="Transmission speed">
-              <input type="number" min={0} value={form.transmissionSpeed} onChange={(e) => set("transmissionSpeed", e.target.value)} className={inputClass} />
-            </Field>
             <Field label="Number of gears">
               <input type="number" min={0} value={form.numGears} onChange={(e) => set("numGears", e.target.value)} className={inputClass} />
             </Field>
@@ -491,9 +449,6 @@ export default function PowertrainIceModal({
             <Field label="Power (PS)" error={errors.powerPs}>
               <input type="number" min={0} value={form.powerPs} onChange={(e) => set("powerPs", e.target.value)} className={inputClass} />
             </Field>
-            <Field label="Power-to-weight">
-              <input type="number" min={0} step="0.01" value={form.powerWeight} onChange={(e) => set("powerWeight", e.target.value)} className={inputClass} />
-            </Field>
             <Field label="Power min RPM">
               <input type="number" min={0} value={form.powerMinRpm} onChange={(e) => set("powerMinRpm", e.target.value)} className={inputClass} />
             </Field>
@@ -502,9 +457,6 @@ export default function PowertrainIceModal({
             </Field>
             <Field label="Torque (Nm)" error={errors.torqueNm}>
               <input type="number" min={0} value={form.torqueNm} onChange={(e) => set("torqueNm", e.target.value)} className={inputClass} />
-            </Field>
-            <Field label="Torque-to-weight">
-              <input type="number" min={0} step="0.01" value={form.torqueWeight} onChange={(e) => set("torqueWeight", e.target.value)} className={inputClass} />
             </Field>
             <Field label="Torque min RPM">
               <input type="number" min={0} value={form.torqueMinRpm} onChange={(e) => set("torqueMinRpm", e.target.value)} className={inputClass} />
@@ -521,29 +473,11 @@ export default function PowertrainIceModal({
             <Field label="Real world mileage (kmpl)">
               <input type="number" min={0} step="0.01" value={form.realWorldMileage} onChange={(e) => set("realWorldMileage", e.target.value)} className={inputClass} />
             </Field>
-            <Field label="City mileage (kmpl)">
-              <input type="number" min={0} step="0.01" value={form.cityMileage} onChange={(e) => set("cityMileage", e.target.value)} className={inputClass} />
-            </Field>
-            <Field label="Highway mileage (kmpl)">
-              <input type="number" min={0} step="0.01" value={form.highwayMileage} onChange={(e) => set("highwayMileage", e.target.value)} className={inputClass} />
-            </Field>
             <Field label="Top speed (km/h)">
               <input type="number" min={0} value={form.topSpeedKmph} onChange={(e) => set("topSpeedKmph", e.target.value)} className={inputClass} />
             </Field>
             <Field label="0-100 time (sec)">
               <input type="number" min={0} step="0.1" value={form.topSpeedTimeSec} onChange={(e) => set("topSpeedTimeSec", e.target.value)} className={inputClass} />
-            </Field>
-          </Section>
-
-          <Section title="Test-run URLs">
-            <Field label="Real-world test URL">
-              <input type="url" value={form.realWorldUrl} onChange={(e) => set("realWorldUrl", e.target.value)} placeholder="https://..." className={inputClass} />
-            </Field>
-            <Field label="City test URL">
-              <input type="url" value={form.cityUrl} onChange={(e) => set("cityUrl", e.target.value)} placeholder="https://..." className={inputClass} />
-            </Field>
-            <Field label="Highway test URL">
-              <input type="url" value={form.highwayUrl} onChange={(e) => set("highwayUrl", e.target.value)} placeholder="https://..." className={inputClass} />
             </Field>
           </Section>
 

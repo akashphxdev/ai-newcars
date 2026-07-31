@@ -44,6 +44,21 @@ const variantShape = {
     required_error: 'isTopSeller is required',
     invalid_type_error: 'isTopSeller must be true or false',
   }),
+  // Chassis/dimension fields — all optional, filled in progressively same
+  // as the powertrain spec sheets. .nullable() alongside .optional() since
+  // the frontend sends explicit null (not just omits the key) for a blank
+  // field — .optional() alone only permits undefined, not null.
+  length: z.coerce.number().int().nonnegative().nullable().optional(),
+  width: z.coerce.number().int().nonnegative().nullable().optional(),
+  height: z.coerce.number().int().nonnegative().nullable().optional(),
+  wheelBase: z.coerce.number().int().nonnegative().nullable().optional(),
+  groundClearance: z.coerce.number().int().nonnegative().nullable().optional(),
+  bootSpace: z.coerce.number().int().nonnegative().nullable().optional(),
+  frontSuspension: z.string().trim().max(100).nullable().optional(),
+  rearSuspension: z.string().trim().max(100).nullable().optional(),
+  steeringType: z.string().trim().max(50).nullable().optional(),
+  frontBrakeType: z.string().trim().max(50).nullable().optional(),
+  rearBrakeType: z.string().trim().max(50).nullable().optional(),
 };
 
 export const createVariantSchema = z.object(variantShape);

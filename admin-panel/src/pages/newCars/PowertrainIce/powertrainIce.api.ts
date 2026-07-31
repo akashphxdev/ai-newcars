@@ -11,9 +11,13 @@ export interface AttributeOptionSummary {
   slug: string;
 }
 
+// Transmission now lives only on CarVariant (single source of truth —
+// the powertrain's own copy was a duplicate and got removed), surfaced
+// here via the variant.
 export interface PowertrainIceVariantSummary {
   id: number;
   variantName: string;
+  transmission: AttributeOptionSummary;
   model: { id: number; name: string; brand: { id: number; name: string } };
 }
 
@@ -28,11 +32,6 @@ export interface PowertrainIceRecord {
   engineDisplacement: string | null;
   cubicCapacity: number | null;
   cylinders: number | null;
-  cylinderCapacity: string | null;
-  transmissionTypeId: number | null;
-  transmissionType: AttributeOptionSummary | null;
-  transmissionSubType: string | null;
-  transmissionSpeed: number | null;
   numGears: number | null;
   isFourByFour: boolean;
   drivetrainId: number | null;
@@ -40,20 +39,15 @@ export interface PowertrainIceRecord {
   powerPs: number | null;
   powerMinRpm: number | null;
   powerMaxRpm: number | null;
-  powerWeight: string | null;
   torqueNm: number | null;
   torqueMinRpm: number | null;
   torqueMaxRpm: number | null;
-  torqueWeight: string | null;
   claimedFe: string | null;
   realWorldMileage: string | null;
-  cityMileage: string | null;
-  highwayMileage: string | null;
   topSpeedKmph: number | null;
   topSpeedTimeSec: string | null;
-  realWorldUrl: string | null;
-  cityUrl: string | null;
-  highwayUrl: string | null;
+  emissionNormCompliance: string | null;
+  turboCharger: boolean;
   isDefault: boolean;
   isDeleted: boolean;
   deletedBy: number | null;
@@ -74,7 +68,6 @@ export interface PowertrainIceListItem {
   engineDisplacement: string | null;
   powerPs: number | null;
   torqueNm: number | null;
-  transmissionType: AttributeOptionSummary | null;
   isDefault: boolean;
   isDeleted: boolean;
   createdAt: string;
@@ -109,30 +102,21 @@ export interface PowertrainIceFormInput {
   engineDisplacement?: number | null;
   cubicCapacity?: number | null;
   cylinders?: number | null;
-  cylinderCapacity?: number | null;
-  transmissionTypeId?: number | null;
-  transmissionSubType?: string | null;
-  transmissionSpeed?: number | null;
   numGears?: number | null;
   isFourByFour?: boolean;
   drivetrainId?: number | null;
   powerPs?: number | null;
   powerMinRpm?: number | null;
   powerMaxRpm?: number | null;
-  powerWeight?: number | null;
   torqueNm?: number | null;
   torqueMinRpm?: number | null;
   torqueMaxRpm?: number | null;
-  torqueWeight?: number | null;
   claimedFe?: number | null;
   realWorldMileage?: number | null;
-  cityMileage?: number | null;
-  highwayMileage?: number | null;
   topSpeedKmph?: number | null;
   topSpeedTimeSec?: number | null;
-  realWorldUrl?: string | null;
-  cityUrl?: string | null;
-  highwayUrl?: string | null;
+  emissionNormCompliance?: string | null;
+  turboCharger?: boolean;
   isDefault?: boolean;
 }
 

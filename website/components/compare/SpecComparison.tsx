@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { formatSinglePrice } from "@/lib/format";
-import { GaugeIcon, PowerIcon, FuelIcon, BatteryIcon, CheckIcon } from "@/components/common/icons";
+import { GaugeIcon, PowerIcon, FuelIcon, BatteryIcon, CheckIcon, GearIcon } from "@/components/common/icons";
 import type { CompareCarResult, CompareCarSpecs } from "@/features/compare/compare.types";
 
 // Merged view of one feature across every compared car — matched by
@@ -158,6 +158,7 @@ const NAV_ITEMS = [
   { id: "performance", label: "Performance" },
   { id: "engine", label: "Engine & Fuel", iceOnly: true },
   { id: "battery", label: "Battery", electricOnly: true },
+  { id: "dimensions", label: "Dimensions" },
 ];
 
 const categorySectionId = (categoryId: number | null, categoryName: string) => `cat-${categoryId ?? categoryName}`;
@@ -269,19 +270,18 @@ export default function SpecComparison({ cars }: { cars: CompareCarResult[] }) {
           {row("Engine Displacement", specsList.map((s) => (s?.engineDisplacementCc ? `${s.engineDisplacementCc} cc` : NA)))}
           {row("Cylinders", specsList.map((s) => s?.cylinders ?? NA))}
           {row("Fuel Type Variant", specsList.map((s) => s?.fuelTypeSubCategory ?? NA))}
-          {row("Gearbox Type", specsList.map((s) => s?.gearboxType ?? NA))}
           {row("Number of Gears", specsList.map((s) => s?.numGears ?? NA))}
           {featureRow("4x4 / AWD", specsList.map((s) => s?.isFourByFour ?? false))}
+          {featureRow("Turbo Charger", specsList.map((s) => s?.turboCharger ?? false))}
           {row(
             "Mileage (ARAI)",
             specsList.map((s) => (s?.mileage ? `${s.mileage} km/l` : NA)),
             bestIndex(specsList.map((s) => num(s?.mileage))),
           )}
-          {row("City Mileage", specsList.map((s) => (s?.cityMileage ? `${s.cityMileage} km/l` : NA)))}
-          {row("Highway Mileage", specsList.map((s) => (s?.highwayMileage ? `${s.highwayMileage} km/l` : NA)))}
           {row("Fuel Tank Capacity", specsList.map((s) => (s?.fuelTankCapacity ? `${s.fuelTankCapacity} L` : NA)))}
           {row("CNG Tank Capacity", specsList.map((s) => (s?.cngTankCapacity ? `${s.cngTankCapacity} kg` : NA)))}
           {row("Kerb Weight", specsList.map((s) => (s?.kerbWeight ? `${s.kerbWeight} kg` : NA)))}
+          {row("Emission Norm", specsList.map((s) => s?.emissionNormCompliance ?? NA))}
         </Section>
       )}
 
@@ -305,10 +305,52 @@ export default function SpecComparison({ cars }: { cars: CompareCarResult[] }) {
           )}
           {row("DC Fast Charging", specsList.map((s) => s?.chargeTime ?? NA))}
           {row("AC Charging Time", specsList.map((s) => (s?.acChargingTime ? `${s.acChargingTime} hrs` : NA)))}
-          {row("Boot Space", specsList.map((s) => (s?.powertrainBootspace ? `${s.powertrainBootspace} L` : NA)))}
+          {row("Motor Power", specsList.map((s) => (s?.motorPowerKw ? `${s.motorPowerKw} kW` : NA)))}
+          {row("Charging Port", specsList.map((s) => s?.chargingPort ?? NA))}
+          {row("Charging Options", specsList.map((s) => s?.chargingOptionsRaw ?? NA))}
+          {featureRow("Regenerative Braking", specsList.map((s) => s?.regenerativeBraking ?? false))}
           {row("Battery Warranty", specsList.map((s) => (s?.batteryWarrantyYears ? `${s.batteryWarrantyYears} years` : NA)))}
+          {row("Emission Norm", specsList.map((s) => s?.emissionNormCompliance ?? NA))}
         </Section>
       )}
+
+      <Section id="dimensions" title="Dimensions & Chassis" icon={<GearIcon className="size-4" />}>
+        {row(
+          "Length",
+          specsList.map((s) => (s?.dimensions.length ? `${s.dimensions.length} mm` : NA)),
+          bestIndex(specsList.map((s) => s?.dimensions.length ?? null)),
+        )}
+        {row(
+          "Width",
+          specsList.map((s) => (s?.dimensions.width ? `${s.dimensions.width} mm` : NA)),
+          bestIndex(specsList.map((s) => s?.dimensions.width ?? null)),
+        )}
+        {row(
+          "Height",
+          specsList.map((s) => (s?.dimensions.height ? `${s.dimensions.height} mm` : NA)),
+          bestIndex(specsList.map((s) => s?.dimensions.height ?? null)),
+        )}
+        {row(
+          "Wheelbase",
+          specsList.map((s) => (s?.dimensions.wheelBase ? `${s.dimensions.wheelBase} mm` : NA)),
+          bestIndex(specsList.map((s) => s?.dimensions.wheelBase ?? null)),
+        )}
+        {row(
+          "Ground Clearance",
+          specsList.map((s) => (s?.dimensions.groundClearance ? `${s.dimensions.groundClearance} mm` : NA)),
+          bestIndex(specsList.map((s) => s?.dimensions.groundClearance ?? null)),
+        )}
+        {row(
+          "Boot Space",
+          specsList.map((s) => (s?.dimensions.bootSpace ? `${s.dimensions.bootSpace} L` : NA)),
+          bestIndex(specsList.map((s) => s?.dimensions.bootSpace ?? null)),
+        )}
+        {row("Front Suspension", specsList.map((s) => s?.dimensions.frontSuspension ?? NA))}
+        {row("Rear Suspension", specsList.map((s) => s?.dimensions.rearSuspension ?? NA))}
+        {row("Steering Type", specsList.map((s) => s?.dimensions.steeringType ?? NA))}
+        {row("Front Brake Type", specsList.map((s) => s?.dimensions.frontBrakeType ?? NA))}
+        {row("Rear Brake Type", specsList.map((s) => s?.dimensions.rearBrakeType ?? NA))}
+      </Section>
 
       {mergedCategories.map((cat) => (
         <Section

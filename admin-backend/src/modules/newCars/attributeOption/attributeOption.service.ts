@@ -149,16 +149,14 @@ export async function updateAttributeOption(
 export async function deleteAttributeOption(id: number, actorId: number, ipAddress?: string | null) {
   const option = await getAttributeOptionById(id);
 
-  const [variantCount, icePowertrainAsTransmission, icePowertrainAsDrivetrain, electricPowertrainCount] =
+  const [variantCount, icePowertrainAsDrivetrain, electricPowertrainCount] =
     await Promise.all([
       prisma.carVariant.count({ where: { transmissionId: id } }),
-      prisma.carPowertrainIce.count({ where: { transmissionTypeId: id } }),
       prisma.carPowertrainIce.count({ where: { drivetrainId: id } }),
       prisma.carPowertrainElectric.count({ where: { drivetrainId: id } }),
     ]);
 
-  const usageCount =
-    variantCount + icePowertrainAsTransmission + icePowertrainAsDrivetrain + electricPowertrainCount;
+  const usageCount = variantCount + icePowertrainAsDrivetrain + electricPowertrainCount;
 
   if (usageCount > 0) {
     throw ApiError.badRequest(

@@ -24,6 +24,37 @@ function formatPrice(value: string): string {
   return `₹${(num / 100000).toFixed(2)}L`;
 }
 
+function formatInt(value: number | null, suffix = ""): string {
+  return value != null ? `${value}${suffix}` : "—";
+}
+
+function SpecItem({ label, value }: { label: string; value: React.ReactNode }) {
+  return (
+    <div>
+      <p className="text-[9px] font-bold uppercase tracking-wider text-[#a39e96]">{label}</p>
+      <p className="text-[12px] font-semibold text-[#1c1a17] mt-0.5">{value}</p>
+    </div>
+  );
+}
+
+function ExpandedVariantDetail({ v }: { v: VariantRecord }) {
+  return (
+    <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-x-4 gap-y-3">
+      <SpecItem label="Length" value={formatInt(v.length, " mm")} />
+      <SpecItem label="Width" value={formatInt(v.width, " mm")} />
+      <SpecItem label="Height" value={formatInt(v.height, " mm")} />
+      <SpecItem label="Wheelbase" value={formatInt(v.wheelBase, " mm")} />
+      <SpecItem label="Ground clearance" value={formatInt(v.groundClearance, " mm")} />
+      <SpecItem label="Boot space" value={formatInt(v.bootSpace, " L")} />
+      <SpecItem label="Front suspension" value={v.frontSuspension ?? "—"} />
+      <SpecItem label="Rear suspension" value={v.rearSuspension ?? "—"} />
+      <SpecItem label="Steering type" value={v.steeringType ?? "—"} />
+      <SpecItem label="Front brake type" value={v.frontBrakeType ?? "—"} />
+      <SpecItem label="Rear brake type" value={v.rearBrakeType ?? "—"} />
+    </div>
+  );
+}
+
 export default function AllVariants() {
   const [page, setPage] = useState(1);
   // Rows-per-page, user-controlled via a dropdown next to the filters.
@@ -144,7 +175,7 @@ export default function AllVariants() {
       header: "",
       align: "right",
       render: (v) => (
-        <div className="flex items-center justify-end gap-1.5">
+        <div className="flex items-center justify-end gap-1.5" onClick={(e) => e.stopPropagation()}>
           <button
             onClick={() => openEditModal(v)}
             className="cursor-pointer text-[10px] font-bold px-2.5 py-1 rounded-lg border border-[#e8e4dc] text-[#4a4640] hover:bg-[#f7f5f1] transition-colors"
@@ -168,7 +199,7 @@ export default function AllVariants() {
         <div>
           <h1 className="text-[18px] font-black text-[#1c1a17]">Variants</h1>
           <p className="text-[12px] text-[#a39e96] mt-0.5">
-            Manage variants under each car model. All fields are required when adding or editing.
+            Manage variants under each car model. Click a row to see its dimensions & chassis specs.
           </p>
         </div>
         <button
@@ -249,6 +280,8 @@ export default function AllVariants() {
           error={error}
           loadingMessage="Loading variants..."
           emptyMessage="No variants found."
+          expandable
+          renderExpanded={(v) => <ExpandedVariantDetail v={v} />}
         />
         <Pagination
           pagination={pagination ?? null}

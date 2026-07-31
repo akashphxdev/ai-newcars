@@ -5,14 +5,12 @@ import {
   useUpdatePowertrainElectricMutation,
   useGetPowertrainElectricByIdQuery,
   type PowertrainElectricRecord,
-  type TestCycleType,
 } from "./powertrainElectric.api";
 import { useGetVariantOptionsQuery } from "../Variants/variant.api";
 import { useGetCarModelOptionsQuery } from "../carModels/carModel.api";
 import { useGetBrandOptionsQuery } from "../Brands/brand.api";
 import { useGetAttributeOptionsGroupedQuery } from "../AttributeOptions/attributeOption.api";
 import { extractApiError } from "../../../lib/apiClient";
-import { TEST_CYCLE_TYPE_OPTIONS } from "../../../lib/lookups";
 
 const ACCENT = "#D4300F";
 
@@ -38,27 +36,24 @@ interface FormState {
   torqueNm: string;
   claimedRange: string;
   realWorldRange: string;
-  testCycleType: TestCycleType | "";
   topSpeedKmph: string;
   topSpeedTimeSec: string;
   acChargingOutput: string;
   acChargingTime: string;
-  chargerSizeAc3kwHours: string;
-  chargerSizeAc7kwHours: string;
-  chargerSizeAc11kwHours: string;
-  chargerSizeAc22kwHours: string;
   dcChargingOutput: string;
   dcFastChargingTime: string;
-  powertrainBootspace: string;
   batteryWarrantyKm: string;
   batteryWarrantyYears: string;
   motorWarrantyKm: string;
   motorWarrantyYears: string;
   standardWarrantyKm: string;
   standardWarrantyYears: string;
-  realWorldUrl: string;
-  cityUrl: string;
-  highwayUrl: string;
+  emissionNormCompliance: string;
+  motorPowerKw: string;
+  chargingPort: string;
+  chargingOptionsRaw: string;
+  regenerativeBraking: boolean;
+  regenerativeBrakingLevels: string;
   isDefault: boolean;
 }
 
@@ -75,27 +70,24 @@ function buildInitialState(p?: PowertrainElectricRecord | null): FormState {
     torqueNm: p?.torqueNm != null ? String(p.torqueNm) : "",
     claimedRange: p?.claimedRange != null ? String(p.claimedRange) : "",
     realWorldRange: p?.realWorldRange != null ? String(p.realWorldRange) : "",
-    testCycleType: p?.testCycleType ?? "",
     topSpeedKmph: p?.topSpeedKmph != null ? String(p.topSpeedKmph) : "",
     topSpeedTimeSec: p?.topSpeedTimeSec ?? "",
     acChargingOutput: p?.acChargingOutput ?? "",
     acChargingTime: p?.acChargingTime ?? "",
-    chargerSizeAc3kwHours: p?.chargerSizeAc3kwHours != null ? String(p.chargerSizeAc3kwHours) : "",
-    chargerSizeAc7kwHours: p?.chargerSizeAc7kwHours != null ? String(p.chargerSizeAc7kwHours) : "",
-    chargerSizeAc11kwHours: p?.chargerSizeAc11kwHours != null ? String(p.chargerSizeAc11kwHours) : "",
-    chargerSizeAc22kwHours: p?.chargerSizeAc22kwHours != null ? String(p.chargerSizeAc22kwHours) : "",
     dcChargingOutput: p?.dcChargingOutput ?? "",
     dcFastChargingTime: p?.dcFastChargingTime ?? "",
-    powertrainBootspace: p?.powertrainBootspace != null ? String(p.powertrainBootspace) : "",
     batteryWarrantyKm: p?.batteryWarrantyKm != null ? String(p.batteryWarrantyKm) : "",
     batteryWarrantyYears: p?.batteryWarrantyYears != null ? String(p.batteryWarrantyYears) : "",
     motorWarrantyKm: p?.motorWarrantyKm != null ? String(p.motorWarrantyKm) : "",
     motorWarrantyYears: p?.motorWarrantyYears != null ? String(p.motorWarrantyYears) : "",
     standardWarrantyKm: p?.standardWarrantyKm ?? "",
     standardWarrantyYears: p?.standardWarrantyYears != null ? String(p.standardWarrantyYears) : "",
-    realWorldUrl: p?.realWorldUrl ?? "",
-    cityUrl: p?.cityUrl ?? "",
-    highwayUrl: p?.highwayUrl ?? "",
+    emissionNormCompliance: p?.emissionNormCompliance ?? "",
+    motorPowerKw: p?.motorPowerKw ?? "",
+    chargingPort: p?.chargingPort ?? "",
+    chargingOptionsRaw: p?.chargingOptionsRaw ?? "",
+    regenerativeBraking: p?.regenerativeBraking ?? false,
+    regenerativeBrakingLevels: p?.regenerativeBrakingLevels != null ? String(p.regenerativeBrakingLevels) : "",
     isDefault: p?.isDefault ?? false,
   };
 }
@@ -258,27 +250,24 @@ export default function PowertrainElectricModal({
       torqueNm: numOrNull(form.torqueNm),
       claimedRange: numOrNull(form.claimedRange),
       realWorldRange: numOrNull(form.realWorldRange),
-      testCycleType: form.testCycleType || null,
       topSpeedKmph: numOrNull(form.topSpeedKmph),
       topSpeedTimeSec: numOrNull(form.topSpeedTimeSec),
       acChargingOutput: numOrNull(form.acChargingOutput),
       acChargingTime: numOrNull(form.acChargingTime),
-      chargerSizeAc3kwHours: numOrNull(form.chargerSizeAc3kwHours),
-      chargerSizeAc7kwHours: numOrNull(form.chargerSizeAc7kwHours),
-      chargerSizeAc11kwHours: numOrNull(form.chargerSizeAc11kwHours),
-      chargerSizeAc22kwHours: numOrNull(form.chargerSizeAc22kwHours),
       dcChargingOutput: numOrNull(form.dcChargingOutput),
       dcFastChargingTime: strOrNull(form.dcFastChargingTime),
-      powertrainBootspace: numOrNull(form.powertrainBootspace),
       batteryWarrantyKm: numOrNull(form.batteryWarrantyKm),
       batteryWarrantyYears: numOrNull(form.batteryWarrantyYears),
       motorWarrantyKm: numOrNull(form.motorWarrantyKm),
       motorWarrantyYears: numOrNull(form.motorWarrantyYears),
       standardWarrantyKm: strOrNull(form.standardWarrantyKm),
       standardWarrantyYears: numOrNull(form.standardWarrantyYears),
-      realWorldUrl: strOrNull(form.realWorldUrl),
-      cityUrl: strOrNull(form.cityUrl),
-      highwayUrl: strOrNull(form.highwayUrl),
+      emissionNormCompliance: strOrNull(form.emissionNormCompliance),
+      motorPowerKw: numOrNull(form.motorPowerKw),
+      chargingPort: strOrNull(form.chargingPort),
+      chargingOptionsRaw: strOrNull(form.chargingOptionsRaw),
+      regenerativeBraking: form.regenerativeBraking,
+      regenerativeBrakingLevels: numOrNull(form.regenerativeBrakingLevels),
       isDefault: form.isDefault,
     };
 
@@ -402,6 +391,9 @@ export default function PowertrainElectricModal({
             <Field label="Motor type">
               <input type="text" value={form.motorType} onChange={(e) => set("motorType", e.target.value)} placeholder="e.g. PMSM" className={inputClass} />
             </Field>
+            <Field label="Motor power (kW)">
+              <input type="number" min={0} step="0.1" value={form.motorPowerKw} onChange={(e) => set("motorPowerKw", e.target.value)} className={inputClass} />
+            </Field>
             <Field label="Battery capacity (kWh)" error={errors.batteryCapacity}>
               <input type="number" min={0} step="0.1" value={form.batteryCapacity} onChange={(e) => set("batteryCapacity", e.target.value)} className={inputClass} />
             </Field>
@@ -410,9 +402,6 @@ export default function PowertrainElectricModal({
             </Field>
             <Field label="Thermal management system">
               <input type="text" value={form.thermalManagementSystem} onChange={(e) => set("thermalManagementSystem", e.target.value)} placeholder="e.g. Liquid cooled" className={inputClass} />
-            </Field>
-            <Field label="Bootspace (L)">
-              <input type="number" min={0} value={form.powertrainBootspace} onChange={(e) => set("powertrainBootspace", e.target.value)} className={inputClass} />
             </Field>
           </Section>
 
@@ -429,19 +418,14 @@ export default function PowertrainElectricModal({
             <Field label="Real world range (km)">
               <input type="number" min={0} value={form.realWorldRange} onChange={(e) => set("realWorldRange", e.target.value)} className={inputClass} />
             </Field>
-            <Field label="Test cycle type">
-              <select value={form.testCycleType} onChange={(e) => set("testCycleType", e.target.value ? (Number(e.target.value) as TestCycleType) : "")} className={selectClass}>
-                <option value="">Not set</option>
-                {TEST_CYCLE_TYPE_OPTIONS.map((t) => (
-                  <option key={t.value} value={t.value}>{t.label}</option>
-                ))}
-              </select>
-            </Field>
             <Field label="Top speed (km/h)">
               <input type="number" min={0} value={form.topSpeedKmph} onChange={(e) => set("topSpeedKmph", e.target.value)} className={inputClass} />
             </Field>
             <Field label="0-100 time (sec)">
               <input type="number" min={0} step="0.1" value={form.topSpeedTimeSec} onChange={(e) => set("topSpeedTimeSec", e.target.value)} className={inputClass} />
+            </Field>
+            <Field label="Emission norm compliance">
+              <input type="text" value={form.emissionNormCompliance} onChange={(e) => set("emissionNormCompliance", e.target.value)} placeholder="e.g. ZEV" className={inputClass} />
             </Field>
           </Section>
 
@@ -452,24 +436,27 @@ export default function PowertrainElectricModal({
             <Field label="AC charging time (hrs)">
               <input type="number" min={0} step="0.1" value={form.acChargingTime} onChange={(e) => set("acChargingTime", e.target.value)} className={inputClass} />
             </Field>
-            <Field label="3 kW charger time (hrs)">
-              <input type="number" min={0} value={form.chargerSizeAc3kwHours} onChange={(e) => set("chargerSizeAc3kwHours", e.target.value)} className={inputClass} />
-            </Field>
-            <Field label="7 kW charger time (hrs)">
-              <input type="number" min={0} value={form.chargerSizeAc7kwHours} onChange={(e) => set("chargerSizeAc7kwHours", e.target.value)} className={inputClass} />
-            </Field>
-            <Field label="11 kW charger time (hrs)">
-              <input type="number" min={0} value={form.chargerSizeAc11kwHours} onChange={(e) => set("chargerSizeAc11kwHours", e.target.value)} className={inputClass} />
-            </Field>
-            <Field label="22 kW charger time (hrs)">
-              <input type="number" min={0} value={form.chargerSizeAc22kwHours} onChange={(e) => set("chargerSizeAc22kwHours", e.target.value)} className={inputClass} />
-            </Field>
             <Field label="DC charging output (kW)">
               <input type="number" min={0} step="0.1" value={form.dcChargingOutput} onChange={(e) => set("dcChargingOutput", e.target.value)} className={inputClass} />
             </Field>
             <Field label="DC fast charging time">
               <input type="text" value={form.dcFastChargingTime} onChange={(e) => set("dcFastChargingTime", e.target.value)} placeholder="e.g. 10-80% in 30 min" className={inputClass} />
             </Field>
+            <Field label="Charging port">
+              <input type="text" value={form.chargingPort} onChange={(e) => set("chargingPort", e.target.value)} placeholder="e.g. CCS-II" className={inputClass} />
+            </Field>
+            <Field label="Charging options (raw text)">
+              <input type="text" value={form.chargingOptionsRaw} onChange={(e) => set("chargingOptionsRaw", e.target.value)} placeholder="e.g. 7.2 kW AC | 3.3 kW AC | 65 kW DC" className={inputClass} />
+            </Field>
+            <Field label="Regenerative braking levels">
+              <input type="number" min={0} value={form.regenerativeBrakingLevels} onChange={(e) => set("regenerativeBrakingLevels", e.target.value)} className={inputClass} />
+            </Field>
+            <div className="flex items-end pb-2.5">
+              <label className="flex items-center gap-2.5 cursor-pointer select-none">
+                <input type="checkbox" checked={form.regenerativeBraking} onChange={(e) => set("regenerativeBraking", e.target.checked)} className="w-4 h-4 rounded accent-[#D4300F] cursor-pointer" />
+                <span className="text-sm font-medium text-[#4a4640]">Regenerative braking</span>
+              </label>
+            </div>
           </Section>
 
           <Section title="Warranty">
@@ -490,18 +477,6 @@ export default function PowertrainElectricModal({
             </Field>
             <Field label="Standard warranty (years)">
               <input type="number" min={0} value={form.standardWarrantyYears} onChange={(e) => set("standardWarrantyYears", e.target.value)} className={inputClass} />
-            </Field>
-          </Section>
-
-          <Section title="Test-run URLs">
-            <Field label="Real-world test URL">
-              <input type="url" value={form.realWorldUrl} onChange={(e) => set("realWorldUrl", e.target.value)} placeholder="https://..." className={inputClass} />
-            </Field>
-            <Field label="City test URL">
-              <input type="url" value={form.cityUrl} onChange={(e) => set("cityUrl", e.target.value)} placeholder="https://..." className={inputClass} />
-            </Field>
-            <Field label="Highway test URL">
-              <input type="url" value={form.highwayUrl} onChange={(e) => set("highwayUrl", e.target.value)} placeholder="https://..." className={inputClass} />
             </Field>
           </Section>
 

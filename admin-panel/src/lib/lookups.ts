@@ -34,21 +34,6 @@ export function getFuelTypeLabel(code: number | null | undefined): string {
   return FUEL_TYPE_OPTIONS.find((o) => o.value === code)?.label ?? "—";
 }
 
-// ===== Test cycle types =====
-// Mirrors TEST_CYCLE_TYPE_CODES in backend/src/modules/newCars/powertrainElectric/powertrainElectric.validation.ts —
-// keep both in sync if a code is ever added/removed.
-export const TEST_CYCLE_TYPE_OPTIONS: LookupOption[] = [
-  { value: 1, label: "ARAI" },
-  { value: 2, label: "WLTP" },
-  { value: 3, label: "EPA" },
-  { value: 4, label: "NEDC" },
-];
-
-export function getTestCycleTypeLabel(code: number | null | undefined): string {
-  if (code == null) return "—";
-  return TEST_CYCLE_TYPE_OPTIONS.find((o) => o.value === code)?.label ?? "—";
-}
-
 // ===== Ad placement page types =====
 // Mirrors PAGE_TYPE_CODES in backend/src/modules/ads/adPlacement/adPlacement.validation.ts —
 // keep both in sync if a code is ever added/removed.

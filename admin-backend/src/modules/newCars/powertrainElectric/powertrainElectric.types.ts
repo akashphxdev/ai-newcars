@@ -1,7 +1,5 @@
 // src/modules/newCars/powertrainElectric/powertrainElectric.types.ts
 
-import type { TestCycleType } from './powertrainElectric.validation';
-
 export interface PowertrainElectricVariantSummary {
   id: number;
   variantName: string;
@@ -28,27 +26,24 @@ export interface PowertrainElectricRecord {
   torqueNm: number | null;
   claimedRange: number | null;
   realWorldRange: number | null;
-  testCycleType: TestCycleType | null;
   topSpeedKmph: number | null;
   topSpeedTimeSec: string | null;
   acChargingOutput: string | null;
   acChargingTime: string | null;
-  chargerSizeAc3kwHours: number | null;
-  chargerSizeAc7kwHours: number | null;
-  chargerSizeAc11kwHours: number | null;
-  chargerSizeAc22kwHours: number | null;
   dcChargingOutput: string | null;
   dcFastChargingTime: string | null;
-  powertrainBootspace: number | null;
   batteryWarrantyKm: number | null;
   batteryWarrantyYears: number | null;
   motorWarrantyKm: number | null;
   motorWarrantyYears: number | null;
   standardWarrantyKm: string | null;
   standardWarrantyYears: number | null;
-  realWorldUrl: string | null;
-  cityUrl: string | null;
-  highwayUrl: string | null;
+  emissionNormCompliance: string | null;
+  motorPowerKw: string | null;
+  chargingPort: string | null;
+  chargingOptionsRaw: string | null;
+  regenerativeBraking: boolean;
+  regenerativeBrakingLevels: number | null;
   isDefault: boolean;
   isDeleted: boolean;
   deletedBy: number | null;
@@ -59,8 +54,8 @@ export interface PowertrainElectricRecord {
 }
 
 // What the listing table actually renders — everything else (charging
-// specs, warranty, URLs, etc.) is fetched on demand via getById when a
-// row is expanded, instead of being shipped on every list call.
+// specs, warranty, etc.) is fetched on demand via getById when a row is
+// expanded, instead of being shipped on every list call.
 export interface PowertrainElectricListItem {
   id: number;
   variantId: number;

@@ -11,6 +11,22 @@ import type {
 } from './powertrainIce.validation';
 import type { PowertrainIceRecord, PowertrainIceListItem } from './powertrainIce.types';
 
+// Transmission comes from the variant now (CarPowertrainIce's own copy
+// was removed as a duplicate of CarVariant.transmission) — same sub-select
+// reused in both the full and list selects below.
+const VARIANT_SUMMARY_SELECT = {
+  id: true,
+  variantName: true,
+  transmission: { select: { id: true, name: true, slug: true } },
+  model: {
+    select: {
+      id: true,
+      name: true,
+      brand: { select: { id: true, name: true } },
+    },
+  },
+} as const;
+
 const POWERTRAIN_ICE_SELECT = {
   id: true,
   variantId: true,
@@ -22,11 +38,6 @@ const POWERTRAIN_ICE_SELECT = {
   engineDisplacement: true,
   cubicCapacity: true,
   cylinders: true,
-  cylinderCapacity: true,
-  transmissionTypeId: true,
-  transmissionType: { select: { id: true, name: true, slug: true } },
-  transmissionSubType: true,
-  transmissionSpeed: true,
   numGears: true,
   isFourByFour: true,
   drivetrainId: true,
@@ -34,39 +45,22 @@ const POWERTRAIN_ICE_SELECT = {
   powerPs: true,
   powerMinRpm: true,
   powerMaxRpm: true,
-  powerWeight: true,
   torqueNm: true,
   torqueMinRpm: true,
   torqueMaxRpm: true,
-  torqueWeight: true,
   claimedFe: true,
   realWorldMileage: true,
-  cityMileage: true,
-  highwayMileage: true,
   topSpeedKmph: true,
   topSpeedTimeSec: true,
-  realWorldUrl: true,
-  cityUrl: true,
-  highwayUrl: true,
+  emissionNormCompliance: true,
+  turboCharger: true,
   isDefault: true,
   isDeleted: true,
   deletedBy: true,
   deletedAt: true,
   expiresAt: true,
   createdAt: true,
-  variant: {
-    select: {
-      id: true,
-      variantName: true,
-      model: {
-        select: {
-          id: true,
-          name: true,
-          brand: { select: { id: true, name: true } },
-        },
-      },
-    },
-  },
+  variant: { select: VARIANT_SUMMARY_SELECT },
 } as const;
 
 // Listing only ships what the table actually renders — full spec sheet is
@@ -79,23 +73,10 @@ const POWERTRAIN_ICE_LIST_SELECT = {
   engineDisplacement: true,
   powerPs: true,
   torqueNm: true,
-  transmissionType: { select: { id: true, name: true, slug: true } },
   isDefault: true,
   isDeleted: true,
   createdAt: true,
-  variant: {
-    select: {
-      id: true,
-      variantName: true,
-      model: {
-        select: {
-          id: true,
-          name: true,
-          brand: { select: { id: true, name: true } },
-        },
-      },
-    },
-  },
+  variant: { select: VARIANT_SUMMARY_SELECT },
 } as const;
 
 export async function listPowertrainIce(query: PowertrainIceListQueryParsed): Promise<{
@@ -193,9 +174,6 @@ export async function createPowertrainIce(
   ipAddress?: string | null,
 ) {
   await assertVariantExists(input.variantId);
-  if (typeof input.transmissionTypeId === 'number') {
-    await assertAttributeOptionExists(input.transmissionTypeId, 'transmission', 'transmissionType');
-  }
   if (typeof input.drivetrainId === 'number') {
     await assertAttributeOptionExists(input.drivetrainId, 'drivetrain', 'drivetrain');
   }
@@ -216,30 +194,21 @@ export async function createPowertrainIce(
         engineDisplacement: input.engineDisplacement,
         cubicCapacity: input.cubicCapacity,
         cylinders: input.cylinders,
-        cylinderCapacity: input.cylinderCapacity,
-        transmissionTypeId: input.transmissionTypeId,
-        transmissionSubType: input.transmissionSubType,
-        transmissionSpeed: input.transmissionSpeed,
         numGears: input.numGears,
         isFourByFour: input.isFourByFour,
         drivetrainId: input.drivetrainId,
         powerPs: input.powerPs,
         powerMinRpm: input.powerMinRpm,
         powerMaxRpm: input.powerMaxRpm,
-        powerWeight: input.powerWeight,
         torqueNm: input.torqueNm,
         torqueMinRpm: input.torqueMinRpm,
         torqueMaxRpm: input.torqueMaxRpm,
-        torqueWeight: input.torqueWeight,
         claimedFe: input.claimedFe,
         realWorldMileage: input.realWorldMileage,
-        cityMileage: input.cityMileage,
-        highwayMileage: input.highwayMileage,
         topSpeedKmph: input.topSpeedKmph,
         topSpeedTimeSec: input.topSpeedTimeSec,
-        realWorldUrl: input.realWorldUrl,
-        cityUrl: input.cityUrl,
-        highwayUrl: input.highwayUrl,
+        emissionNormCompliance: input.emissionNormCompliance,
+        turboCharger: input.turboCharger,
         isDefault: input.isDefault,
       },
       select: POWERTRAIN_ICE_SELECT,
@@ -266,9 +235,6 @@ export async function updatePowertrainIce(
   if (typeof input.variantId === 'number') {
     await assertVariantExists(input.variantId);
   }
-  if (typeof input.transmissionTypeId === 'number') {
-    await assertAttributeOptionExists(input.transmissionTypeId, 'transmission', 'transmissionType');
-  }
   if (typeof input.drivetrainId === 'number') {
     await assertAttributeOptionExists(input.drivetrainId, 'drivetrain', 'drivetrain');
   }
@@ -291,29 +257,20 @@ export async function updatePowertrainIce(
         engineDisplacement: input.engineDisplacement,
         cubicCapacity: input.cubicCapacity,
         cylinders: input.cylinders,
-        cylinderCapacity: input.cylinderCapacity,
-        transmissionTypeId: input.transmissionTypeId,
-        transmissionSubType: input.transmissionSubType,
-        transmissionSpeed: input.transmissionSpeed,
         numGears: input.numGears,
         drivetrainId: input.drivetrainId,
         powerPs: input.powerPs,
         powerMinRpm: input.powerMinRpm,
         powerMaxRpm: input.powerMaxRpm,
-        powerWeight: input.powerWeight,
         torqueNm: input.torqueNm,
         torqueMinRpm: input.torqueMinRpm,
         torqueMaxRpm: input.torqueMaxRpm,
-        torqueWeight: input.torqueWeight,
         claimedFe: input.claimedFe,
         realWorldMileage: input.realWorldMileage,
-        cityMileage: input.cityMileage,
-        highwayMileage: input.highwayMileage,
         topSpeedKmph: input.topSpeedKmph,
         topSpeedTimeSec: input.topSpeedTimeSec,
-        realWorldUrl: input.realWorldUrl,
-        cityUrl: input.cityUrl,
-        highwayUrl: input.highwayUrl,
+        emissionNormCompliance: input.emissionNormCompliance,
+        turboCharger: input.turboCharger,
       },
       select: POWERTRAIN_ICE_SELECT,
     });

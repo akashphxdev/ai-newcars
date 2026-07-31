@@ -66,36 +66,19 @@ function ExpandedIceDetail({ id }: { id: number }) {
       <SpecItem label="Kerb weight" value={formatInt(p.kerbWeight, " kg")} />
       <SpecItem label="Cubic capacity" value={formatInt(p.cubicCapacity, " cc")} />
       <SpecItem label="Cylinders" value={formatInt(p.cylinders)} />
-      <SpecItem label="Cylinder capacity" value={formatDecimal(p.cylinderCapacity, " cc")} />
-      <SpecItem label="Transmission sub-type" value={p.transmissionSubType ?? "—"} />
-      <SpecItem label="Transmission speed" value={formatInt(p.transmissionSpeed)} />
       <SpecItem label="Number of gears" value={formatInt(p.numGears)} />
       <SpecItem label="Is 4x4" value={p.isFourByFour ? "Yes" : "No"} />
       <SpecItem label="Drivetrain" value={p.drivetrain?.name ?? "—"} />
-      <SpecItem label="Power-to-weight" value={formatDecimal(p.powerWeight)} />
       <SpecItem label="Power min RPM" value={formatInt(p.powerMinRpm)} />
       <SpecItem label="Power max RPM" value={formatInt(p.powerMaxRpm)} />
-      <SpecItem label="Torque-to-weight" value={formatDecimal(p.torqueWeight)} />
       <SpecItem label="Torque min RPM" value={formatInt(p.torqueMinRpm)} />
       <SpecItem label="Torque max RPM" value={formatInt(p.torqueMaxRpm)} />
       <SpecItem label="Claimed FE" value={formatDecimal(p.claimedFe, " kmpl")} />
       <SpecItem label="Real world mileage" value={formatDecimal(p.realWorldMileage, " kmpl")} />
-      <SpecItem label="City mileage" value={formatDecimal(p.cityMileage, " kmpl")} />
-      <SpecItem label="Highway mileage" value={formatDecimal(p.highwayMileage, " kmpl")} />
       <SpecItem label="Top speed" value={formatInt(p.topSpeedKmph, " km/h")} />
       <SpecItem label="0-100 time" value={formatDecimal(p.topSpeedTimeSec, " sec")} />
-      <SpecItem
-        label="Real-world test"
-        value={p.realWorldUrl ? <a href={p.realWorldUrl} target="_blank" rel="noreferrer" className="text-[#D4300F] hover:underline">Link</a> : "—"}
-      />
-      <SpecItem
-        label="City test"
-        value={p.cityUrl ? <a href={p.cityUrl} target="_blank" rel="noreferrer" className="text-[#D4300F] hover:underline">Link</a> : "—"}
-      />
-      <SpecItem
-        label="Highway test"
-        value={p.highwayUrl ? <a href={p.highwayUrl} target="_blank" rel="noreferrer" className="text-[#D4300F] hover:underline">Link</a> : "—"}
-      />
+      <SpecItem label="Emission norm" value={p.emissionNormCompliance ?? "—"} />
+      <SpecItem label="Turbo charger" value={p.turboCharger ? "Yes" : "No"} />
       <SpecItem label="Created" value={formatDate(p.createdAt)} />
     </div>
   );
@@ -235,7 +218,7 @@ export default function AllPowertrainIce() {
     { header: "Displacement", render: (p) => <span className="text-[#7a7670]">{formatDecimal(p.engineDisplacement, "L")}</span> },
     { header: "Power", render: (p) => <span className="text-[#7a7670]">{p.powerPs != null ? `${p.powerPs} PS` : "—"}</span> },
     { header: "Torque", render: (p) => <span className="text-[#7a7670]">{p.torqueNm != null ? `${p.torqueNm} Nm` : "—"}</span> },
-    { header: "Transmission", render: (p) => <span className="text-[#7a7670]">{p.transmissionType?.name ?? "—"}</span> },
+    { header: "Transmission", render: (p) => <span className="text-[#7a7670]">{p.variant.transmission.name}</span> },
     {
       header: "",
       align: "right",
