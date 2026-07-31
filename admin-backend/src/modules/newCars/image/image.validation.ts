@@ -2,15 +2,31 @@
 
 import { z } from 'zod';
 
+// Mirrors CarDekho's own gallery sub-categories (used as the reference
+// vocabulary since it's the richest available breakdown) — 'other' is
+// kept as a catch-all for anything that doesn't fit.
 const ANGLES = [
-  'front',
-  'rear',
-  'side',
-  'interior',
+  'looks',
+  'details',
+  'lights',
+  'badges',
+  'camera_and_sensors',
+  'other_information',
   'dashboard',
+  'steering_wheel',
+  'instrument_cluster',
+  'center_console',
+  'seats',
+  'storage',
   'boot',
-  'wheel',
-  'top',
+  'infotainment_system',
+  'air-conditioning',
+  'sunroof',
+  'controls_and_buttons',
+  'charging_options',
+  'seat_ventilation',
+  'safety',
+  'other_features',
   'other',
 ] as const;
 

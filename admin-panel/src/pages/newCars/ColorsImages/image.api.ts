@@ -4,15 +4,30 @@
 
 import { api } from "../../../store/baseApi";
 
+// Mirrors CarDekho's own gallery sub-categories (the backend's ANGLES enum
+// in image.validation.ts) — "other" is a catch-all for anything unmatched.
 export type CarImageAngle =
-  | "front"
-  | "rear"
-  | "side"
-  | "interior"
+  | "looks"
+  | "details"
+  | "lights"
+  | "badges"
+  | "camera_and_sensors"
+  | "other_information"
   | "dashboard"
+  | "steering_wheel"
+  | "instrument_cluster"
+  | "center_console"
+  | "seats"
+  | "storage"
   | "boot"
-  | "wheel"
-  | "top"
+  | "infotainment_system"
+  | "air-conditioning"
+  | "sunroof"
+  | "controls_and_buttons"
+  | "charging_options"
+  | "seat_ventilation"
+  | "safety"
+  | "other_features"
   | "other";
 
 export interface CarImageRecord {

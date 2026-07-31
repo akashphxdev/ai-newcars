@@ -14,14 +14,27 @@ import { extractApiError, getUploadUrl } from "../../../lib/apiClient";
 const ACCENT = "#D4300F";
 
 const ANGLES: { value: CarImageAngle; label: string }[] = [
-  { value: "front", label: "Front" },
-  { value: "rear", label: "Rear" },
-  { value: "side", label: "Side" },
-  { value: "interior", label: "Interior" },
+  { value: "looks", label: "Looks" },
+  { value: "details", label: "Details" },
+  { value: "lights", label: "Lights" },
+  { value: "badges", label: "Badges" },
+  { value: "camera_and_sensors", label: "Camera & Sensors" },
+  { value: "other_information", label: "Other Information" },
   { value: "dashboard", label: "Dashboard" },
+  { value: "steering_wheel", label: "Steering Wheel" },
+  { value: "instrument_cluster", label: "Instrument Cluster" },
+  { value: "center_console", label: "Center Console" },
+  { value: "seats", label: "Seats" },
+  { value: "storage", label: "Storage" },
   { value: "boot", label: "Boot" },
-  { value: "wheel", label: "Wheel" },
-  { value: "top", label: "Top" },
+  { value: "infotainment_system", label: "Infotainment System" },
+  { value: "air-conditioning", label: "Air Conditioning" },
+  { value: "sunroof", label: "Sunroof" },
+  { value: "controls_and_buttons", label: "Controls & Buttons" },
+  { value: "charging_options", label: "Charging Options" },
+  { value: "seat_ventilation", label: "Seat Ventilation" },
+  { value: "safety", label: "Safety" },
+  { value: "other_features", label: "Other Features" },
   { value: "other", label: "Other" },
 ];
 

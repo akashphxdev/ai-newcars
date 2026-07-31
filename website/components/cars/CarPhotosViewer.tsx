@@ -7,20 +7,56 @@ import { buildSwatchBackground } from "@/lib/colorSwatch";
 import type { CarDetailImage, CarDetailColor } from "@/features/cars/car.types";
 
 // admin-panel's fixed angle vocabulary (ImageModal.tsx / image.validation.ts
-// ANGLES) — same 9 values, so labels here always match what an admin
-// actually picked when uploading, nothing invented.
+// ANGLES) — mirrors CarDekho's own gallery sub-categories, so labels here
+// always match what an admin actually picked when uploading, nothing invented.
 const ANGLE_LABELS: Record<string, string> = {
-  front: "Front",
-  rear: "Rear",
-  side: "Side",
-  interior: "Interior",
+  looks: "Looks",
+  details: "Details",
+  lights: "Lights",
+  badges: "Badges",
+  camera_and_sensors: "Camera & Sensors",
+  other_information: "Other Information",
   dashboard: "Dashboard",
+  steering_wheel: "Steering Wheel",
+  instrument_cluster: "Instrument Cluster",
+  center_console: "Center Console",
+  seats: "Seats",
+  storage: "Storage",
   boot: "Boot",
-  wheel: "Wheel",
-  top: "Top",
+  infotainment_system: "Infotainment System",
+  "air-conditioning": "Air Conditioning",
+  sunroof: "Sunroof",
+  controls_and_buttons: "Controls & Buttons",
+  charging_options: "Charging Options",
+  seat_ventilation: "Seat Ventilation",
+  safety: "Safety",
+  other_features: "Other Features",
   other: "Other",
 };
-const ANGLE_ORDER = ["front", "rear", "side", "wheel", "top", "boot", "interior", "dashboard", "other"];
+const ANGLE_ORDER = [
+  "looks",
+  "details",
+  "lights",
+  "badges",
+  "camera_and_sensors",
+  "other_information",
+  "dashboard",
+  "steering_wheel",
+  "instrument_cluster",
+  "center_console",
+  "seats",
+  "storage",
+  "boot",
+  "infotainment_system",
+  "air-conditioning",
+  "sunroof",
+  "controls_and_buttons",
+  "charging_options",
+  "seat_ventilation",
+  "safety",
+  "other_features",
+  "other",
+];
 
 function angleKey(img: CarDetailImage): string {
   return img.angle && ANGLE_LABELS[img.angle] ? img.angle : "other";
