@@ -3,7 +3,14 @@
 import { Request, Response } from 'express';
 import { sendPaginated } from '@/core/utils/sendResponse';
 import { sendSuccess } from '@/core/utils/sendResponse';
-import { carListQuerySchema, carsBrowseQuerySchema, carDetailParamSchema, carDetailQuerySchema } from './car.validation';
+import {
+  carListQuerySchema,
+  carsBrowseQuerySchema,
+  carDetailParamSchema,
+  carDetailQuerySchema,
+  modelsByBrandQuerySchema,
+  variantsByModelQuerySchema,
+} from './car.validation';
 import * as carService from './car.service';
 
 // GET /api/public/v1/cars
@@ -31,6 +38,22 @@ export async function getCarsBrowse(req: Request, res: Response) {
   });
 
   return sendSuccess(res, result, 'Cars fetched successfully');
+}
+
+// GET /api/public/v1/cars/lookup/models?brandId=X — EMI calculator's
+// Model dropdown, once a brand is chosen.
+export async function getModelsByBrand(req: Request, res: Response) {
+  const query = modelsByBrandQuerySchema.parse(req.query);
+  const result = await carService.listModelsByBrand(query.brandId);
+  return sendSuccess(res, result, 'Models fetched successfully');
+}
+
+// GET /api/public/v1/cars/lookup/variants?modelId=X — EMI calculator's
+// Variant dropdown, once a model is chosen.
+export async function getVariantsByModel(req: Request, res: Response) {
+  const query = variantsByModelQuerySchema.parse(req.query);
+  const result = await carService.listVariantsByModel(query.modelId);
+  return sendSuccess(res, result, 'Variants fetched successfully');
 }
 
 // GET /api/public/v1/cars/:brandSlug/:modelSlug — car model detail page

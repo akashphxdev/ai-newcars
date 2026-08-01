@@ -643,6 +643,49 @@ export async function getCarDetail(brandSlug: string, modelSlug: string, variant
   };
 }
 
+export interface CarModelLookup {
+  id: number;
+  name: string;
+  slug: string;
+  priceMin: string | null;
+  priceMax: string | null;
+}
+
+// Lightweight "models for this brand" picker (EMI calculator's Model
+// dropdown, once a brand is chosen) — id/name/price only, not the full
+// HOME_CAR_SELECT shape (no image/bodyType/rating needed for a picker).
+export async function listModelsByBrand(brandId: number): Promise<CarModelLookup[]> {
+  const models = await prisma.carModel.findMany({
+    where: { brandId, launchStatus: 'available' },
+    select: { id: true, name: true, slug: true, priceMin: true, priceMax: true },
+    orderBy: { name: 'asc' },
+  });
+
+  return models.map((m) => ({
+    ...m,
+    priceMin: m.priceMin?.toString() ?? null,
+    priceMax: m.priceMax?.toString() ?? null,
+  }));
+}
+
+export interface CarVariantLookup {
+  id: number;
+  variantName: string;
+  price: string;
+}
+
+// Lightweight "variants for this model" picker (EMI calculator's Variant
+// dropdown) — every variant's own price, cheapest first.
+export async function listVariantsByModel(modelId: number): Promise<CarVariantLookup[]> {
+  const variants = await prisma.carVariant.findMany({
+    where: { modelId },
+    select: { id: true, variantName: true, price: true },
+    orderBy: { price: 'asc' },
+  });
+
+  return variants.map((v) => ({ ...v, price: v.price.toString() }));
+}
+
 export interface CarImagesResult {
   name: string;
   brand: { name: string; slug: string };

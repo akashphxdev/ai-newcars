@@ -76,7 +76,7 @@ export default function CarModelHero({ car, variant }: { car: CarDetailResult; v
               priceLabel={formatSinglePrice(variant.price)}
             />
 
-            <Link href="/emi-calculator" className="block text-center text-[12.5px] font-semibold text-brand hover:underline">
+            <Link href="/car-loan-emi-calculator" className="block text-center text-[12.5px] font-semibold text-brand hover:underline">
               Calculate EMI →
             </Link>
           </>

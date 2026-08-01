@@ -56,3 +56,15 @@ export const carDetailQuerySchema = z.object({
 
 export type CarDetailParamParsed = z.infer<typeof carDetailParamSchema>;
 export type CarDetailQueryParsed = z.infer<typeof carDetailQuerySchema>;
+
+// Lightweight picker lookups (EMI calculator's Brand→Model→Variant flow).
+export const modelsByBrandQuerySchema = z.object({
+  brandId: z.coerce.number().int().positive(),
+});
+
+export const variantsByModelQuerySchema = z.object({
+  modelId: z.coerce.number().int().positive(),
+});
+
+export type ModelsByBrandQueryParsed = z.infer<typeof modelsByBrandQuerySchema>;
+export type VariantsByModelQueryParsed = z.infer<typeof variantsByModelQuerySchema>;

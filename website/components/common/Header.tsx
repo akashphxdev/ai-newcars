@@ -27,7 +27,7 @@ const STATIC_NAV_ITEMS: NavItem[] = [
   {
     label: "Tools",
     dropdown: [
-      { label: "EMI Calculator", href: "/emi-calculator" },
+      { label: "EMI Calculator", href: "/car-loan-emi-calculator" },
       { label: "Fuel Cost Calculator", href: "/fuel-cost-calculator" },
       { label: "Mileage Calculator", href: "/mileage-calculator" },
       { label: "On-Road Price Calculator", href: "/on-road-price-calculator" },
