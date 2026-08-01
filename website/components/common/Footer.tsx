@@ -166,9 +166,11 @@ const TOOLS_COL: FooterCol = {
   title: "Tools",
   links: [
     { label: "EMI Calculator", href: "/car-loan-emi-calculator" },
-    { label: "Fuel Cost Calculator", href: "/fuel-cost-calculator" },
     { label: "Mileage Calculator", href: "/mileage-calculator" },
-    { label: "On-Road Price", href: "#" },
+    { label: "Down Payment", href: "/down-payment-calculator" },
+    { label: "Car Affordability", href: "/car-affordability-calculator" },
+    { label: "EV Charging Time", href: "/ev-charging-time-calculator" },
+    { label: "Fuel Comparison", href: "/fuel-comparison-calculator" },
   ],
 };
 

@@ -32,6 +32,26 @@ export function calculateEmi(principal: number, annualRatePercent: number, tenur
   return { emi, totalPayable, totalInterest: totalPayable - principal };
 }
 
+// Inverse of calculateEmi — given a target monthly EMI, solve for the
+// loan amount (principal) it can support:
+//   P = EMI * [(1+r)^n - 1] / [r * (1+r)^n]
+// Same reducing-balance formula, just algebraically rearranged — used
+// by the Affordability and Down Payment calculators (both start from
+// "I can pay this much EMI" rather than "I'm borrowing this much").
+export function calculatePrincipalFromEmi(emi: number, annualRatePercent: number, tenureYears: number): number {
+  if (emi <= 0 || tenureYears <= 0) return 0;
+
+  const months = tenureYears * 12;
+
+  if (annualRatePercent <= 0) {
+    return emi * months;
+  }
+
+  const monthlyRate = annualRatePercent / 12 / 100;
+  const factor = Math.pow(1 + monthlyRate, months);
+  return (emi * (factor - 1)) / (monthlyRate * factor);
+}
+
 export interface AmortizationYear {
   year: number;
   principalPaid: number;

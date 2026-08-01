@@ -672,18 +672,34 @@ export interface CarVariantLookup {
   id: number;
   variantName: string;
   price: string;
+  // Null for electric variants — the Mileage Calculator's fuel-type
+  // filter uses these two fields to only show variants matching the
+  // fuel type picked (EMI calculator ignores them).
+  isElectric: boolean;
+  fuelType: string | null;
 }
 
-// Lightweight "variants for this model" picker (EMI calculator's Variant
-// dropdown) — every variant's own price, cheapest first.
+// Lightweight "variants for this model" picker (EMI + Mileage
+// calculators' Variant dropdown) — every variant's own price, cheapest
+// first.
 export async function listVariantsByModel(modelId: number): Promise<CarVariantLookup[]> {
   const variants = await prisma.carVariant.findMany({
     where: { modelId },
-    select: { id: true, variantName: true, price: true },
+    select: {
+      id: true,
+      variantName: true,
+      price: true,
+      icePowertrains: { where: { isDeleted: false }, take: 1, select: { fuelType: true } },
+      electricPowertrains: { where: { isDeleted: false }, take: 1, select: { id: true } },
+    },
     orderBy: { price: 'asc' },
   });
 
-  return variants.map((v) => ({ ...v, price: v.price.toString() }));
+  return variants.map((v) => {
+    const isElectric = v.electricPowertrains.length > 0;
+    const fuelType = !isElectric && v.icePowertrains[0] ? (FUEL_TYPE_LABELS[v.icePowertrains[0].fuelType] ?? null) : null;
+    return { id: v.id, variantName: v.variantName, price: v.price.toString(), isElectric, fuelType };
+  });
 }
 
 export interface CarImagesResult {

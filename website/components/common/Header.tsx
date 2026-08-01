@@ -28,9 +28,12 @@ const STATIC_NAV_ITEMS: NavItem[] = [
     label: "Tools",
     dropdown: [
       { label: "EMI Calculator", href: "/car-loan-emi-calculator" },
-      { label: "Fuel Cost Calculator", href: "/fuel-cost-calculator" },
       { label: "Mileage Calculator", href: "/mileage-calculator" },
-      { label: "On-Road Price Calculator", href: "/on-road-price-calculator" },
+      { label: "Down Payment Calculator", href: "/down-payment-calculator" },
+      { label: "Car Affordability Calculator", href: "/car-affordability-calculator" },
+      { label: "EV Charging Time Calculator", href: "/ev-charging-time-calculator" },
+      { label: "Fuel Type Comparison", href: "/fuel-comparison-calculator" },
+      { label: "Compare Cars", href: "/compare-cars" },
     ],
   },
 ];
@@ -246,7 +249,7 @@ export default function Header({ bodyTypes, articleCategories }: { bodyTypes: Bo
                         <Link
                           key={link.label}
                           href={link.href}
-                          className="block px-3.5 py-2 text-[13px] font-medium capitalize no-underline transition-colors"
+                          className="block whitespace-nowrap px-3.5 py-2 text-[13px] font-medium capitalize no-underline transition-colors"
                           style={{ color: MUTED }}
                           onMouseEnter={(e) => {
                             e.currentTarget.style.background = ORANGE_SOFT;
