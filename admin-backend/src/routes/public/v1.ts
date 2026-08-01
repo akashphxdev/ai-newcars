@@ -14,6 +14,8 @@ import CompareRoutes from './compare';
 import AuthRoutes from './auth';
 import SearchRoutes from './search';
 import ReviewsRoutes from './reviews';
+import LeadsRoutes from './leads';
+import CitiesRoutes from './cities';
 
 const router = Router();
 
@@ -27,5 +29,7 @@ router.use('/compare', CompareRoutes);
 router.use('/auth', AuthRoutes);
 router.use('/search', SearchRoutes);
 router.use('/reviews', ReviewsRoutes);
+router.use('/leads', LeadsRoutes);
+router.use('/cities', CitiesRoutes);
 
 export default router;

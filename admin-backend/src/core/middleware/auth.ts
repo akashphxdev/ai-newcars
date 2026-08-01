@@ -84,6 +84,31 @@ async function assertAdminStillActiveAndGetRoleId(adminId: number): Promise<numb
   return snapshot.roleId;
 }
 
+// Same JWT check as requireAuth, but never rejects the request — for
+// routes that serve BOTH logged-in users (skip OTP, use their account)
+// and guests (must OTP-verify separately). An invalid/expired token
+// falls back to "guest" rather than hard-failing, since the OTP step
+// is the real identity check either way. Only 'user' tokens are ever
+// attached — an admin token hitting a public route is ignored, not
+// treated as an authenticated user.
+export function optionalAuth() {
+  return (req: Request, _res: Response, next: NextFunction) => {
+    const header = req.headers.authorization;
+    if (!header || !header.startsWith('Bearer ')) {
+      return next();
+    }
+    try {
+      const decoded = jwt.verify(header.replace('Bearer ', ''), env.jwtSecret) as AuthPayload;
+      if (decoded.type === 'user') {
+        req.auth = decoded;
+      }
+    } catch {
+      // ignore — proceed as guest
+    }
+    next();
+  };
+}
+
 export function requireAuth(allowedTypes?: Array<'user' | 'admin'>) {
   return async (req: Request, _res: Response, next: NextFunction) => {
     const header = req.headers.authorization;

@@ -14,6 +14,7 @@ import HomeRoutes from './home'
 import SiteSettingRoutes from './site-setting'
 import AnalyticsRoutes from './analytics'
 import ReviewsRoutes from './reviews'
+import LeadsRoutes from './leads'
 
 const router = Router();
 
@@ -31,6 +32,7 @@ router.use('/home', HomeRoutes)
 router.use('/site-settings',SiteSettingRoutes)
 router.use('/analytics', AnalyticsRoutes)
 router.use('/reviews', ReviewsRoutes)
+router.use('/leads', LeadsRoutes)
 
 
 export default router;

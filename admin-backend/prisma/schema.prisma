@@ -401,6 +401,7 @@ model CarVariant {
   newCarOffers        NewCarOffer[]
   usedCarListings     UsedCarListing[]
   reviews             Review[]
+  buyNewCarLeads BuyNewCarLead[]
 
   @@unique([modelId, variantName])
   @@map("car_variants")
@@ -691,10 +692,13 @@ model BuyNewCarLead {
   user         User?     @relation(fields: [userId], references: [id])
   name         String?   @db.VarChar(100)
   mobile       String    @db.VarChar(15)
+  email        String?   @map("email") @db.VarChar(150)
   brandId      Int?      @map("brand_id")
   brand        Brand?    @relation(fields: [brandId], references: [id])
   modelId      Int?      @map("model_id")
   model        CarModel? @relation(fields: [modelId], references: [id])
+  variantId    Int?         @map("variant_id")
+  variant      CarVariant?  @relation(fields: [variantId], references: [id])
   cityId       Int?      @map("city_id")
   city         City?     @relation(fields: [cityId], references: [id])
   interestType String?   @map("interest_type") @db.VarChar(30)
@@ -707,6 +711,11 @@ model BuyNewCarLead {
   deviceType   String?   @map("device_type") @db.VarChar(20)
   ipAddress    String?   @map("ip_address") @db.VarChar(45)
   createdAt    DateTime  @default(now()) @map("created_at")
+  updatedAt    DateTime  @updatedAt @map("updated_at")
+
+  @@index([status, createdAt])
+  @@index([mobile])
+  @@index([brandId, modelId])
 
   @@map("buy_new_car_leads")
 }
@@ -758,6 +767,11 @@ model InsuranceLead {
   deviceType         String?   @map("device_type") @db.VarChar(20)
   ipAddress          String?   @map("ip_address") @db.VarChar(45)
   createdAt          DateTime  @default(now()) @map("created_at")
+  updatedAt          DateTime  @updatedAt @map("updated_at")
+
+  @@index([status, createdAt])
+  @@index([mobile])
+  @@index([brandId, modelId])
 
   @@map("insurance_leads")
 }
@@ -826,6 +840,7 @@ model PriceDropAlertLead {
   user        User?     @relation(fields: [userId], references: [id])
   mobile      String    @db.VarChar(15)
   email       String?   @db.VarChar(150)
+  priceAtSubscription Decimal? @map("price_at_subscription") @db.Decimal(12, 2)
   brandId     Int?      @map("brand_id")
   brand       Brand?    @relation(fields: [brandId], references: [id])
   modelId     Int?      @map("model_id")
@@ -841,6 +856,11 @@ model PriceDropAlertLead {
   deviceType  String?   @map("device_type") @db.VarChar(20)
   ipAddress   String?   @map("ip_address") @db.VarChar(45)
   createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+
+  @@index([isActive, createdAt])
+  @@index([mobile])
+  @@index([brandId, modelId])
 
   @@map("price_drop_alert_leads")
 }

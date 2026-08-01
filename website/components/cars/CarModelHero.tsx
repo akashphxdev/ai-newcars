@@ -1,6 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import CarModelGallery from "./CarModelGallery";
+import CarLeadActions from "./CarLeadActions";
 import { WishlistButton } from "@/components/common/CardBits";
 import { StarIcon, ShareIcon } from "@/components/common/icons";
 import { formatSinglePrice } from "@/lib/format";
@@ -66,14 +67,14 @@ export default function CarModelHero({ car, variant }: { car: CarDetailResult; v
               </p>
             </div>
 
-            <div className="flex flex-col gap-2.5 sm:flex-row">
-              <button type="button" className="w-full cursor-pointer rounded-xl border-[1.5px] border-brand px-5 py-3 text-center text-[13.5px] font-bold text-brand transition-colors hover:bg-orange-50">
-                Check Offers
-              </button>
-              <button type="button" className="w-full cursor-pointer rounded-xl border-[1.5px] border-border px-5 py-3 text-center text-[13.5px] font-bold text-ink transition-colors hover:border-brand hover:text-brand">
-                Enquire Now
-              </button>
-            </div>
+            <CarLeadActions
+              brandId={car.brand.id}
+              modelId={car.id}
+              variantId={variant.id}
+              carName={car.name}
+              imageUrl={car.coverImageUrl}
+              priceLabel={formatSinglePrice(variant.price)}
+            />
 
             <Link href="/emi-calculator" className="block text-center text-[12.5px] font-semibold text-brand hover:underline">
               Calculate EMI →
