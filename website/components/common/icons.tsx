@@ -13,6 +13,14 @@ export const ChevronIcon = ({ className = "size-3.5", dir = "right" }: IconProps
   </svg>
 );
 
+export const CompareIcon = ({ className = "size-4" }: IconProps) => (
+  <svg className={className} viewBox="0 0 24 24" fill="none">
+    <rect x="3" y="6" width="8" height="12" rx="1.5" stroke="currentColor" strokeWidth="1.6" />
+    <rect x="13" y="6" width="8" height="12" rx="1.5" stroke="currentColor" strokeWidth="1.6" />
+    <path d="m16 20 3-3-3-3" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+  </svg>
+);
+
 export const PhoneIcon = ({ className = "size-4" }: IconProps) => (
   <svg className={className} viewBox="0 0 24 24" fill="none">
     <path

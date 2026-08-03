@@ -12,7 +12,10 @@ export interface HomeCity {
 // Mirrors admin-backend's public /cities/options — lightweight,
 // unpaginated, every city in one shot. Used wherever City is just a
 // dropdown/datalist (lead-form city field), not the homepage carousel.
+// stateId lets the insurance wizard's City field filter to the
+// selected Registration State.
 export interface CityOption {
   id: number;
   name: string;
+  stateId: number;
 }

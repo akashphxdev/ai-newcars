@@ -3,8 +3,11 @@ import { useEffect, useState } from "react";
 import {
   useGetInsuranceLeadsQuery,
   useUpdateInsuranceLeadStatusMutation,
+  INSURANCE_TYPES,
+  INSURANCE_TYPE_LABELS,
   type InsuranceLeadRecord,
   type InsuranceLeadStatus,
+  type InsuranceType,
 } from "./insuranceLead.api";
 import { useGetBrandOptionsQuery } from "../../newCars/Brands/brand.api";
 import { useGetCarModelOptionsQuery } from "../../newCars/carModels/carModel.api";
@@ -66,6 +69,7 @@ export default function AllInsuranceLeads() {
   const [brandId, setBrandId] = useState<number | "">("");
   const [modelId, setModelId] = useState<number | "">("");
   const [cityId, setCityId] = useState<number | "">("");
+  const [insuranceType, setInsuranceType] = useState<InsuranceType | "">("");
   const [status, setStatus] = useState<InsuranceLeadStatus | "">("");
 
   useEffect(() => {
@@ -89,6 +93,7 @@ export default function AllInsuranceLeads() {
     brandId: brandId || undefined,
     modelId: modelId || undefined,
     cityId: cityId || undefined,
+    insuranceType: insuranceType || undefined,
     status: status || undefined,
   });
 
@@ -134,6 +139,14 @@ export default function AllInsuranceLeads() {
     },
     { header: "Reg. No.", render: (r) => <span className="text-[#7a7670]">{r.registrationNumber ?? "—"}</span> },
     { header: "City", render: (r) => <span className="text-[#7a7670]">{r.city?.name ?? "—"}</span> },
+    {
+      header: "Insurance For",
+      render: (r) => (
+        <span className="text-[11px] font-semibold text-[#4a4640]">
+          {r.insuranceType ? INSURANCE_TYPE_LABELS[r.insuranceType] : "—"}
+        </span>
+      ),
+    },
     {
       header: "Status",
       render: (r) => <StatusSelect value={r.status} disabled={togglingId === r.id} onChange={(next) => handleStatusChange(r, next)} />,
@@ -214,6 +227,15 @@ export default function AllInsuranceLeads() {
           }}
           options={cities.map((c) => ({ value: c.id, label: c.name }))}
           placeholder="All cities"
+        />
+        <FilterSelect
+          value={insuranceType}
+          onChange={(v) => {
+            setInsuranceType((v as InsuranceType) || "");
+            setPage(1);
+          }}
+          options={INSURANCE_TYPES.map((t) => ({ value: t, label: INSURANCE_TYPE_LABELS[t] }))}
+          placeholder="All insurance types"
         />
         <FilterSelect
           value={status}

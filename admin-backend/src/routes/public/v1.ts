@@ -16,6 +16,8 @@ import SearchRoutes from './search';
 import ReviewsRoutes from './reviews';
 import LeadsRoutes from './leads';
 import CitiesRoutes from './cities';
+import StatesRoutes from './states';
+import LendersRoutes from './lenders';
 
 const router = Router();
 
@@ -31,5 +33,7 @@ router.use('/search', SearchRoutes);
 router.use('/reviews', ReviewsRoutes);
 router.use('/leads', LeadsRoutes);
 router.use('/cities', CitiesRoutes);
+router.use('/states', StatesRoutes);
+router.use('/lenders', LendersRoutes);
 
 export default router;

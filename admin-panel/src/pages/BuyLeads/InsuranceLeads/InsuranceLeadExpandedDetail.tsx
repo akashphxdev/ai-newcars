@@ -3,7 +3,12 @@
 // Mounted only while its row is expanded — same convention as
 // BuyLeads/NewCarLeads/NewCarLeadExpandedDetail.tsx.
 import { useState } from "react";
-import { useGetInsuranceLeadByIdQuery, useAddInsuranceLeadActivityMutation, type InsuranceLeadRecord } from "./insuranceLead.api";
+import {
+  useGetInsuranceLeadByIdQuery,
+  useAddInsuranceLeadActivityMutation,
+  INSURANCE_TYPE_LABELS,
+  type InsuranceLeadRecord,
+} from "./insuranceLead.api";
 import { extractApiError } from "../../../lib/apiClient";
 
 const ACCENT = "#D4300F";
@@ -16,6 +21,10 @@ function formatDateTime(value: string) {
     hour: "2-digit",
     minute: "2-digit",
   });
+}
+
+function formatDate(value: string) {
+  return new Date(value).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" });
 }
 
 const Field = ({ label, value }: { label: string; value: React.ReactNode }) => (
@@ -54,6 +63,17 @@ export default function InsuranceLeadExpandedDetail({ lead }: { lead: InsuranceL
   return (
     <div className="space-y-4 text-[12px]">
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-x-4 gap-y-3">
+        <Field label="Variant" value={detail.variant?.variantName ?? "—"} />
+        <Field label="Registration Year" value={detail.registrationYear ?? "—"} />
+        <Field label="Registration State" value={detail.registrationState?.name ?? "—"} />
+        <Field label="Insurance For" value={detail.insuranceType ? INSURANCE_TYPE_LABELS[detail.insuranceType] : "—"} />
+        {detail.insuranceType === "renew" && (
+          <>
+            <Field label="Current Insurer" value={detail.currentInsuranceCompany ?? "—"} />
+            <Field label="Policy Expiry" value={detail.policyExpiryDate ? formatDate(detail.policyExpiryDate) : "—"} />
+            <Field label="Claim in Last Policy" value={detail.hadClaim == null ? "—" : detail.hadClaim ? "Yes" : "No"} />
+          </>
+        )}
         <Field label="Lead Channel" value={detail.leadChannel ?? "—"} />
         <Field label="Device" value={detail.deviceType ?? "—"} />
         <Field label="IP Address" value={detail.ipAddress ?? "—"} />

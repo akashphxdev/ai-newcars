@@ -40,6 +40,7 @@ model State {
   code      String?  @db.VarChar(10)
   country   Country  @relation(fields: [countryId], references: [id])
   cities    City[]
+  insuranceLeads InsuranceLead[]
 
   @@map("states")
 }
@@ -174,9 +175,6 @@ model AdminUser {
   seoMetaUpdates        SeoMeta[]
   seoRedirectsCreated   SeoRedirect[]
 
-  // Articles — three separate relations to AdminUser (byline author,
-  // who actually created the row, who last edited it) so each needs
-  // its own relation name to disambiguate.
   articlesAuthored         Article[]         @relation("ArticleAuthor")
   articlesCreated          Article[]         @relation("ArticleCreatedBy")
   articlesUpdated          Article[]         @relation("ArticleUpdatedBy")
@@ -187,12 +185,13 @@ model AdminUser {
   adPlacementsUpdated AdPlacement[] @relation("AdPlacementUpdatedBy")
   advertisersCreated  Advertiser[]  @relation("AdvertiserCreatedBy")
   advertisersUpdated  Advertiser[]  @relation("AdvertiserUpdatedBy")  
+  lendersCreated Lender[] @relation("LenderCreatedBy")
+  lendersUpdated Lender[] @relation("LenderUpdatedBy")
+
 
   adCampaignsCreated  AdCampaign[]  @relation("AdCampaignCreatedBy")
   adCampaignsUpdated  AdCampaign[]  @relation("AdCampaignUpdatedBy")
 
-  // Stories — created/updated split into their own relation names,
-  // same convention as ArticleCreatedBy/ArticleUpdatedBy above.
   storyGroupsCreated StoryGroup[] @relation("StoryGroupCreatedBy")
   storyGroupsUpdated StoryGroup[] @relation("StoryGroupUpdatedBy")
   storyItemsCreated  StoryItem[]  @relation("StoryItemCreatedBy")
@@ -402,6 +401,9 @@ model CarVariant {
   usedCarListings     UsedCarListing[]
   reviews             Review[]
   buyNewCarLeads BuyNewCarLead[]
+  insuranceLeads InsuranceLead[]
+  loanLeads LoanLead[]
+
 
   @@unique([modelId, variantName])
   @@map("car_variants")
@@ -755,9 +757,18 @@ model InsuranceLead {
   brand              Brand?    @relation(fields: [brandId], references: [id])
   modelId            Int?      @map("model_id")
   model              CarModel? @relation(fields: [modelId], references: [id])
+  variantId          Int?      @map("variant_id")
+  variant            CarVariant? @relation(fields: [variantId], references: [id])
+  registrationYear   Int?      @map("registration_year")
+  registrationStateId Int?     @map("registration_state_id")
+  registrationState  State?    @relation(fields: [registrationStateId], references: [id])
   registrationNumber String?   @map("registration_number") @db.VarChar(20)
   cityId             Int?      @map("city_id")
   city               City?     @relation(fields: [cityId], references: [id])
+  insuranceType          String?   @map("insurance_type") @db.VarChar(20)
+  currentInsuranceCompany String?  @map("current_insurance_company") @db.VarChar(150)
+  policyExpiryDate       DateTime? @map("policy_expiry_date") @db.Date
+  hadClaim               Boolean?  @map("had_claim")
   status             String    @default("new") @db.VarChar(20)
   leadChannel        String?   @map("lead_channel") @db.VarChar(30)
   utmSource          String?   @map("utm_source") @db.VarChar(100)
@@ -781,7 +792,19 @@ model Lender {
   name            String   @db.VarChar(150)
   logoUrl         String?  @map("logo_url") @db.VarChar(255)
   minInterestRate Decimal? @map("min_interest_rate") @db.Decimal(4, 2)
+  maxInterestRate Decimal? @map("max_interest_rate") @db.Decimal(4, 2)
+  maxLoanAmount   Decimal? @map("max_loan_amount") @db.Decimal(12, 2)
+  maxTenureYears  Int?     @map("max_tenure_years")
+
   isActive        Boolean  @default(true) @map("is_active")
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime   @updatedAt @map("updated_at")
+  createdBy      Int?       @map("created_by")
+  createdByAdmin AdminUser? @relation("LenderCreatedBy", fields: [createdBy], references: [id])
+  updatedBy      Int?       @map("updated_by")
+  updatedByAdmin AdminUser? @relation("LenderUpdatedBy", fields: [updatedBy], references: [id])
+
+
 
   loanLeads LoanLead[]
 
@@ -798,10 +821,13 @@ model LoanLead {
   brand         Brand?    @relation(fields: [brandId], references: [id])
   modelId       Int?      @map("model_id")
   model         CarModel? @relation(fields: [modelId], references: [id])
+  variantId     Int?      @map("variant_id")
+  variant       CarVariant? @relation(fields: [variantId], references: [id])
   lenderId      Int?      @map("lender_id")
   lender        Lender?   @relation(fields: [lenderId], references: [id])
   loanAmount    Decimal?  @map("loan_amount") @db.Decimal(12, 2)
   tenureYears   Int?      @map("tenure_years")
+  interestRate  Decimal?  @map("interest_rate") @db.Decimal(4, 2)
   monthlyIncome Decimal?  @map("monthly_income") @db.Decimal(10, 2)
   status        String    @default("new") @db.VarChar(20)
   leadChannel   String?   @map("lead_channel") @db.VarChar(30)
@@ -812,8 +838,14 @@ model LoanLead {
   deviceType    String?   @map("device_type") @db.VarChar(20)
   ipAddress     String?   @map("ip_address") @db.VarChar(45)
   createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @updatedAt @map("updated_at")
+
 
   @@map("loan_leads")
+  @@index([status, createdAt])
+  @@index([mobile])
+  @@index([brandId, modelId])
+
 }
 
 model SoftLead {

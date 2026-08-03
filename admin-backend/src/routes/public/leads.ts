@@ -5,6 +5,7 @@ import newCarLeadRoute from '@/modules/public/leads/newCarLead/newCarLead.public
 import insuranceLeadRoute from '@/modules/public/leads/insuranceLead/insuranceLead.public.routes';
 import priceDropAlertRoute from '@/modules/public/leads/priceDropAlert/priceDropAlert.public.routes';
 import softLeadRoute from '@/modules/public/leads/softLead/softLead.public.routes';
+import loanLeadRoute from '@/modules/public/leads/loanLead/loanLead.public.routes';
 
 const router = Router();
 
@@ -13,5 +14,6 @@ router.use('/buy/new-cars', newCarLeadRoute);
 router.use('/buy/insurance', insuranceLeadRoute);
 router.use('/buy/price-drop', priceDropAlertRoute);
 router.use('/buy/soft', softLeadRoute);
+router.use('/buy/loan', loanLeadRoute);
 
 export default router;

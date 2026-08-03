@@ -69,6 +69,7 @@ export default function CarModelHero({ car, variant }: { car: CarDetailResult; v
 
             <CarLeadActions
               brandId={car.brand.id}
+              brandName={car.brand.name}
               modelId={car.id}
               variantId={variant.id}
               carName={car.name}

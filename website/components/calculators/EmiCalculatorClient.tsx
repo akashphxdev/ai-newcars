@@ -9,6 +9,9 @@ import { getCarDetail } from "@/features/cars/car.api";
 import type { CarDetailResult } from "@/features/cars/car.types";
 import ReviewsSection from "@/components/cars/reviews/ReviewsSection";
 import SoftLeadCapture from "@/components/leads/SoftLeadCapture";
+import LoanLeadModal from "@/components/leads/LoanLeadModal";
+import { ChevronIcon } from "@/components/common/icons";
+import { submitLoanLead } from "@/features/leads/lead.api";
 import { calculateEmi, buildAmortizationSchedule } from "@/lib/emiMath";
 
 const TENURE_OPTIONS = [1, 2, 3, 4, 5, 7];
@@ -67,6 +70,7 @@ export default function EmiCalculatorClient({ brands }: { brands: Brand[] }) {
   const [modelId, setModelId] = useState<number | "">("");
   const [variants, setVariants] = useState<EmiCalculatorVariant[]>([]);
   const [variantId, setVariantId] = useState<number | "">("");
+  const [loanModalOpen, setLoanModalOpen] = useState(false);
 
   const [exShowroomPrice, setExShowroomPrice] = useState(0);
   const [downPayment, setDownPayment] = useState(0);
@@ -527,6 +531,32 @@ export default function EmiCalculatorClient({ brands }: { brands: Brand[] }) {
             modelId={selectedModel?.id}
             inputSummary={`EMI ${formatRupee(emi)}/mo · ${formatLakh(exShowroomPrice)} @ ${interestRate.toFixed(2)}% · ${tenureYears}yr`}
           />
+
+          {selectedBrand && selectedModel && (
+            <button
+              type="button"
+              onClick={() => setLoanModalOpen(true)}
+              className="flex w-full cursor-pointer items-center justify-center gap-1 py-1 text-[12.5px] font-bold text-brand hover:underline"
+            >
+              Want better loan offers? Apply Now <ChevronIcon className="size-3" />
+            </button>
+          )}
+
+          {loanModalOpen && selectedBrand && selectedModel && (
+            <LoanLeadModal
+              brandName={selectedBrand.name}
+              carName={selectedModel.name}
+              modelId={selectedModel.id}
+              imageUrl={carDetail?.coverImageUrl ?? null}
+              initialLoanAmount={loanAmount}
+              initialTenureYears={tenureYears}
+              initialInterestRate={interestRate}
+              onClose={() => setLoanModalOpen(false)}
+              onSubmit={async (values) => {
+                await submitLoanLead({ ...values, brandId: selectedBrand.id, modelId: selectedModel.id });
+              }}
+            />
+          )}
             </>
           )}
         </div>

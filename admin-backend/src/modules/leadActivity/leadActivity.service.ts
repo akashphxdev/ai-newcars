@@ -11,6 +11,7 @@ export const LEAD_TYPES = {
   INSURANCE: 'insurance',
   PRICE_DROP_ALERT: 'price_drop_alert',
   SOFT_LEAD: 'soft_lead',
+  LOAN: 'loan',
 } as const;
 
 export type LeadType = (typeof LEAD_TYPES)[keyof typeof LEAD_TYPES];

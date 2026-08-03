@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useMemo, useState } from "react";
 import Image from "next/image";
-import { StarIcon, CheckIcon, ShieldIcon } from "@/components/common/icons";
+import { StarIcon, CheckIcon, ShieldIcon, ChevronIcon } from "@/components/common/icons";
 import { getModelsByBrand, getVariantsByModel } from "@/features/calculators/emiCalculator.api";
 import type { EmiCalculatorModel, EmiCalculatorVariant } from "@/features/calculators/emiCalculator.types";
 import type { Brand } from "@/features/brands/brand.types";
@@ -11,6 +11,8 @@ import { calculateEmi, calculatePrincipalFromEmi } from "@/lib/emiMath";
 import { formatRupee, formatLakh } from "@/lib/calculatorFormat";
 import { Label, selectClass, inputClass } from "@/components/calculators/CalculatorFormControls";
 import SoftLeadCapture from "@/components/leads/SoftLeadCapture";
+import LoanLeadModal from "@/components/leads/LoanLeadModal";
+import { submitLoanLead } from "@/features/leads/lead.api";
 
 const TENURE_OPTIONS = [1, 2, 3, 4, 5, 7];
 const DEFAULT_INTEREST_RATE = 9;
@@ -22,6 +24,7 @@ export default function DownPaymentCalculatorClient({ brands }: { brands: Brand[
   const [modelId, setModelId] = useState<number | "">("");
   const [variants, setVariants] = useState<EmiCalculatorVariant[]>([]);
   const [variantId, setVariantId] = useState<number | "">("");
+  const [loanModalOpen, setLoanModalOpen] = useState(false);
 
   const [desiredEmi, setDesiredEmi] = useState("");
   const [interestRate, setInterestRate] = useState(DEFAULT_INTEREST_RATE);
@@ -346,6 +349,32 @@ export default function DownPaymentCalculatorClient({ brands }: { brands: Brand[
                 modelId={selectedModel?.id}
                 inputSummary={`Down payment ${formatRupee(result.downPayment)} · Target EMI ${formatRupee(desiredEmiValue)}/mo · ${tenureYears}yr`}
               />
+
+              {selectedBrand && selectedModel && (
+                <button
+                  type="button"
+                  onClick={() => setLoanModalOpen(true)}
+                  className="flex w-full cursor-pointer items-center justify-center gap-1 py-1 text-[12.5px] font-bold text-brand hover:underline"
+                >
+                  Want better loan offers? Apply Now <ChevronIcon className="size-3" />
+                </button>
+              )}
+
+              {loanModalOpen && selectedBrand && selectedModel && (
+                <LoanLeadModal
+                  brandName={selectedBrand.name}
+                  carName={selectedModel.name}
+                  modelId={selectedModel.id}
+                  imageUrl={carDetail?.coverImageUrl ?? null}
+                  initialLoanAmount={result.loanAmount}
+                  initialTenureYears={tenureYears}
+                  initialInterestRate={interestRate}
+                  onClose={() => setLoanModalOpen(false)}
+                  onSubmit={async (values) => {
+                    await submitLoanLead({ ...values, brandId: selectedBrand.id, modelId: selectedModel.id });
+                  }}
+                />
+              )}
             </>
           )}
         </div>

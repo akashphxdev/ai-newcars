@@ -20,8 +20,14 @@ const INSURANCE_LEAD_LIST_SELECT = {
   brand: { select: { id: true, name: true } },
   modelId: true,
   model: { select: { id: true, name: true } },
+  variantId: true,
+  variant: { select: { id: true, variantName: true } },
+  registrationYear: true,
+  registrationStateId: true,
+  registrationState: { select: { id: true, name: true } },
   cityId: true,
   city: { select: { id: true, name: true } },
+  insuranceType: true,
   status: true,
   createdAt: true,
   updatedAt: true,
@@ -29,6 +35,9 @@ const INSURANCE_LEAD_LIST_SELECT = {
 
 const INSURANCE_LEAD_DETAIL_SELECT = {
   ...INSURANCE_LEAD_LIST_SELECT,
+  currentInsuranceCompany: true,
+  policyExpiryDate: true,
+  hadClaim: true,
   leadChannel: true,
   utmSource: true,
   utmMedium: true,
@@ -39,13 +48,14 @@ const INSURANCE_LEAD_DETAIL_SELECT = {
 } as const;
 
 export async function listInsuranceLeads(query: InsuranceLeadListQueryParsed) {
-  const { page, limit, search, status, brandId, modelId, cityId, sortBy, sortOrder } = query;
+  const { page, limit, search, status, brandId, modelId, cityId, insuranceType, sortBy, sortOrder } = query;
 
   const where: Prisma.InsuranceLeadWhereInput = {
     ...(status ? { status } : {}),
     ...(brandId ? { brandId } : {}),
     ...(modelId ? { modelId } : {}),
     ...(cityId ? { cityId } : {}),
+    ...(insuranceType ? { insuranceType } : {}),
     ...(search
       ? {
           OR: [

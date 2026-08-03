@@ -6,6 +6,15 @@ import { api } from "../../../store/baseApi";
 import type { LeadActivityRecord } from "../NewCarLeads/buyNewCarLead.api";
 
 export type InsuranceLeadStatus = "new" | "contacted" | "qualified" | "converted" | "junk";
+export type InsuranceType = "new" | "renew" | "expired";
+
+export const INSURANCE_TYPES: InsuranceType[] = ["new", "renew", "expired"];
+
+export const INSURANCE_TYPE_LABELS: Record<InsuranceType, string> = {
+  new: "New Car",
+  renew: "Renew Existing Policy",
+  expired: "Expired Policy",
+};
 
 export interface InsuranceLeadRecord {
   id: number;
@@ -16,14 +25,23 @@ export interface InsuranceLeadRecord {
   brand: { id: number; name: string } | null;
   modelId: number | null;
   model: { id: number; name: string } | null;
+  variantId: number | null;
+  variant: { id: number; variantName: string } | null;
+  registrationYear: number | null;
+  registrationStateId: number | null;
+  registrationState: { id: number; name: string } | null;
   cityId: number | null;
   city: { id: number; name: string } | null;
+  insuranceType: InsuranceType | null;
   status: InsuranceLeadStatus;
   createdAt: string;
   updatedAt: string;
 }
 
 export interface InsuranceLeadDetailRecord extends InsuranceLeadRecord {
+  currentInsuranceCompany: string | null;
+  policyExpiryDate: string | null;
+  hadClaim: boolean | null;
   leadChannel: string | null;
   utmSource: string | null;
   utmMedium: string | null;
@@ -49,6 +67,7 @@ export interface ListInsuranceLeadsParams {
   brandId?: number;
   modelId?: number;
   cityId?: number;
+  insuranceType?: InsuranceType;
   sortBy?: "id" | "createdAt" | "status";
   sortOrder?: "asc" | "desc";
 }

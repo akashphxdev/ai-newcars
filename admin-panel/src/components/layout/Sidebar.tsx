@@ -161,6 +161,7 @@ const NAV: NavGroup[] = [
           { label: "Used Car Leads", href: "/leads/buy/used-cars" },
           { label: "Insurance Leads", href: "/leads/buy/insurance" },
           { label: "Loan Leads", href: "/leads/buy/loan" },
+          { label: "Lenders", href: "/leads/buy/lenders" },
           { label: "Soft Leads", href: "/leads/buy/soft" },
           { label: "Price Drop Alerts", href: "/leads/buy/price-drop" },
         ],

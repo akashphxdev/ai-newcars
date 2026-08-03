@@ -35,6 +35,41 @@ export interface SubmitPriceDropAlertLeadInput {
   modelId: number;
 }
 
+export type InsuranceType = "new" | "renew" | "expired";
+
+export interface SubmitInsuranceLeadInput {
+  name?: string;
+  mobile: string;
+  email?: string;
+  otp?: string;
+  registrationNumber?: string;
+  brandId?: number;
+  modelId?: number;
+  variantId?: number;
+  registrationYear?: number;
+  registrationStateId?: number;
+  cityId?: number;
+  insuranceType: InsuranceType;
+  currentInsuranceCompany?: string;
+  policyExpiryDate?: string;
+  hadClaim?: boolean;
+}
+
+export interface SubmitLoanLeadInput {
+  name?: string;
+  mobile: string;
+  email?: string;
+  otp?: string;
+  brandId?: number;
+  modelId?: number;
+  variantId?: number;
+  lenderId?: number;
+  loanAmount?: number;
+  tenureYears?: number;
+  interestRate?: number;
+  monthlyIncome?: number;
+}
+
 export interface SubmitLeadResult {
   id: number;
   duplicate: boolean;
