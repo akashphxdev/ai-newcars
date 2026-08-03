@@ -3,7 +3,9 @@
 import { z } from 'zod';
 
 // Same string->boolean coercion as brand.validation.ts's booleanish —
-// multipart form fields (logo upload) always arrive as strings.
+// multipart form fields AND query string params both arrive as plain
+// strings, so `z.coerce.boolean()` is wrong here (Boolean("false") is
+// `true` in JS — any non-empty string coerces truthy).
 const booleanish = z.preprocess((val) => {
   if (typeof val === 'string') return val === 'true';
   return val;
@@ -15,7 +17,7 @@ export const lenderListQuerySchema = z.object({
   page: z.coerce.number().int().min(1).default(1),
   limit: z.coerce.number().int().min(1).max(500).default(20),
   search: z.string().trim().min(1).optional(),
-  isActive: z.coerce.boolean().optional(),
+  isActive: booleanish.optional(),
   sortBy: z.enum(['name', 'id']).default('name'),
   sortOrder: z.enum(['asc', 'desc']).default('asc'),
 });
@@ -28,7 +30,7 @@ export const lenderIdParamSchema = z.object({
 // this always returns the full unpaginated set for dropdown use (the
 // Loan Lead form's "Preferred Lender" field).
 export const lenderOptionsQuerySchema = z.object({
-  isActive: z.coerce.boolean().optional(),
+  isActive: booleanish.optional(),
 });
 
 // Only `name` is required — everything else is a nullable/optional

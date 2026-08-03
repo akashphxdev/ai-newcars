@@ -39,6 +39,10 @@ import AllPriceDropLeads from "./pages/BuyLeads/PriceDropAlerts/AllPriceDropLead
 import AllSoftLeads from "./pages/BuyLeads/SoftLeads/AllSoftLeads";
 import AllLenders from "./pages/BuyLeads/Lenders/AllLenders";
 import AllLoanLeads from "./pages/BuyLeads/LoanLeads/AllLoanLeads";
+import UsedCarListings from "./pages/UsedCars/Listings";
+import UsedCarInspections from "./pages/UsedCars/Inspections";
+import AllSellLeads from "./pages/SellLeads/AllSellLeads";
+import SellLeadActivities from "./pages/SellLeads/LeadActivities";
 import AllStoryGroups from "./pages/Stories/StoryGroups/AllStoryGroups";
 import AllStoryItems from "./pages/Stories/StoryItems/AllStoryItems";
 import AllPlacements from "./pages/Ads/Placements/AllPlacements";
@@ -122,8 +126,12 @@ export default function App() {
           <Route path="/leads/buy/insurance" element={<AllInsuranceLeads />} />
           <Route path="/leads/buy/price-drop" element={<AllPriceDropLeads />} />
           <Route path="/leads/buy/soft" element={<AllSoftLeads />} />
-          <Route path="/leads/buy/lenders" element={<AllLenders />} />
+          <Route path="/partners/lenders" element={<AllLenders />} />
           <Route path="/leads/buy/loan" element={<AllLoanLeads />} />
+          <Route path="/used-cars/listings" element={<UsedCarListings />} />
+          <Route path="/used-cars/inspections" element={<UsedCarInspections />} />
+          <Route path="/leads/sell" element={<AllSellLeads />} />
+          <Route path="/leads/sell/activities" element={<SellLeadActivities />} />
 
           <Route path ="/ads/placements" element={<AllPlacements/>}/>
           <Route path ="/ads/advertisers" element={<AllAdvertisers/>}/>

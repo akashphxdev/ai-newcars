@@ -158,10 +158,8 @@ const NAV: NavGroup[] = [
         ),
         children: [
           { label: "New Car Leads", href: "/leads/buy/new-cars" },
-          { label: "Used Car Leads", href: "/leads/buy/used-cars" },
           { label: "Insurance Leads", href: "/leads/buy/insurance" },
           { label: "Loan Leads", href: "/leads/buy/loan" },
-          { label: "Lenders", href: "/leads/buy/lenders" },
           { label: "Soft Leads", href: "/leads/buy/soft" },
           { label: "Price Drop Alerts", href: "/leads/buy/price-drop" },
         ],
@@ -179,6 +177,24 @@ const NAV: NavGroup[] = [
           { label: "All Sell Leads", href: "/leads/sell" },
           { label: "Lead Activities", href: "/leads/sell/activities" },
         ],
+      },
+    ],
+  },
+  {
+    group: "Partners",
+    items: [
+      {
+        label: "Lenders",
+        href: "/partners/lenders",
+        icon: (
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
+            <rect x="4" y="10" width="16" height="9" rx="1" />
+            <path d="M2 10h20L12 4 2 10Z" strokeLinejoin="round" />
+            <line x1="8" y1="13" x2="8" y2="16" />
+            <line x1="12" y1="13" x2="12" y2="16" />
+            <line x1="16" y1="13" x2="16" y2="16" />
+          </svg>
+        ),
       },
     ],
   },
