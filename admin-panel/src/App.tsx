@@ -6,7 +6,6 @@ import AdminLayout from "./components/layout/AdminLayout";
 import Dashboard from "./pages/Dashboard";
 import AllAdmins from "./pages/AdminUsers/AllAdmins/AllAdmins";
 import AllUsers from "./pages/Users/AllUsers/AllUsers";
-import AllNotifications from "./pages/Users/Notifications/AllNotifications";
 import AllPermissions from "./pages/AdminUsers/Permission/AllPermissions";
 import AllRoles from "./pages/AdminUsers/Roles/AllRoles";
 import AllAdminLogs from "./pages/AdminUsers/AdminLogs/AllAdminLogs";
@@ -92,7 +91,6 @@ export default function App() {
 
           <Route path="admins" element={<AllAdmins />} />
           <Route path="/users" element={<AllUsers />} />
-          <Route path="/users/notifications" element={<AllNotifications />} />
           <Route path="roles" element={<AllRoles />} />
           <Route path="permissions" element={<AllPermissions />} />
           <Route path="adminlogs" element={<AllAdminLogs />} />
