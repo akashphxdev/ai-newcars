@@ -89,3 +89,13 @@ export async function getCarArticles(req: Request, res: Response) {
   const result = await carService.getCarArticles(params.brandSlug, params.modelSlug);
   return sendSuccess(res, result, 'Car articles fetched successfully');
 }
+
+// GET /api/public/v1/cars/:brandSlug/:modelSlug/variants — full variant
+// list for the "View All" expansion in the model page's Variants section
+// and the Write Review form's variant picker, kept separate so
+// getCarDetail's own payload only ships its preview-limited subset.
+export async function getCarVariants(req: Request, res: Response) {
+  const params = carDetailParamSchema.parse(req.params);
+  const result = await carService.getCarVariants(params.brandSlug, params.modelSlug);
+  return sendSuccess(res, result, 'Car variants fetched successfully');
+}

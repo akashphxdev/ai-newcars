@@ -208,6 +208,9 @@ export interface CarDetailResult {
   ratingAvg: string | null;
   coverImageUrl: string | null;
   variantOptions: CarDetailVariantOption[];
+  // Total variant count for the model — variantOptions above is capped
+  // server-side, so this tells the page whether "View All" has more to fetch.
+  variantCount: number;
   selectedVariant: CarDetailSelectedVariant | null;
   images: CarDetailImage[];
   colors: CarDetailColor[];

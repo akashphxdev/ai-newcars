@@ -236,3 +236,16 @@ export const ThermometerIcon = ({ className = "size-4" }: IconProps) => (
     <circle cx="10" cy="16.5" r="1.3" fill="currentColor" />
   </svg>
 );
+
+export const CalculatorIcon = ({ className = "size-4" }: IconProps) => (
+  <svg className={className} viewBox="0 0 24 24" fill="none">
+    <rect x="5" y="3" width="14" height="18" rx="2" stroke="currentColor" strokeWidth="1.7" />
+    <path d="M8 7.5h8" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" />
+    <path
+      d="M8 12h.01M12 12h.01M16 12h.01M8 15.5h.01M12 15.5h.01M16 15.5h.01M8 19h.01M12 19h.01"
+      stroke="currentColor"
+      strokeWidth="2.2"
+      strokeLinecap="round"
+    />
+  </svg>
+);

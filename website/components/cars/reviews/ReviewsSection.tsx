@@ -2,29 +2,37 @@
 import { useEffect, useState } from "react";
 import { getReviews } from "@/features/reviews/review.api";
 import { getCurrentUser } from "@/features/auth/currentUser";
+import { getCarVariants } from "@/features/cars/car.api";
 import AuthModal from "@/components/common/AuthModal";
 import ReviewSummary from "./ReviewSummary";
 import ReviewCard from "./ReviewCard";
 import WriteReviewForm from "./WriteReviewForm";
 import type { ListReviewsResult } from "@/features/reviews/review.types";
+import type { CarDetailVariantOption } from "@/features/cars/car.types";
 
 const PAGE_SIZE = 10;
 
 // Client-fetched (not SSR) — reviews carry the logged-in viewer's own
 // helpful/reply state, which only exists in the browser (the auth token
-// lives in localStorage, not a cookie the server can read).
+// lives in localStorage, not a cookie the server can read). Variant
+// options are also fetched here (rather than passed down from the page's
+// car.variantOptions) since that's now capped to a preview subset —
+// the Write Review picker needs every variant.
 export default function ReviewsSection({
   modelId,
-  variantOptions,
+  brandSlug,
+  modelSlug,
 }: {
   modelId: number;
-  variantOptions: { id: number; variantName: string }[];
+  brandSlug: string;
+  modelSlug: string;
 }) {
   const [result, setResult] = useState<ListReviewsResult | null>(null);
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
   const [showWriteForm, setShowWriteForm] = useState(false);
   const [showAuth, setShowAuth] = useState(false);
+  const [variantOptions, setVariantOptions] = useState<CarDetailVariantOption[]>([]);
 
   const load = async (targetPage: number) => {
     setLoading(true);
@@ -42,6 +50,10 @@ export default function ReviewsSection({
     load(page);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [modelId, page]);
+
+  useEffect(() => {
+    getCarVariants(brandSlug, modelSlug).then(setVariantOptions);
+  }, [brandSlug, modelSlug]);
 
   const handleWriteReviewClick = () => {
     if (!getCurrentUser()) {

@@ -3,11 +3,12 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { getCarDetail, getCarFaqs, getCarArticles } from "@/features/cars/car.api";
 import { getModelCrossPairs } from "@/features/compare/compare.api";
-import { formatPriceRange, formatSinglePrice } from "@/lib/format";
+import { formatPriceRange } from "@/lib/format";
 import ModelDetailTabs from "@/components/common/ModelDetailTabs";
 import CarModelHero from "@/components/cars/CarModelHero";
 import CarModelSidebar from "@/components/cars/CarModelSidebar";
 import CarModelColours from "@/components/cars/CarModelColours";
+import VariantsList from "@/components/cars/VariantsList";
 import Articles from "@/components/home/Articles";
 import BrandComparisonsSection from "@/components/brands/BrandComparisonsSection";
 import ReviewsSection from "@/components/cars/reviews/ReviewsSection";
@@ -139,8 +140,6 @@ export default async function CarModelPage(props: Props) {
           <nav className="flex items-center gap-1.5 text-[12px] font-medium text-faint">
             <Link href="/" className="hover:text-brand">Home</Link>
             <span aria-hidden="true">/</span>
-            <Link href="/new-cars" className="hover:text-brand">New Cars</Link>
-            <span aria-hidden="true">/</span>
             <Link href={`/${car.brand.slug}-cars`} className="hover:text-brand">{car.brand.name}</Link>
             <span aria-hidden="true">/</span>
             <span className="text-ink">{car.name}</span>
@@ -188,31 +187,13 @@ export default async function CarModelPage(props: Props) {
                 <h2 className="font-head text-lg font-extrabold text-ink">Variants &amp; Price</h2>
                 <p className="mt-1 text-[12.5px] text-muted">Select a variant to see its full specifications and features.</p>
 
-                <div className="mt-4 flex flex-col gap-2.5">
-                  {car.variantOptions.map((opt) => {
-                    const isSelected = v ? v.id === opt.id : opt.id === (variantId ?? car.variantOptions[0]?.id);
-                    return (
-                      <Link
-                        key={opt.id}
-                        href={`?variant=${opt.id}#variants`}
-                        scroll={false}
-                        className={`flex items-center justify-between rounded-xl border px-4 py-3.5 transition-colors ${
-                          isSelected ? "border-brand bg-orange-50" : "border-border bg-white hover:border-brand"
-                        }`}
-                      >
-                        <div className="flex items-center gap-2">
-                          <span className="text-[13.5px] font-bold text-ink">{opt.variantName}</span>
-                          {opt.isTopSeller && (
-                            <span className="rounded-full bg-brand/10 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-brand">
-                              Top Seller
-                            </span>
-                          )}
-                        </div>
-                        <span className="text-[13.5px] font-bold text-ink">{formatSinglePrice(opt.price)}</span>
-                      </Link>
-                    );
-                  })}
-                </div>
+                <VariantsList
+                  brandSlug={car.brand.slug}
+                  modelSlug={car.slug}
+                  variantOptions={car.variantOptions}
+                  variantCount={car.variantCount}
+                  selectedVariantId={v ? v.id : (variantId ?? car.variantOptions[0]?.id)}
+                />
               </section>
             )}
 
@@ -341,6 +322,7 @@ export default async function CarModelPage(props: Props) {
             eyebrow="How It Compares"
             title={`Compare ${car.name} with other cars`}
             subtitle={`See how the ${car.brand.name} ${car.name} stacks up against other popular models`}
+            cardWidthClass="w-full sm:w-1/2 lg:w-1/4"
           />
         </div>
       )}
@@ -362,7 +344,7 @@ export default async function CarModelPage(props: Props) {
           (see ReviewsSection) so it can carry the logged-in viewer's own
           helpful/reply state straight away. */}
       <div id="reviews" className="scroll-mt-32">
-        <ReviewsSection modelId={car.id} variantOptions={car.variantOptions} />
+        <ReviewsSection modelId={car.id} brandSlug={car.brand.slug} modelSlug={car.slug} />
       </div>
     </div>
   );

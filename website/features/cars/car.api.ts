@@ -1,7 +1,7 @@
 // features/cars/car.api.ts
 
 import { apiFetch, apiFetchPaginated, getUploadUrl, ApiError, type Pagination } from "@/lib/apiClient";
-import type { HomeCar, HomeCarType, BrowseCarsResult, CarDetailResult, CarImagesResult, CarFaq } from "./car.types";
+import type { HomeCar, HomeCarType, BrowseCarsResult, CarDetailResult, CarDetailVariantOption, CarImagesResult, CarFaq } from "./car.types";
 import type { HomeArticle } from "@/features/articles/article.types";
 
 export async function getHomeCars(type: HomeCarType, limit = 6): Promise<HomeCar[]> {
@@ -86,6 +86,19 @@ export async function getCarImages(brandSlug: string, modelSlug: string): Promis
     };
   } catch (err) {
     if (err instanceof ApiError && err.status === 404) return null;
+    throw err;
+  }
+}
+
+// Full variant list — backs the model-detail page's "View All" expansion
+// (getCarDetail's own variantOptions is capped server-side to a preview
+// subset) and the Write Review form's variant picker. Empty array on 404
+// since both callers can just treat that as "nothing more to show".
+export async function getCarVariants(brandSlug: string, modelSlug: string): Promise<CarDetailVariantOption[]> {
+  try {
+    return await apiFetch<CarDetailVariantOption[]>(`/cars/${brandSlug}/${modelSlug}/variants`, { next: { revalidate: 180 } });
+  } catch (err) {
+    if (err instanceof ApiError && err.status === 404) return [];
     throw err;
   }
 }

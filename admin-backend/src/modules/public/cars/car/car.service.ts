@@ -25,6 +25,12 @@ const FUEL_FILTER_CODES: Record<'petrol' | 'diesel' | 'cng', number> = {
   cng: 3,
 };
 
+// getCarDetail's initial payload only ships this many variants (cheapest/
+// top-seller first) — the model-detail page's "View All" expansion and
+// the Write Review form both pull the rest from getCarVariants instead,
+// so the first page load doesn't have to carry every variant up front.
+const VARIANT_OPTIONS_PREVIEW_LIMIT = 5;
+
 // Select shape for a variant's assigned features — reused by
 // compare.service.ts (imported from here) so both public endpoints stay
 // in sync with the VariantFeature schema.
@@ -397,6 +403,10 @@ export interface CarDetailResult {
   ratingAvg: string | null;
   coverImageUrl: string | null;
   variantOptions: CarDetailVariantOption[];
+  // Total variant count for the model — variantOptions above is capped to
+  // VARIANT_OPTIONS_PREVIEW_LIMIT, so the page needs this to know whether
+  // a "View All" expansion has anything more to fetch.
+  variantCount: number;
   selectedVariant: CarDetailSelectedVariant | null;
   images: CarDetailImage[];
   colors: CarDetailColor[];
@@ -420,7 +430,9 @@ export async function getCarDetail(brandSlug: string, modelSlug: string, variant
       variants: {
         select: { id: true, variantName: true, price: true, isTopSeller: true },
         orderBy: [{ isTopSeller: 'desc' }, { price: 'asc' }],
+        take: VARIANT_OPTIONS_PREVIEW_LIMIT,
       },
+      _count: { select: { variants: true } },
       images: {
         select: { id: true, imageUrl: true, isPrimary: true, angle: true, colorId: true },
         orderBy: { isPrimary: 'desc' },
@@ -637,10 +649,37 @@ export async function getCarDetail(brandSlug: string, modelSlug: string, variant
       price: v.price.toString(),
       isTopSeller: v.isTopSeller,
     })),
+    variantCount: car._count.variants,
     selectedVariant,
     images: car.images,
     colors: car.colors.map((c) => ({ ...c, additionalCost: c.additionalCost?.toString() ?? null })),
   };
+}
+
+// Full variant list for a model — backs the model-detail page's "View
+// All" expansion (beyond getCarDetail's VARIANT_OPTIONS_PREVIEW_LIMIT)
+// and the Write Review form's variant picker. Kept as its own lean
+// endpoint rather than folded into getCarDetail so neither has to
+// over-fetch for the other's need.
+export async function getCarVariants(brandSlug: string, modelSlug: string): Promise<CarDetailVariantOption[]> {
+  const car = await prisma.carModel.findFirst({
+    where: { slug: modelSlug, brand: { slug: brandSlug, isActive: true } },
+    select: {
+      variants: {
+        select: { id: true, variantName: true, price: true, isTopSeller: true },
+        orderBy: [{ isTopSeller: 'desc' }, { price: 'asc' }],
+      },
+    },
+  });
+
+  if (!car) throw ApiError.notFound(`Car "${brandSlug}/${modelSlug}" not found`);
+
+  return car.variants.map((v) => ({
+    id: v.id,
+    variantName: v.variantName,
+    price: v.price.toString(),
+    isTopSeller: v.isTopSeller,
+  }));
 }
 
 export interface CarModelLookup {

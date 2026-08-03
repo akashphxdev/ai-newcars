@@ -17,6 +17,7 @@ import {
   getCarImages,
   getCarFaqs,
   getCarArticles,
+  getCarVariants,
 } from './car.controller';
 
 const router = Router();
@@ -36,5 +37,6 @@ router.get('/:brandSlug/:modelSlug', publicCache(180), asyncHandler(getCarDetail
 router.get('/:brandSlug/:modelSlug/images', publicCache(180), asyncHandler(getCarImages));
 router.get('/:brandSlug/:modelSlug/faqs', publicCache(180), asyncHandler(getCarFaqs));
 router.get('/:brandSlug/:modelSlug/articles', publicCache(180), asyncHandler(getCarArticles));
+router.get('/:brandSlug/:modelSlug/variants', publicCache(180), asyncHandler(getCarVariants));
 
 export default router;

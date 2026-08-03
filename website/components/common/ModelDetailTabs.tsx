@@ -51,8 +51,8 @@ export default function ModelDetailTabs({ brandSlug, modelSlug }: { brandSlug: s
   const tabs = [...ANCHOR_TABS, { label: "Photos", href: `/${brandSlug}-cars/${modelSlug}/photos` }];
 
   return (
-    <div ref={tabsRef} className="sticky top-16 z-40 w-full rounded-xl border border-border bg-orange-50">
-      <div className="flex items-center gap-1 overflow-x-auto px-3 text-[13.5px] font-semibold text-muted scrollbar-none">
+    <div ref={tabsRef} className="sticky top-16 z-40 w-full rounded-xl border border-border bg-white">
+      <div className="flex items-center gap-1 overflow-x-auto px-3 text-[13.5px] font-medium text-ink scrollbar-none">
         {tabs.map((tab) => {
           const isAnchor = "id" in tab;
           const isActive = isAnchor && tab.id === activeId;
@@ -60,9 +60,7 @@ export default function ModelDetailTabs({ brandSlug, modelSlug }: { brandSlug: s
             <Link
               key={tab.label}
               href={isAnchor ? `#${tab.id}` : tab.href}
-              className={`whitespace-nowrap border-b-2 px-3 py-3 transition-colors hover:text-brand ${
-                isActive ? "border-brand text-brand" : "border-transparent hover:border-brand"
-              }`}
+              className={`whitespace-nowrap px-3 py-3 transition-colors hover:text-brand ${isActive ? "text-brand" : ""}`}
             >
               {tab.label}
             </Link>

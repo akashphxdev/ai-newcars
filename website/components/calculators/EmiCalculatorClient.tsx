@@ -588,10 +588,7 @@ export default function EmiCalculatorClient({ brands }: { brands: Brand[] }) {
           <h2 className="mb-4 text-[19px] font-bold text-ink">
             {selectedBrand?.name} {selectedModel.name} Reviews
           </h2>
-          <ReviewsSection
-            modelId={selectedModel.id}
-            variantOptions={variants.map((v) => ({ id: v.id, variantName: v.variantName }))}
-          />
+          {selectedBrand && <ReviewsSection modelId={selectedModel.id} brandSlug={selectedBrand.slug} modelSlug={selectedModel.slug} />}
         </div>
       )}
     </div>
