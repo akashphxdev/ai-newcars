@@ -10,6 +10,7 @@ import type {
   SendLeadOtpResult,
   SubmitBuyNewCarLeadInput,
   SubmitPriceDropAlertLeadInput,
+  SubmitSoftLeadInput,
   SubmitLeadResult,
 } from "./lead.types";
 
@@ -50,6 +51,16 @@ export async function submitBuyNewCarLead(input: SubmitBuyNewCarLeadInput): Prom
 
 export async function submitPriceDropAlertLead(input: SubmitPriceDropAlertLeadInput): Promise<SubmitLeadResult> {
   return apiFetch<SubmitLeadResult>("/leads/buy/price-drop", {
+    method: "POST",
+    headers: authHeaders(),
+    body: JSON.stringify({ ...input, ...captureContext() }),
+  });
+}
+
+// No OTP — soft leads are a deliberately low-friction capture off the
+// calculator pages, mobile number only.
+export async function submitSoftLead(input: SubmitSoftLeadInput): Promise<SubmitLeadResult> {
+  return apiFetch<SubmitLeadResult>("/leads/buy/soft", {
     method: "POST",
     headers: authHeaders(),
     body: JSON.stringify({ ...input, ...captureContext() }),

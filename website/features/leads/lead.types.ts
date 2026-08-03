@@ -39,3 +39,16 @@ export interface SubmitLeadResult {
   id: number;
   duplicate: boolean;
 }
+
+// Matches admin-backend's SOFT_LEAD_CALCULATOR_TYPES
+// (modules/buyLeads/softLeads/softLead.validation.ts) — extend both
+// whenever a new calculator ships.
+export type SoftLeadCalculatorType = "emi" | "mileage" | "down_payment" | "affordability" | "ev_charging" | "fuel_comparison";
+
+export interface SubmitSoftLeadInput {
+  mobile: string;
+  brandId?: number;
+  modelId?: number;
+  calculatorType: SoftLeadCalculatorType;
+  inputSummary?: string;
+}

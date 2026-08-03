@@ -10,6 +10,7 @@ export const LEAD_TYPES = {
   BUY_NEW_CAR: 'buy_new_car',
   INSURANCE: 'insurance',
   PRICE_DROP_ALERT: 'price_drop_alert',
+  SOFT_LEAD: 'soft_lead',
 } as const;
 
 export type LeadType = (typeof LEAD_TYPES)[keyof typeof LEAD_TYPES];

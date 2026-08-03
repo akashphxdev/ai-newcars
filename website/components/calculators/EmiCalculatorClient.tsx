@@ -8,6 +8,7 @@ import type { Brand } from "@/features/brands/brand.types";
 import { getCarDetail } from "@/features/cars/car.api";
 import type { CarDetailResult } from "@/features/cars/car.types";
 import ReviewsSection from "@/components/cars/reviews/ReviewsSection";
+import SoftLeadCapture from "@/components/leads/SoftLeadCapture";
 import { calculateEmi, buildAmortizationSchedule } from "@/lib/emiMath";
 
 const TENURE_OPTIONS = [1, 2, 3, 4, 5, 7];
@@ -519,6 +520,13 @@ export default function EmiCalculatorClient({ brands }: { brands: Brand[] }) {
               </div>
             )}
           </div>
+
+          <SoftLeadCapture
+            calculatorType="emi"
+            brandId={selectedBrand?.id}
+            modelId={selectedModel?.id}
+            inputSummary={`EMI ${formatRupee(emi)}/mo · ${formatLakh(exShowroomPrice)} @ ${interestRate.toFixed(2)}% · ${tenureYears}yr`}
+          />
             </>
           )}
         </div>

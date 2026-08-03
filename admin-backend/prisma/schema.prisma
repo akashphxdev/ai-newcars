@@ -829,8 +829,17 @@ model SoftLead {
   inputSummary   String?   @map("input_summary") @db.VarChar(255)
   status         String    @default("new") @db.VarChar(20)
   leadChannel    String?   @map("lead_channel") @db.VarChar(30)
+  utmSource      String?   @map("utm_source") @db.VarChar(100)
+  utmMedium      String?   @map("utm_medium") @db.VarChar(100)
+  utmCampaign    String?   @map("utm_campaign") @db.VarChar(150)
+  landingPage    String?   @map("landing_page") @db.VarChar(255)
+  deviceType     String?   @map("device_type") @db.VarChar(20)
+  ipAddress      String?   @map("ip_address") @db.VarChar(45)
   createdAt      DateTime  @default(now()) @map("created_at")
-
+  updatedAt      DateTime  @updatedAt @map("updated_at")
+  @@index([status, createdAt])
+  @@index([mobile])
+  @@index([brandId, modelId])
   @@map("soft_leads")
 }
 

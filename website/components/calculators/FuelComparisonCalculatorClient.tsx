@@ -12,6 +12,7 @@ import { getCarDetail } from "@/features/cars/car.api";
 import { calculateRunningCost } from "@/lib/mileageMath";
 import { formatRupee } from "@/lib/calculatorFormat";
 import { Label, selectClass, inputClass } from "@/components/calculators/CalculatorFormControls";
+import SoftLeadCapture from "@/components/leads/SoftLeadCapture";
 
 const FUEL_TYPE_ICONS: Record<FuelType, React.ComponentType<{ className?: string }>> = {
   petrol: FuelIcon,
@@ -267,6 +268,19 @@ export default function FuelComparisonCalculatorClient({ brands }: { brands: Bra
                 {formatRupee(monthlySavings * 12)}/year).
               </p>
             </div>
+          )}
+
+          {validResults.length > 0 && selectedBrand && selectedModel && (
+            <SoftLeadCapture
+              calculatorType="fuel_comparison"
+              brandId={selectedBrand.id}
+              modelId={selectedModel.id}
+              inputSummary={
+                cheapest
+                  ? `Cheapest: ${FUEL_TYPE_LABELS[cheapest.fuelType]} ${formatRupee(cheapest.cost.monthlyCost)}/mo`
+                  : `${FUEL_TYPE_LABELS[validResults[0].fuelType]} ${formatRupee(validResults[0].cost.monthlyCost)}/mo`
+              }
+            />
           )}
         </>
       )}

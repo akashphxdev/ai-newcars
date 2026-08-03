@@ -10,6 +10,7 @@ import type { CarDetailResult } from "@/features/cars/car.types";
 import { calculateEmi, calculatePrincipalFromEmi } from "@/lib/emiMath";
 import { formatRupee, formatLakh } from "@/lib/calculatorFormat";
 import { Label, selectClass, inputClass } from "@/components/calculators/CalculatorFormControls";
+import SoftLeadCapture from "@/components/leads/SoftLeadCapture";
 
 const TENURE_OPTIONS = [1, 2, 3, 4, 5, 7];
 const DEFAULT_INTEREST_RATE = 9;
@@ -338,6 +339,13 @@ export default function DownPaymentCalculatorClient({ brands }: { brands: Brand[
                   </div>
                 </dl>
               </div>
+
+              <SoftLeadCapture
+                calculatorType="down_payment"
+                brandId={selectedBrand?.id}
+                modelId={selectedModel?.id}
+                inputSummary={`Down payment ${formatRupee(result.downPayment)} · Target EMI ${formatRupee(desiredEmiValue)}/mo · ${tenureYears}yr`}
+              />
             </>
           )}
         </div>

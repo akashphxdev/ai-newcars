@@ -11,6 +11,7 @@ import { Label, inputClass, selectClass } from "@/components/calculators/Calcula
 import BrandCarCard from "@/components/brands/BrandCarCard";
 import ScrollArrows from "@/components/common/ScrollArrows";
 import { useScrollRail } from "@/components/common/useScrollRail";
+import SoftLeadCapture from "@/components/leads/SoftLeadCapture";
 
 const TENURE_OPTIONS = [1, 2, 3, 4, 5, 7];
 const DEFAULT_INTEREST_RATE = 9;
@@ -316,6 +317,11 @@ export default function CarAffordabilityCalculatorClient({ bodyTypes }: { bodyTy
                   ))}
                 </dl>
               </div>
+
+              <SoftLeadCapture
+                calculatorType="affordability"
+                inputSummary={`Afford up to ${formatLakh(result.maxCarPrice)} · EMI ${formatRupee(monthlyEmiValue)}/mo · Down payment ${formatRupee(downPaymentValue)}`}
+              />
             </>
           )}
         </div>

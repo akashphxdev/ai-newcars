@@ -13,6 +13,17 @@ export const ChevronIcon = ({ className = "size-3.5", dir = "right" }: IconProps
   </svg>
 );
 
+export const PhoneIcon = ({ className = "size-4" }: IconProps) => (
+  <svg className={className} viewBox="0 0 24 24" fill="none">
+    <path
+      d="M6.6 3.5h3.1l1.4 3.9-2 1.7a13.2 13.2 0 0 0 5.8 5.8l1.7-2 3.9 1.4v3.1c0 1-.9 1.8-1.9 1.7C10.9 18.7 5.3 13.1 4.9 5.4c-.1-1 .7-1.9 1.7-1.9Z"
+      stroke="currentColor"
+      strokeWidth="1.7"
+      strokeLinejoin="round"
+    />
+  </svg>
+);
+
 export const ChevronDownIcon = ({ className = "size-4" }: IconProps) => (
   <svg className={className} viewBox="0 0 24 24" fill="none">
     <path d="m6 9 6 6 6-6" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />

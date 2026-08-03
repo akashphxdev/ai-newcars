@@ -23,6 +23,7 @@ import type { Brand } from "@/features/brands/brand.types";
 import { getCarDetail, getCarsBrowse } from "@/features/cars/car.api";
 import type { CarDetailResult, HomeCar } from "@/features/cars/car.types";
 import ReviewsSection from "@/components/cars/reviews/ReviewsSection";
+import SoftLeadCapture from "@/components/leads/SoftLeadCapture";
 import { calculateRunningCost } from "@/lib/mileageMath";
 
 function formatRupee(n: number): string {
@@ -425,6 +426,15 @@ export default function MileageCalculatorClient({ brands }: { brands: Brand[] })
                   </div>
                 )}
               </div>
+
+              {hasRunningCost && (
+                <SoftLeadCapture
+                  calculatorType="mileage"
+                  brandId={selectedBrand?.id}
+                  modelId={selectedModel?.id}
+                  inputSummary={`Mileage ${averageMileage} ${MILEAGE_UNIT_LABELS[fuelType]} · Running cost ${formatRupee(runningCost.monthlyCost)}/mo`}
+                />
+              )}
             </>
           )}
         </div>
