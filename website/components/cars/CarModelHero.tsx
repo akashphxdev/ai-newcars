@@ -2,6 +2,7 @@ import Image from "next/image";
 import CarModelGallery from "./CarModelGallery";
 import CarLeadActions from "./CarLeadActions";
 import CarLeadSecondaryActions from "./CarLeadSecondaryActions";
+import VariantSwitcher from "./VariantSwitcher";
 import { WishlistButton } from "@/components/common/CardBits";
 import { StarIcon, ShareIcon } from "@/components/common/icons";
 import { formatSinglePrice } from "@/lib/format";
@@ -81,6 +82,16 @@ export default function CarModelHero({ car, variant }: { car: CarDetailResult; v
               />
             </p>
             <p className="text-[11.5px] font-medium text-ink">*Ex-showroom price, actual on-road price may vary by location</p>
+
+            <div className="mt-3 max-w-xs">
+              <VariantSwitcher
+                brandSlug={car.brand.slug}
+                modelSlug={car.slug}
+                currentVariantName={variant.variantName}
+                variantOptions={car.variantOptions}
+                variantCount={car.variantCount}
+              />
+            </div>
             <p className="mt-3 text-[12.5px] leading-relaxed text-ink">
               Get the best price, exclusive offers, and a hassle-free booking experience for your {car.brand.name} {car.name}. Compare
               offers from verified dealers near you and drive home with the best deal today.

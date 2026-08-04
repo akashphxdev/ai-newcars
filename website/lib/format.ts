@@ -23,3 +23,21 @@ export function formatSinglePrice(priceMin: string | null, fallback = "-"): stri
   const lakh = toLakh(priceMin);
   return lakh ? `₹${lakh}L` : fallback;
 }
+
+// CarVariant has no dedicated slug column (schema stays untouched per
+// project rule) — variant URLs derive one from variantName on the fly,
+// matched back the same way when resolving a URL to a variant.
+export function slugify(text: string): string {
+  return text
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+}
+
+// Shared by the model page's Overview cards and the variant page's
+// Features/Safety lists — a feature with a value reads as "Name: Value"
+// (e.g. "Airbags: 6"), a plain toggle feature (e.g. "Sunroof") just as its name.
+export function featureLabel(item: { name: string; value: string | null }): string {
+  return item.value ? `${item.name}: ${item.value}` : item.name;
+}

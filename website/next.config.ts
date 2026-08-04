@@ -27,10 +27,22 @@ const nextConfig: NextConfig = {
         destination: "/car-model/:brandSlug/:modelSlug",
       },
       // "/tata-motors-cars/nexon/photos" — the model page's dedicated
-      // photos tab. Three segments vs two above, so no overlap.
+      // photos tab. Three segments vs two above, so no overlap with that
+      // rule — but SAME segment count as the variant rewrite below, so
+      // order matters here: this literal "photos" match must come first,
+      // otherwise the wildcard variant-slug rule below would swallow it.
       {
         source: "/:brandSlug([a-z0-9-]+)-cars/:modelSlug([a-z0-9-]+)/photos",
         destination: "/car-model/:brandSlug/:modelSlug/photos",
+      },
+      // "/tata-motors-cars/nexon/xz-plus-dark-edition" — a specific
+      // variant's own page (see app/car-model/.../[variantSlug]). Must be
+      // registered after the "photos" rule immediately above (same
+      // 3-segment shape; Next.js rewrites match in array order, first
+      // match wins).
+      {
+        source: "/:brandSlug([a-z0-9-]+)-cars/:modelSlug([a-z0-9-]+)/:variantSlug([a-z0-9-]+)",
+        destination: "/car-model/:brandSlug/:modelSlug/:variantSlug",
       },
     ];
   },

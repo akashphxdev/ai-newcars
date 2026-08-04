@@ -1,7 +1,7 @@
 import Link from "next/link";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { getCarImages } from "@/features/cars/car.api";
+import { getCarImages, getHomeCars } from "@/features/cars/car.api";
 import { ChevronIcon } from "@/components/common/icons";
 import CarPhotosViewer from "@/components/cars/CarPhotosViewer";
 
@@ -14,6 +14,14 @@ import CarPhotosViewer from "@/components/cars/CarPhotosViewer";
 // (see lib/routes.ts's isChromelessRoute, checked by both components).
 
 type Props = { params: Promise<{ brandSlug: string; modelSlug: string }> };
+
+// Same popular-cars slice as the model page's own generateStaticParams —
+// any other model still renders fine on first visit via dynamicParams'
+// on-demand render-then-cache fallback.
+export async function generateStaticParams() {
+  const cars = await getHomeCars("popular", 24);
+  return cars.map((car) => ({ brandSlug: car.brand.slug, modelSlug: car.slug }));
+}
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { brandSlug, modelSlug } = await params;
