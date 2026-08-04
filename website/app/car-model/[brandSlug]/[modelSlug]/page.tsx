@@ -55,7 +55,13 @@ async function loadCar(props: Props): Promise<{
 
 export async function generateMetadata(props: Props): Promise<Metadata> {
   const { brandSlug, modelSlug } = await props.params;
-  const car = await getCarDetail(brandSlug, modelSlug);
+  const { variant } = await props.searchParams;
+  const variantId = variant ? Number(variant) : undefined;
+  const parsedVariantId = variantId && !Number.isNaN(variantId) ? variantId : undefined;
+  // Same args as loadCar's getCarDetail call below — matching fetch
+  // signatures let Next.js's request memoization collapse this into the
+  // same call instead of a second full round trip when a variant is selected.
+  const car = await getCarDetail(brandSlug, modelSlug, parsedVariantId);
   if (!car) return {};
 
   const priceText = formatPriceRange(car.priceMin, car.priceMax);

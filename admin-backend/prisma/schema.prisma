@@ -41,13 +41,11 @@ model State {
   country   Country  @relation(fields: [countryId], references: [id])
   cities    City[]
   insuranceLeads InsuranceLead[]
-
+  @@index([countryId])
   @@map("states")
 }
 
-// District removed — City now links directly to State (was
-// State -> District -> City, District has been dropped from the
-// hierarchy entirely per 2026-07-24 decision).
+
 model City {
   id                Int      @id @default(autoincrement())
   stateId           Int      @map("state_id")
@@ -66,7 +64,7 @@ model City {
   buyNewCarLeads  BuyNewCarLead[]
   insuranceLeads  InsuranceLead[]
   userAddresses   UserAddress[]
-
+  @@index([stateId])
   @@map("cities")
 }
 
@@ -215,7 +213,7 @@ model AdminUser {
   testimonialsCreated  Testimonial[] @relation("TestimonialCreatedBy")
   testimonialsReviewed Testimonial[] @relation("TestimonialReviewedBy")  
   reviewRepliesPosted ReviewReply[]
-
+  @@index([roleId])
   @@map("admin_users")
 }
 
@@ -226,7 +224,7 @@ model AdminLog {
   description String?   @db.VarChar(255)
   ipAddress   String?   @map("ip_address") @db.VarChar(45)
   createdAt   DateTime  @default(now()) @map("created_at")
-
+  @@index([adminId, createdAt])
   @@map("admin_logs")
 }
 
@@ -241,7 +239,7 @@ model AdminOtpVerification {
   expiresAt  DateTime  @map("expires_at")
   verifiedAt DateTime? @map("verified_at")
   createdAt  DateTime  @default(now()) @map("created_at")
-
+  @@index([mobile, purpose])
   @@map("admin_otp_verifications")
 }
 
@@ -302,6 +300,7 @@ model UserOtpVerification {
   verifiedAt DateTime? @map("verified_at")
   createdAt  DateTime  @default(now()) @map("created_at")
 
+  @@index([mobile, purpose])
   @@map("user_otp_verifications")
 }
 
@@ -368,6 +367,10 @@ model CarModel {
   aiFaqs              AiFaq[]
   aiArticles          AiArticle[]
 
+  @@index([brandId])
+  @@index([bodyTypeId])
+  @@index([launchStatus])
+  @@index([priceMin])
   @@map("car_models")
 }
 
@@ -406,6 +409,7 @@ model CarVariant {
 
 
   @@unique([modelId, variantName])
+  @@index([modelId])
   @@map("car_variants")
 }
 
@@ -445,6 +449,7 @@ model CarPowertrainIce {
   emissionNormCompliance String?  @map("emission_norm_compliance") @db.VarChar(30)
   turboCharger           Boolean  @default(false) @map("turbo_charger")
 
+  @@index([variantId, isDeleted])
   @@map("car_powertrains_ice")
 }
 
@@ -488,7 +493,7 @@ model CarPowertrainElectric {
   chargingOptionsRaw        String?  @map("charging_options_raw") @db.VarChar(255)
   regenerativeBraking       Boolean  @default(false) @map("regenerative_braking")
   regenerativeBrakingLevels Int?     @map("regenerative_braking_levels")
-
+  @@index([variantId, isDeleted])
   @@map("car_powertrains_electric")
 }
 
@@ -501,7 +506,7 @@ model CarImage {
   imageUrl  String      @map("image_url") @db.VarChar(255)
   isPrimary Boolean     @default(false) @map("is_primary")
   angle     String?     @db.VarChar(30)
-
+  @@index([modelId])
   @@map("car_images")
 }
 
@@ -568,7 +573,7 @@ model CarColor {
   
   shades CarColorShade[]
   images CarImage[]
-
+  @@index([modelId]) 
   @@map("car_colors")
 }
 
@@ -596,20 +601,15 @@ model NewCarOffer {
   variant     CarVariant? @relation(fields: [variantId], references: [id])
   cityId      Int?        @map("city_id")
   city        City?       @relation(fields: [cityId], references: [id])
-  // Numeric code — frontend maps this to a label via
-  // front/src/lib/lookups.ts's OFFER_TYPE_OPTIONS (1 = Cash discount,
-  // 2 = Exchange bonus, ... 6 = Other). Backend only validates the code
-  // is in range; it doesn't need to know the label text.
   offerType   Int?        @map("offer_type")
   offerAmount Decimal?    @map("offer_amount") @db.Decimal(10, 2)
   description String?     @db.VarChar(255)
   validFrom   DateTime?   @map("valid_from") @db.Date
   validUntil  DateTime?   @map("valid_until") @db.Date
   isActive    Boolean     @default(true) @map("is_active")
-  // Required — same "image required on create" convention as Brand's
-  // logoUrl / City's logoUrl.
   imageUrl    String      @map("image_url") @db.VarChar(255)
-
+  @@index([modelId])
+  @@index([isActive])
   @@map("new_car_offers")
 }
 
@@ -643,7 +643,10 @@ model UsedCarListing {
 
   images          UsedCarListingImage[]
   buyUsedCarLeads BuyUsedCarLead[]
-
+  @@index([modelId])
+  @@index([cityId])
+  @@index([sellerId])
+  @@index([status])
   @@map("used_car_listings")
 }
 
@@ -685,6 +688,9 @@ model SellCarLead {
   ipAddress   String?   @map("ip_address") @db.VarChar(45)
   createdAt   DateTime  @default(now()) @map("created_at")
 
+  @@index([status, createdAt])
+  @@index([mobile])
+  @@index([brandId, modelId])
   @@map("sell_car_leads")
 }
 
@@ -744,6 +750,9 @@ model BuyUsedCarLead {
   ipAddress   String?         @map("ip_address") @db.VarChar(45)
   createdAt   DateTime        @default(now()) @map("created_at")
 
+  @@index([status, createdAt])
+  @@index([mobile])
+  @@index([brandId, modelId])
   @@map("buy_used_car_leads")
 }
 
@@ -915,7 +924,8 @@ model LeadActivity {
   activityType String?   @map("activity_type") @db.VarChar(20)
   notes        String?   @db.VarChar(500)
   createdAt    DateTime  @default(now()) @map("created_at")
-
+  @@index([leadType, leadId])
+  @@index([adminId])
   @@map("lead_activities")
 }
 
@@ -1285,16 +1295,9 @@ model Article {
   categoryId Int             @map("category_id")
   category   ArticleCategory @relation(fields: [categoryId], references: [id])
 
-  // Public byline — who this article is credited to. Editable via a
-  // dropdown in the editor; defaults to the creating admin but can be
-  // reassigned to any admin (e.g. an editor publishing under a senior
-  // writer's name).
   authorId Int       @map("author_id")
   author   AdminUser @relation("ArticleAuthor", fields: [authorId], references: [id])
 
-  // Pure audit trail — set automatically from the logged-in admin at
-  // create/update time, never user-editable. Deliberately separate
-  // from authorId, which the editor can freely reassign.
   createdBy      Int?       @map("created_by")
   createdByAdmin AdminUser? @relation("ArticleCreatedBy", fields: [createdBy], references: [id])
   updatedBy      Int?       @map("updated_by")
@@ -1310,16 +1313,9 @@ model Article {
   // draft | scheduled | published
   status      String    @default("draft") @db.VarChar(20)
   isActive    Boolean   @default(true) @map("is_active")
-  // Future publish time set by the admin. A scheduler job flips status
-  // to "published" and stamps publishedAt once this time arrives.
   scheduledAt DateTime? @map("scheduled_at")
   publishedAt DateTime? @map("published_at")
   viewCount   Int       @default(0) @map("view_count")
-
-  // SEO — kept directly on the article rather than in the shared
-  // SeoMeta table, by design. canonicalUrl is deliberately NOT stored:
-  // slug is unique, so the canonical URL is always derivable as
-  // `${SITE_BASE_URL}/articles/${slug}` — nothing to store or drift.
   metaTitle       String? @map("meta_title") @db.VarChar(160)
   metaDescription String? @map("meta_description") @db.VarChar(300)
   metaKeywords    String? @map("meta_keywords") @db.VarChar(255)
@@ -1333,6 +1329,8 @@ model Article {
   articleComments  ArticleComment[]
   aiArticleSources AiArticle[]
 
+  @@index([status, isActive, publishedAt])
+  @@index([categoryId])
   @@map("articles")
 }
 
@@ -1347,7 +1345,7 @@ model ArticleBrand {
   article   Article @relation(fields: [articleId], references: [id])
   brandId   Int     @map("brand_id")
   brand     Brand   @relation(fields: [brandId], references: [id])
-
+  @@index([brandId]) 
   @@unique([articleId, brandId])
   @@map("article_brands")
 }
@@ -1360,6 +1358,7 @@ model ArticleCarModel {
   modelId   Int      @map("model_id")
   model     CarModel @relation(fields: [modelId], references: [id])
 
+  @@index([modelId]) 
   @@unique([articleId, modelId])
   @@map("article_car_models")
 }

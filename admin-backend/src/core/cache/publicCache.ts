@@ -18,6 +18,17 @@ export function publicCache(ttlSeconds: number) {
       return next();
     }
 
+    // The cache key is URL-only — it can't tell two different callers
+    // of the same URL apart. That's fine for pure public data, but a
+    // request carrying a Bearer token (e.g. reviews' optional-auth
+    // "hasMarkedHelpful" field) can get a viewer-specific response, and
+    // caching that would leak one user's state to the next caller who
+    // hits the same URL. Skip caching entirely whenever auth is present
+    // — safe for every other route too, since none of them vary by it.
+    if (req.headers.authorization) {
+      return next();
+    }
+
     const key = CACHE_PREFIX + req.originalUrl;
 
     try {

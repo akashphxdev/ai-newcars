@@ -33,6 +33,7 @@ export default function ReviewsSection({
   const [showWriteForm, setShowWriteForm] = useState(false);
   const [showAuth, setShowAuth] = useState(false);
   const [variantOptions, setVariantOptions] = useState<CarDetailVariantOption[]>([]);
+  const [variantsLoading, setVariantsLoading] = useState(false);
 
   const load = async (targetPage: number) => {
     setLoading(true);
@@ -51,14 +52,22 @@ export default function ReviewsSection({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [modelId, page]);
 
-  useEffect(() => {
-    getCarVariants(brandSlug, modelSlug).then(setVariantOptions);
-  }, [brandSlug, modelSlug]);
-
-  const handleWriteReviewClick = () => {
+  // Fetched on demand (not on mount) — most visitors read reviews and
+  // never open the write-review form, so there's no reason to pay for
+  // the full variant list on every page view.
+  const handleWriteReviewClick = async () => {
     if (!getCurrentUser()) {
       setShowAuth(true);
       return;
+    }
+    if (variantOptions.length === 0) {
+      setVariantsLoading(true);
+      try {
+        const all = await getCarVariants(brandSlug, modelSlug);
+        setVariantOptions(all);
+      } finally {
+        setVariantsLoading(false);
+      }
     }
     setShowWriteForm(true);
   };
@@ -70,9 +79,10 @@ export default function ReviewsSection({
         <button
           type="button"
           onClick={handleWriteReviewClick}
-          className="w-full cursor-pointer rounded-xl border-[1.5px] border-brand px-4 py-2.5 text-[13px] font-bold text-brand transition-colors hover:bg-orange-50 sm:w-auto sm:py-2"
+          disabled={variantsLoading}
+          className="w-full cursor-pointer rounded-xl border-[1.5px] border-brand px-4 py-2.5 text-[13px] font-bold text-brand transition-colors hover:bg-orange-50 disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto sm:py-2"
         >
-          Write a Review
+          {variantsLoading ? "Loading..." : "Write a Review"}
         </button>
       </div>
 

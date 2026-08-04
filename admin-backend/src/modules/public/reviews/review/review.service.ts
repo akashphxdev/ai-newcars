@@ -68,7 +68,11 @@ export async function listReviewsForModel(
   const { modelId, page, limit, sortBy, sortOrder } = query;
   const where: Prisma.ReviewWhereInput = { modelId, status: 'approved' };
 
-  const [items, total, allRatings] = await Promise.all([
+  // Average + the 1-5 star breakdown are computed in SQL (aggregate /
+  // grouped raw query) instead of pulling every approved review's rating
+  // into Node — same result, but the row count fetched no longer grows
+  // with how many reviews a model has.
+  const [items, total, avgResult, breakdownRows] = await Promise.all([
     prisma.review.findMany({
       where,
       select: REVIEW_SELECT,
@@ -77,10 +81,13 @@ export async function listReviewsForModel(
       take: limit,
     }),
     prisma.review.count({ where }),
-    // Just the rating column, across every approved review for this
-    // model — cheap enough to bucket the 1-5 star breakdown in JS rather
-    // than fighting Prisma's groupBy over a Decimal column.
-    prisma.review.findMany({ where, select: { rating: true } }),
+    prisma.review.aggregate({ where, _avg: { rating: true } }),
+    prisma.$queryRaw<{ star: number; count: bigint }[]>`
+      SELECT ROUND(rating)::int AS star, COUNT(*)::bigint AS count
+      FROM reviews
+      WHERE model_id = ${modelId} AND status = 'approved' AND rating IS NOT NULL
+      GROUP BY ROUND(rating)
+    `,
   ]);
 
   let markedSet = new Set<number>();
@@ -92,14 +99,9 @@ export async function listReviewsForModel(
     markedSet = new Set(votes.map((v) => v.reviewId));
   }
 
-  const numericRatings = allRatings.map((r) => (r.rating ? Number(r.rating) : null)).filter((n): n is number => n !== null);
-  const averageRating = numericRatings.length
-    ? Math.round((numericRatings.reduce((a, b) => a + b, 0) / numericRatings.length) * 10) / 10
-    : null;
-  const ratingBreakdown = [5, 4, 3, 2, 1].map((star) => ({
-    star,
-    count: numericRatings.filter((n) => Math.round(n) === star).length,
-  }));
+  const averageRating = avgResult._avg.rating ? Math.round(Number(avgResult._avg.rating) * 10) / 10 : null;
+  const breakdownByStar = new Map(breakdownRows.map((r) => [r.star, Number(r.count)]));
+  const ratingBreakdown = [5, 4, 3, 2, 1].map((star) => ({ star, count: breakdownByStar.get(star) ?? 0 }));
 
   return {
     reviews: items.map((r) => shapeReview(r, markedSet.has(r.id))),
