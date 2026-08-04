@@ -8,7 +8,7 @@ import Footer from "@/components/common/Footer";
 import DevLoadTimeBadge from "@/components/common/DevLoadTimeBadge";
 import { getBodyTypes } from "@/features/bodyTypes/bodyType.api";
 import { getArticleCategories } from "@/features/articles/article.api";
-import { getSiteSettings } from "@/features/siteSettings/siteSetting.api";
+import { getSiteSettingsCached } from "@/features/siteSettings/siteSetting.api";
 
 const inter = Inter({
   variable: "--font-body",
@@ -39,7 +39,7 @@ export default async function RootLayout({
   const [bodyTypes, articleCategories, siteSettings] = await Promise.all([
     getBodyTypes(20),
     getArticleCategories(),
-    getSiteSettings(),
+    getSiteSettingsCached(),
   ]);
 
   return (

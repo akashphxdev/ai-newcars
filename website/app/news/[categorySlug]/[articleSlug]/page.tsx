@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import Image from "next/image";
-import { getArticleDetail, getRelatedArticles } from "@/features/articles/article.api";
+import { getArticleCategories, getArticleDetail, getArticlesByCategoryPaginated, getRelatedArticles } from "@/features/articles/article.api";
 import type { HomeArticle } from "@/features/articles/article.types";
 
 const DATE_FMT = new Intl.DateTimeFormat("en-IN", { day: "2-digit", month: "long", year: "numeric" });
@@ -42,6 +42,20 @@ const RelatedCard = ({ item }: { item: HomeArticle }) => (
 );
 
 type Props = { params: Promise<{ categorySlug: string; articleSlug: string }> };
+
+// Pre-render each category's most recent articles at build time — the
+// long tail (older articles, or ones published after the build) still
+// works via dynamicParams' on-demand render-then-cache fallback.
+export async function generateStaticParams() {
+  const categories = await getArticleCategories();
+  const paramsByCategory = await Promise.all(
+    categories.map(async (category) => {
+      const { articles } = await getArticlesByCategoryPaginated(category.slug, 1, 10);
+      return articles.map((article) => ({ categorySlug: category.slug, articleSlug: article.slug }));
+    }),
+  );
+  return paramsByCategory.flat();
+}
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { categorySlug, articleSlug } = await params;

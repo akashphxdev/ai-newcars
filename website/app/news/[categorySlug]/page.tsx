@@ -10,6 +10,13 @@ type Props = {
   params: Promise<{ categorySlug: string }>;
 };
 
+// Small, fixed set of categories — pre-render all of them so this route
+// is served statically (ISR-revalidated) instead of rendered per request.
+export async function generateStaticParams() {
+  const categories = await getArticleCategories();
+  return categories.map((category) => ({ categorySlug: category.slug }));
+}
+
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { categorySlug } = await params;
   const categories = await getArticleCategories();

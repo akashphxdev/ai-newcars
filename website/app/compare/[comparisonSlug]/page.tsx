@@ -35,6 +35,14 @@ function splitComparisonSlug(comparisonSlug: string): string[] | null {
   return slugs;
 }
 
+// Pre-render today's featured random pairs at build time — any other
+// combination a visitor types in the URL still works via dynamicParams'
+// on-demand render-then-cache fallback.
+export async function generateStaticParams() {
+  const { pairs } = await getRandomPairs({ count: 24 });
+  return pairs.map((pair) => ({ comparisonSlug: `${pair.carA.slug}-vs-${pair.carB.slug}` }));
+}
+
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const slugs = splitComparisonSlug((await params).comparisonSlug);
   if (!slugs) return {};
