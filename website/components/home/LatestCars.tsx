@@ -8,7 +8,10 @@ import { useScrollRail } from "@/components/common/useScrollRail";
 import { WishlistButton } from "@/components/common/CardBits";
 import { ChevronIcon, GaugeIcon, StarIcon } from "@/components/common/icons";
 import { formatPriceRange } from "@/lib/format";
+import { getHomeCars } from "@/features/cars/car.api";
 import type { HomeCar } from "@/features/cars/car.types";
+
+const CARS_PER_BRAND = 6;
 
 const ORANGE = "#f2650f";
 const DARK = "#111827";
@@ -20,15 +23,6 @@ const FALLBACK_IMG =
 
 // Distinctive icons kept local since they're visually different from the
 // generic common/icons.tsx equivalents (or have no equivalent there).
-const FilterIcon = () => (
-  <svg className="size-3.5" viewBox="0 0 24 24" fill="none">
-    <path d="M4 6h16M7 12h10M10 18h4" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" />
-    <circle cx="8" cy="6" r="1.6" fill={DARK} />
-    <circle cx="16" cy="12" r="1.6" fill={DARK} />
-    <circle cx="12" cy="18" r="1.6" fill={DARK} />
-  </svg>
-);
-
 const EngineIcon = () => (
   <svg className="size-4" viewBox="0 0 24 24" fill="none">
     <path d="M3 13v3a1 1 0 0 0 1 1h1M3 13V9a1 1 0 0 1 1-1h6l3 3h4a2 2 0 0 1 2 2v2a1 1 0 0 1-1 1h-1M3 13h9" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" />
@@ -134,14 +128,34 @@ const Card = ({ car }: { car: HomeCar }) => {
   );
 };
 
-export default function LatestCars({ cars }: { cars: HomeCar[] }) {
-  const brandNames = ["All Brands", ...Array.from(new Set(cars.map((c) => c.brand.name)))];
-  const [activeBrand, setActiveBrand] = useState("All Brands");
+export default function LatestCars({ cars: initialCars }: { cars: HomeCar[] }) {
+  // Deduped from the initial (unscoped) rail — enough to build the chip
+  // list without a separate "all brands" lookup call.
+  const brands = Array.from(new Map(initialCars.map((c) => [c.brand.slug, c.brand])).values());
+  const [activeBrandSlug, setActiveBrandSlug] = useState<string | null>(null);
+  // Each brand chip re-fetches ITS OWN latest cars from the API (rather
+  // than filtering the fixed initial 6) — otherwise a brand with only 1-2
+  // cars in that unscoped set of 6 would show fewer than CARS_PER_BRAND
+  // even though the brand actually has more.
+  const [visibleCars, setVisibleCars] = useState(initialCars);
+  const [loading, setLoading] = useState(false);
   const { trackRef, canScrollLeft, canScrollRight, updateArrows, scrollBy } = useScrollRail<HTMLDivElement>();
 
-  if (cars.length === 0) return null;
+  if (initialCars.length === 0) return null;
 
-  const visibleCars = activeBrand === "All Brands" ? cars : cars.filter((c) => c.brand.name === activeBrand);
+  async function selectBrand(slug: string | null) {
+    setActiveBrandSlug(slug);
+    if (slug === null) {
+      setVisibleCars(initialCars);
+      return;
+    }
+    setLoading(true);
+    try {
+      setVisibleCars(await getHomeCars("latest", CARS_PER_BRAND, slug));
+    } finally {
+      setLoading(false);
+    }
+  }
 
   return (
     <div style={{ background: PAGE_BG }}>
@@ -155,14 +169,14 @@ export default function LatestCars({ cars }: { cars: HomeCar[] }) {
             subtitle="Explore the newest launches in the market. Stay ahead with the latest features, designs, and innovation."
             after={
               <>
-                <button
-                  type="button"
+                <Link
+                  href="/new-cars"
                   className="inline-flex shrink-0 items-center gap-1.5 rounded-xl px-5 py-3 text-[13.5px] font-bold"
                   style={{ border: `1px solid ${ORANGE}`, color: ORANGE }}
                 >
                   View All New Cars
                   <ChevronIcon />
-                </button>
+                </Link>
                 <ScrollArrows
                   canScrollLeft={canScrollLeft}
                   canScrollRight={canScrollRight}
@@ -173,49 +187,56 @@ export default function LatestCars({ cars }: { cars: HomeCar[] }) {
             }
           />
 
-          {/* Brand chips scroll horizontally on mobile on their own —
-              "All Filters" stays outside that scroll area so it's
-              always visible without having to scroll the chips. */}
-          <div className="mb-7 flex items-center gap-2.5">
-            <div className="scrollbar-none flex min-w-0 flex-1 flex-nowrap items-center gap-2.5 overflow-x-auto sm:flex-wrap">
-              {brandNames.map((brand) => {
-                const active = brand === activeBrand;
-                return (
-                  <button
-                    key={brand}
-                    type="button"
-                    onClick={() => setActiveBrand(brand)}
-                    className="shrink-0 whitespace-nowrap rounded-full px-4 py-2 text-[13px] font-semibold transition-colors"
-                    style={{
-                      background: "#fff",
-                      color: active ? ORANGE : DARK,
-                      border: `1.5px solid ${active ? ORANGE : BORDER}`,
-                    }}
-                  >
-                    {brand}
-                  </button>
-                );
-              })}
-            </div>
+          <div className="scrollbar-none mb-7 flex flex-nowrap items-center gap-2.5 overflow-x-auto sm:flex-wrap">
             <button
               type="button"
-              className="inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full bg-white px-4 py-2 text-[13px] font-semibold"
-              style={{ border: `1px solid ${BORDER}`, color: DARK }}
+              onClick={() => selectBrand(null)}
+              disabled={loading}
+              className="shrink-0 whitespace-nowrap rounded-full px-4 py-2 text-[13px] font-semibold transition-colors disabled:cursor-not-allowed"
+              style={{
+                background: "#fff",
+                color: activeBrandSlug === null ? ORANGE : DARK,
+                border: `1.5px solid ${activeBrandSlug === null ? ORANGE : BORDER}`,
+              }}
             >
-              <FilterIcon />
-              All Filters
+              All Brands
             </button>
+            {brands.map((brand) => {
+              const active = brand.slug === activeBrandSlug;
+              return (
+                <button
+                  key={brand.slug}
+                  type="button"
+                  onClick={() => selectBrand(brand.slug)}
+                  disabled={loading}
+                  className="shrink-0 whitespace-nowrap rounded-full px-4 py-2 text-[13px] font-semibold transition-colors disabled:cursor-not-allowed"
+                  style={{
+                    background: "#fff",
+                    color: active ? ORANGE : DARK,
+                    border: `1.5px solid ${active ? ORANGE : BORDER}`,
+                  }}
+                >
+                  {brand.name}
+                </button>
+              );
+            })}
           </div>
 
-          <div
-            ref={trackRef}
-            onScroll={updateArrows}
-            className="scrollbar-none flex snap-x snap-mandatory gap-5 overflow-x-auto pb-2"
-          >
-            {visibleCars.map((car) => (
-              <Card key={car.id} car={car} />
-            ))}
-          </div>
+          {loading ? (
+            <p className="py-8 text-center text-[13px] font-medium" style={{ color: MUTED }}>
+              Loading cars…
+            </p>
+          ) : (
+            <div
+              ref={trackRef}
+              onScroll={updateArrows}
+              className="scrollbar-none flex snap-x snap-mandatory gap-5 overflow-x-auto pb-2"
+            >
+              {visibleCars.map((car) => (
+                <Card key={car.id} car={car} />
+              ))}
+            </div>
+          )}
         </div>
       </section>
     </div>

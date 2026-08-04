@@ -49,8 +49,6 @@ export default function TrustedUsedCars({ cities }: { cities: HomeCity[] }) {
           eyebrow="Find Nearby"
           title="Get trusted used cars in your city"
           subtitle="Browse verified listings across India's top cities"
-          href="#"
-          linkLabel="View all cities"
           after={
             <ScrollArrows
               canScrollLeft={canScrollLeft}

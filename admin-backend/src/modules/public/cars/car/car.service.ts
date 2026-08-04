@@ -117,6 +117,7 @@ export interface BrowseCarsFilters {
   minPrice?: number;
   maxPrice?: number;
   sort: CarsBrowseQueryParsed['sort'];
+  launchStatus: CarsBrowseQueryParsed['launchStatus'];
 }
 
 export interface BrowseCarsResult {
@@ -131,7 +132,7 @@ export interface BrowseCarsResult {
 }
 
 function buildBrowseCarsWhere(filters: Omit<BrowseCarsFilters, 'page' | 'limit' | 'sort'>): Prisma.CarModelWhereInput {
-  const where: Prisma.CarModelWhereInput = { launchStatus: 'available' };
+  const where: Prisma.CarModelWhereInput = { launchStatus: filters.launchStatus };
 
   if (filters.brandSlugs?.length) {
     where.brand = { slug: { in: filters.brandSlugs } };
@@ -241,7 +242,7 @@ export async function browseCars(filters: BrowseCarsFilters): Promise<BrowseCars
     getBrowseBrandCounts(filters),
     getBrowseBodyTypeCounts(filters),
     getBrowseFuelTypeCounts(filters),
-    prisma.carModel.aggregate({ where: { launchStatus: 'available' }, _min: { priceMin: true }, _max: { priceMax: true } }),
+    prisma.carModel.aggregate({ where: { launchStatus: filters.launchStatus }, _min: { priceMin: true }, _max: { priceMax: true } }),
   ]);
 
   return {

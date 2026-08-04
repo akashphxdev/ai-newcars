@@ -7,13 +7,12 @@ import { getRandomPairs, getBrandCrossPairs } from "@/features/compare/compare.a
 import BrandCarsHero from "@/components/brands/BrandCarsHero";
 import BrandCarsFilterSidebar from "@/components/brands/BrandCarsFilterSidebar";
 import BrandCarsSort from "@/components/brands/BrandCarsSort";
-import BrandCarCard from "@/components/brands/BrandCarCard";
 import BrandElectricCarsRail from "@/components/brands/BrandElectricCarsRail";
 import BrandComparisonsSection from "@/components/brands/BrandComparisonsSection";
 import OtherBrandsSection from "@/components/brands/OtherBrandsSection";
 import BodyTypeCarsHero from "@/components/bodyTypes/BodyTypeCarsHero";
 import BodyTypeCarsFilterSidebar from "@/components/bodyTypes/BodyTypeCarsFilterSidebar";
-import Pagination from "@/components/common/Pagination";
+import InfiniteCarGrid from "@/components/cars/InfiniteCarGrid";
 import Articles from "@/components/home/Articles";
 import SectionSkeleton from "@/components/common/SectionSkeleton";
 
@@ -114,12 +113,6 @@ async function BrandCarsPageContent({ slug, sp }: { slug: string; sp: SearchPara
   const { brand, cars, pagination, filters } = result;
   const basePath = `/${brand.slug}-cars`;
 
-  const queryParams: Record<string, string> = {};
-  if (bodyType?.length) queryParams.bodyType = bodyType.join(",");
-  if (fuelType?.length) queryParams.fuelType = fuelType.join(",");
-  if (maxPrice) queryParams.maxPrice = String(maxPrice);
-  if (sort !== "popularity") queryParams.sort = sort;
-
   return (
     <div>
       <BrandCarsHero brand={brand} result={result} />
@@ -144,20 +137,12 @@ async function BrandCarsPageContent({ slug, sp }: { slug: string; sp: SearchPara
               <BrandCarsSort basePath={basePath} sort={sort} />
             </div>
 
-            {cars.length > 0 ? (
-              <>
-                <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-3">
-                  {cars.map((car) => (
-                    <BrandCarCard key={car.id} car={car} />
-                  ))}
-                </div>
-                <Pagination pagination={pagination} basePath={basePath} queryParams={queryParams} />
-              </>
-            ) : (
-              <p className="rounded-2xl border border-border bg-surface p-8 text-center text-muted">
-                No {brand.name} cars match these filters — try adjusting them.
-              </p>
-            )}
+            <InfiniteCarGrid
+              key={`${bodyType?.join(",")}|${fuelType?.join(",")}|${maxPrice}|${sort}`}
+              initialCars={cars}
+              initialPagination={pagination}
+              source={{ kind: "brand", slug: brand.slug, filters: { limit: 12, bodyType, fuelType, maxPrice, sort } }}
+            />
 
             <div className="mt-8 flex flex-col items-start gap-4 rounded-2xl border border-border bg-surface p-5 sm:flex-row sm:items-center sm:justify-between">
               <div>
@@ -236,12 +221,6 @@ async function BodyTypeCarsPageContent({ slug, sp }: { slug: string; sp: SearchP
   const { bodyType, cars, pagination, filters } = result;
   const basePath = `/${bodyType.slug}-cars`;
 
-  const queryParams: Record<string, string> = {};
-  if (brand?.length) queryParams.brand = brand.join(",");
-  if (fuelType?.length) queryParams.fuelType = fuelType.join(",");
-  if (maxPrice) queryParams.maxPrice = String(maxPrice);
-  if (sort !== "popularity") queryParams.sort = sort;
-
   return (
     <div>
       <BodyTypeCarsHero bodyType={bodyType} result={result} otherBodyTypes={otherBodyTypes} />
@@ -266,20 +245,12 @@ async function BodyTypeCarsPageContent({ slug, sp }: { slug: string; sp: SearchP
               <BrandCarsSort basePath={basePath} sort={sort} />
             </div>
 
-            {cars.length > 0 ? (
-              <>
-                <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-3">
-                  {cars.map((car) => (
-                    <BrandCarCard key={car.id} car={car} />
-                  ))}
-                </div>
-                <Pagination pagination={pagination} basePath={basePath} queryParams={queryParams} />
-              </>
-            ) : (
-              <p className="rounded-2xl border border-border bg-surface p-8 text-center text-muted">
-                No {bodyType.name} cars match these filters — try adjusting them.
-              </p>
-            )}
+            <InfiniteCarGrid
+              key={`${brand?.join(",")}|${fuelType?.join(",")}|${maxPrice}|${sort}`}
+              initialCars={cars}
+              initialPagination={pagination}
+              source={{ kind: "bodyType", slug: bodyType.slug, filters: { limit: 12, brand, fuelType, maxPrice, sort } }}
+            />
 
             <div className="mt-8 flex flex-col items-start gap-4 rounded-2xl border border-border bg-surface p-5 sm:flex-row sm:items-center sm:justify-between">
               <div>

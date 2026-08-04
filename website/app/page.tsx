@@ -52,7 +52,7 @@ async function LatestCarsData() {
 
 async function PopularCarsData() {
   const cars = await getHomeCars("popular");
-  return <PopularCars cars={cars} />;
+  return <PopularCars cars={cars} href="/new-cars" linkLabel="View all popular cars" />;
 }
 
 async function UpcomingLaunchesData() {
@@ -71,7 +71,10 @@ async function CompareCarsData() {
 }
 
 async function TrustedUsedCarsData() {
-  const cities = await getHomeCities();
+  // No "View All" page for this section — the scroll rail itself is meant
+  // to carry every top city, so this asks for the backend's max (50)
+  // instead of the smaller unscoped default.
+  const cities = await getHomeCities(50);
   return <TrustedUsedCars cities={cities} />;
 }
 

@@ -3,8 +3,7 @@ import Link from "next/link";
 import { getCarsBrowse } from "@/features/cars/car.api";
 import NewCarsFilterSidebar from "@/components/cars/NewCarsFilterSidebar";
 import BrandCarsSort from "@/components/brands/BrandCarsSort";
-import BrandCarCard from "@/components/brands/BrandCarCard";
-import Pagination from "@/components/common/Pagination";
+import InfiniteCarGrid from "@/components/cars/InfiniteCarGrid";
 import { formatSinglePrice } from "@/lib/format";
 
 export const metadata: Metadata = {
@@ -14,7 +13,6 @@ export const metadata: Metadata = {
 
 type Props = {
   searchParams: Promise<{
-    page?: string;
     brand?: string;
     bodyType?: string;
     fuelType?: string;
@@ -29,22 +27,15 @@ type SortValue = (typeof VALID_SORTS)[number];
 export default async function NewCarsPage({ searchParams }: Props) {
   const sp = await searchParams;
 
-  const page = Math.max(1, Number(sp.page) || 1);
   const brand = sp.brand ? sp.brand.split(",").filter(Boolean) : undefined;
   const bodyType = sp.bodyType ? sp.bodyType.split(",").filter(Boolean) : undefined;
   const fuelType = sp.fuelType ? sp.fuelType.split(",").filter(Boolean) : undefined;
   const maxPrice = sp.maxPrice ? Number(sp.maxPrice) : undefined;
   const sort: SortValue = VALID_SORTS.includes(sp.sort as SortValue) ? (sp.sort as SortValue) : "popularity";
 
-  const result = await getCarsBrowse({ page, limit: 12, brand, bodyType, fuelType, maxPrice, sort });
-  const { cars, pagination, filters } = result;
-
-  const queryParams: Record<string, string> = {};
-  if (brand?.length) queryParams.brand = brand.join(",");
-  if (bodyType?.length) queryParams.bodyType = bodyType.join(",");
-  if (fuelType?.length) queryParams.fuelType = fuelType.join(",");
-  if (maxPrice) queryParams.maxPrice = String(maxPrice);
-  if (sort !== "popularity") queryParams.sort = sort;
+  const filters = { limit: 12, brand, bodyType, fuelType, maxPrice, sort };
+  const result = await getCarsBrowse({ page: 1, ...filters });
+  const { cars, pagination, filters: filterOptions } = result;
 
   return (
     <div>
@@ -69,7 +60,7 @@ export default async function NewCarsPage({ searchParams }: Props) {
               {pagination.total} model{pagination.total === 1 ? "" : "s"}
             </span>
             <span className="rounded-full border border-border bg-surface px-3 py-1.5 text-[12px] font-semibold text-ink">
-              From {formatSinglePrice(filters.priceRange.min)}
+              From {formatSinglePrice(filterOptions.priceRange.min)}
             </span>
           </div>
         </div>
@@ -78,10 +69,11 @@ export default async function NewCarsPage({ searchParams }: Props) {
       <div className="mx-auto max-w-7xl px-4 py-8 sm:py-10">
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-[260px_1fr]">
           <NewCarsFilterSidebar
-            brands={filters.brands}
-            bodyTypes={filters.bodyTypes}
-            fuelTypes={filters.fuelTypes}
+            brands={filterOptions.brands}
+            bodyTypes={filterOptions.bodyTypes}
+            fuelTypes={filterOptions.fuelTypes}
             initial={{ brand, bodyType, fuelType, maxPrice }}
+            basePath="/new-cars"
           />
 
           <div>
@@ -95,20 +87,12 @@ export default async function NewCarsPage({ searchParams }: Props) {
               <BrandCarsSort basePath="/new-cars" sort={sort} />
             </div>
 
-            {cars.length > 0 ? (
-              <>
-                <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-3">
-                  {cars.map((car) => (
-                    <BrandCarCard key={car.id} car={car} />
-                  ))}
-                </div>
-                <Pagination pagination={pagination} basePath="/new-cars" queryParams={queryParams} />
-              </>
-            ) : (
-              <p className="rounded-2xl border border-border bg-surface p-8 text-center text-muted">
-                No cars match these filters — try adjusting them.
-              </p>
-            )}
+            <InfiniteCarGrid
+              key={`${brand?.join(",")}|${bodyType?.join(",")}|${fuelType?.join(",")}|${maxPrice}|${sort}`}
+              initialCars={cars}
+              initialPagination={pagination}
+              source={{ kind: "browse", filters }}
+            />
           </div>
         </div>
       </div>

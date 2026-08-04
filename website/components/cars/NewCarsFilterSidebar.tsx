@@ -12,6 +12,7 @@ const FilterFields = ({
   brands,
   bodyTypes,
   fuelTypes,
+  showFuelType = true,
   draft,
   setDraft,
   onApply,
@@ -20,6 +21,10 @@ const FilterFields = ({
   brands: BrowseCarsBrandFilter[];
   bodyTypes: BrowseCarsBodyTypeFilter[];
   fuelTypes: BrowseCarsFuelTypeFilter[];
+  // /electric-cars fixes fuelType=electric server-side already — showing
+  // a redundant, always-checked "Electric" filter there would be
+  // confusing, so the section is hidden entirely for that page.
+  showFuelType?: boolean;
   draft: Draft;
   setDraft: (d: Draft) => void;
   onApply: () => void;
@@ -74,7 +79,7 @@ const FilterFields = ({
         </div>
       )}
 
-      {fuelTypes.length > 0 && (
+      {showFuelType && fuelTypes.length > 0 && (
         <div>
           <p className="mb-2.5 text-[12px] font-semibold uppercase tracking-wide text-muted">Fuel Type</p>
           <div className="flex flex-col gap-2">
@@ -136,12 +141,16 @@ export default function NewCarsFilterSidebar({
   brands,
   bodyTypes,
   fuelTypes,
+  showFuelType = true,
   initial,
+  basePath = "/new-cars",
 }: {
   brands: BrowseCarsBrandFilter[];
   bodyTypes: BrowseCarsBodyTypeFilter[];
   fuelTypes: BrowseCarsFuelTypeFilter[];
+  showFuelType?: boolean;
   initial: { brand?: string[]; bodyType?: string[]; fuelType?: string[]; maxPrice?: number };
+  basePath?: string;
 }) {
   const router = useRouter();
   const [sheetOpen, setSheetOpen] = useState(false);
@@ -171,7 +180,6 @@ export default function NewCarsFilterSidebar({
   }, [sheetOpen]);
 
   const hasActiveFilters = !!(initial.brand?.length || initial.bodyType?.length || initial.fuelType?.length || initial.maxPrice);
-  const basePath = "/new-cars";
 
   const apply = () => {
     const params = new URLSearchParams();
@@ -194,7 +202,16 @@ export default function NewCarsFilterSidebar({
     <>
       <aside className="sticky top-20 hidden h-fit max-h-[calc(100vh-6rem)] flex-col gap-5 self-start overflow-y-auto rounded-2xl border border-border bg-surface p-5 lg:flex">
         <h3 className="text-[14.5px] font-semibold text-ink">Filter Cars</h3>
-        <FilterFields brands={brands} bodyTypes={bodyTypes} fuelTypes={fuelTypes} draft={draft} setDraft={setDraft} onApply={apply} onReset={reset} />
+        <FilterFields
+          brands={brands}
+          bodyTypes={bodyTypes}
+          fuelTypes={fuelTypes}
+          showFuelType={showFuelType}
+          draft={draft}
+          setDraft={setDraft}
+          onApply={apply}
+          onReset={reset}
+        />
       </aside>
 
       <button
@@ -224,7 +241,16 @@ export default function NewCarsFilterSidebar({
                 <CloseIcon className="size-4" />
               </button>
             </div>
-            <FilterFields brands={brands} bodyTypes={bodyTypes} fuelTypes={fuelTypes} draft={draft} setDraft={setDraft} onApply={apply} onReset={reset} />
+            <FilterFields
+          brands={brands}
+          bodyTypes={bodyTypes}
+          fuelTypes={fuelTypes}
+          showFuelType={showFuelType}
+          draft={draft}
+          setDraft={setDraft}
+          onApply={apply}
+          onReset={reset}
+        />
           </div>
         </div>
       )}

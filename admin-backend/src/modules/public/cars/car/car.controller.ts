@@ -35,6 +35,7 @@ export async function getCarsBrowse(req: Request, res: Response) {
     minPrice: query.minPrice,
     maxPrice: query.maxPrice,
     sort: query.sort,
+    launchStatus: query.launchStatus,
   });
 
   return sendSuccess(res, result, 'Cars fetched successfully');

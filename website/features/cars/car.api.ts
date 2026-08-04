@@ -4,8 +4,11 @@ import { apiFetch, apiFetchPaginated, getUploadUrl, ApiError, type Pagination } 
 import type { HomeCar, HomeCarType, BrowseCarsResult, CarDetailResult, CarDetailVariantOption, CarImagesResult, CarFaq } from "./car.types";
 import type { HomeArticle } from "@/features/articles/article.types";
 
-export async function getHomeCars(type: HomeCarType, limit = 6): Promise<HomeCar[]> {
-  const cars = await apiFetch<HomeCar[]>(`/home/cars?type=${type}&limit=${limit}`, { next: { revalidate: 180 } });
+// brandSlug re-fetches this rail scoped to one brand (e.g. LatestCars'
+// brand chips) — omitted, this is the plain unscoped rail.
+export async function getHomeCars(type: HomeCarType, limit = 6, brandSlug?: string): Promise<HomeCar[]> {
+  const query = brandSlug ? `type=${type}&limit=${limit}&brand=${encodeURIComponent(brandSlug)}` : `type=${type}&limit=${limit}`;
+  const cars = await apiFetch<HomeCar[]>(`/home/cars?${query}`, { next: { revalidate: 180 } });
   return cars.map((c) => ({ ...c, coverImageUrl: getUploadUrl(c.coverImageUrl) }));
 }
 
@@ -31,9 +34,15 @@ export interface BrowseCarsFilters {
   minPrice?: number;
   maxPrice?: number;
   sort?: "popularity" | "price-asc" | "price-desc" | "rating";
+  // "available" (default) backs /new-cars and /electric-cars; "upcoming"
+  // backs /upcoming-cars — same filter machinery, different launch scope.
+  launchStatus?: "available" | "upcoming";
 }
 
-// "/new-cars" — the un-scoped browse page (no fixed brand or body type).
+// "/new-cars", "/electric-cars", "/upcoming-cars" — the un-scoped browse
+// endpoint (no fixed brand or body type), reused across all three with a
+// different fixed filter (fuelType=electric, launchStatus=upcoming) baked
+// in by each page's own caller rather than duplicated backend logic.
 export async function getCarsBrowse(filters: BrowseCarsFilters = {}): Promise<BrowseCarsResult> {
   const params = new URLSearchParams();
   if (filters.page) params.set("page", String(filters.page));
@@ -44,6 +53,7 @@ export async function getCarsBrowse(filters: BrowseCarsFilters = {}): Promise<Br
   if (filters.minPrice != null) params.set("minPrice", String(filters.minPrice));
   if (filters.maxPrice != null) params.set("maxPrice", String(filters.maxPrice));
   if (filters.sort) params.set("sort", filters.sort);
+  if (filters.launchStatus) params.set("launchStatus", filters.launchStatus);
 
   const result = await apiFetch<BrowseCarsResult>(`/cars/browse?${params.toString()}`, { next: { revalidate: 180 } });
   return {

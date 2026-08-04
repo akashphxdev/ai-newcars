@@ -41,6 +41,10 @@ export const carsBrowseQuerySchema = z.object({
   minPrice: z.coerce.number().nonnegative().optional(),
   maxPrice: z.coerce.number().nonnegative().optional(),
   sort: z.enum(['popularity', 'price-asc', 'price-desc', 'rating']).default('popularity'),
+  // "/new-cars" and "/electric-cars" want launched models; "/upcoming-cars"
+  // wants the opposite — same browse/filter machinery, just a different
+  // launchStatus scope, instead of a separate un-filterable endpoint.
+  launchStatus: z.enum(['available', 'upcoming']).default('available'),
 });
 
 export type CarsBrowseQueryParsed = z.infer<typeof carsBrowseQuerySchema>;

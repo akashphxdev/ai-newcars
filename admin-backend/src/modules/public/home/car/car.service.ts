@@ -123,11 +123,12 @@ export function buildHomeCarWhereAndOrderBy(type: HomeCarListQueryParsed['type']
 }
 
 export async function listHomeCars(query: HomeCarListQueryParsed): Promise<PublicHomeCarRecord[]> {
-  const { type, limit } = query;
+  const { type, limit, brand } = query;
   const { where, orderBy } = buildHomeCarWhereAndOrderBy(type);
+  const finalWhere: Prisma.CarModelWhereInput = brand ? { ...where, brand: { slug: brand } } : where;
 
   const cars = await prisma.carModel.findMany({
-    where,
+    where: finalWhere,
     select: HOME_CAR_SELECT,
     orderBy,
     take: limit,
