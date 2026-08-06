@@ -16,6 +16,7 @@ import AnalyticsRoutes from './analytics'
 import ReviewsRoutes from './reviews'
 import LeadsRoutes from './leads'
 import LendersRoutes from './lenders'
+import SeoRoutes from './seo'
 
 const router = Router();
 
@@ -35,6 +36,7 @@ router.use('/analytics', AnalyticsRoutes)
 router.use('/reviews', ReviewsRoutes)
 router.use('/leads', LeadsRoutes)
 router.use('/lenders', LendersRoutes)
+router.use('/seo', SeoRoutes)
 
 
 export default router;

@@ -1,1 +1,12 @@
 @import "tailwindcss";
+
+/* Hides the scrollbar on an otherwise-scrollable element (e.g. a
+   horizontal chip strip with custom prev/next arrow buttons) without
+   disabling scroll/touch behavior. */
+.no-scrollbar {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}

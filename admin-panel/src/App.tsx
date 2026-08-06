@@ -60,6 +60,7 @@ import AllAiStoryItems from "./pages/Ai/Stories/AllAiStoryItems";
 import AllBanners from "./pages/Home/Banners/AllBanners";
 import AllTestimonials from "./pages/Home/Testimonials/AllTestimonials";
 import SiteSettings from "./pages/SiteSettings/SiteSettings";
+import AllSeoMetas from "./pages/Seo/SeoMeta/AllSeoMetas";
 // ── Auth guard — baad mein real auth logic lagao ──────────────────────────────
 function RequireAuth({ children }: { children: React.ReactNode }) {
   const isLoggedIn = !!localStorage.getItem("admin_token"); // apna auth check yahan
@@ -136,6 +137,8 @@ export default function App() {
           <Route path ="/ads/campaigns" element={<AllCampaigns/>}/>
           <Route path ="/ads/impressions" element={<AllImpressions/>}/>
           <Route path ="/ads/clicks" element={<AllClicks/>}/>
+
+          <Route path="/seo/meta" element={<AllSeoMetas />} />
 
           <Route path="/analytics/search-logs" element={<AllSearchLogs />} />
 

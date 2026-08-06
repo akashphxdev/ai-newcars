@@ -28,8 +28,8 @@ async function main() {
   }
 
   // 2. Create the first admin user if it doesn't exist
-  const adminEmail = 'admin@timesauto.in';
-  const adminMobile = '9999999999';
+  const adminEmail = 'akashmeena@phx.co.in';
+  const adminMobile = '7850986035';
   const adminPassword = 'Admin@1234'; // change after first login
 
   const accessStartDate = new Date(); // access starts today

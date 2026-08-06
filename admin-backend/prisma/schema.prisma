@@ -170,7 +170,8 @@ model AdminUser {
   deletedIcePowertrains CarPowertrainIce[]
   deletedEvPowertrains  CarPowertrainElectric[]
   leadActivities        LeadActivity[]
-  seoMetaUpdates        SeoMeta[]
+  seoMetaCreated       SeoMeta[]           @relation("SeoMetaCreatedBy")
+  seoMetaUpdated       SeoMeta[]           @relation("SeoMetaUpdatedBy")
   seoRedirectsCreated   SeoRedirect[]
 
   articlesAuthored         Article[]         @relation("ArticleAuthor")
@@ -1203,22 +1204,42 @@ model SearchLog {
 
 model SeoMeta {
   id              Int        @id @default(autoincrement())
-  pageType        String     @map("page_type") @db.VarChar(30)
-  pageId          Int?       @map("page_id")
+  pageType        Int        @map("page_type")
+  entityId        Int?       @map("entity_id")
   staticPageSlug  String?    @map("static_page_slug") @db.VarChar(100)
-  metaTitle       String?    @map("meta_title") @db.VarChar(160)
-  metaDescription String?    @map("meta_description") @db.VarChar(300)
-  metaKeywords    String?    @map("meta_keywords") @db.VarChar(255)
-  canonicalUrl    String?    @map("canonical_url") @db.VarChar(255)
-  ogImageUrl      String?    @map("og_image_url") @db.VarChar(255)
-  robotsDirective String?    @map("robots_directive") @db.VarChar(50)
-  schemaType      String?    @map("schema_type") @db.VarChar(50)
-  updatedBy       Int?       @map("updated_by")
-  updatedByAdmin  AdminUser? @relation(fields: [updatedBy], references: [id])
-  updatedAt       DateTime   @default(now()) @map("updated_at")
 
+  metaTitle       String?    @map("meta_title") @db.VarChar(255)
+  metaDescription String?    @map("meta_description") @db.Text
+  metaKeywords    String?    @map("meta_keywords") @db.Text
+  canonicalUrl    String?    @map("canonical_url") @db.VarChar(255)
+  h1Tag           String?    @map("h1_tag") @db.VarChar(255)
+  ogTitle         String?    @map("og_title") @db.VarChar(255)
+  ogDescription   String?    @map("og_description") @db.Text
+  ogImage         String?    @map("og_image") @db.VarChar(255)
+  robotsMeta      String?    @map("robots_meta") @db.VarChar(100)
+
+  // ---- structured data / JSON-LD (car listing site ke liye important schemas) ----
+  vehicleSchema    String? @map("vehicle_schema") @db.Text   // specs + price + rating sab isi mein
+  faqSchema        String? @map("faq_schema") @db.Text
+  reviewSchema     String? @map("review_schema") @db.Text
+  articleSchema    String? @map("article_schema") @db.Text
+  authorSchema     String? @map("author_schema") @db.Text
+  breadcrumbSchema String? @map("breadcrumb_schema") @db.Text
+
+  status          Boolean    @default(true)
+
+  createdBy      Int?       @map("created_by")
+  createdByAdmin AdminUser? @relation("SeoMetaCreatedBy", fields: [createdBy], references: [id])
+  createdAt      DateTime   @default(now()) @map("created_at")
+
+  updatedBy      Int?       @map("updated_by")
+  updatedByAdmin AdminUser? @relation("SeoMetaUpdatedBy", fields: [updatedBy], references: [id])
+  updatedAt      DateTime   @updatedAt @map("updated_at")
+
+  @@unique([pageType, entityId])
   @@map("seo_meta")
 }
+
 
 model SeoRedirect {
   id             Int        @id @default(autoincrement())

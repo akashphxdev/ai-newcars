@@ -93,7 +93,7 @@ const NAV: NavGroup[] = [
           { label: "Campaigns", href: "/ads/campaigns" },
           { label: "Clicks", href: "/ads/clicks" },
           { label: "Impressions", href: "/ads/impressions" },
-         
+
         ],
       },
     ],
