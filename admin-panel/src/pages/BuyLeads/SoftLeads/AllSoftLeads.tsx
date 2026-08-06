@@ -8,6 +8,7 @@ import {
   SOFT_LEAD_CALCULATOR_TYPES,
   SOFT_LEAD_CALCULATOR_LABELS,
   type SoftLeadRecord,
+  type SoftLeadCalculatorType,
   type SoftLeadStatus,
 } from "./softLead.api";
 import { useGetBrandOptionsQuery } from "../../newCars/Brands/brand.api";
@@ -100,7 +101,10 @@ export default function AllSoftLeads() {
     search: debouncedSearch || undefined,
     brandId: brandId || undefined,
     modelId: modelId || undefined,
-    calculatorType: (calculatorType || undefined) as SoftLeadRecord["calculatorType"] | undefined,
+    // Cast to the calculator type itself, not SoftLeadRecord["calculatorType"] —
+    // that field is nullable on a record, but the filter only ever sends a
+    // value or nothing at all.
+    calculatorType: (calculatorType || undefined) as SoftLeadCalculatorType | undefined,
     status: status || undefined,
   });
 
