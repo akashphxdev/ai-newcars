@@ -13,6 +13,7 @@ import type {
   SubmitInsuranceLeadInput,
   SubmitSoftLeadInput,
   SubmitLoanLeadInput,
+  SubmitLaunchNotifyLeadInput,
   SubmitLeadResult,
 } from "./lead.types";
 
@@ -79,6 +80,14 @@ export async function submitSoftLead(input: SubmitSoftLeadInput): Promise<Submit
 
 export async function submitLoanLead(input: SubmitLoanLeadInput): Promise<SubmitLeadResult> {
   return apiFetch<SubmitLeadResult>("/leads/buy/loan", {
+    method: "POST",
+    headers: authHeaders(),
+    body: JSON.stringify({ ...input, ...captureContext() }),
+  });
+}
+
+export async function submitLaunchNotifyLead(input: SubmitLaunchNotifyLeadInput): Promise<SubmitLeadResult> {
+  return apiFetch<SubmitLeadResult>("/leads/buy/launch-notify", {
     method: "POST",
     headers: authHeaders(),
     body: JSON.stringify({ ...input, ...captureContext() }),

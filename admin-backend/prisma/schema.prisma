@@ -274,6 +274,8 @@ model User {
   loanLeads           LoanLead[]
   softLeads           SoftLead[]
   priceDropAlertLeads PriceDropAlertLead[]
+  wishlists           Wishlist[]
+  launchNotifyLeads   LaunchNotifyLead[]
   reviews             Review[]
   reviewReplies       ReviewReply[]
   reviewHelpfulVotes  ReviewHelpfulVote[]
@@ -327,6 +329,7 @@ model Brand {
   loanLeads           LoanLead[]
   softLeads           SoftLead[]
   priceDropAlertLeads PriceDropAlertLead[]
+  launchNotifyLeads   LaunchNotifyLead[]
   articleBrands       ArticleBrand[]
   aiArticles          AiArticle[]
 
@@ -362,6 +365,8 @@ model CarModel {
   loanLeads           LoanLead[]
   softLeads           SoftLead[]
   priceDropAlertLeads PriceDropAlertLead[]
+  wishlists           Wishlist[]
+  launchNotifyLeads   LaunchNotifyLead[]
   reviews             Review[]
   mileageLogs         MileageLog[]
   articleCarModels    ArticleCarModel[]
@@ -914,6 +919,48 @@ model PriceDropAlertLead {
   @@index([brandId, modelId])
 
   @@map("price_drop_alert_leads")
+}
+
+model Wishlist {
+  id        Int      @id @default(autoincrement())
+  userId    Int      @map("user_id")
+  user      User     @relation(fields: [userId], references: [id])
+  modelId   Int      @map("model_id")
+  model     CarModel @relation(fields: [modelId], references: [id])
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@unique([userId, modelId])
+  @@index([modelId])
+  @@map("wishlists")
+}
+
+model LaunchNotifyLead {
+  id                                Int       @id @default(autoincrement())
+  userId                            Int?      @map("user_id")
+  user                              User?     @relation(fields: [userId], references: [id])
+  mobile                            String    @db.VarChar(15)
+  email                             String?   @db.VarChar(150)
+  expectedLaunchDateAtSubscription  DateTime? @map("expected_launch_date_at_subscription") @db.Date
+  brandId                           Int?      @map("brand_id")
+  brand                             Brand?    @relation(fields: [brandId], references: [id])
+  modelId                           Int?      @map("model_id")
+  model                             CarModel? @relation(fields: [modelId], references: [id])
+  isActive                          Boolean   @default(true) @map("is_active")
+  notifiedAt                        DateTime? @map("notified_at")
+  leadChannel                       String?   @map("lead_channel") @db.VarChar(30)
+  utmSource                         String?   @map("utm_source") @db.VarChar(100)
+  utmMedium                         String?   @map("utm_medium") @db.VarChar(100)
+  utmCampaign                       String?   @map("utm_campaign") @db.VarChar(150)
+  landingPage                       String?   @map("landing_page") @db.VarChar(255)
+  deviceType                        String?   @map("device_type") @db.VarChar(20)
+  ipAddress                         String?   @map("ip_address") @db.VarChar(45)
+  createdAt                         DateTime  @default(now()) @map("created_at")
+  updatedAt                         DateTime  @updatedAt @map("updated_at")
+
+  @@index([isActive, createdAt])
+  @@index([mobile])
+  @@index([brandId, modelId])
+  @@map("launch_notify_leads")
 }
 
 model LeadActivity {

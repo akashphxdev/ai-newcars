@@ -73,7 +73,7 @@ const Card = ({ car }: { car: HomeCar }) => {
         )}
 
         <div className="absolute right-3 top-3 z-10">
-          <WishlistButton size="md" />
+          <WishlistButton modelId={car.id} size="md" />
         </div>
       </div>
 

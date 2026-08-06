@@ -6,6 +6,8 @@
 // than using fetch() directly, so the base URL, response envelope, and
 // error handling stay in one place.
 
+import { clearCurrentUser } from "@/features/auth/currentUser";
+
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:5000/api/public/v1";
 
 // admin-backend returns uploaded-file fields (logoUrl, coverImageUrl, ...)
@@ -66,6 +68,11 @@ export async function apiFetch<T>(path: string, options?: ApiFetchOptions): Prom
   }
 
   if (!res.ok || !body?.success) {
+    // Only auth-gated routes ever 401 here — the stored token is dead
+    // (expired/invalid), so drop it immediately rather than leaving the
+    // header/wishlist etc. showing a "logged in" state every subsequent
+    // call keeps failing against.
+    if (res.status === 401) clearCurrentUser();
     throw new ApiError(body?.message ?? `Request to ${path} failed (${res.status})`, res.status);
   }
 
@@ -91,6 +98,7 @@ export async function apiFetchPaginated<T>(
   }
 
   if (!res.ok || !body?.success) {
+    if (res.status === 401) clearCurrentUser();
     throw new ApiError(body?.message ?? `Request to ${path} failed (${res.status})`, res.status);
   }
 

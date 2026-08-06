@@ -55,7 +55,7 @@ export default function CarModelHero({ car, variant }: { car: CarDetailResult; v
           </div>
 
           <div className="flex shrink-0 items-center gap-3">
-            <WishlistButton size="md" />
+            <WishlistButton modelId={car.id} size="md" />
             <button type="button" aria-label="Share" className="flex size-8 cursor-pointer items-center justify-center rounded-full text-muted transition-colors hover:text-brand">
               <ShareIcon className="size-4" />
             </button>

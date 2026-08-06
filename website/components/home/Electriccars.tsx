@@ -88,7 +88,7 @@ const Card = ({ car, badge }: { car: HomeCar; badge: string | null }) => {
             )}
           </div>
 
-          <WishlistButton size="md" />
+          <WishlistButton modelId={car.id} size="md" />
         </div>
 
         {badge && (

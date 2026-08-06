@@ -37,7 +37,7 @@ export default function BrandCarCard({ car }: { car: HomeCar }) {
           </span>
         )}
         <div className="absolute right-3 top-3 z-10">
-          <WishlistButton size="md" />
+          <WishlistButton modelId={car.id} size="md" />
         </div>
       </div>
 

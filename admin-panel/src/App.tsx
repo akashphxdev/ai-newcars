@@ -38,6 +38,7 @@ import AllPriceDropLeads from "./pages/BuyLeads/PriceDropAlerts/AllPriceDropLead
 import AllSoftLeads from "./pages/BuyLeads/SoftLeads/AllSoftLeads";
 import AllLenders from "./pages/BuyLeads/Lenders/AllLenders";
 import AllLoanLeads from "./pages/BuyLeads/LoanLeads/AllLoanLeads";
+import AllLaunchNotifyLeads from "./pages/BuyLeads/LaunchNotify/AllLaunchNotifyLeads";
 import UsedCarListings from "./pages/UsedCars/Listings";
 import UsedCarInspections from "./pages/UsedCars/Inspections";
 import AllSellLeads from "./pages/SellLeads/AllSellLeads";
@@ -124,6 +125,7 @@ export default function App() {
           <Route path="/leads/buy/new-cars" element={<AllNewCarLeads />} />
           <Route path="/leads/buy/insurance" element={<AllInsuranceLeads />} />
           <Route path="/leads/buy/price-drop" element={<AllPriceDropLeads />} />
+          <Route path="/leads/buy/launch-notify" element={<AllLaunchNotifyLeads />} />
           <Route path="/leads/buy/soft" element={<AllSoftLeads />} />
           <Route path="/partners/lenders" element={<AllLenders />} />
           <Route path="/leads/buy/loan" element={<AllLoanLeads />} />
