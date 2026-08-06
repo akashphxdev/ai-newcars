@@ -10,6 +10,7 @@ import AllPermissions from "./pages/AdminUsers/Permission/AllPermissions";
 import AllRoles from "./pages/AdminUsers/Roles/AllRoles";
 import AllAdminLogs from "./pages/AdminUsers/AdminLogs/AllAdminLogs";
 import AllSearchLogs from "./pages/Analytics/SearchLogs/AllSearchLogs";
+import AllPageViews from "./pages/Analytics/PageViews/AllPageViews";
 import { AuthProvider } from "./context/AuthContext";
 import AllCountries from "./pages/Locations/Countries/AllCountries";
 import AllStates from "./pages/Locations/States/AllStates";
@@ -143,6 +144,7 @@ export default function App() {
           <Route path="/seo/meta" element={<AllSeoMetas />} />
 
           <Route path="/analytics/search-logs" element={<AllSearchLogs />} />
+          <Route path="/analytics/page-views" element={<AllPageViews />} />
 
           <Route path="/ai/dashboard" element={<AIDashboard />} />
           <Route path="/ai/car-faqs/review" element={<AllAiFaqs />} />
