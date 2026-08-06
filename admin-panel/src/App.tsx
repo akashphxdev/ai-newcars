@@ -3,7 +3,7 @@ import Login from "./pages/Login";
 import AdminLayout from "./components/layout/AdminLayout";
 
 // ── Page imports (apne actual pages se replace karo) ──────────────────────────
-import Dashboard from "./pages/Dashboard";
+import Dashboard from "./pages/Dashboard/Dashboard";
 import AllAdmins from "./pages/AdminUsers/AllAdmins/AllAdmins";
 import AllUsers from "./pages/Users/AllUsers/AllUsers";
 import AllPermissions from "./pages/AdminUsers/Permission/AllPermissions";

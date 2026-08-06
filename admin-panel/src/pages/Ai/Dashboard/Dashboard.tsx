@@ -10,6 +10,7 @@ import { useGetAiDashboardQuery, POLL_INTERVAL_MS, type AiDashboardFeatureStatus
 import { useToggleAutomationRuleMutation } from "../Settings/automationRule.api";
 import { extractApiError } from "../../../lib/apiClient";
 import { AI_FEATURE_OPTIONS, getAiFeatureLabel } from "../../../lib/aiLookups";
+import { formatRelativeToNow } from "../../../lib/timeAgo";
 
 const ACCENT = "#D4300F";
 
@@ -38,22 +39,6 @@ function formatFrequency(minutes: number | null, countPerRun: number | null): st
       ? `Every ${minutes / 60} hr${minutes / 60 === 1 ? "" : "s"}`
       : `Every ${minutes} min`;
   return countPerRun ? `${label} · ${countPerRun} per run` : label;
-}
-
-function formatRelativeToNow(iso: string | null, future: boolean): string {
-  if (!iso) return "—";
-  const target = new Date(iso).getTime();
-  const now = Date.now();
-  const diffMs = future ? target - now : now - target;
-  if (future && diffMs <= 0) return "any moment now";
-  const abs = Math.abs(diffMs);
-  const mins = Math.round(abs / 60000);
-  if (mins < 1) return future ? "any moment now" : "just now";
-  if (mins < 60) return future ? `in ${mins} min` : `${mins} min ago`;
-  const hrs = Math.round(mins / 60);
-  if (hrs < 24) return future ? `in ${hrs} hr${hrs === 1 ? "" : "s"}` : `${hrs} hr${hrs === 1 ? "" : "s"} ago`;
-  const days = Math.round(hrs / 24);
-  return future ? `in ${days} day${days === 1 ? "" : "s"}` : `${days} day${days === 1 ? "" : "s"} ago`;
 }
 
 function StatePill({ state }: { state: RunState }) {

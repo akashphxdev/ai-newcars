@@ -111,6 +111,11 @@ export const DYNAMIC_SEO_PAGE_TYPE_OPTIONS: LookupOption[] = SEO_PAGE_TYPE_OPTIO
   (o) => o.value !== SEO_PAGE_TYPE.STATIC,
 );
 
+export function getSeoPageTypeLabel(code: number | null | undefined): string {
+  if (code == null) return "—";
+  return SEO_PAGE_TYPE_OPTIONS.find((o) => o.value === code)?.label ?? "—";
+}
+
 // ===== Static page slugs (pageType = SEO_PAGE_TYPE.STATIC) =====
 // Fixed list of the site's actual static pages (website/app/**/page.tsx),
 // so the admin picks a slug from a dropdown instead of free-typing it
