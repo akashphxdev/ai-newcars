@@ -9,16 +9,21 @@
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:5000/api/public/v1";
 
 // admin-backend returns uploaded-file fields (logoUrl, coverImageUrl, ...)
-// as host-relative paths (e.g. "/uploads/brands/x.png") — resolving those
-// in the browser against API_ORIGIN (not window.location) is what actually
-// serves the file, since Express mounts /uploads at its own root, not
-// under /api. Same fix as admin-panel's lib/apiClient.ts getUploadUrl.
+// as host-relative paths (e.g. "/uploads/brands/x.avif"). Those paths are
+// what the database stores, deliberately — the CDN hostname lives here in
+// config instead, so pointing assets at a different origin is an env
+// change rather than a rewrite of every row holding a path.
+//
+// NEXT_PUBLIC_ASSET_BASE_URL is the CDN origin (https://static.timesauto.net).
+// Without it, paths resolve against the API origin, which is what keeps
+// local development working against Express's own /uploads static mount.
 const API_ORIGIN = API_BASE_URL.replace(/\/api\/public\/v1\/?$/, "");
+const ASSET_BASE_URL = (process.env.NEXT_PUBLIC_ASSET_BASE_URL ?? API_ORIGIN).replace(/\/+$/, "");
 
 export function getUploadUrl(path?: string | null): string | null {
   if (!path) return null;
   if (/^https?:\/\//i.test(path)) return path;
-  return `${API_ORIGIN}${path.startsWith("/") ? path : `/${path}`}`;
+  return `${ASSET_BASE_URL}${path.startsWith("/") ? path : `/${path}`}`;
 }
 
 interface ApiEnvelope<T> {

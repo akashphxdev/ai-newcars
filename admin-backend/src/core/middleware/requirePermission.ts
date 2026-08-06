@@ -23,9 +23,14 @@ async function getRolePermissionState(
     return cached;
   }
 
+  // One join replaces what used to be two round-trips: fetch the role's
+  // permissionIds JSON array, then look those ids up in permissions.
   const role = await prisma.role.findUnique({
     where: { id: roleId },
-    select: { roleName: true, permissionIds: true },
+    select: {
+      roleName: true,
+      permissions: { select: { permission: { select: { permissionKey: true } } } },
+    },
   });
 
   if (!role) {
@@ -34,23 +39,10 @@ async function getRolePermissionState(
     return empty;
   }
 
-  const isSuperAdmin = role.roleName === SUPER_ADMIN_ROLE_NAME;
-
-  // permissionIds is stored as a JSON array of permission row IDs
-  const ids = Array.isArray(role.permissionIds) ? (role.permissionIds as number[]) : [];
-
-  if (ids.length === 0) {
-    const result = { permissionKeys: new Set<string>(), isSuperAdmin };
-    roleCache.set(roleId, { ...result, cachedAt: Date.now() });
-    return result;
-  }
-
-  const permissions = await prisma.permission.findMany({
-    where: { id: { in: ids } },
-    select: { permissionKey: true },
-  });
-
-  const result = { permissionKeys: new Set(permissions.map((p) => p.permissionKey)), isSuperAdmin };
+  const result = {
+    permissionKeys: new Set(role.permissions.map((rp) => rp.permission.permissionKey)),
+    isSuperAdmin: role.roleName === SUPER_ADMIN_ROLE_NAME,
+  };
   roleCache.set(roleId, { ...result, cachedAt: Date.now() });
   return result;
 }

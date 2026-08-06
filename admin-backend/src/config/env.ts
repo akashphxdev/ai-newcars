@@ -67,4 +67,15 @@ export const env = {
   // OTP emails. Required: admin login has no other OTP delivery channel.
   gmailUser: required('GMAIL_USER'),
   gmailAppPassword: required('GMAIL_APP_PASSWORD'),
+
+  // Where uploaded files are physically written. In production this
+  // points at the volume nginx serves as static.timesauto.net; locally
+  // it defaults to ./uploads so nothing has to be configured for dev.
+  assetStorageRoot: process.env.ASSET_STORAGE_ROOT || '',
+
+  // Origin that serves the files above. Only used to build the
+  // convenience `url` field on upload responses — what gets persisted is
+  // always the host-relative path, so this hostname stays out of the
+  // database and can be changed without a data migration.
+  assetPublicBaseUrl: (process.env.ASSET_PUBLIC_BASE_URL || '').replace(/\/+$/, ''),
 };

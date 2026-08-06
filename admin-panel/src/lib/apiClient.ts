@@ -64,14 +64,27 @@ import axios from "axios";
 
 const BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000/api/v1";
 const API_ORIGIN = BASE_URL.replace(/\/api\/v1\/?$/, "");
+
+// The database stores host-relative paths ("/uploads/brands/x.avif") and
+// the CDN hostname lives here in config, so repointing assets at another
+// origin is an env change rather than a rewrite of every stored path.
+// Falls back to the API origin so local development keeps working against
+// Express's own /uploads static mount.
+const ASSET_BASE_URL = (import.meta.env.VITE_ASSET_BASE_URL || API_ORIGIN).replace(/\/+$/, "");
+
 export function getUploadUrl(path?: string | null): string | null {
   if (!path) return null;
   if (/^https?:\/\//i.test(path)) return path;
-  return `${API_ORIGIN}${path.startsWith("/") ? path : `/${path}`}`;
+  return `${ASSET_BASE_URL}${path.startsWith("/") ? path : `/${path}`}`;
 }
 
+// Inverse of getUploadUrl — turns a rendered URL back into the path that
+// belongs in a database column. Strips either origin, since rows written
+// before the CDN cutover may still be resolved against the API.
 export function getRelativeUploadPath(url: string): string {
-  if (url.startsWith(API_ORIGIN)) return url.slice(API_ORIGIN.length);
+  for (const origin of [ASSET_BASE_URL, API_ORIGIN]) {
+    if (origin && url.startsWith(origin)) return url.slice(origin.length);
+  }
   return url;
 }
 

@@ -18,6 +18,7 @@ import LeadsRoutes from './leads'
 import LendersRoutes from './lenders'
 import SeoRoutes from './seo'
 import DashboardRoutes from '@/modules/dashboard/dashboard.routes'
+import AssetRoutes from '@/modules/assets/asset.routes'
 
 const router = Router();
 
@@ -39,6 +40,7 @@ router.use('/leads', LeadsRoutes)
 router.use('/lenders', LendersRoutes)
 router.use('/seo', SeoRoutes)
 router.use('/dashboard', DashboardRoutes)
+router.use('/assets', AssetRoutes)
 
 
 export default router;

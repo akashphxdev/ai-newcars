@@ -42,6 +42,7 @@ const PERMISSION_KEYS = [
   'dashboard.view',
   'ad-placements.create', 'ad-placements.delete', 'ad-placements.update', 'ad-placements.view',
   'adminlogs.view',
+  'assets.create', 'assets.delete',
   'ai.articles.delete', 'ai.articles.update', 'ai.articles.view',
   'ai.automation-rules.update', 'ai.automation-rules.view',
   'ai.dashboard.view',

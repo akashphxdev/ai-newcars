@@ -11,16 +11,27 @@ const ROLE_SELECT = {
   id: true,
   roleName: true,
   parentRoleId: true,
-  permissionIds: true,
   createdAt: true,
   parentRole: { select: { id: true, roleName: true } },
+  permissions: { select: { permissionId: true } },
 } as const;
 
+// The API still exposes permissionIds as a flat number[] — that is what
+// the admin panel sends and renders. Only the storage changed, from a
+// JSON column to the role_permissions join table.
+type RoleRow = { permissions: { permissionId: number }[] };
+
+function shapeRole<T extends RoleRow>(role: T) {
+  const { permissions, ...rest } = role;
+  return { ...rest, permissionIds: permissions.map((p) => p.permissionId) };
+}
+
 export async function listRoles() {
-  const roles = await prisma.role.findMany({
+  const rows = await prisma.role.findMany({
     select: ROLE_SELECT,
     orderBy: { roleName: 'asc' },
   });
+  const roles = rows.map(shapeRole);
 
   const parentRoles = roles.filter((r) => r.parentRoleId === null);
   const childRolesByParent: Record<number, typeof roles> = {};
@@ -45,7 +56,7 @@ export async function getRoleById(id: number) {
     throw ApiError.notFound('Role not found');
   }
 
-  return role;
+  return shapeRole(role);
 }
 
 async function validatePermissionIds(permissionIds: number[]) {
@@ -87,8 +98,10 @@ export async function createRole(input: CreateRoleParsed, actorId: number, ipAdd
     data: {
       roleName: input.roleName,
       parentRoleId: input.parentRoleId ?? null,
-      permissionIds: input.permissionIds,
       createdBy: actorId,
+      permissions: {
+        create: input.permissionIds.map((permissionId) => ({ permissionId })),
+      },
     },
     select: ROLE_SELECT,
   });
@@ -129,13 +142,25 @@ export async function updateRole(
     await validatePermissionIds(input.permissionIds);
   }
 
-  const role = await prisma.role.update({
-    where: { id },
-    data: {
-      ...(input.roleName ? { roleName: input.roleName } : {}),
-      ...(input.permissionIds ? { permissionIds: input.permissionIds } : {}),
-    },
-    select: ROLE_SELECT,
+  // Replacing the whole set in one transaction rather than diffing it:
+  // the admin panel always submits the complete list, and a
+  // delete-then-insert inside a transaction cannot leave the role
+  // half-updated if the second statement fails.
+  const role = await prisma.$transaction(async (tx) => {
+    if (input.permissionIds) {
+      await tx.rolePermission.deleteMany({ where: { roleId: id } });
+      if (input.permissionIds.length > 0) {
+        await tx.rolePermission.createMany({
+          data: input.permissionIds.map((permissionId) => ({ roleId: id, permissionId })),
+        });
+      }
+    }
+
+    return tx.role.update({
+      where: { id },
+      data: { ...(input.roleName ? { roleName: input.roleName } : {}) },
+      select: ROLE_SELECT,
+    });
   });
 
   // Permissions changed -> any cached permission set for this role is stale

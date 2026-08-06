@@ -57,37 +57,25 @@ export async function deletePermission(id: number, actorId: number, ipAddress?: 
     throw ApiError.notFound('Permission not found');
   }
 
-  // FIXED: previously this only deleted the Permission row, leaving its
-  // id behind inside any role's `permissionIds` JSON array — a dangling
-  // reference to nothing. Harmless at runtime (requirePermission always
-  // re-looks-up ids against the DB) but left role data inconsistent.
-  // Find every role that references this id and strip it out first.
-  const affectedRoles = await prisma.role.findMany({
-    select: { id: true, permissionIds: true },
+  // Which roles held this permission has to be read before the delete,
+  // purely so their cached permission sets can be invalidated afterwards
+  // — the rows themselves are removed by the role_permissions foreign
+  // key's ON DELETE CASCADE.
+  //
+  // This previously loaded every role, filtered its permissionIds JSON
+  // array in JavaScript and wrote each one back. That was a
+  // read-modify-write with no locking: a concurrent role edit between
+  // the read and the write silently lost whichever change landed first.
+  const rolesToClean = await prisma.rolePermission.findMany({
+    where: { permissionId: id },
+    select: { roleId: true },
   });
-
-  const rolesToClean = affectedRoles.filter((role) => {
-    const ids = Array.isArray(role.permissionIds) ? (role.permissionIds as number[]) : [];
-    return ids.includes(id);
-  });
-
-  if (rolesToClean.length > 0) {
-    await prisma.$transaction(
-      rolesToClean.map((role) => {
-        const ids = (role.permissionIds as number[]).filter((pId) => pId !== id);
-        return prisma.role.update({
-          where: { id: role.id },
-          data: { permissionIds: ids },
-        });
-      }),
-    );
-
-    for (const role of rolesToClean) {
-      invalidateRoleCache(role.id);
-    }
-  }
 
   await prisma.permission.delete({ where: { id } });
+
+  for (const { roleId } of rolesToClean) {
+    invalidateRoleCache(roleId);
+  }
 
   await createLog({
     adminId: actorId,

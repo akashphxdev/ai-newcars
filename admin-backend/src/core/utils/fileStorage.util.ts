@@ -1,9 +1,30 @@
 // src/core/utils/fileStorage.util.ts
 import fs from 'fs';
 import path from 'path';
+import { env } from '@/config/env';
 import { logger } from '@/core/utils/logger';
 
-export const UPLOAD_ROOT = path.join(process.cwd(), 'uploads');
+// Where files physically land. ASSET_STORAGE_ROOT points this at the
+// volume nginx publishes as static.timesauto.net; unset, it falls back
+// to ./uploads so local development needs no configuration.
+//
+// The public path written to the database is NOT affected by this — it
+// stays "/uploads/<folder>/<file>" regardless of where the bytes live,
+// so moving storage never requires rewriting existing rows.
+export const UPLOAD_ROOT = env.assetStorageRoot
+  ? path.resolve(env.assetStorageRoot)
+  : path.join(process.cwd(), 'uploads');
+
+// Resolves a stored path to the absolute URL a browser should request.
+// Returns the path unchanged when no CDN origin is configured, which is
+// what keeps local development working against the API's own /uploads
+// static mount.
+export function toPublicUrl(publicPath: string): string {
+  if (!env.assetPublicBaseUrl || /^https?:\/\//i.test(publicPath)) {
+    return publicPath;
+  }
+  return `${env.assetPublicBaseUrl}${publicPath.startsWith('/') ? publicPath : `/${publicPath}`}`;
+}
 
 function resolveUploadPath(publicPath: string): string | null {
   const relative = publicPath.replace(/^\/?uploads\//, '');
