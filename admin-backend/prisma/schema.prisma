@@ -279,7 +279,6 @@ model User {
   reviews             Review[]
   reviewReplies       ReviewReply[]
   reviewHelpfulVotes  ReviewHelpfulVote[]
-  articleComments     ArticleComment[]
   mileageLogs         MileageLog[]
   adImpressions       AdImpression[]
   adClicks            AdClick[]
@@ -1388,7 +1387,6 @@ model Article {
 
   articleBrands    ArticleBrand[]
   articleCarModels ArticleCarModel[]
-  articleComments  ArticleComment[]
   aiArticleSources AiArticle[]
 
   @@index([status, isActive, publishedAt])
@@ -1423,26 +1421,6 @@ model ArticleCarModel {
   @@index([modelId]) 
   @@unique([articleId, modelId])
   @@map("article_car_models")
-}
-
-model ArticleComment {
-  id        Int     @id @default(autoincrement())
-  articleId Int     @map("article_id")
-  article   Article @relation(fields: [articleId], references: [id])
-  userId    Int     @map("user_id")
-  user      User    @relation(fields: [userId], references: [id])
-
-  parentCommentId Int?             @map("parent_comment_id")
-  parentComment   ArticleComment?  @relation("ArticleCommentReplies", fields: [parentCommentId], references: [id])
-  replies         ArticleComment[] @relation("ArticleCommentReplies")
-
-  body String
-
-  // visible | hidden | flagged — moderation state
-  status    String   @default("visible") @db.VarChar(20)
-  createdAt DateTime @default(now()) @map("created_at")
-
-  @@map("article_comments")
 }
 
 // ============================================================

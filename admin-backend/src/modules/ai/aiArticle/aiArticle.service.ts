@@ -527,7 +527,6 @@ async function autoDeleteExcessArticles(brandId: number, keepLatest: number, str
   await prisma.$transaction([
     prisma.articleBrand.deleteMany({ where: { articleId: { in: ids } } }),
     prisma.articleCarModel.deleteMany({ where: { articleId: { in: ids } } }),
-    prisma.articleComment.deleteMany({ where: { articleId: { in: ids } } }),
     prisma.article.deleteMany({ where: { id: { in: ids } } }),
   ]);
 

@@ -1,26 +1,30 @@
 // src/modules/analytics/pageView/pageView.service.ts
 
 import { prisma } from '@/prisma/client';
+import { startOfToday, toLocalDateKey } from '@/core/utils/dateRanges';
 import type { PageViewStatsQueryParsed } from './pageView.validation';
 import type { PageViewSummary, PageViewTrendPoint, PageViewTopPage } from './pageView.types';
 
 const TOP_PAGES_LIMIT = 10;
 
+// LOCAL calendar day throughout (not UTC) — matches how
+// pageView.public.service.ts writes viewDate (startOfToday), so "today"
+// always lands in the last bucket instead of rolling back a day for
+// server timezones ahead of UTC (e.g. IST).
 function rangeStartDate(range: PageViewStatsQueryParsed['range']): Date {
-  const start = new Date();
-  start.setUTCHours(0, 0, 0, 0);
+  const start = startOfToday();
 
   switch (range) {
     case 'today':
       return start;
     case '1m':
-      start.setUTCDate(start.getUTCDate() - 29);
+      start.setDate(start.getDate() - 29);
       return start;
     case '6m':
-      start.setUTCMonth(start.getUTCMonth() - 6);
+      start.setMonth(start.getMonth() - 6);
       return start;
     case '1y':
-      start.setUTCFullYear(start.getUTCFullYear() - 1);
+      start.setFullYear(start.getFullYear() - 1);
       return start;
   }
 }
@@ -29,8 +33,8 @@ function rangeStartDate(range: PageViewStatsQueryParsed['range']): Date {
 // is still readable); monthly buckets for "6m"/"1y" — 180+ daily bars
 // would be unreadable on a small dashboard chart.
 function bucketKey(date: Date, range: PageViewStatsQueryParsed['range']): string {
-  const iso = date.toISOString();
-  return range === '6m' || range === '1y' ? iso.slice(0, 7) : iso.slice(0, 10);
+  if (range === '6m' || range === '1y') return toLocalDateKey(date).slice(0, 7);
+  return toLocalDateKey(date);
 }
 
 // The underlying table is bounded by distinct-pages × days, not raw

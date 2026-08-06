@@ -25,3 +25,18 @@ export function startOfMonth(): Date {
   d.setDate(1);
   return d;
 }
+
+// "YYYY-MM-DD" in the server's LOCAL calendar day — deliberately NOT
+// `date.toISOString().slice(0, 10)`, which reads the UTC day instead.
+// Trend-chart bucketing (dashboard.service.ts, ai/dashboard's own, and
+// pageView's) needs every date it buckets by — today's boundary AND
+// each row's own timestamp — read the same way, or the "today" bucket
+// silently lands on the wrong day for any server timezone ahead of UTC
+// (e.g. IST): local midnight, once serialized back through
+// toISOString(), rolls back to the previous UTC day.
+export function toLocalDateKey(date: Date): string {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}

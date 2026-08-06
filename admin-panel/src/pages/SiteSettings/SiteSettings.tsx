@@ -280,7 +280,7 @@ export default function SiteSettings() {
           </Field>
         </div>
         <Field label="Address">
-          <textarea rows={2} value={form.address} onChange={(e) => update({ address: e.target.value })} className={inputClass} />
+          <textarea rows={10} value={form.address} onChange={(e) => update({ address: e.target.value })} className={inputClass} />
         </Field>
       </section>
 

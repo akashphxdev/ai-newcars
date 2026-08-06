@@ -8,8 +8,10 @@
 import { prisma } from '@/prisma/client';
 import { getDashboardSummary as getAiDashboardSummary } from '../ai/dashboard/dashboard.service';
 import { SEO_PAGE_TYPE_CODES, STATIC_PAGE_TYPE } from '../seo/seoMeta/seoMeta.validation';
+import { startOfToday, toLocalDateKey } from '@/core/utils/dateRanges';
 import type {
   DashboardSummary,
+  DashboardTraffic,
   DashboardTrendPoint,
   LeadTypeCount,
   SeoPageTypeCount,
@@ -21,13 +23,6 @@ const REVIEW_STATUS_PENDING = 'pending';
 const ARTICLE_STATUS_PUBLISHED = 'published';
 const ARTICLE_STATUS_DRAFT = 'draft';
 const AD_CAMPAIGN_STATUS_ACTIVE = 'active';
-const ARTICLE_COMMENT_STATUS_FLAGGED = 'flagged';
-
-function startOfToday(): Date {
-  const d = new Date();
-  d.setHours(0, 0, 0, 0);
-  return d;
-}
 
 async function getKpis() {
   const [totalBrands, totalModels, totalVariants, totalUsedCarListings, totalUsers, totalAdmins] = await Promise.all([
@@ -81,11 +76,11 @@ async function getLeads(trendStart: Date) {
   for (let i = 0; i < TREND_DAYS; i += 1) {
     const d = new Date(since);
     d.setDate(d.getDate() - (TREND_DAYS - 1 - i));
-    trendMap.set(d.toISOString().slice(0, 10), 0);
+    trendMap.set(toLocalDateKey(d), 0);
   }
   for (const rows of [sellCarDates, buyNewCarDates, buyUsedCarDates, insuranceDates, loanDates, softLeadDates, priceDropDates]) {
     for (const row of rows) {
-      const key = row.createdAt.toISOString().slice(0, 10);
+      const key = toLocalDateKey(row.createdAt);
       if (!trendMap.has(key)) continue;
       trendMap.set(key, (trendMap.get(key) ?? 0) + 1);
     }
@@ -97,6 +92,38 @@ async function getLeads(trendStart: Date) {
     total: byType.reduce((sum, t) => sum + t.count, 0),
     trend,
   };
+}
+
+// PageViewDailyStat is already bucketed by day (one row per page per
+// day — see modules/public/analytics/pageView/pageView.public.service.ts's
+// upsert), so a native groupBy+sum gets the daily total directly instead
+// of the per-record JS bucketing getLeads needs above (lead tables have
+// one row per lead, not pre-aggregated).
+async function getTraffic(trendStart: Date): Promise<DashboardTraffic> {
+  const [totalAgg, rows] = await Promise.all([
+    prisma.pageViewDailyStat.aggregate({ _sum: { viewCount: true } }),
+    prisma.pageViewDailyStat.groupBy({
+      by: ['viewDate'],
+      where: { viewDate: { gte: trendStart } },
+      _sum: { viewCount: true },
+    }),
+  ]);
+
+  const trendMap = new Map<string, number>();
+  const since = startOfToday();
+  for (let i = 0; i < TREND_DAYS; i += 1) {
+    const d = new Date(since);
+    d.setDate(d.getDate() - (TREND_DAYS - 1 - i));
+    trendMap.set(toLocalDateKey(d), 0);
+  }
+  for (const row of rows) {
+    const key = toLocalDateKey(row.viewDate);
+    if (!trendMap.has(key)) continue;
+    trendMap.set(key, (trendMap.get(key) ?? 0) + (row._sum.viewCount ?? 0));
+  }
+  const trend: DashboardTrendPoint[] = Array.from(trendMap.entries()).map(([date, count]) => ({ date, count }));
+
+  return { total: totalAgg._sum.viewCount ?? 0, trend };
 }
 
 async function getContent() {
@@ -170,12 +197,9 @@ async function getRecentActivity() {
 }
 
 async function getPendingActions() {
-  const [reviewsPending, articleCommentsFlagged] = await Promise.all([
-    prisma.review.count({ where: { status: REVIEW_STATUS_PENDING } }),
-    prisma.articleComment.count({ where: { status: ARTICLE_COMMENT_STATUS_FLAGGED } }),
-  ]);
+  const reviewsPending = await prisma.review.count({ where: { status: REVIEW_STATUS_PENDING } });
 
-  return { reviewsPending, articleCommentsFlagged };
+  return { reviewsPending };
 }
 
 export async function getDashboardSummary(): Promise<DashboardSummary> {
@@ -183,9 +207,10 @@ export async function getDashboardSummary(): Promise<DashboardSummary> {
   const trendStart = new Date(since);
   trendStart.setDate(trendStart.getDate() - (TREND_DAYS - 1));
 
-  const [kpis, leads, content, ads, seo, ai, recentActivity, pendingActions] = await Promise.all([
+  const [kpis, leads, traffic, content, ads, seo, ai, recentActivity, pendingActions] = await Promise.all([
     getKpis(),
     getLeads(trendStart),
+    getTraffic(trendStart),
     getContent(),
     getAds(since),
     getSeo(),
@@ -194,5 +219,5 @@ export async function getDashboardSummary(): Promise<DashboardSummary> {
     getPendingActions(),
   ]);
 
-  return { kpis, leads, content, ads, seo, ai, recentActivity, pendingActions };
+  return { kpis, leads, traffic, content, ads, seo, ai, recentActivity, pendingActions };
 }

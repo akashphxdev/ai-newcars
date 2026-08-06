@@ -52,7 +52,6 @@ const PERMISSION_KEYS = [
   'ai.story-items.delete', 'ai.story-items.update', 'ai.story-items.view',
   'alladmins.create', 'alladmins.delete', 'alladmins.update', 'alladmins.view',
   'article-categories.create', 'article-categories.delete', 'article-categories.update', 'article-categories.view',
-  'article-comments.delete', 'article-comments.moderate', 'article-comments.view',
   'articles.create', 'articles.delete', 'articles.update', 'articles.view',
   'attribute-options.create', 'attribute-options.delete', 'attribute-options.update', 'attribute-options.view',
   'banners.create', 'banners.delete', 'banners.update', 'banners.view',

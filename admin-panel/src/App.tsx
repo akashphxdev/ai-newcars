@@ -30,7 +30,6 @@ import AllOffers from "./pages/newCars/Offers/AllOffers";
 import AllBodyTypes from "./pages/newCars/BodyTypes/AllBodyTypes";
 import AllAttributeOptions from "./pages/newCars/AttributeOptions/AllAttributeOptions";
 import AllArticleCategories from "./pages/Articles/ArticleCategories/AllArticleCategories";
-import AllArticleComments from "./pages/Articles/ArticleComments/AllArticleComments";
 import AllArticles from "./pages/Articles/Articles/AllArticles";
 import AllReviews from "./pages/Reviews/AllReviews/AllReviews";
 import AllNewCarLeads from "./pages/BuyLeads/NewCarLeads/AllNewCarLeads";
@@ -118,7 +117,6 @@ export default function App() {
 
           <Route path ="/articles/category" element={<AllArticleCategories/>}/>
           <Route path ="/articles/all-articles" element={<AllArticles/>}/>
-          <Route path ="/articles/article-comments" element={<AllArticleComments/>}/>
           <Route path ="/stories/story-groups" element={<AllStoryGroups/>}/>
           <Route path ="/stories/story-items" element={<AllStoryItems/>}/>
           <Route path ="/reviews/all-reviews" element={<AllReviews/>}/>

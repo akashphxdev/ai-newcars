@@ -225,7 +225,6 @@ const NAV: NavGroup[] = [
         children: [
           { label: "Category", href: "/articles/category" },
           { label: "All Articles", href: "/articles/all-articles" },
-          { label: "Article Comments", href: "articles/article-comments" },
         ],
       },
       {

@@ -1,17 +1,22 @@
 // src/modules/public/analytics/pageView/pageView.public.service.ts
 
 import { prisma } from '@/prisma/client';
+import { startOfToday } from '@/core/utils/dateRanges';
 import type { RecordPageViewParsed } from './pageView.public.validation';
 
 // Best-effort — a logging failure must never break page rendering for
 // the visitor. One row per (page, day) — every visit increments that
 // day's counter instead of inserting a new row, so the table stays
 // bounded by distinct-pages × days rather than growing with raw traffic.
+// The "day" boundary is the server's LOCAL calendar day (startOfToday),
+// matching how the admin dashboard reads these rows back (see
+// dashboard.service.ts / pageView.service.ts's toLocalDateKey usage) —
+// using UTC here instead would silently roll "today" back to yesterday
+// for any server timezone ahead of UTC (e.g. IST).
 export async function recordPageView(input: RecordPageViewParsed): Promise<void> {
   if (!input.pageUrl) return;
 
-  const today = new Date();
-  today.setUTCHours(0, 0, 0, 0);
+  const today = startOfToday();
 
   try {
     await prisma.pageViewDailyStat.upsert({

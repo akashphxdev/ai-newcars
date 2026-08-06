@@ -27,7 +27,7 @@ src/
       color/ image/ feature/ faq/ offer/
       powertrainIce/ powertrainElectric/ video/
     articles/
-      article/ articleCategory/ articleComment/
+      article/ articleCategory/
     stories/
       storyGroup/ storyItem/
 

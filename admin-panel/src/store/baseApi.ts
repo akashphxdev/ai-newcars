@@ -50,7 +50,7 @@ export const api = createApi({
   tagTypes: ["Auth", "Admin", "User", "Role", "Permission", "AdminLog", "Country", "State", "City", "Brand",
              "CarModel", "Variant", "PowertrainIce", "PowertrainElectric", "CarColor", "CarImage", "Feature",
              "FeatureCategory", "VariantFeature", "Faq",
-             "Offer", "BodyType", "AttributeOption", "Article", "ArticleCategory", "ArticleComment",
+             "Offer", "BodyType", "AttributeOption", "Article", "ArticleCategory",
              "StoryGroup", "StoryItem", "Advertiser", "AdPlacement", "AdCampaign", "AiFaq", "AiSetting", "AiAutomationRule",
              "AiLog", "AiImagePool", "AiArticle", "AiStoryItem", "Banner", "Testimonial", "AdClick", "AdImpression",
              "SiteSetting", "SearchLog", "Review", "BuyNewCarLead", "InsuranceLead", "PriceDropAlertLead", "SoftLead", "Lender", "LoanLead",

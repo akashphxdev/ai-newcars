@@ -1,6 +1,4 @@
 // src/pages/Reviews/AllReviews/review.api.ts
-//
-// RTK Query version, same pattern as Articles/ArticleComments/articleComment.api.ts.
 
 import { api } from "../../../store/baseApi";
 

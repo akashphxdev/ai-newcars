@@ -6,6 +6,7 @@
 
 import { prisma } from '@/prisma/client';
 import { AI_FEATURE_CODES, type AiFeatureCode } from '../ai.constants';
+import { startOfToday, toLocalDateKey } from '@/core/utils/dateRanges';
 import type {
   AiDashboardFeatureStatus,
   AiDashboardSummary,
@@ -19,12 +20,6 @@ const AI_ITEM_STATUS_PENDING = 1;
 // module today — SEO (3) has no ai_seo table yet, so it's reported as
 // "not built" instead of forced into a fake running/paused state.
 const BUILT_FEATURE_KEYS = new Set<number>([1, 2, 4]);
-
-function startOfToday(): Date {
-  const d = new Date();
-  d.setHours(0, 0, 0, 0);
-  return d;
-}
 
 async function getGeneratedTodayCount(featureKey: number, since: Date): Promise<number> {
   switch (featureKey) {
@@ -123,10 +118,10 @@ export async function getDashboardSummary(): Promise<AiDashboardSummary> {
   for (let i = 0; i < TREND_DAYS; i += 1) {
     const d = new Date(since);
     d.setDate(d.getDate() - (TREND_DAYS - 1 - i));
-    trendMap.set(d.toISOString().slice(0, 10), 0);
+    trendMap.set(toLocalDateKey(d), 0);
   }
   for (const row of trendLogs) {
-    const key = row.createdAt.toISOString().slice(0, 10);
+    const key = toLocalDateKey(row.createdAt);
     if (!trendMap.has(key)) continue;
     const meta = row.meta as { count?: number } | null;
     const contribution = typeof meta?.count === 'number' ? meta.count : 1;
