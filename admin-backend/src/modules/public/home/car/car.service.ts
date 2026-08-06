@@ -113,12 +113,12 @@ export function buildHomeCarWhereAndOrderBy(type: HomeCarListQueryParsed['type']
       };
     case 'popular':
       return {
-        where: { launchStatus: 'available' },
+        where: { launchStatus: 'available', variants: { some: {} } },
         orderBy: [{ ratingAvg: { sort: 'desc', nulls: 'last' } }, { createdAt: 'desc' }],
       };
     case 'latest':
     default:
-      return { where: { launchStatus: 'available' }, orderBy: { createdAt: 'desc' } };
+      return { where: { launchStatus: 'available', variants: { some: {} } }, orderBy: { createdAt: 'desc' } };
   }
 }
 

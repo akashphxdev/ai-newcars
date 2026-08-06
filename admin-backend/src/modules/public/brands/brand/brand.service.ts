@@ -81,7 +81,7 @@ export interface BrandWithCount {
 export async function listAllBrandsWithCounts(): Promise<BrandWithCount[]> {
   const [brands, counts] = await Promise.all([
     prisma.brand.findMany({ where: { isActive: true }, select: { id: true, name: true, slug: true, logoUrl: true }, orderBy: { name: 'asc' } }),
-    prisma.carModel.groupBy({ by: ['brandId'], where: { launchStatus: 'available' }, _count: { _all: true } }),
+    prisma.carModel.groupBy({ by: ['brandId'], where: { launchStatus: 'available', variants: { some: {} } }, _count: { _all: true } }),
   ]);
 
   const countByBrandId = new Map(counts.map((c) => [c.brandId, c._count._all]));
@@ -98,7 +98,7 @@ export async function getBrandBySlug(slug: string): Promise<BrandDetail> {
 }
 
 function buildBrandCarsWhere(brandId: number, filters: Omit<BrandCarsFilters, 'page' | 'limit' | 'sort'>): Prisma.CarModelWhereInput {
-  const where: Prisma.CarModelWhereInput = { brandId, launchStatus: 'available' };
+  const where: Prisma.CarModelWhereInput = { brandId, launchStatus: 'available', variants: { some: {} } };
 
   if (filters.bodyTypeSlugs?.length) {
     where.bodyType = { slug: { in: filters.bodyTypeSlugs } };
@@ -204,7 +204,7 @@ export async function listBrandCars(slug: string, filters: BrandCarsFilters): Pr
     getBodyTypeCounts(brand.id, filters),
     getFuelTypeCounts(brand.id, filters),
     prisma.carModel.aggregate({
-      where: { brandId: brand.id, launchStatus: 'available' },
+      where: { brandId: brand.id, launchStatus: 'available', variants: { some: {} } },
       _min: { priceMin: true },
       _max: { priceMax: true },
     }),

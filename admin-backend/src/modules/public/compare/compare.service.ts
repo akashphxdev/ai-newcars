@@ -293,7 +293,7 @@ export async function listVariantPowertrainOptions(slug: string, variantId: numb
 
 export async function listCarOptions(): Promise<CarOption[]> {
   const cars = await prisma.carModel.findMany({
-    where: { launchStatus: 'available' },
+    where: { launchStatus: 'available', variants: { some: {} } },
     select: {
       id: true,
       name: true,
@@ -325,7 +325,7 @@ export async function listCarVariantOptions(slug: string): Promise<CompareVarian
 }
 
 function buildRandomPairsWhere(query: RandomPairsQueryParsed): Prisma.CarModelWhereInput {
-  const where: Prisma.CarModelWhereInput = { launchStatus: 'available' };
+  const where: Prisma.CarModelWhereInput = { launchStatus: 'available', variants: { some: {} } };
 
   if (query.brandSlug) {
     where.brand = { slug: query.brandSlug };
@@ -439,8 +439,8 @@ export async function getBrandCrossBrandPairs(
   if (!brand) return [];
 
   const [brandCars, otherCars] = await Promise.all([
-    prisma.carModel.findMany({ where: { brandId: brand.id, launchStatus: 'available' }, select: { id: true }, orderBy: { id: 'asc' } }),
-    prisma.carModel.findMany({ where: { brandId: { not: brand.id }, launchStatus: 'available' }, select: { id: true }, orderBy: { id: 'asc' } }),
+    prisma.carModel.findMany({ where: { brandId: brand.id, launchStatus: 'available', variants: { some: {} } }, select: { id: true }, orderBy: { id: 'asc' } }),
+    prisma.carModel.findMany({ where: { brandId: { not: brand.id }, launchStatus: 'available', variants: { some: {} } }, select: { id: true }, orderBy: { id: 'asc' } }),
   ]);
 
   const shuffledBrand = seededShuffle(brandCars.map((c) => c.id), daySeed());
@@ -487,7 +487,7 @@ export async function getModelCrossPairs(brandSlug: string, modelSlug: string, c
   if (!model) return [];
 
   const others = await prisma.carModel.findMany({
-    where: { id: { not: model.id }, launchStatus: 'available' },
+    where: { id: { not: model.id }, launchStatus: 'available', variants: { some: {} } },
     select: { id: true },
     orderBy: { id: 'asc' },
   });

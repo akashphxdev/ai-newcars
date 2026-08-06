@@ -134,6 +134,14 @@ export interface BrowseCarsResult {
 function buildBrowseCarsWhere(filters: Omit<BrowseCarsFilters, 'page' | 'limit' | 'sort'>): Prisma.CarModelWhereInput {
   const where: Prisma.CarModelWhereInput = { launchStatus: filters.launchStatus };
 
+  // "Available" cars aren't publicly visible until they have at least one
+  // variant — an admin can create a model shell (brand/body type/price)
+  // before its variants/powertrains are entered. "Upcoming" cars are
+  // exempt: they're expected to be variant-less teasers.
+  if (filters.launchStatus === 'available') {
+    where.variants = { some: {} };
+  }
+
   if (filters.brandSlugs?.length) {
     where.brand = { slug: { in: filters.brandSlugs } };
   }
@@ -452,6 +460,13 @@ export async function getCarDetail(brandSlug: string, modelSlug: string, variant
 
   if (!car) throw ApiError.notFound(`Car "${brandSlug}/${modelSlug}" not found`);
 
+  // Same "available means it has a variant" rule as buildBrowseCarsWhere —
+  // enforced again here so a variant-less model's detail page 404s even
+  // if its URL is guessed/indexed directly instead of reached via a listing.
+  if (car.launchStatus === 'available' && car._count.variants === 0) {
+    throw ApiError.notFound(`Car "${brandSlug}/${modelSlug}" not found`);
+  }
+
   const chosenVariantId = variantId ?? car.variants[0]?.id;
   let selectedVariant: CarDetailSelectedVariant | null = null;
 
@@ -696,7 +711,7 @@ export interface CarModelLookup {
 // HOME_CAR_SELECT shape (no image/bodyType/rating needed for a picker).
 export async function listModelsByBrand(brandId: number): Promise<CarModelLookup[]> {
   const models = await prisma.carModel.findMany({
-    where: { brandId, launchStatus: 'available' },
+    where: { brandId, launchStatus: 'available', variants: { some: {} } },
     select: { id: true, name: true, slug: true, priceMin: true, priceMax: true },
     orderBy: { name: 'asc' },
   });

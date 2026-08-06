@@ -29,6 +29,10 @@ export async function searchCars(query: SearchCarsQueryParsed, meta: SearchMeta)
   const cars = await prisma.carModel.findMany({
     where: {
       OR: [{ name: { contains: q, mode: 'insensitive' } }, { brand: { name: { contains: q, mode: 'insensitive' } } }],
+      // "Available" models without a variant yet aren't publicly viewable
+      // (see cars/car/car.service.ts) — don't surface them here either,
+      // since their detail page would 404. "Upcoming" models are exempt.
+      NOT: { launchStatus: 'available', variants: { none: {} } },
     },
     select: SEARCH_SELECT,
     orderBy: [{ ratingAvg: 'desc' }, { name: 'asc' }],
