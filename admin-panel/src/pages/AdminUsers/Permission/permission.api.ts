@@ -18,7 +18,7 @@ export interface ListPermissionsResponse {
 
 export interface CreatePermissionInput {
   module: string;
-  action: "view" | "create" | "update" | "delete";
+  action: "view" | "create" | "update" | "delete" | "moderate" | "upload";
 }
 
 interface PermissionListRawResponse {

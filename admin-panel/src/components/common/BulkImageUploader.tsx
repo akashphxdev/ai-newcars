@@ -2,7 +2,7 @@
 //
 // Pick multiple image files at once, preview them, and upload all of
 // them in a single API call via useCreateImagesBulkMutation. Scoping
-// (modelId + optional variantId/colorId/angle) is fixed by the parent —
+// (modelId + optional colorId/angle) is fixed by the parent —
 // this widget only handles file selection + the upload action itself.
 
 import { useRef, useState } from "react";
@@ -19,13 +19,11 @@ interface PendingFile {
 
 export default function BulkImageUploader({
   modelId,
-  variantId,
   colorId,
   angle,
   onDone,
 }: {
   modelId: number;
-  variantId?: number;
   colorId?: number;
   angle?: CarImageAngle;
   // Called after a successful upload (e.g. so the parent can collapse
@@ -70,7 +68,6 @@ export default function BulkImageUploader({
     try {
       await createImagesBulk({
         modelId,
-        variantId,
         colorId,
         angle,
         images: pending.map((p) => p.file),

@@ -8,6 +8,7 @@ import {
   SOFT_LEAD_CALCULATOR_TYPES,
   SOFT_LEAD_CALCULATOR_LABELS,
   type SoftLeadRecord,
+  type SoftLeadCalculatorType,
   type SoftLeadStatus,
 } from "./softLead.api";
 import { useGetBrandOptionsQuery } from "../../newCars/Brands/brand.api";
@@ -76,7 +77,7 @@ export default function AllSoftLeads() {
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [brandId, setBrandId] = useState<number | "">("");
   const [modelId, setModelId] = useState<number | "">("");
-  const [calculatorType, setCalculatorType] = useState<string>("");
+  const [calculatorType, setCalculatorType] = useState<SoftLeadCalculatorType | "">("");
   const [status, setStatus] = useState<SoftLeadStatus | "">("");
 
   useEffect(() => {
@@ -100,7 +101,7 @@ export default function AllSoftLeads() {
     search: debouncedSearch || undefined,
     brandId: brandId || undefined,
     modelId: modelId || undefined,
-    calculatorType: (calculatorType || undefined) as SoftLeadRecord["calculatorType"] | undefined,
+    calculatorType: calculatorType || undefined,
     status: status || undefined,
   });
 
@@ -245,7 +246,7 @@ export default function AllSoftLeads() {
         <FilterSelect
           value={calculatorType}
           onChange={(v) => {
-            setCalculatorType(v ? String(v) : "");
+            setCalculatorType((v as SoftLeadCalculatorType) || "");
             setPage(1);
           }}
           options={SOFT_LEAD_CALCULATOR_TYPES.map((c) => ({ value: c, label: SOFT_LEAD_CALCULATOR_LABELS[c] }))}
