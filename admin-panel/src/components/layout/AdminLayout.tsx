@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Outlet } from "react-router-dom";
 import Header from "./Header";
 import Sidebar from "./Sidebar";
+import CommandPalette from "../common/CommandPalette";
 
 export default function AdminLayout() {
   // ✅ Fixed: initial state seedha useState mein, useEffect nahi
@@ -9,6 +10,7 @@ export default function AdminLayout() {
 
   return (
     <div className="h-screen bg-[#f7f5f1] flex flex-col font-['Inter',sans-serif] overflow-hidden">
+      <CommandPalette />
       <Header
         sidebarCollapsed={collapsed}
         onToggleSidebar={() => setCollapsed((v) => !v)}

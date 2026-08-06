@@ -168,20 +168,26 @@ export default function Header({ sidebarCollapsed, onToggleSidebar }: HeaderProp
       </div>
 
       <div className="flex-1 max-w-sm ml-2">
-        <div className="flex items-center gap-2 bg-[#f7f5f1] border border-[#e8e4dc] rounded-lg px-3 py-2">
+        {/* Opens the ⌘K palette. Previously a real <input> with no state
+            or handler attached, so typing in it did nothing. */}
+        <button
+          type="button"
+          onClick={() =>
+            window.dispatchEvent(
+              new KeyboardEvent("keydown", { key: "k", metaKey: true, bubbles: true }),
+            )
+          }
+          className="w-full cursor-pointer flex items-center gap-2 bg-[#f7f5f1] border border-[#e8e4dc] rounded-lg px-3 py-2 hover:border-[#d8d2c8] transition-colors"
+        >
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#c0bab0" strokeWidth="1.8">
             <circle cx="11" cy="11" r="8" />
             <line x1="21" y1="21" x2="16.65" y2="16.65" />
           </svg>
-          <input
-            type="text"
-            placeholder="Search anything..."
-            className="flex-1 bg-transparent text-xs text-[#1c1a17] outline-none placeholder:text-[#c0bab0]"
-          />
+          <span className="flex-1 text-left text-xs text-[#c0bab0]">Search pages...</span>
           <kbd className="hidden sm:inline text-[9px] font-bold text-[#c0bab0] bg-white border border-[#e8e4dc] rounded px-1 py-0.5">
             ⌘K
           </kbd>
-        </div>
+        </button>
       </div>
 
       <div className="ml-auto flex items-center gap-2">

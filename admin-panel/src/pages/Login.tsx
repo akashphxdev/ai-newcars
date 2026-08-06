@@ -204,16 +204,54 @@ function OtpForm({ adminId, maskedEmail, onBack, onSuccess }: OtpFormProps) {
     };
   }, [startTimer]);
 
-  const handleChange = (val: string, idx: number) => {
-    if (!/^\d?$/.test(val)) return;
+  // Spreads `digits` across the boxes starting at `startIdx` and focuses
+  // whatever comes after the last one filled. Shared by typing and
+  // pasting so both behave identically.
+  const fillFrom = (startIdx: number, digits: string) => {
+    if (!digits) return;
     const next = [...otp];
-    next[idx] = val;
+    for (let i = 0; i < digits.length && startIdx + i < 6; i++) {
+      next[startIdx + i] = digits[i];
+    }
     setOtp(next);
-    if (val && idx < 5) document.getElementById(`otp-${idx + 1}`)?.focus();
+    const landed = Math.min(startIdx + digits.length, 5);
+    document.getElementById(`otp-${landed}`)?.focus();
   };
+
+  const handleChange = (val: string, idx: number) => {
+    // Autofill (iOS/Android SMS suggestion) delivers the whole code to one
+    // box, so anything longer than a single character is distributed
+    // rather than rejected.
+    const digits = val.replace(/\D/g, "");
+    if (!digits) {
+      if (val === "") {
+        const next = [...otp];
+        next[idx] = "";
+        setOtp(next);
+      }
+      return;
+    }
+    fillFrom(idx, digits);
+  };
+
+  // maxLength={1} truncates a pasted code to its first character before
+  // onChange ever sees it, which is why pasting used to fill only the
+  // first box. Reading the clipboard here bypasses that entirely.
+  const handlePaste = (e: React.ClipboardEvent<HTMLInputElement>, idx: number) => {
+    const digits = e.clipboardData.getData("text").replace(/\D/g, "").slice(0, 6);
+    if (!digits) return;
+    e.preventDefault();
+    // A full-length code always starts at the first box, however the user
+    // got there; a shorter fragment fills from where they are.
+    fillFrom(digits.length === 6 ? 0 : idx, digits);
+  };
+
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>, idx: number) => {
-    if (e.key === "Backspace" && !otp[idx] && idx > 0)
+    if (e.key === "Backspace" && !otp[idx] && idx > 0) {
       document.getElementById(`otp-${idx - 1}`)?.focus();
+    }
+    if (e.key === "ArrowLeft" && idx > 0) document.getElementById(`otp-${idx - 1}`)?.focus();
+    if (e.key === "ArrowRight" && idx < 5) document.getElementById(`otp-${idx + 1}`)?.focus();
   };
 
   const handleVerify = useCallback(async (digits: string) => {
@@ -268,9 +306,11 @@ function OtpForm({ adminId, maskedEmail, onBack, onSuccess }: OtpFormProps) {
               id={`otp-${idx}`}
               type="text"
               inputMode="numeric"
-              maxLength={1}
+              autoComplete={idx === 0 ? "one-time-code" : "off"}
+              maxLength={6}
               value={digit}
               onChange={(e) => handleChange(e.target.value, idx)}
+              onPaste={(e) => handlePaste(e, idx)}
               onKeyDown={(e) => handleKeyDown(e, idx)}
               onFocus={(e) => e.target.select()}
               className="w-11 h-12 text-center text-[#1c1a17] text-lg font-bold bg-[#f7f5f1] border border-[#e2ddd5] rounded-xl outline-none transition-all focus:border-[#D4300F] focus:ring-2 focus:ring-[#D4300F]/10 focus:bg-white"

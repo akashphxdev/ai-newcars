@@ -1,6 +1,7 @@
 // Sidebar.tsx
-import { useState, useRef } from "react";
+import { useState, useRef, useMemo } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
+import { useGetDashboardSummaryQuery } from "../../pages/Dashboard/dashboard.api";
 import { useAuth } from "../../context/useAuth";
 
 const ACCENT = "#D4300F";
@@ -13,7 +14,6 @@ interface ChildItem {
 interface NavItemType {
   label: string;
   href?: string;
-  badge?: string;
   icon: React.ReactNode;
   children?: ChildItem[];
 }
@@ -23,9 +23,14 @@ interface NavGroup {
   items: NavItemType[];
 }
 
+
 interface NavItemProps {
   item: NavItemType;
   collapsed: boolean;
+  // Live count for this item, or undefined when there is nothing to show.
+  // Passed in rather than fetched per item so the sidebar makes one
+  // request, not one per badge.
+  badge?: number;
 }
 
 interface SidebarProps {
@@ -147,7 +152,6 @@ const NAV: NavGroup[] = [
     items: [
       {
         label: "Buy Leads",
-        badge: "24",
         icon: (
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
             <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
@@ -165,7 +169,6 @@ const NAV: NavGroup[] = [
       },
       {
         label: "Sell Leads",
-        badge: "8",
         icon: (
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
             <line x1="12" y1="1" x2="12" y2="23" />
@@ -339,7 +342,30 @@ const NAV: NavGroup[] = [
   },
 ];
 
-function NavItem({ item, collapsed }: NavItemProps) {
+// Flattened, icon-free view of NAV for the command palette. Derived from
+// the same source the sidebar renders, so a route added above is
+// searchable without touching anything else.
+export interface SearchableRoute {
+  label: string;
+  href: string;
+  group: string;
+  parent?: string;
+}
+
+export const SEARCHABLE_ROUTES: SearchableRoute[] = NAV.flatMap((g) =>
+  g.items.flatMap((item) => {
+    const self = item.href ? [{ label: item.label, href: item.href, group: g.group }] : [];
+    const children = (item.children ?? []).map((c) => ({
+      label: c.label,
+      href: c.href,
+      group: g.group,
+      parent: item.label,
+    }));
+    return [...self, ...children];
+  }),
+);
+
+function NavItem({ item, collapsed, badge }: NavItemProps) {
   const navigate = useNavigate();
   const location = useLocation();
   const [open, setOpen] = useState(false);
@@ -389,12 +415,13 @@ function NavItem({ item, collapsed }: NavItemProps) {
         {!collapsed && (
           <>
             <span className="flex-1 text-[12.5px] truncate">{item.label}</span>
-            {item.badge && (
+            {badge != null && badge > 0 && (
               <span
                 className="text-[10px] font-bold text-white px-1.5 py-0.5 rounded-full min-w-[18px] text-center"
                 style={{ background: ACCENT }}
+                title={`${badge} total`}
               >
-                {item.badge}
+                {badge > 99 ? "99+" : badge}
               </span>
             )}
             {hasChildren && (
@@ -480,6 +507,23 @@ export default function Sidebar({ collapsed }: SidebarProps) {
   const { logout } = useAuth();
   const [loggingOut, setLoggingOut] = useState(false);
 
+  // One request for the whole sidebar. The chips previously showed the
+  // literals 24 and 8 regardless of what was in the database.
+  const { data: summary } = useGetDashboardSummaryQuery();
+
+  const badges = useMemo<Record<string, number>>(() => {
+    const byType = summary?.leads?.byType ?? [];
+    const count = (...types: string[]) =>
+      byType.filter((l) => types.includes(l.type)).reduce((sum, l) => sum + l.count, 0);
+
+    return {
+      // Mirrors the children listed under each item: everything a visitor
+      // submits while buying vs. the sell-side enquiries.
+      "Buy Leads": count("buyNewCar", "buyUsedCar", "insurance", "loan", "softLead", "priceDropAlert"),
+      "Sell Leads": count("sellCar"),
+    };
+  }, [summary]);
+
   const handleLogout = async () => {
     setLoggingOut(true);
     await logout();
@@ -502,7 +546,7 @@ export default function Sidebar({ collapsed }: SidebarProps) {
             )}
             <div className="space-y-0.5">
               {group.items.map((item) => (
-                <NavItem key={item.label} item={item} collapsed={collapsed} />
+                <NavItem key={item.label} item={item} collapsed={collapsed} badge={badges[item.label]} />
               ))}
             </div>
           </div>
