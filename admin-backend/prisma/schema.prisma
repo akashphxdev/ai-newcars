@@ -110,16 +110,16 @@ model AttributeOption {
 // ============================================================
 
 model Role {
-  id            Int      @id @default(autoincrement())
-  roleName      String   @map("role_name") @db.VarChar(50)
-  parentRoleId  Int?     @map("parent_role_id")
-  parentRole    Role?    @relation("RoleHierarchy", fields: [parentRoleId], references: [id])
-  childRoles    Role[]   @relation("RoleHierarchy")
-  permissionIds Json?    @map("permission_ids")
-  createdBy     Int?     @map("created_by")
-  createdAt     DateTime @default(now()) @map("created_at")
+  id           Int      @id @default(autoincrement())
+  roleName     String   @map("role_name") @db.VarChar(50)
+  parentRoleId Int?     @map("parent_role_id")
+  parentRole   Role?    @relation("RoleHierarchy", fields: [parentRoleId], references: [id])
+  childRoles   Role[]   @relation("RoleHierarchy")
+  createdBy    Int?     @map("created_by")
+  createdAt    DateTime @default(now()) @map("created_at")
 
-  adminUsers AdminUser[]
+  adminUsers  AdminUser[]
+  permissions RolePermission[]
 
   @@map("roles")
 }
@@ -130,7 +130,23 @@ model Permission {
   action        String @db.VarChar(20)
   permissionKey String @unique @map("permission_key") @db.VarChar(100)
 
+  rolePermissions RolePermission[]
+
   @@map("permissions")
+}
+
+// Replaces the old roles.permission_ids JSON array — see migration
+// 20260806120000. The cascade here is what lets a permission be deleted
+// in one statement instead of a read-modify-write over every role.
+model RolePermission {
+  roleId       Int        @map("role_id")
+  role         Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  permissionId Int        @map("permission_id")
+  permission   Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+
+  @@id([roleId, permissionId])
+  @@index([permissionId])
+  @@map("role_permissions")
 }
 
 model AdminUser {
@@ -349,6 +365,15 @@ model CarModel {
   coverImageUrl      String?   @map("cover_image_url") @db.VarChar(255)
   createdAt          DateTime  @default(now()) @map("created_at")
 
+  // Derived from this model's variants and their live powertrains, kept
+  // current by database triggers (migration 20260806120000). Never write
+  // these from application code — the trigger will overwrite it.
+  hasPetrol    Boolean @default(false) @map("has_petrol")
+  hasDiesel    Boolean @default(false) @map("has_diesel")
+  hasCng       Boolean @default(false) @map("has_cng")
+  hasElectric  Boolean @default(false) @map("has_electric")
+  variantCount Int     @default(0) @map("variant_count")
+
   variants            CarVariant[]
   images              CarImage[]
   faqs                CarFaq[]
@@ -370,8 +395,8 @@ model CarModel {
 
   @@index([brandId])
   @@index([bodyTypeId])
-  @@index([launchStatus])
-  @@index([priceMin])
+  @@index([brandId, launchStatus], map: "car_models_brand_status_idx")
+  @@index([bodyTypeId, launchStatus], map: "car_models_body_status_idx")
   @@map("car_models")
 }
 
