@@ -18,8 +18,10 @@ async function main() {
   if (!superAdminRole) {
     superAdminRole = await prisma.role.create({
       data: {
+        // No permission rows: Super Admin bypasses the permission check
+        // entirely in requirePermission, so granting it every row would be
+        // redundant and would go stale as new permissions are added.
         roleName: 'Super Admin',
-        permissionIds: [], // super admin bypasses permission checks in app logic
       },
     });
     console.log(`Created role: ${superAdminRole.roleName} (id: ${superAdminRole.id})`);

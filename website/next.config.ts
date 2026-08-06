@@ -1,6 +1,19 @@
 import type { NextConfig } from "next";
 
+// Assets are served from a CDN origin in every deployed environment and
+// from the API's own /uploads mount locally. Both have to be allowlisted
+// for next/image, which refuses to optimise a host it was not told about
+// — an unlisted host is a hard 400, not a silent passthrough, so a wrong
+// value here breaks every image on the site.
+const assetBase = process.env.NEXT_PUBLIC_ASSET_BASE_URL;
+const assetPattern = assetBase ? new URL(assetBase) : null;
+
 const nextConfig: NextConfig = {
+  // Emits .next/standalone with only the modules actually reached at
+  // runtime, so a deploy ships that instead of the whole node_modules
+  // tree. Matters here because the host is memory- and disk-constrained.
+  output: "standalone",
+
   // "/tata-motors-cars" or "/suv-cars" -> internally served by
   // app/listing-cars/[slug]/page.tsx (slug = "tata-motors" / "suv"). A
   // plain [slug]-cars folder isn't valid Next.js routing syntax (dynamic
@@ -47,15 +60,25 @@ const nextConfig: NextConfig = {
     ];
   },
   images: {
-    // Next.js 16 blocks image optimization for local/private IPs by
-    // default (security hardening against SSRF-style abuse). Safe to
-    // allow here since admin-backend runs on localhost in dev — revisit
-    // once the backend has a real domain in production.
-    dangerouslyAllowLocalIP: true,
+    // Next.js blocks image optimization for local/private IPs by default
+    // as SSRF hardening. Only lifted for local development, where the
+    // backend genuinely is on localhost — never in a deployed build.
+    dangerouslyAllowLocalIP: process.env.NODE_ENV !== "production",
     remotePatterns: [
-      // admin-backend's /uploads (banners, brand logos, car covers,
-      // city logos, testimonial photos). Update the hostname here when
-      // the backend moves off localhost in production.
+      // The CDN origin (static.timesauto.net), derived from the same env
+      // var the app resolves asset paths against so the two can never
+      // disagree about which host serves uploads.
+      ...(assetPattern
+        ? [
+            {
+              protocol: assetPattern.protocol.replace(":", "") as "http" | "https",
+              hostname: assetPattern.hostname,
+              pathname: "/uploads/**",
+            },
+          ]
+        : []),
+      // admin-backend's own /uploads mount — the local-development
+      // fallback, and the rollback path if assets ever move back off CDN.
       { protocol: "http", hostname: "localhost", port: "5000", pathname: "/uploads/**" },
       // Still-static sections (Comparecars/Videos/Stories) — remove
       // once those are wired to real data too.

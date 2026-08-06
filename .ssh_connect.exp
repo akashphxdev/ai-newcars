@@ -1,0 +1,37 @@
+#!/usr/bin/expect -f
+#
+# Opens a persistent SSH control master for this project's server.
+# Credentials are read from the canonical secrets file at runtime and
+# never appear in this script, in process arguments, or in shell history.
+#
+# Usage:
+#   expect /Users/vmconnect/TimesAuto/.ssh_connect.exp
+#   ssh -o ControlPath=/Users/vmconnect/.ssh/cm/%r@%h:%p root@<host> "<command>"
+
+set timeout 30
+
+# TimesAuto is being deployed onto the TimesMoney host, so the
+# credentials live under that project's name.
+set creds_file "/Users/vmconnect/Projects/server_test/timesmoney"
+
+if {![file readable $creds_file]} { puts stderr "creds file not readable: $creds_file"; exit 2 }
+set fd [open $creds_file r]; set lines [split [read $fd] "\n"]; close $fd
+set host [string trim [lindex $lines 0]]
+set user [string trim [lindex $lines 1]]
+set pass [string trim [lindex $lines 2]]
+if {$host eq "" || $user eq "" || $pass eq ""} { puts stderr "creds file malformed"; exit 2 }
+
+# Keeps the password out of the transcript even if ssh ever echoes it.
+log_user 0
+
+set cm "/Users/vmconnect/.ssh/cm/%r@%h:%p"
+spawn ssh -o StrictHostKeyChecking=accept-new -o UserKnownHostsFile=/Users/vmconnect/.ssh/known_hosts \
+    -o ControlMaster=yes -o ControlPath=$cm -o ControlPersist=30m \
+    -o ServerAliveInterval=30 -N -f $user@$host
+expect {
+    -re "(?i)password:" { send -- "$pass\r"; exp_continue }
+    -re "(?i)yes/no" { send "yes\r"; exp_continue }
+    eof
+}
+
+puts "control master open for $user@$host"
