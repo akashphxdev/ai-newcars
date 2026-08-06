@@ -6,6 +6,7 @@
 // deliver; subject and HTML content stay with the caller.
 
 import { env } from '@/config/env';
+import { ApiError } from '@/core/errors/ApiError';
 import { logger } from '@/core/utils/logger';
 
 export interface SendMailInput {
@@ -39,6 +40,11 @@ function toPlainText(html: string): string {
     .trim();
 }
 
+// Shown to the user when delivery fails. Deliberately says nothing about
+// the provider or the reason — those go to the log.
+const MAIL_FAILURE_MESSAGE =
+  'We could not send the verification code right now. Please try again in a moment.';
+
 const REQUEST_TIMEOUT_MS = 10_000;
 const MAX_ATTEMPTS = 3;
 
@@ -47,12 +53,15 @@ const MAX_ATTEMPTS = 3;
 // retried — a 4xx means the request itself is wrong and will fail again.
 export async function sendMail(input: SendMailInput): Promise<void> {
   if (!env.mailApiKey) {
-    throw new Error('MAIL_API_KEY is not configured — cannot send email');
+    logger.error('[mailer] MAIL_API_KEY is not configured — cannot send email');
+    throw ApiError.internal(MAIL_FAILURE_MESSAGE);
   }
 
   const body = JSON.stringify({
     from: env.mailFrom,
-    to: input.to,
+    // Must be an array. The provider's own example shows a bare string,
+    // but the API rejects that with "to: Expected array, received string".
+    to: [input.to],
     subject: input.subject,
     text: toPlainText(input.html),
     html: input.html,
@@ -91,6 +100,9 @@ export async function sendMail(input: SendMailInput): Promise<void> {
     }
   }
 
+  // The provider's message can name the account, the domain, or the key's
+  // scope, so it is logged rather than returned. The caller gets something
+  // a user can act on instead of a bare "something went wrong".
   logger.error(`[mailer] Failed to send "${input.subject}" to ${input.to}: ${lastError}`);
-  throw new Error(`Email delivery failed: ${lastError}`);
+  throw ApiError.internal(MAIL_FAILURE_MESSAGE);
 }
