@@ -63,10 +63,17 @@ export const env = {
   // required — if Redis is unreachable, publicCache just skips caching
   // and requests fall through to the DB, see redisClient.ts.
   redisUrl: process.env.REDIS_URL || 'redis://localhost:6379',
-  // Gmail SMTP (app password) — used by core/utils/mailer.ts to send
-  // OTP emails. Required: admin login has no other OTP delivery channel.
-  gmailUser: required('GMAIL_USER'),
-  gmailAppPassword: required('GMAIL_APP_PASSWORD'),
+  // Transactional email (core/utils/mailer.ts).
+  //
+  // Deliberately not required at boot. This process also serves the whole
+  // public catalogue, none of which sends email — refusing to start over a
+  // missing mail key would take the website's API down to protect a login
+  // flow. sendMail throws a clear error instead, so the failure lands on
+  // the request that actually needed email.
+  mailApiUrl: process.env.MAIL_API_URL || 'https://api.quick2host.net/v1/messages',
+  mailApiKey: process.env.MAIL_API_KEY || '',
+  // Must be a sender the provider has verified, or every send is rejected.
+  mailFrom: process.env.MAIL_FROM || 'noreply@timesauto.net',
 
   // Where uploaded files are physically written. In production this
   // points at the volume nginx serves as static.timesauto.net; locally
