@@ -62,6 +62,7 @@ import AllBanners from "./pages/Home/Banners/AllBanners";
 import AllTestimonials from "./pages/Home/Testimonials/AllTestimonials";
 import SiteSettings from "./pages/SiteSettings/SiteSettings";
 import AllSeoMetas from "./pages/Seo/SeoMeta/AllSeoMetas";
+import AllSeoRedirects from "./pages/Seo/SeoRedirects/AllSeoRedirects";
 // ── Auth guard — baad mein real auth logic lagao ──────────────────────────────
 function RequireAuth({ children }: { children: React.ReactNode }) {
   const isLoggedIn = !!localStorage.getItem("admin_token"); // apna auth check yahan
@@ -140,6 +141,7 @@ export default function App() {
           <Route path ="/ads/clicks" element={<AllClicks/>}/>
 
           <Route path="/seo/meta" element={<AllSeoMetas />} />
+          <Route path="/seo/redirects" element={<AllSeoRedirects />} />
 
           <Route path="/analytics/search-logs" element={<AllSearchLogs />} />
           <Route path="/analytics/page-views" element={<AllPageViews />} />

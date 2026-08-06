@@ -172,7 +172,8 @@ model AdminUser {
   leadActivities        LeadActivity[]
   seoMetaCreated       SeoMeta[]           @relation("SeoMetaCreatedBy")
   seoMetaUpdated       SeoMeta[]           @relation("SeoMetaUpdatedBy")
-  seoRedirectsCreated   SeoRedirect[]
+  seoRedirectsCreated   SeoRedirect[]       @relation("SeoRedirectCreatedBy")
+  seoRedirectsUpdated   SeoRedirect[]       @relation("SeoRedirectUpdatedBy")
 
   articlesAuthored         Article[]         @relation("ArticleAuthor")
   articlesCreated          Article[]         @relation("ArticleCreatedBy")
@@ -1288,9 +1289,13 @@ model SeoRedirect {
   redirectType   Int        @default(301) @map("redirect_type")
   isActive       Boolean    @default(true) @map("is_active")
   createdBy      Int?       @map("created_by")
-  createdByAdmin AdminUser? @relation(fields: [createdBy], references: [id])
+  createdByAdmin AdminUser? @relation("SeoRedirectCreatedBy", fields: [createdBy], references: [id])
   createdAt      DateTime   @default(now()) @map("created_at")
+  updatedBy      Int?       @map("updated_by")
+  updatedByAdmin AdminUser? @relation("SeoRedirectUpdatedBy", fields: [updatedBy], references: [id])
+  updatedAt      DateTime   @updatedAt @map("updated_at")
 
+  @@index([isActive, createdAt])
   @@map("seo_redirects")
 }
 
