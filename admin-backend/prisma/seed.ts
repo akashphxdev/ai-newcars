@@ -27,7 +27,11 @@ async function main() {
     console.log(`Role already exists: ${superAdminRole.roleName} (id: ${superAdminRole.id})`);
   }
 
-  // 2. Create the first admin user if it doesn't exist
+  // 2. Upsert the admin by email — same email already exists -> refresh
+  // its password/mobile to the values below; doesn't exist -> create it.
+  // Never deletes anything (no admin-wipe here — see prior conversation:
+  // a hard delete-all would violate ON DELETE RESTRICT foreign keys from
+  // admin_logs/site_settings/etc.).
   const adminEmail = 'akashmeena@phx.co.in';
   const adminMobile = '7850986035';
   const adminPassword = 'Admin@1234'; // change after first login
@@ -36,15 +40,29 @@ async function main() {
   const accessEndDate = new Date();
   accessEndDate.setFullYear(accessEndDate.getFullYear() + 10); // valid for 10 years
 
-  const existingAdmin = await prisma.adminUser.findFirst({
-    where: { OR: [{ email: adminEmail }, { mobile: adminMobile }] },
+  const passwordHash = await bcrypt.hash(adminPassword, SALT_ROUNDS);
+
+  const existingAdmin = await prisma.adminUser.findUnique({
+    where: { email: adminEmail },
   });
 
   if (existingAdmin) {
-    console.log(`Admin already exists: ${existingAdmin.email}`);
-  } else {
-    const passwordHash = await bcrypt.hash(adminPassword, SALT_ROUNDS);
+    const admin = await prisma.adminUser.update({
+      where: { id: existingAdmin.id },
+      data: {
+        mobile: adminMobile,
+        passwordHash,
+        roleId: superAdminRole.id,
+        status: 'active',
+      },
+    });
 
+    console.log('Existing admin updated:');
+    console.log(`  Email:            ${admin.email}`);
+    console.log(`  Mobile:           ${admin.mobile}`);
+    console.log(`  Password:         ${adminPassword}`);
+    console.log('  (Change this password after logging in)');
+  } else {
     const admin = await prisma.adminUser.create({
       data: {
         name: 'Super Admin',
@@ -58,7 +76,7 @@ async function main() {
       },
     });
 
-    console.log('First admin created successfully:');
+    console.log('New admin created successfully:');
     console.log(`  Email:            ${admin.email}`);
     console.log(`  Mobile:           ${admin.mobile}`);
     console.log(`  Password:         ${adminPassword}`);

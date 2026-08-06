@@ -2,7 +2,11 @@
 
 import { z } from 'zod';
 
-const ACTIONS = ['view', 'create', 'update', 'delete'] as const; // CHANGED: lock/export/approve hataye
+// 'moderate'/'upload' added — reviews/article-comments/leads.moderate and
+// ai.image-pool.upload are real keys already checked by requirePermission()
+// in the routes (see prisma/seed-site-settings-and-permissions.ts's
+// PERMISSION_KEYS), but this enum didn't allow recreating them by hand.
+const ACTIONS = ['view', 'create', 'update', 'delete', 'moderate', 'upload'] as const;
 
 export const createPermissionSchema = z.object({
   module: z
@@ -11,7 +15,9 @@ export const createPermissionSchema = z.object({
     .toLowerCase()
     .min(2, 'Module must be at least 2 characters')
     .max(50)
-    .regex(/^[a-z_]+$/, 'Module must be lowercase letters/underscores only (e.g. "leads", "admins")'),
+    // Hyphen added — modules like "ad-placements", "article-categories",
+    // "story-groups" are real keys already in use (same reason as above).
+    .regex(/^[a-z_-]+$/, 'Module must be lowercase letters/underscores/hyphens only (e.g. "leads", "ad-placements")'),
   action: z.enum(ACTIONS, { message: `Action must be one of: ${ACTIONS.join(', ')}` }),
 });
 

@@ -5,7 +5,9 @@ import { useCreatePermissionMutation } from "./permission.api";
 import { extractApiError } from "../../../lib/apiClient";
 
 const ACCENT = "#D4300F";
-const ACTIONS = ["view", "create", "update", "delete"] as const;
+// Mirrors ACTIONS in backend/src/modules/admins/permission/permission.validation.ts —
+// keep both in sync if an action is ever added/removed.
+const ACTIONS = ["view", "create", "update", "delete", "moderate", "upload"] as const;
 
 interface FieldErrors {
   module?: string;
@@ -46,8 +48,8 @@ export default function PermissionModal({ open, onClose }: { open: boolean; onCl
     const trimmed = module.trim();
     if (trimmed.length < 2) {
       next.module = "Module must be at least 2 characters (e.g. leads, admins).";
-    } else if (!/^[a-z_]+$/.test(trimmed.toLowerCase())) {
-      next.module = "Module must be lowercase letters/underscores only.";
+    } else if (!/^[a-z_-]+$/.test(trimmed.toLowerCase())) {
+      next.module = "Module must be lowercase letters/underscores/hyphens only.";
     }
     setErrors(next);
     return Object.keys(next).length === 0;
@@ -103,7 +105,7 @@ export default function PermissionModal({ open, onClose }: { open: boolean; onCl
               type="text"
               value={module}
               onChange={(e) => setModule(e.target.value)}
-              placeholder="e.g. leads, admins, stories"
+              placeholder="e.g. leads, admins, ad-placements"
               className="w-full text-sm font-medium text-[#1c1a17] bg-[#f7f5f1] border rounded-xl px-3 py-2.5 outline-none transition-all focus:bg-white"
               style={{
                 borderColor: errors.module ? "#f0997b" : "#e2ddd5",
