@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Image from "next/image";
 import { FuelIcon, FlameIcon, BoltIcon, TagIcon, ShieldIcon, CheckIcon } from "@/components/common/icons";
 import { getModelsByBrand } from "@/features/calculators/emiCalculator.api";
@@ -13,6 +13,10 @@ import { calculateRunningCost } from "@/lib/mileageMath";
 import { formatRupee } from "@/lib/calculatorFormat";
 import { Label, selectClass, inputClass } from "@/components/calculators/CalculatorFormControls";
 import SoftLeadCapture from "@/components/leads/SoftLeadCapture";
+import { CITY_EVENT, getCurrentCity } from "@/features/location/currentCity";
+import { getFuelPricesForCity } from "@/features/fuel/fuel.api";
+import type { LocationCity } from "@/features/location/location.types";
+import type { FuelName } from "@/features/fuel/fuel.types";
 
 const FUEL_TYPE_ICONS: Record<FuelType, React.ComponentType<{ className?: string }>> = {
   petrol: FuelIcon,
@@ -34,9 +38,13 @@ export default function FuelComparisonCalculatorClient({ brands }: { brands: Bra
   const [models, setModels] = useState<EmiCalculatorModel[]>([]);
   const [modelId, setModelId] = useState<number | "">("");
 
+  const [city, setCity] = useState<LocationCity | null>(null);
+  const [cityPrices, setCityPrices] = useState<Partial<Record<FuelName, string>>>({});
+  const [pricesFrom, setPricesFrom] = useState<string | null>(null);
+  const cityPricesRef = useRef<Partial<Record<FuelName, string>>>({});
   const [fuelOptions, setFuelOptions] = useState<FuelOption[]>([]);
   const [loadingOptions, setLoadingOptions] = useState(false);
-  const [monthlyDistance, setMonthlyDistance] = useState("");
+  const [monthlyDistance, setMonthlyDistance] = useState("1200");
 
   useEffect(() => {
     if (brandId === "") {
@@ -90,7 +98,7 @@ export default function FuelComparisonCalculatorClient({ brands }: { brands: Bra
             variant,
             imageUrl: detail?.coverImageUrl ?? null,
             mileage: rated ? String(rated) : "",
-            fuelPrice: "",
+            fuelPrice: cityPricesRef.current[fuelType as FuelName] ?? "",
           };
         });
 
@@ -104,6 +112,45 @@ export default function FuelComparisonCalculatorClient({ brands }: { brands: Bra
       cancelled = true;
     };
   }, [selectedBrand?.slug, selectedModel?.id, selectedModel?.slug]);
+
+  useEffect(() => {
+    setCity(getCurrentCity());
+    const sync = (e: Event) => setCity((e as CustomEvent<LocationCity>).detail);
+    window.addEventListener(CITY_EVENT, sync);
+    return () => window.removeEventListener(CITY_EVENT, sync);
+  }, []);
+
+  useEffect(() => {
+    if (!city) return;
+    let alive = true;
+    getFuelPricesForCity(city.slug).then((res) => {
+      if (!alive || !res) return;
+      const next: Partial<Record<FuelName, string>> = {};
+      (Object.keys(res.prices) as FuelName[]).forEach((f) => {
+        const p = res.prices[f];
+        if (p) next[f] = Number(p.price).toFixed(2);
+      });
+      cityPricesRef.current = next;
+      setCityPrices(next);
+      setPricesFrom(res.prices.petrol?.updatedOn ?? null);
+    });
+    return () => {
+      alive = false;
+    };
+  }, [city]);
+
+  // Fill only blanks, so a price the visitor typed is never overwritten
+  // when they change city or pick another car.
+  useEffect(() => {
+    if (Object.keys(cityPrices).length === 0) return;
+    setFuelOptions((prev) =>
+      prev.map((o) =>
+        o.fuelPrice === "" && cityPrices[o.fuelType as FuelName]
+          ? { ...o, fuelPrice: cityPrices[o.fuelType as FuelName]! }
+          : o,
+      ),
+    );
+  }, [cityPrices, fuelOptions.length]);
 
   const monthlyDistanceValue = Number(monthlyDistance) || 0;
 
@@ -176,6 +223,19 @@ export default function FuelComparisonCalculatorClient({ brands }: { brands: Bra
           </div>
         </div>
       </div>
+
+      {Object.keys(cityPrices).length > 0 && city && (
+        <p className="mt-3 flex flex-wrap items-center gap-x-2 gap-y-1 text-[12px] text-muted">
+          <CheckIcon className="size-3.5 text-ev" />
+          Fuel prices prefilled from {city.name}
+          {pricesFrom && `, ${pricesFrom}`}. Edit any of them if your local rate differs.
+        </p>
+      )}
+      {!city && (
+        <p className="mt-3 text-[12px] text-muted">
+          Pick your city in the header and we&apos;ll fill today&apos;s fuel prices for you.
+        </p>
+      )}
 
       {loadingOptions && <p className="mt-6 text-center text-[13px] text-muted">Loading fuel-type options for this car...</p>}
 
