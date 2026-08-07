@@ -182,6 +182,57 @@ Cache: default (no caching on `api.`), *Cache Everything* on `static.`.
    outright if it is not.
 7. Build and deploy the admin panel.
 
+## As deployed
+
+Host `82.180.147.1` (Ubuntu 22.04, 4 cores, 5.8 GB RAM). **Shared** — it also
+runs TimesMoney plus ~9 other production databases, mail, FTP and MongoDB,
+and had 24 OOM kills in its kernel log before we arrived. Both services
+therefore carry a systemd `MemoryMax` so that under memory pressure they
+die rather than a neighbouring site. Nothing is built on this box:
+artifacts are built locally and rsynced, because `next build` alone peaks
+at 1–2 GB.
+
+| Component | Where | Port |
+|---|---|---|
+| Node API | `/var/www/timesauto/admin-backend` (systemd `timesauto-api`) | 5000 |
+| Go API | `/var/www/timesauto/go-backend` (systemd `timesauto-go`) | 5001 |
+| Admin panel | `/var/www/timesauto_ne_usr/data/www/admin.timesauto.net` | static |
+| Assets | `…/data/www/static.timesauto.net/uploads` | static |
+| Website | not deployed yet | 3002 reserved (3000 is taken) |
+
+### nginx is FastPanel-managed
+
+Vhosts live in `/etc/nginx/fastpanel2-available/timesauto_ne_usr/` and are
+**regenerated if the site is re-saved in the FastPanel UI**, which would
+revert the upstream ports and the Go/Node split. A backup of the working
+set is at `/root/vhost-backup-2026-08-06/`. FastPanel generated all four
+vhosts pointing at `127.0.0.1:8899`, a port belonging to another site
+entirely; each was repointed by hand.
+
+One trap worth remembering, because it cuts both ways: the api vhost must
+**not** use `location ^~` for the Go split (`^~` stops nginx before regex
+locations, so every request silently goes to Node and the Go service sits
+idle), while the static vhost **must** use it for `/uploads/` (that vhost
+also carries a generic `\.(jpg|png|pdf|…)$` regex location, which
+otherwise serves the file and skips the immutable cache headers).
+
+### Redis
+
+Shared with every other site on the host — db0 holds ~194k of their keys.
+TimesAuto uses **db5**, and its cache keys are prefixed
+`public-cache:go:` to stay clear of the Node backend's own namespace.
+
+### Backups
+
+`/usr/local/bin/timesauto-backup`, nightly at 03:15 via
+`/etc/cron.d/timesauto-backup`, 14-day retention, into `/root/db-backups`.
+There was no backup of any kind before this.
+
+The database was restored from a PostgreSQL 18 dump onto this PostgreSQL
+16 server, which needs `postgresql-client-17` (installed, client only) —
+16's own `pg_restore` cannot read the v1.16 archive header at all.
+`timesauto_seedonly` is the pre-restore database, kept for reference.
+
 ## Open items
 
 - **Admin panel does not compile.** `tsc -b` fails with 5 errors,
