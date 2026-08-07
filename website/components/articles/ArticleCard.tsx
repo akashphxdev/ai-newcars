@@ -34,7 +34,7 @@ export default function ArticleCard({ article, className = "" }: { article: Home
           className="size-full object-cover transition-transform duration-500 ease-out group-hover:scale-[1.06] motion-reduce:transition-none motion-reduce:group-hover:scale-100"
         />
         <div className="absolute inset-x-0 top-0 flex items-start justify-between p-2.5">
-          <span className="rounded-full bg-white/90 px-2 py-0.5 text-[9.5px] font-bold uppercase tracking-wide backdrop-blur-sm" style={{ color: ORANGE }}>
+          <span className="rounded-md bg-white/90 px-2 py-0.5 text-[9.5px] font-bold uppercase tracking-wide backdrop-blur-sm" style={{ color: ORANGE }}>
             {article.category.name}
           </span>
         </div>

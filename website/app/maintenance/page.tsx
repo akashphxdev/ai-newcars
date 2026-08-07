@@ -41,7 +41,7 @@ export default async function MaintenancePage() {
           style={{ background: SURFACE, border: `1px solid ${BORDER}`, boxShadow: "0 1px 2px rgba(17,24,39,0.04), 0 8px 28px rgba(17,24,39,0.06)" }}
         >
           <span
-            className="inline-flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-[11px] font-bold tracking-[0.12em] uppercase"
+            className="inline-flex items-center gap-1.5 rounded-md px-3.5 py-1.5 text-[11px] font-bold tracking-[0.12em] uppercase"
             style={{ color: ORANGE, background: ORANGE_SOFT }}
           >
             <span className="size-1.5 animate-pulse rounded-full" style={{ background: ORANGE }} />

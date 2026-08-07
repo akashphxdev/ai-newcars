@@ -39,14 +39,14 @@ export default function BodyTypeCarsHero({
             </p>
 
             <div className="mt-4 flex flex-wrap gap-2">
-              <span className="rounded-full border border-border bg-surface px-3 py-1.5 text-[12px] font-semibold text-ink">
+              <span className="rounded-md border border-border bg-surface px-3 py-1.5 text-[12px] font-semibold text-ink">
                 {result.pagination.total} model{result.pagination.total === 1 ? "" : "s"}
               </span>
-              <span className="rounded-full border border-border bg-surface px-3 py-1.5 text-[12px] font-semibold text-ink">
+              <span className="rounded-md border border-border bg-surface px-3 py-1.5 text-[12px] font-semibold text-ink">
                 From {formatSinglePrice(result.filters.priceRange.min)}
               </span>
               {brandNames.length > 0 && (
-                <span className="rounded-full border border-border bg-surface px-3 py-1.5 text-[12px] font-semibold text-ink">
+                <span className="rounded-md border border-border bg-surface px-3 py-1.5 text-[12px] font-semibold text-ink">
                   {brandNames.length} brand{brandNames.length === 1 ? "" : "s"}
                 </span>
               )}
@@ -68,7 +68,7 @@ export default function BodyTypeCarsHero({
                 <a
                   key={bt.id}
                   href={routes.bodyType(bt.slug)}
-                  className="rounded-full border border-border bg-surface px-3.5 py-1.5 text-[12px] font-semibold text-ink transition-colors hover:border-brand hover:text-brand"
+                  className="rounded-md border border-border bg-surface px-3.5 py-1.5 text-[12px] font-semibold text-ink transition-colors hover:border-brand hover:text-brand"
                 >
                   {bt.name} <span className="text-muted">({bt.count})</span>
                 </a>

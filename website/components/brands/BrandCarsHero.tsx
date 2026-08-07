@@ -36,14 +36,14 @@ export default function BrandCarsHero({ brand, result }: { brand: Brand; result:
             </p>
 
             <div className="mt-4 flex flex-wrap gap-2">
-              <span className="rounded-full border border-border bg-surface px-3 py-1.5 text-[12px] font-semibold text-ink">
+              <span className="rounded-md border border-border bg-surface px-3 py-1.5 text-[12px] font-semibold text-ink">
                 {result.pagination.total} model{result.pagination.total === 1 ? "" : "s"}
               </span>
-              <span className="rounded-full border border-border bg-surface px-3 py-1.5 text-[12px] font-semibold text-ink">
+              <span className="rounded-md border border-border bg-surface px-3 py-1.5 text-[12px] font-semibold text-ink">
                 From {formatSinglePrice(result.filters.priceRange.min)}
               </span>
               {bodyTypeNames.length > 0 && (
-                <span className="rounded-full border border-border bg-surface px-3 py-1.5 text-[12px] font-semibold text-ink">
+                <span className="rounded-md border border-border bg-surface px-3 py-1.5 text-[12px] font-semibold text-ink">
                   {bodyTypeNames.join(" · ")}
                 </span>
               )}

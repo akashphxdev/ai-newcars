@@ -144,7 +144,7 @@ export default function CarPhotosViewer({
           <button
             type="button"
             onClick={() => selectAngle("all")}
-            className={`shrink-0 cursor-pointer whitespace-nowrap rounded-full border px-4 py-2 text-[12.5px] font-semibold transition-colors ${
+            className={`shrink-0 cursor-pointer whitespace-nowrap rounded-md border px-4 py-2 text-[12.5px] font-semibold transition-colors ${
               activeAngle === "all" ? "border-brand text-brand" : "border-white/20 text-white/70 hover:border-white/40"
             }`}
           >
@@ -155,7 +155,7 @@ export default function CarPhotosViewer({
               key={p.key}
               type="button"
               onClick={() => selectAngle(p.key)}
-              className={`shrink-0 cursor-pointer whitespace-nowrap rounded-full border px-4 py-2 text-[12.5px] font-semibold transition-colors ${
+              className={`shrink-0 cursor-pointer whitespace-nowrap rounded-md border px-4 py-2 text-[12.5px] font-semibold transition-colors ${
                 activeAngle === p.key ? "border-brand text-brand" : "border-white/20 text-white/70 hover:border-white/40"
               }`}
             >
@@ -184,7 +184,7 @@ export default function CarPhotosViewer({
 
         {!fallbackImage && filtered.length > 1 && (
           <>
-            <span className="absolute right-6 top-3 rounded-full bg-black/70 px-2.5 py-1 text-[11px] font-semibold text-white">
+            <span className="absolute right-6 top-3 rounded-md bg-black/70 px-2.5 py-1 text-[11px] font-semibold text-white">
               {index + 1}/{filtered.length}
             </span>
             <button

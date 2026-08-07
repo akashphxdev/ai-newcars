@@ -79,7 +79,7 @@ export default function CarModelGallery({
 
         {gallery.length > 1 && (
           <>
-            <span className="absolute right-3 top-3 rounded-full bg-black/60 px-2.5 py-1 text-[11px] font-semibold text-white">
+            <span className="absolute right-3 top-3 rounded-md bg-black/60 px-2.5 py-1 text-[11px] font-semibold text-white">
               {index + 1}/{gallery.length}
             </span>
             <button
@@ -104,14 +104,14 @@ export default function CarModelGallery({
         {isLastSlide && (
           <Link
             href={photosHref}
-            className="absolute bottom-3 right-3 rounded-full bg-white px-3 py-1.5 text-[11.5px] font-bold text-brand shadow-md transition-colors hover:bg-orange-50"
+            className="absolute bottom-3 right-3 rounded-md bg-white px-3 py-1.5 text-[11.5px] font-bold text-brand shadow-md transition-colors hover:bg-orange-50"
           >
             View All Photos →
           </Link>
         )}
 
         {colors.length > 0 && (
-          <div className="absolute bottom-3 left-3 flex items-center gap-1.5 rounded-full bg-black/60 px-2.5 py-1.5">
+          <div className="absolute bottom-3 left-3 flex items-center gap-1.5 rounded-md bg-black/60 px-2.5 py-1.5">
             <span className="mr-0.5 text-[11px] font-semibold text-white">Colours:</span>
             <button
               type="button"

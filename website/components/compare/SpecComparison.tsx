@@ -136,7 +136,7 @@ const FeatureRow = ({ label, values, activeCount, hidden }: { label: string; val
         <div key={i} className="flex justify-center">
           {i < activeCount && (
             <span
-              className={`rounded-full px-2.5 py-0.5 text-[9.5px] font-bold sm:text-[10.5px] ${v ? "bg-ev/10 text-ev" : "bg-page text-faint"}`}
+              className={`rounded-md px-2.5 py-0.5 text-[9.5px] font-bold sm:text-[10.5px] ${v ? "bg-ev/10 text-ev" : "bg-page text-faint"}`}
             >
               {v ? "Yes" : "No"}
             </span>
@@ -229,7 +229,7 @@ export default function SpecComparison({ cars }: { cars: CompareCarResult[] }) {
         <button
           type="button"
           onClick={() => setHideCommon((v) => !v)}
-          className={`shrink-0 cursor-pointer rounded-full border px-3.5 py-1.5 text-[11.5px] font-bold transition-colors ${
+          className={`shrink-0 cursor-pointer rounded-md border px-3.5 py-1.5 text-[11.5px] font-bold transition-colors ${
             hideCommon ? "border-brand bg-orange-50 text-brand" : "border-border text-muted hover:border-brand hover:text-brand"
           }`}
         >

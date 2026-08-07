@@ -74,14 +74,14 @@ export default function UpcomingCarCard({ car }: { car: HomeCar }) {
           <div className="flex items-center gap-1.5">
             {car.bodyType && (
               <span
-                className="inline-flex items-center rounded-full bg-white/95 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide backdrop-blur-sm"
+                className="inline-flex items-center rounded-md bg-white/95 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide backdrop-blur-sm"
                 style={{ color: DARK }}
               >
                 {car.bodyType.name}
               </span>
             )}
             <span
-              className="inline-flex items-center rounded-full px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wide text-white"
+              className="inline-flex items-center rounded-md px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wide text-white"
               style={{ background: ORANGE }}
             >
               Coming Soon
@@ -93,7 +93,7 @@ export default function UpcomingCarCard({ car }: { car: HomeCar }) {
 
         {isUpcoming && (
           <span
-            className="absolute bottom-3 left-3 inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[10px] font-bold text-white backdrop-blur-sm"
+            className="absolute bottom-3 left-3 inline-flex items-center gap-1 rounded-md px-2.5 py-1 text-[10px] font-bold text-white backdrop-blur-sm"
             style={{ background: "rgba(17,24,39,0.78)" }}
           >
             <span className="tabular-nums" style={{ color: "#ff8a3d" }}>
@@ -105,7 +105,7 @@ export default function UpcomingCarCard({ car }: { car: HomeCar }) {
 
         {car.ratingAvg && (
           <span
-            className="absolute bottom-3 right-3 inline-flex items-center gap-1 rounded-full bg-white/95 px-2 py-1 text-[10.5px] font-bold backdrop-blur-sm"
+            className="absolute bottom-3 right-3 inline-flex items-center gap-1 rounded-md bg-white/95 px-2 py-1 text-[10.5px] font-bold backdrop-blur-sm"
             style={{ color: DARK }}
           >
             <StarIcon filled className="size-3 text-amber-400" />

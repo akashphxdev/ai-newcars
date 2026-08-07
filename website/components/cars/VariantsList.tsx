@@ -89,7 +89,7 @@ export default function VariantsList({
               <div className="flex items-center gap-2">
                 <span className="text-[13.5px] font-bold text-ink">{opt.variantName}</span>
                 {opt.isTopSeller && (
-                  <span className="rounded-full bg-brand/10 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-brand">
+                  <span className="rounded-md bg-brand/10 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-brand">
                     Top Seller
                   </span>
                 )}

@@ -64,7 +64,7 @@ export default function CategoryArticlesGrid({
             type="button"
             onClick={loadMore}
             disabled={loading}
-            className="cursor-pointer rounded-full border-[1.5px] border-brand px-6 py-2.5 text-[13.5px] font-bold text-brand transition-colors hover:bg-orange-50 disabled:cursor-not-allowed disabled:opacity-50"
+            className="cursor-pointer rounded-md border-[1.5px] border-brand px-6 py-2.5 text-[13.5px] font-bold text-brand transition-colors hover:bg-orange-50 disabled:cursor-not-allowed disabled:opacity-50"
           >
             {loading ? "Loading..." : "Load more"}
           </button>

@@ -102,7 +102,7 @@ export default function ReviewsSection({
             type="button"
             disabled={page <= 1 || loading}
             onClick={() => setPage((p) => p - 1)}
-            className="cursor-pointer rounded-full border border-border px-4 py-1.5 text-[12.5px] font-semibold text-ink transition-colors hover:border-brand disabled:cursor-not-allowed disabled:opacity-40"
+            className="cursor-pointer rounded-md border border-border px-4 py-1.5 text-[12.5px] font-semibold text-ink transition-colors hover:border-brand disabled:cursor-not-allowed disabled:opacity-40"
           >
             Previous
           </button>
@@ -113,7 +113,7 @@ export default function ReviewsSection({
             type="button"
             disabled={page >= result.pagination.totalPages || loading}
             onClick={() => setPage((p) => p + 1)}
-            className="cursor-pointer rounded-full border border-border px-4 py-1.5 text-[12.5px] font-semibold text-ink transition-colors hover:border-brand disabled:cursor-not-allowed disabled:opacity-40"
+            className="cursor-pointer rounded-md border border-border px-4 py-1.5 text-[12.5px] font-semibold text-ink transition-colors hover:border-brand disabled:cursor-not-allowed disabled:opacity-40"
           >
             Next
           </button>

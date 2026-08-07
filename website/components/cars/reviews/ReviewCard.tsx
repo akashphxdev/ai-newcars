@@ -99,7 +99,7 @@ export default function ReviewCard({
             <p className="flex flex-wrap items-center gap-1.5 text-[13px] font-bold text-ink sm:text-[13.5px]">
               {review.user.name}
               {review.isVerifiedOwner && (
-                <span className="rounded-full bg-ev/10 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wide text-ev sm:text-[9.5px]">
+                <span className="rounded-md bg-ev/10 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wide text-ev sm:text-[9.5px]">
                   Verified Owner
                 </span>
               )}
@@ -113,13 +113,13 @@ export default function ReviewCard({
       {(review.ownershipDuration || review.kmDriven || review.variant) && (
         <div className="mt-3 flex flex-wrap gap-1.5">
           {review.variant && (
-            <span className="rounded-full bg-page px-2.5 py-1 text-[10.5px] font-semibold text-muted">{review.variant.variantName}</span>
+            <span className="rounded-md bg-page px-2.5 py-1 text-[10.5px] font-semibold text-muted">{review.variant.variantName}</span>
           )}
           {review.ownershipDuration && (
-            <span className="rounded-full bg-page px-2.5 py-1 text-[10.5px] font-semibold text-muted">Owned {review.ownershipDuration}</span>
+            <span className="rounded-md bg-page px-2.5 py-1 text-[10.5px] font-semibold text-muted">Owned {review.ownershipDuration}</span>
           )}
           {review.kmDriven != null && (
-            <span className="rounded-full bg-page px-2.5 py-1 text-[10.5px] font-semibold text-muted">
+            <span className="rounded-md bg-page px-2.5 py-1 text-[10.5px] font-semibold text-muted">
               {review.kmDriven.toLocaleString("en-IN")} km driven
             </span>
           )}

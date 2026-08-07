@@ -9,7 +9,7 @@ export const metadata: Metadata = {
 export default function ProfilePage() {
   return (
     <div className="mx-auto flex min-h-[60vh] max-w-7xl flex-col items-center justify-center px-4 py-16 text-center">
-      <span className="rounded-full border-[1.5px] border-brand px-3.5 py-1.5 text-[11px] font-bold uppercase tracking-[0.12em] text-brand">
+      <span className="rounded-md border-[1.5px] border-brand px-3.5 py-1.5 text-[11px] font-bold uppercase tracking-[0.12em] text-brand">
         Coming Soon
       </span>
       <h1 className="mt-5 font-head text-2xl font-extrabold text-ink sm:text-3xl">Your Profile</h1>

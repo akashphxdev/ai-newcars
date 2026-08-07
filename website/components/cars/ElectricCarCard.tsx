@@ -44,7 +44,7 @@ export default function ElectricCarCard({ car }: { car: HomeCar }) {
           <Image src={car.coverImageUrl ?? FALLBACK_IMG} alt={`${car.brand.name} ${car.name}`} fill sizes="320px" className="object-cover" />
         </Link>
         <span
-          className="absolute left-3 top-3 z-10 inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-white"
+          className="absolute left-3 top-3 z-10 inline-flex items-center gap-1 rounded-md px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-white"
           style={{ background: TEAL }}
         >
           <BoltIcon className="size-3.5" />

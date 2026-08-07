@@ -76,14 +76,14 @@ const Card = ({ car, badge }: { car: HomeCar; badge: string | null }) => {
         <div className="absolute inset-x-0 top-0 z-10 flex items-start justify-between p-3">
           <div className="flex flex-wrap items-center gap-1.5">
             <span
-              className="inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-white"
+              className="inline-flex items-center gap-1 rounded-md px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-white"
               style={{ background: TEAL }}
             >
               <BoltIcon className="size-3.5" />
               Electric
             </span>
             {car.bodyType && (
-              <span className="inline-flex items-center rounded-full bg-white/90 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide" style={{ color: DARK }}>
+              <span className="inline-flex items-center rounded-md bg-white/90 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide" style={{ color: DARK }}>
                 {car.bodyType.name}
               </span>
             )}

@@ -302,7 +302,7 @@ export default function Header({ bodyTypes, articleCategories }: { bodyTypes: Bo
         <div className="flex items-center gap-5">
           <div className="relative hidden items-center md:flex">
             <div
-              className="flex items-center gap-2 rounded-full px-3.5 py-2 transition-all"
+              className="flex items-center gap-2 rounded-md px-3.5 py-2 transition-all"
               style={{
                 background: PAGE_BG,
                 width: searchOpen ? 260 : 38,
@@ -381,7 +381,7 @@ export default function Header({ bodyTypes, articleCategories }: { bodyTypes: Bo
           ) : (
             <button
               onClick={() => setAuthOpen(true)}
-              className="hidden whitespace-nowrap rounded-full px-4 py-2 text-[13px] font-semibold transition-colors hover:bg-orange-50 sm:block"
+              className="hidden whitespace-nowrap rounded-md px-4 py-2 text-[13px] font-semibold transition-colors hover:bg-orange-50 sm:block"
               style={{ border: `1.5px solid ${ORANGE}`, color: ORANGE, background: "transparent" }}
             >
               Login / Signup
@@ -417,7 +417,7 @@ export default function Header({ bodyTypes, articleCategories }: { bodyTypes: Bo
         >
           <div className="relative mb-2">
             <div
-              className="flex items-center gap-2 rounded-full px-3.5 py-2.5"
+              className="flex items-center gap-2 rounded-md px-3.5 py-2.5"
               style={{ background: PAGE_BG }}
             >
               <span style={{ color: MUTED }}>

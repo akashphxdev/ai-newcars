@@ -29,7 +29,7 @@ export default function DevLoadTimeBadge() {
 
   return (
     <div
-      className="fixed bottom-3 right-3 z-[999] flex items-center gap-2 rounded-full bg-black/80 px-3 py-1.5 text-[11px] font-semibold text-white shadow-lg backdrop-blur-sm"
+      className="fixed bottom-3 right-3 z-[999] flex items-center gap-2 rounded-md bg-black/80 px-3 py-1.5 text-[11px] font-semibold text-white shadow-lg backdrop-blur-sm"
       role="status"
     >
       <span>⚡ Loaded in {loadMs < 1000 ? `${loadMs}ms` : `${(loadMs / 1000).toFixed(2)}s`}</span>
