@@ -3,7 +3,6 @@ import HeroSection from "@/components/home/HeroSection";
 import CuratedCars from "@/components/home/CuratedCars";
 import GuidedDiscovery from "@/components/home/GuidedDiscovery";
 import PopularBrands from "@/components/home/PopularBrands";
-import BodyTypes from "@/components/home/BodyTypes";
 import UpcomingLaunches from "@/components/home/UpcomingLaunches";
 import CompareCars from "@/components/home/Comparecars";
 import Stories from "@/components/home/Stories";
@@ -26,7 +25,6 @@ import { getRandomPairs } from "@/features/compare/compare.api";
 // the whole page waiting on the slowest fetch.
 
 async function HeroSectionData() {
-  // getBodyTypes() is called again in BodyTypesData below — same URL/
   // revalidate window, so Next.js dedupes it into one request, not two.
   const [banners, bodyTypes] = await Promise.all([getBanners(), getBodyTypes()]);
   return <HeroSection banners={banners} bodyTypes={bodyTypes} />;
@@ -37,16 +35,16 @@ async function PopularBrandsData() {
   return <PopularBrands brands={brands} />;
 }
 
-async function BodyTypesData() {
-  const bodyTypes = await getBodyTypes();
-  return <BodyTypes bodyTypes={bodyTypes} />;
-}
-
 async function GuidedDiscoveryData() {
-  // One row is all this needs — the facets and pagination.total come back
-  // regardless, and they are the whole payload.
-  const { filters } = await getCarsBrowse({ page: 1, limit: 1 });
-  return <GuidedDiscovery initialFilters={filters} />;
+  // One row is all the browse call needs — the facets and
+  // pagination.total come back regardless, and they are the whole
+  // payload. Brands come separately because the facet carries counts but
+  // no logo.
+  const [{ filters }, brands] = await Promise.all([
+    getCarsBrowse({ page: 1, limit: 1 }),
+    getBrands(8),
+  ]);
+  return <GuidedDiscovery initialFilters={filters} brandLogos={brands} />;
 }
 
 async function CuratedCarsData() {
@@ -87,9 +85,6 @@ export default function HomePage() {
       </Suspense>
       <Suspense fallback={<SectionSkeleton />}>
         <PopularBrandsData />
-      </Suspense>
-      <Suspense fallback={<SectionSkeleton />}>
-        <BodyTypesData />
       </Suspense>
       <Suspense fallback={<SectionSkeleton />}>
         <GuidedDiscoveryData />

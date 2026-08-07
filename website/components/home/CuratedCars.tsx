@@ -110,12 +110,17 @@ export default function CuratedCars({
               Nothing to show here yet.
             </p>
           ) : (
-            <div className="grid gap-4 lg:grid-cols-2">
+            <div className="grid items-stretch gap-4 lg:grid-cols-2">
               {featured && <FeaturedCarCard car={featured} />}
-              <div className="grid gap-4 sm:grid-cols-2">
-                {rest.map((car) => (
+              <div className="grid content-start gap-4 sm:grid-cols-2">
+                {rest.slice(0, 2).map((car) => (
                   <CarCard key={car.id} car={car} />
                 ))}
+                {rest[2] && (
+                  <div className="sm:col-span-2">
+                    <CarCard car={rest[2]} variant="wide" />
+                  </div>
+                )}
               </div>
             </div>
           )}

@@ -37,7 +37,8 @@ export default function FeaturedCarCard({ car }: { car: HomeCar }) {
     : formatPriceRange(car.priceMin, car.priceMax);
 
   return (
-    <div className="flex flex-col overflow-hidden rounded-xl border border-border bg-surface">
+    <div className="flex h-full flex-col overflow-hidden rounded-xl border border-border bg-surface">
+      <div className="flex flex-1 flex-col gap-4 sm:flex-row">
       <div className="flex flex-1 flex-col gap-3 p-5">
         <span className="w-fit rounded-sm bg-brand-soft px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.08em] text-brand">
           {isUpcoming ? "Upcoming launch" : "Featured"}
@@ -60,15 +61,20 @@ export default function FeaturedCarCard({ car }: { car: HomeCar }) {
         </div>
       </div>
 
-      <Link href={href} className="relative block aspect-16/9 bg-page" aria-label={car.name}>
+      <Link
+        href={href}
+        className="relative block min-h-52 flex-1 bg-page sm:min-h-0"
+        aria-label={car.name}
+      >
         <Image
           src={car.coverImageUrl ?? FALLBACK_IMG}
           alt={`${car.brand.name} ${car.name}`}
           fill
-          sizes="(max-width: 1024px) 100vw, 600px"
+          sizes="(max-width: 640px) 100vw, 340px"
           className="object-cover"
         />
       </Link>
+      </div>
 
       <div className="flex items-center justify-between gap-3 border-t border-border-soft px-5 py-3.5">
         <div className="flex flex-wrap items-center gap-x-5 gap-y-2">

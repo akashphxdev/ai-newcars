@@ -38,13 +38,16 @@ import type { HomeCar } from "@/features/cars/car.types";
 const FALLBACK_IMG =
   "data:image/svg+xml;charset=UTF-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='225' viewBox='0 0 300 225'%3E%3Crect width='300' height='225' fill='%23e5e7eb'/%3E%3Ctext x='50%25' y='50%25' text-anchor='middle' dy='.3em' font-family='sans-serif' font-size='13' fill='%239ca3af'%3EImage unavailable%3C/text%3E%3C/svg%3E";
 
-export type CarCardVariant = "grid" | "rail";
+export type CarCardVariant = "grid" | "rail" | "wide";
 
 const SIZING: Record<CarCardVariant, { wrapper: string; sizes: string }> = {
   // Fills its grid cell; the grid decides the column count.
   grid: { wrapper: "w-full", sizes: "(max-width: 640px) 90vw, 280px" },
   // Fixed width so a horizontal rail scrolls predictably.
   rail: { wrapper: "w-[272px] shrink-0 snap-start", sizes: "272px" },
+  // Fills a full-width slot by laying the image beside the details
+  // instead of above them, so the card stays short.
+  wide: { wrapper: "w-full", sizes: "(max-width: 640px) 90vw, 300px" },
 };
 
 function Spec({ icon, value, label }: { icon: React.ReactNode; value: string; label: string }) {
@@ -88,9 +91,15 @@ export default function CarCard({
   return (
     <>
       <div
-        className={`${wrapper} group flex h-full flex-col overflow-hidden rounded-xl border border-border bg-surface transition-shadow duration-200 hover:shadow-md`}
+        className={`${wrapper} group flex h-full overflow-hidden rounded-xl border border-border bg-surface transition-shadow duration-200 hover:shadow-md ${
+          variant === "wide" ? "flex-row" : "flex-col"
+        }`}
       >
-        <div className="relative aspect-4/3 overflow-hidden bg-page">
+        <div
+          className={`relative overflow-hidden bg-page ${
+            variant === "wide" ? "w-2/5 shrink-0" : "aspect-4/3"
+          }`}
+        >
           <Link
             href={modelUrl}
             className="absolute inset-0 z-0"
@@ -131,7 +140,7 @@ export default function CarCard({
           )}
         </div>
 
-        <div className="flex flex-1 flex-col gap-2.5 px-3.5 pt-3">
+        <div className="flex min-w-0 flex-1 flex-col gap-2.5 px-3.5 pt-3">
           <div className="flex items-start justify-between gap-2">
             <div className="min-w-0">
               <p className="truncate text-[10.5px] font-semibold uppercase tracking-[0.06em] text-muted">
