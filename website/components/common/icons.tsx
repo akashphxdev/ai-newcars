@@ -268,3 +268,18 @@ export const PinIcon = ({ className = "size-3.5" }: IconProps) => (
     <circle cx="12" cy="9.5" r="2.2" stroke="currentColor" strokeWidth="1.8" />
   </svg>
 );
+
+export const WalletIcon = ({ className = "size-5" }: IconProps) => (
+  <svg className={className} viewBox="0 0 24 24" fill="none">
+    <path d="M3 8a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v1" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+    <rect x="3" y="8" width="18" height="11" rx="2" stroke="currentColor" strokeWidth="1.6" />
+    <circle cx="16.5" cy="13.5" r="1.4" fill="currentColor" />
+  </svg>
+);
+
+export const SparkleIcon = ({ className = "size-4" }: IconProps) => (
+  <svg className={className} viewBox="0 0 24 24" fill="none">
+    <path d="M12 3.5 13.6 9 19 10.5 13.6 12 12 17.5 10.4 12 5 10.5 10.4 9 12 3.5Z" fill="currentColor" />
+    <path d="M18.5 15.5 19.2 18l2.3.7-2.3.7-.7 2.3-.7-2.3-2.3-.7 2.3-.7.7-2.5Z" fill="currentColor" opacity=".7" />
+  </svg>
+);

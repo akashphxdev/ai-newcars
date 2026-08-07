@@ -16,18 +16,22 @@
 import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { CheckIcon, TagIcon, FuelIcon, ShieldIcon, CloseIcon } from "@/components/common/icons";
+import {
+  CheckIcon, WalletIcon, SparkleIcon, FuelIcon, ShieldIcon, CloseIcon,
+} from "@/components/common/icons";
 import { getCarsBrowse } from "@/features/cars/car.api";
 import type { CarBrowseFilterOptions } from "@/features/cars/car.types";
 import type { Brand } from "@/features/brands/brand.types";
 import { routes } from "@/lib/routes";
 
-const BUDGETS = [
-  { label: "Under ₹10L", maxPrice: 1_000_000 },
-  { label: "₹10L – ₹25L", minPrice: 1_000_000, maxPrice: 2_500_000 },
-  { label: "₹25L – ₹50L", minPrice: 2_500_000, maxPrice: 5_000_000 },
-  { label: "Above ₹50L", minPrice: 5_000_000 },
-] as const;
+const FLOOR = 100_000;
+const CEILING = 10_000_000;
+const STEP = 100_000;
+
+function lakh(v: number): string {
+  if (v >= 10_000_000) return "₹1.00 Cr+";
+  return `₹${(v / 100_000).toFixed(2)} L`;
+}
 
 function Card({
   icon,
@@ -96,7 +100,9 @@ export default function GuidedDiscovery({
   brandLogos: Brand[];
 }) {
   const router = useRouter();
-  const [budget, setBudget] = useState<number | null>(null);
+  const [minPrice, setMinPrice] = useState(FLOOR);
+  const [maxPrice, setMaxPrice] = useState(CEILING);
+  const budgetTouched = minPrice !== FLOOR || maxPrice !== CEILING;
   const [bodyType, setBodyType] = useState<string | null>(null);
   const [fuelType, setFuelType] = useState<string | null>(null);
   const [brand, setBrand] = useState<string | null>(null);
@@ -107,14 +113,14 @@ export default function GuidedDiscovery({
   const runId = useRef(0);
 
   useEffect(() => {
-    const b = budget != null ? BUDGETS[budget] : undefined;
     const id = ++runId.current;
     setLoading(true);
     getCarsBrowse({
       page: 1,
       limit: 1,
-      minPrice: b && "minPrice" in b ? b.minPrice : undefined,
-      maxPrice: b && "maxPrice" in b ? b.maxPrice : undefined,
+      minPrice: minPrice > FLOOR ? minPrice : undefined,
+      // At the ceiling the handle means "and above", so no cap is sent.
+      maxPrice: maxPrice < CEILING ? maxPrice : undefined,
       bodyType: bodyType ? [bodyType] : undefined,
       fuelType: fuelType ? [fuelType] : undefined,
       brand: brand ? [brand] : undefined,
@@ -132,10 +138,16 @@ export default function GuidedDiscovery({
       .finally(() => {
         if (id === runId.current) setLoading(false);
       });
-  }, [budget, bodyType, fuelType, brand]);
+  }, [minPrice, maxPrice, bodyType, fuelType, brand]);
 
   const chosen: { label: string; clear: () => void }[] = [
-    budget != null && { label: BUDGETS[budget].label, clear: () => setBudget(null) },
+    budgetTouched && {
+      label: `${lakh(minPrice)} – ${lakh(maxPrice)}`,
+      clear: () => {
+        setMinPrice(FLOOR);
+        setMaxPrice(CEILING);
+      },
+    },
     bodyType && {
       label: facets.bodyTypes.find((b) => b.slug === bodyType)?.name ?? bodyType,
       clear: () => setBodyType(null),
@@ -152,8 +164,7 @@ export default function GuidedDiscovery({
 
   const viewMatches = () => {
     const p = new URLSearchParams();
-    const b = budget != null ? BUDGETS[budget] : undefined;
-    if (b && "maxPrice" in b && b.maxPrice) p.set("maxPrice", String(b.maxPrice));
+    if (maxPrice < CEILING) p.set("maxPrice", String(maxPrice));
     if (bodyType) p.set("bodyType", bodyType);
     if (fuelType) p.set("fuelType", fuelType);
     if (brand) p.set("brand", brand);
@@ -181,25 +192,31 @@ export default function GuidedDiscovery({
           </p>
           <p className="mt-6 flex items-center gap-2.5 text-[12.5px] font-semibold text-muted">
             <span className="flex size-8 items-center justify-center rounded-full bg-ev-soft text-ev">
-              <CheckIcon className="size-4" />
+              <SparkleIcon className="size-4" />
             </span>
             Smart filters • Real results • Zero guesswork
           </p>
+
+          <ConnectorTrace />
         </div>
 
         <div className="rounded-2xl border border-border p-4 sm:p-5">
           <div className="grid gap-4 sm:grid-cols-2">
             <Card
-              icon={<TagIcon className="size-5" />}
+              icon={<WalletIcon className="size-5" />}
               title="Budget first"
               hint="Set your range"
-              active={budget != null}
+              active={budgetTouched}
             >
-              <div className="flex flex-wrap gap-2">
-                {BUDGETS.map((b, i) => (
-                  <Chip key={b.label} label={b.label} active={budget === i} onClick={() => setBudget(toggle(budget, i))} />
-                ))}
-              </div>
+              <p className="mb-3 text-lg font-bold text-brand tabular-nums">
+                {lakh(minPrice)} – {lakh(maxPrice)}
+              </p>
+              <RangeSlider
+                min={minPrice}
+                max={maxPrice}
+                onMin={(v) => setMinPrice(Math.min(v, maxPrice - STEP))}
+                onMax={(v) => setMaxPrice(Math.max(v, minPrice + STEP))}
+              />
             </Card>
 
             <Card
@@ -275,7 +292,7 @@ export default function GuidedDiscovery({
           <div className="mt-4 flex flex-wrap items-center justify-between gap-4 border-t border-border pt-4">
             <div className="flex min-w-0 flex-1 items-center gap-3">
               <span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-brand-soft text-brand">
-                <CheckIcon className="size-4" />
+                <SparkleIcon className="size-4" />
               </span>
               <div className="min-w-0">
                 <p className="text-[12px] font-semibold text-muted">Your selection</p>
@@ -283,7 +300,7 @@ export default function GuidedDiscovery({
                   {chosen.length === 0 ? (
                     <span className="text-[12.5px] text-subtle">Nothing yet — every car qualifies</span>
                   ) : (
-                    chosen.map((c) => (
+                    chosen.slice(0, 3).map((c) => (
                       <button
                         key={c.label}
                         type="button"
@@ -294,6 +311,11 @@ export default function GuidedDiscovery({
                         <CloseIcon className="size-3 text-subtle" />
                       </button>
                     ))
+                  )}
+                  {chosen.length > 3 && (
+                    <span className="rounded-md border border-dashed border-border px-2 py-1 text-[11.5px] font-semibold text-muted">
+                      +{chosen.length - 3} more
+                    </span>
                   )}
                 </div>
               </div>
@@ -322,6 +344,96 @@ export default function GuidedDiscovery({
         </div>
       </div>
     </section>
+  );
+}
+
+// Two range inputs stacked on one track. A single input cannot express a
+// range, and a library for one control is not worth the bundle. Only the
+// handles take pointer events, so the lower input does not swallow
+// clicks meant for the upper one.
+// Decorative only, and hidden from assistive tech: it carries no
+// information the copy does not already give.
+function ConnectorTrace() {
+  return (
+    <div aria-hidden className="pointer-events-none relative mt-8 hidden h-40 lg:block">
+      <svg viewBox="0 0 320 160" fill="none" className="size-full overflow-visible">
+        <defs>
+          <pattern id="gd-grid" width="26" height="26" patternUnits="userSpaceOnUse">
+            <path d="M26 0H0v26" stroke="var(--color-border)" strokeWidth="1" opacity=".5" />
+          </pattern>
+        </defs>
+        <rect width="320" height="160" fill="url(#gd-grid)" />
+        <path
+          d="M8 34h120a20 20 0 0 1 20 20v34a20 20 0 0 0 20 20h144"
+          stroke="var(--color-border)"
+          strokeWidth="1.5"
+        />
+        <path
+          d="M8 118h74a20 20 0 0 0 20-20V72a20 20 0 0 1 20-20h190"
+          stroke="var(--color-brand)"
+          strokeWidth="1.5"
+          strokeDasharray="5 6"
+          opacity=".55"
+        />
+        <circle cx="148" cy="52" r="3.5" fill="var(--color-surface)" stroke="var(--color-border)" strokeWidth="1.5" />
+        <circle cx="102" cy="98" r="3.5" fill="var(--color-surface)" stroke="var(--color-brand)" strokeWidth="1.5" />
+        <circle cx="8" cy="34" r="3" fill="var(--color-border)" />
+        <circle cx="8" cy="118" r="3" fill="var(--color-brand)" opacity=".55" />
+      </svg>
+    </div>
+  );
+}
+
+function RangeSlider({
+  min,
+  max,
+  onMin,
+  onMax,
+}: {
+  min: number;
+  max: number;
+  onMin: (v: number) => void;
+  onMax: (v: number) => void;
+}) {
+  const pct = (v: number) => ((v - FLOOR) / (CEILING - FLOOR)) * 100;
+  const thumb =
+    "pointer-events-none absolute inset-0 h-1.5 w-full appearance-none bg-transparent " +
+    "[&::-webkit-slider-thumb]:pointer-events-auto [&::-webkit-slider-thumb]:size-4 " +
+    "[&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:cursor-grab " +
+    "[&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:border-2 " +
+    "[&::-webkit-slider-thumb]:border-brand [&::-webkit-slider-thumb]:bg-surface " +
+    "[&::-moz-range-thumb]:pointer-events-auto [&::-moz-range-thumb]:size-4 " +
+    "[&::-moz-range-thumb]:cursor-grab [&::-moz-range-thumb]:rounded-full " +
+    "[&::-moz-range-thumb]:border-2 [&::-moz-range-thumb]:border-brand [&::-moz-range-thumb]:bg-surface";
+
+  return (
+    <div className="relative h-4">
+      <div className="absolute inset-x-0 top-1/2 h-1.5 -translate-y-1/2 rounded-full bg-border" />
+      <div
+        className="absolute top-1/2 h-1.5 -translate-y-1/2 rounded-full bg-brand"
+        style={{ left: `${pct(min)}%`, right: `${100 - pct(max)}%` }}
+      />
+      <input
+        type="range"
+        aria-label="Minimum budget"
+        min={FLOOR}
+        max={CEILING}
+        step={STEP}
+        value={min}
+        onChange={(e) => onMin(Number(e.target.value))}
+        className={`${thumb} top-1/2 -translate-y-1/2`}
+      />
+      <input
+        type="range"
+        aria-label="Maximum budget"
+        min={FLOOR}
+        max={CEILING}
+        step={STEP}
+        value={max}
+        onChange={(e) => onMax(Number(e.target.value))}
+        className={`${thumb} top-1/2 -translate-y-1/2`}
+      />
+    </div>
   );
 }
 
