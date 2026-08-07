@@ -51,11 +51,11 @@ function Card({
 }) {
   return (
     <div
-      className={`rounded-xl border p-4 transition-colors ${
+      className={`rounded-xl border p-3.5 transition-colors ${
         active ? "border-brand bg-brand-soft/40" : "border-border bg-surface"
       }`}
     >
-      <div className="mb-3.5 flex items-start gap-3">
+      <div className="mb-3 flex items-start gap-2.5">
         <span
           className={`flex size-10 shrink-0 items-center justify-center rounded-lg ${
             active ? "bg-brand-soft text-brand" : "bg-page text-muted"
@@ -186,9 +186,23 @@ export default function GuidedDiscovery({
     .map((b) => ({ ...b, logoUrl: logoBySlug.get(b.slug) ?? null }));
 
   return (
-    <section className="bg-surface py-12 sm:py-16">
-      <div className="mx-auto grid max-w-7xl gap-8 px-4 lg:grid-cols-[minmax(0,340px)_minmax(0,1fr)] lg:gap-12">
-        <div className="lg:pt-6">
+    <section className="relative overflow-hidden bg-surface py-12 sm:py-16">
+      {/* Road grid sits under the left column only, fading out before it
+          reaches the panel so the cards keep a clean background. */}
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-y-0 left-0 hidden w-[46%] opacity-[0.5] lg:block"
+        style={{
+          backgroundImage: "url(/design/road-grid.png)",
+          backgroundSize: "cover",
+          backgroundPosition: "left bottom",
+          maskImage: "linear-gradient(to right, black 55%, transparent)",
+          WebkitMaskImage: "linear-gradient(to right, black 55%, transparent)",
+        }}
+      />
+
+      <div className="relative mx-auto grid max-w-7xl gap-8 px-4 lg:grid-cols-[minmax(0,300px)_minmax(0,1fr)] lg:gap-10">
+        <div className="lg:pt-4">
           <p className="flex items-center gap-3 text-[11px] font-bold uppercase tracking-[0.16em] text-brand">
             Find your perfect car <span className="h-px w-8 bg-brand" />
           </p>
@@ -207,10 +221,11 @@ export default function GuidedDiscovery({
             Smart filters • Real results • Zero guesswork
           </p>
 
+          <CarAndTrace />
         </div>
 
-        <div className="rounded-2xl border border-border p-4 sm:p-5">
-          <div className="grid items-start gap-4 sm:grid-cols-2">
+        <div className="rounded-2xl border border-border p-3.5 sm:p-4">
+          <div className="grid items-start gap-3 sm:grid-cols-2">
             <Card
               icon={<WalletIcon className="size-5" />}
               title="Budget first"
@@ -354,6 +369,45 @@ export default function GuidedDiscovery({
         </div>
       </div>
     </section>
+  );
+}
+
+// The car bleeds past the container's left edge and the traces run from
+// it toward the cards, which is what ties the two halves of the section
+// together. Decorative: it carries nothing the copy does not already say.
+function CarAndTrace() {
+  return (
+    <div aria-hidden className="pointer-events-none relative mt-10 hidden h-56 lg:block">
+      <svg
+        viewBox="0 0 300 224"
+        fill="none"
+        className="absolute inset-0 size-full overflow-visible"
+        preserveAspectRatio="none"
+      >
+        <path d="M40 60h96a22 22 0 0 1 22 22v40a22 22 0 0 0 22 22h150" stroke="var(--color-border)" strokeWidth="1.5" />
+        <path
+          d="M40 158h54a22 22 0 0 0 22-22V96a22 22 0 0 1 22-22h192"
+          stroke="var(--color-brand)"
+          strokeWidth="1.5"
+          strokeDasharray="5 6"
+          opacity=".6"
+        />
+        <circle cx="158" cy="82" r="4" fill="var(--color-surface)" stroke="var(--color-border)" strokeWidth="1.5" />
+        <circle cx="116" cy="136" r="4" fill="var(--color-surface)" stroke="var(--color-brand)" strokeWidth="1.5" />
+      </svg>
+
+      {/* -left-24 pulls it past the max-w-7xl gutter so it runs off the
+          viewport edge instead of stopping at the container. */}
+      <Image
+        src="/design/guided-suv.png"
+        alt=""
+        width={1050}
+        height={760}
+        sizes="420px"
+        className="absolute -left-24 bottom-0 w-[420px] max-w-none"
+        priority={false}
+      />
+    </div>
   );
 }
 
