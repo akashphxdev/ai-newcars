@@ -16,6 +16,7 @@ import {
   PinIcon, SearchIcon,
 } from "@/components/common/icons";
 import CitySelector from "@/components/common/CitySelector";
+import SearchResultsList from "@/components/common/SearchResultsList";
 
 
 // Token references, kept as constants purely because the remaining inline
@@ -103,57 +104,6 @@ function buildNavItems(bodyTypes: BodyType[], articleCategories: ArticleCategory
 
 /* ---------------- Search results dropdown ---------------- */
 
-function SearchResultsList({
-  results,
-  searching,
-  onSelect,
-}: {
-  results: SearchCarResult[];
-  searching: boolean;
-  onSelect: (car: SearchCarResult) => void;
-}) {
-  if (!searching && results.length === 0) return null;
-
-  return (
-    <div
-      // Prevents the input from blurring before a result's click fires —
-      // without this, onBlur closes the dropdown first and the click
-      // never lands (classic blur-vs-click race).
-      onMouseDown={(e) => e.preventDefault()}
-      className="absolute left-0 top-full z-50 mt-1.5 max-h-96 w-full min-w-70 overflow-y-auto rounded-xl py-1.5"
-      style={{ background: SURFACE, border: `1px solid ${BORDER}`, boxShadow: "0 12px 28px rgba(17,24,39,0.12)" }}
-    >
-      {searching && results.length === 0 && (
-        <p className="px-3.5 py-3 text-[12.5px] font-medium" style={{ color: MUTED }}>
-          Searching...
-        </p>
-      )}
-      {results.map((car) => (
-        <button
-          key={car.id}
-          type="button"
-          onClick={() => onSelect(car)}
-          className="flex w-full cursor-pointer items-center gap-2.5 px-3.5 py-2 text-left transition-colors hover:bg-orange-50"
-        >
-          <span className="relative size-10 shrink-0 overflow-hidden rounded-lg" style={{ background: PAGE_BG }}>
-            {car.coverImageUrl && (
-              // eslint-disable-next-line @next/next/no-img-element -- tiny result thumb, not worth next/image's overhead here
-              <img src={car.coverImageUrl} alt={car.name} className="size-full object-cover" />
-            )}
-          </span>
-          <span className="min-w-0 flex-1">
-            <span className="block truncate text-[10.5px] font-semibold uppercase tracking-wide" style={{ color: MUTED }}>
-              {car.brand.name}
-            </span>
-            <span className="block truncate text-[13px] font-bold" style={{ color: DARK }}>
-              {car.name}
-            </span>
-          </span>
-        </button>
-      ))}
-    </div>
-  );
-}
 
 /* ---------------- Header ---------------- */
 

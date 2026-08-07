@@ -6,6 +6,10 @@ import type { Banner } from "@/features/banners/banner.types";
 import { recordBannerClick } from "@/features/banners/banner.api";
 import type { BodyType } from "@/features/bodyTypes/bodyType.types";
 import { routes } from "@/lib/routes";
+import SearchResultsList from "@/components/common/SearchResultsList";
+import { ChevronDownIcon, SearchIcon } from "@/components/common/icons";
+import { searchCars } from "@/features/search/search.api";
+import type { SearchCarResult } from "@/features/search/search.types";
 
 const budgetOptions = [
   { value: "", label: "Select Budget" },
@@ -36,11 +40,32 @@ export default function HeroSection({ banners, bodyTypes }: { banners: Banner[];
   const [budget, setBudget] = useState("");
   const [bodyType, setBodyType] = useState("");
   const [carTab, setCarTab] = useState("new");
+  const [carQuery, setCarQuery] = useState("");
+  const [carResults, setCarResults] = useState<SearchCarResult[]>([]);
+  const [carSearching, setCarSearching] = useState(false);
 
   const videoRef = useRef<HTMLVideoElement>(null);
   const timer = useRef<ReturnType<typeof setInterval> | undefined>(undefined);
 
   const slide = banners[current];
+
+  useEffect(() => {
+    const q = carQuery.trim();
+    if (q.length < 2) {
+      setCarResults([]);
+      setCarSearching(false);
+      return;
+    }
+    setCarSearching(true);
+    // Debounced so typing a model name is one request, not one per key.
+    const t = setTimeout(() => {
+      searchCars(q, { pageUrl: window.location.pathname, deviceType: "web" })
+        .then((r) => setCarResults(r.results))
+        .catch(() => setCarResults([]))
+        .finally(() => setCarSearching(false));
+    }, 300);
+    return () => clearTimeout(t);
+  }, [carQuery]);
 
   const advance = () => {
     clearInterval(timer.current);
@@ -209,68 +234,158 @@ export default function HeroSection({ banners, bodyTypes }: { banners: Banner[];
         </div>
       </section>
 
-      {/* Search card — overlaps the hero's bottom edge the way CarWale's
-          does, so it reads as attached to the banner without sitting on
-          the artwork. */}
+      {/* Search card — one prominent car lookup plus compact filter
+          chips, rather than two full-width selects. The chips carry
+          their value in the label, so a chosen filter is visible without
+          opening anything. */}
       <div className="relative z-30 mx-auto -mt-10 max-w-7xl px-4">
-        <div className="rounded-2xl border border-border bg-surface p-4 shadow-lg sm:p-5">
-          <div className="mb-3 inline-flex rounded-md border border-border p-0.5">
-            {(["new", "used"] as const).map((tab) => (
-              <button
-                key={tab}
-                onClick={() => setCarTab(tab)}
-                className={`cursor-pointer rounded-sm px-6 py-1.5 text-[13px] font-bold transition-colors ${
-                  carTab === tab ? "bg-brand text-white" : "text-muted hover:text-ink"
-                }`}
-              >
-                {tab === "new" ? "New Car" : "Used Car"}
-              </button>
-            ))}
-          </div>
-
-          <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
-            <div className="relative w-full flex-1">
-              <select
-                value={budget}
-                onChange={(e) => setBudget(e.target.value)}
-                aria-label="Budget"
-                className="w-full cursor-pointer appearance-none rounded-md border border-border bg-surface py-3 pl-4 pr-9 text-sm font-medium text-ink outline-none transition-colors hover:border-subtle"
-              >
-                {budgetOptions.map((o) => (
-                  <option key={o.value} value={o.value}>
-                    {o.label}
-                  </option>
-                ))}
-              </select>
-              <span className="pointer-events-none absolute right-3.5 top-1/2 -translate-y-1/2 text-[10px] text-subtle">▼</span>
+        <div className="rounded-2xl border border-border bg-surface p-3 shadow-lg sm:p-4">
+          <div className="flex flex-col gap-2.5 lg:flex-row lg:items-center">
+            <div className="inline-flex shrink-0 self-start rounded-md bg-page p-0.5 lg:self-auto">
+              {(["new", "used"] as const).map((tab) => (
+                <button
+                  key={tab}
+                  onClick={() => setCarTab(tab)}
+                  className={`cursor-pointer rounded-sm px-5 py-2 text-[13px] font-bold transition-colors ${
+                    carTab === tab ? "bg-brand text-white" : "text-muted hover:text-ink"
+                  }`}
+                >
+                  {tab === "new" ? "New" : "Used"}
+                </button>
+              ))}
             </div>
 
-            <div className="relative w-full flex-1">
-              <select
-                value={bodyType}
-                onChange={(e) => setBodyType(e.target.value)}
-                aria-label="Body type"
-                className="w-full cursor-pointer appearance-none rounded-md border border-border bg-surface py-3 pl-4 pr-9 text-sm font-medium text-ink outline-none transition-colors hover:border-subtle"
-              >
-                <option value="">Select Body Type</option>
-                {bodyTypes.map((bt) => (
-                  <option key={bt.id} value={bt.slug}>
-                    {bt.name}
-                  </option>
-                ))}
-              </select>
-              <span className="pointer-events-none absolute right-3.5 top-1/2 -translate-y-1/2 text-[10px] text-subtle">▼</span>
+            <div className="relative flex-1">
+              <span className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-subtle">
+                <SearchIcon />
+              </span>
+              <input
+                value={carQuery}
+                onChange={(e) => setCarQuery(e.target.value)}
+                placeholder="Search by car name, e.g. Nexon"
+                aria-label="Search for a car"
+                className="w-full rounded-md border border-border bg-surface py-2.5 pl-10 pr-4 text-sm font-medium text-ink outline-none transition-colors placeholder:text-subtle hover:border-subtle focus:border-brand"
+              />
+              {carQuery.trim().length >= 2 && (
+                <SearchResultsList
+                  results={carResults}
+                  searching={carSearching}
+                  onSelect={(car) => {
+                    setCarQuery("");
+                    setCarResults([]);
+                    router.push(routes.model(car.brand.slug, car.slug));
+                  }}
+                />
+              )}
             </div>
 
             <button
               onClick={handleSearch}
-              className="w-full shrink-0 cursor-pointer rounded-md bg-brand px-10 py-3 text-sm font-bold text-white transition-colors hover:bg-brand-hover sm:w-auto"
+              className="shrink-0 cursor-pointer rounded-md bg-brand px-8 py-2.5 text-sm font-bold text-white transition-colors hover:bg-brand-hover"
             >
               Search
             </button>
           </div>
+
+          <div className="mt-3 flex flex-wrap items-center gap-2 border-t border-border-soft pt-3">
+            <FilterChip
+              label="Budget"
+              value={budget}
+              options={budgetOptions.filter((o) => o.value)}
+              onChange={setBudget}
+            />
+            <FilterChip
+              label="Body Type"
+              value={bodyType}
+              options={bodyTypes.map((bt) => ({ value: bt.slug, label: bt.name }))}
+              onChange={setBodyType}
+            />
+            {(budget || bodyType) && (
+              <button
+                onClick={() => {
+                  setBudget("");
+                  setBodyType("");
+                }}
+                className="cursor-pointer px-2 py-1 text-[12px] font-semibold text-muted underline-offset-2 transition-colors hover:text-ink hover:underline"
+              >
+                Clear
+              </button>
+            )}
+          </div>
         </div>
       </div>
     </>
+  );
+}
+
+// A filter reads as a chip carrying its own value rather than an empty
+// full-width bar. Kept local: the hero is the only place with this
+// pattern, and hoisting it now would be abstraction without a caller.
+function FilterChip({
+  label,
+  value,
+  options,
+  onChange,
+}: {
+  label: string;
+  value: string;
+  options: { value: string; label: string }[];
+  onChange: (v: string) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const boxRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    const onClick = (e: MouseEvent) => {
+      if (!boxRef.current?.contains(e.target as Node)) setOpen(false);
+    };
+    const onKey = (e: KeyboardEvent) => e.key === "Escape" && setOpen(false);
+    document.addEventListener("mousedown", onClick);
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("mousedown", onClick);
+      document.removeEventListener("keydown", onKey);
+    };
+  }, [open]);
+
+  const selected = options.find((o) => o.value === value);
+
+  return (
+    <div ref={boxRef} className="relative">
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        aria-expanded={open}
+        className={`flex cursor-pointer items-center gap-1.5 rounded-md border px-3.5 py-1.5 text-[12.5px] font-semibold transition-colors ${
+          selected
+            ? "border-brand bg-brand-soft text-brand"
+            : "border-border text-ink hover:border-subtle"
+        }`}
+      >
+        {selected ? selected.label : label}
+        <ChevronDownIcon className="size-3.5" />
+      </button>
+
+      {open && (
+        <div className="absolute left-0 top-full z-50 mt-1.5 max-h-72 w-56 overflow-y-auto rounded-xl border border-border bg-surface py-1.5 shadow-lg">
+          {options.map((o) => (
+            <button
+              key={o.value}
+              type="button"
+              onClick={() => {
+                onChange(o.value === value ? "" : o.value);
+                setOpen(false);
+              }}
+              className={`w-full cursor-pointer px-3.5 py-2 text-left text-[13px] font-semibold transition-colors hover:bg-page ${
+                o.value === value ? "text-brand" : "text-ink"
+              }`}
+            >
+              {o.label}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
   );
 }
