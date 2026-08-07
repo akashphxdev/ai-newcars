@@ -1,8 +1,12 @@
 -- name: ListHomeBrands :many
+-- Ordered by display_order, not name. Alphabetical put Aston Martin,
+-- Bentley and Bugatti in front of Maruti and Hyundai, which is the wrong
+-- first impression for an Indian car site. display_order is admin-owned
+-- so the running order is editorial, not a side effect of spelling.
 SELECT id, name, slug, logo_url
 FROM brands
 WHERE is_active = true
-ORDER BY name ASC
+ORDER BY display_order DESC, name ASC
 LIMIT $1;
 
 -- name: ListHomeCities :many
@@ -13,9 +17,14 @@ ORDER BY name ASC
 LIMIT $1;
 
 -- name: ListHomeBodyTypes :many
-SELECT id, name, slug, icon_url
-FROM body_types
-ORDER BY name ASC
+-- Ranked by how many cars actually carry the type, so SUV and Hatchback
+-- lead and near-empty entries fall off the end of the row rather than
+-- being surfaced by an accident of alphabet.
+SELECT bt.id, bt.name, bt.slug, bt.icon_url
+FROM body_types bt
+LEFT JOIN car_models m ON m.body_type_id = bt.id
+GROUP BY bt.id, bt.name, bt.slug, bt.icon_url
+ORDER BY count(m.id) DESC, bt.name ASC
 LIMIT $1;
 
 -- name: ListHomeArticles :many

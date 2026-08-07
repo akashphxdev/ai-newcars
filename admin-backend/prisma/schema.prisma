@@ -335,6 +335,9 @@ model Brand {
   countryOriginId Int?     @map("country_origin_id")
   countryOrigin   Country? @relation(fields: [countryOriginId], references: [id])
   isActive        Boolean  @default(true) @map("is_active")
+  /// Higher shows first on the homepage. Editorial, so alphabetical order
+  /// cannot put Aston Martin ahead of Maruti.
+  displayOrder    Int      @default(0) @map("display_order")
   createdAt       DateTime @default(now()) @map("created_at")
 
   carModels           CarModel[]

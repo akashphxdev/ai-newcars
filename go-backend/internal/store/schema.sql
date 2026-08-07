@@ -1030,7 +1030,8 @@ CREATE TABLE public.brands (
     country_origin_id integer,
     is_active boolean DEFAULT true NOT NULL,
     created_at timestamp(3) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL
-);
+,
+    display_order integer DEFAULT 0 NOT NULL);
 
 
 --

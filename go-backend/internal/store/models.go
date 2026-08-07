@@ -343,6 +343,7 @@ type Brand struct {
 	CountryOriginID *int32    `json:"country_origin_id"`
 	IsActive        bool      `json:"is_active"`
 	CreatedAt       time.Time `json:"created_at"`
+	DisplayOrder    int32     `json:"display_order"`
 }
 
 type BuyNewCarLead struct {
