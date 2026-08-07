@@ -2,10 +2,13 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import UsedCarCard from "@/components/cars/UsedCarCard";
 import { getUsedCarsByCity } from "@/features/usedCars/usedCar.api";
+import { BUY_USED_CARS_ENABLED } from "@/lib/features";
 
 type Props = { params: Promise<{ citySlug: string }> };
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  if (!BUY_USED_CARS_ENABLED) return { title: "Used Cars | TimesAuto" };
+
   const { citySlug } = await params;
   const res = await getUsedCarsByCity(citySlug, 1);
   if (!res) return { title: "Used Cars | TimesAuto" };
@@ -16,6 +19,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 }
 
 export default async function UsedCarsInCityPage({ params }: Props) {
+  if (!BUY_USED_CARS_ENABLED) notFound();
+
   const { citySlug } = await params;
   const res = await getUsedCarsByCity(citySlug, 48);
 

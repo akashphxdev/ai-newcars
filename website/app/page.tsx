@@ -9,7 +9,6 @@ import ElectricCars from "@/components/home/Electriccars";
 import CompareCars from "@/components/home/Comparecars";
 import Stories from "@/components/home/Stories";
 import Articles from "@/components/home/Articles";
-import TrustedUsedCars from "@/components/home/Trustedusedcars";
 import Reviews from "@/components/home/Reviews";
 import SectionSkeleton from "@/components/common/SectionSkeleton";
 import { getBanners } from "@/features/banners/banner.api";
@@ -111,7 +110,6 @@ export default function HomePage() {
       <Suspense fallback={<SectionSkeleton />}>
         <CompareCarsData />
       </Suspense>
-      <TrustedUsedCars />
       <Suspense fallback={<SectionSkeleton />}>
         <StoriesData />
       </Suspense>

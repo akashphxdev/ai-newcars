@@ -6,6 +6,7 @@ import type { Banner } from "@/features/banners/banner.types";
 import { recordBannerClick } from "@/features/banners/banner.api";
 import type { BodyType } from "@/features/bodyTypes/bodyType.types";
 import { routes } from "@/lib/routes";
+import { BUY_USED_CARS_ENABLED } from "@/lib/features";
 import SearchResultsList from "@/components/common/SearchResultsList";
 import { ChevronDownIcon, SearchIcon } from "@/components/common/icons";
 import { searchCars } from "@/features/search/search.api";
@@ -241,19 +242,21 @@ export default function HeroSection({ banners, bodyTypes }: { banners: Banner[];
       <div className="relative z-30 mx-auto -mt-10 max-w-7xl px-4">
         <div className="rounded-2xl border border-border bg-surface p-3 shadow-lg sm:p-4">
           <div className="flex flex-col gap-2.5 lg:flex-row lg:items-center">
-            <div className="inline-flex shrink-0 self-start rounded-md bg-page p-0.5 lg:self-auto">
-              {(["new", "used"] as const).map((tab) => (
-                <button
-                  key={tab}
-                  onClick={() => setCarTab(tab)}
-                  className={`cursor-pointer rounded-sm px-5 py-2 text-[13px] font-bold transition-colors ${
-                    carTab === tab ? "bg-brand text-white" : "text-muted hover:text-ink"
-                  }`}
-                >
-                  {tab === "new" ? "New" : "Used"}
-                </button>
-              ))}
-            </div>
+            {BUY_USED_CARS_ENABLED && (
+              <div className="inline-flex shrink-0 self-start rounded-md bg-page p-0.5 lg:self-auto">
+                {(["new", "used"] as const).map((tab) => (
+                  <button
+                    key={tab}
+                    onClick={() => setCarTab(tab)}
+                    className={`cursor-pointer rounded-sm px-5 py-2 text-[13px] font-bold transition-colors ${
+                      carTab === tab ? "bg-brand text-white" : "text-muted hover:text-ink"
+                    }`}
+                  >
+                    {tab === "new" ? "New" : "Used"}
+                  </button>
+                ))}
+              </div>
+            )}
 
             <div className="relative flex-1">
               <span className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-subtle">
