@@ -5,13 +5,13 @@ import { formatSinglePrice } from "@/lib/format";
 import type { HomeCar } from "@/features/cars/car.types";
 import { routes } from "@/lib/routes";
 
-const ORANGE = "#f2650f";
-const DARK = "#0f172a";
-const MUTED = "#64748b";
-const BORDER = "#e5e7eb";
-const SURFACE = "#f4f5f9";
-const TEAL = "#0d9488";
-const TEAL_SOFT = "#e6f6f4";
+const ORANGE = "var(--color-brand)";
+const DARK = "var(--color-ink)";
+const MUTED = "var(--color-muted)";
+const BORDER = "var(--color-border)";
+const SURFACE = "var(--color-page)";
+const TEAL = "var(--color-ev)";
+const TEAL_SOFT = "var(--color-ev-soft)";
 const FALLBACK_IMG =
   "data:image/svg+xml;charset=UTF-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='320' height='200' viewBox='0 0 320 200'%3E%3Crect width='320' height='200' fill='%23e5e7eb'/%3E%3Ctext x='50%25' y='50%25' text-anchor='middle' dy='.3em' font-family='sans-serif' font-size='13' fill='%239ca3af'%3EImage unavailable%3C/text%3E%3C/svg%3E";
 

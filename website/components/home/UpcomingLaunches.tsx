@@ -5,7 +5,7 @@ import { useScrollRail } from "@/components/common/useScrollRail";
 import UpcomingCarCard from "@/components/cars/UpcomingCarCard";
 import type { HomeCar } from "@/features/cars/car.types";
 
-const SURFACE = "#f4f5f9";
+const SURFACE = "var(--color-page)";
 
 export default function UpcomingLaunches({ cars }: { cars: HomeCar[] }) {
   const { trackRef, canScrollLeft, canScrollRight, updateArrows, scrollBy } = useScrollRail<HTMLDivElement>();

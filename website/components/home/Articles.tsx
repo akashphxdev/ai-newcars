@@ -5,7 +5,7 @@ import { useScrollRail } from "@/components/common/useScrollRail";
 import ArticleCard from "@/components/articles/ArticleCard";
 import type { HomeArticle } from "@/features/articles/article.types";
 
-const SURFACE = "#f4f5f9";
+const SURFACE = "var(--color-page)";
 
 export default function Articles({
   articles,

@@ -6,14 +6,14 @@ export const metadata: Metadata = {
   robots: { index: false, follow: false },
 };
 
-const DARK = "#111827";
-const MUTED = "#6b7280";
-const BORDER = "#e5e7eb";
-const BORDER_SOFT = "#f0f1f4";
-const SURFACE = "#ffffff";
-const PAGE_BG = "#f4f5f9";
-const ORANGE = "#f2650f";
-const ORANGE_SOFT = "#fde3d3";
+const DARK = "var(--color-ink)";
+const MUTED = "var(--color-muted)";
+const BORDER = "var(--color-border)";
+const BORDER_SOFT = "var(--color-border-soft)";
+const SURFACE = "var(--color-surface)";
+const PAGE_BG = "var(--color-page)";
+const ORANGE = "var(--color-brand)";
+const ORANGE_SOFT = "var(--color-brand-soft)";
 
 const DEFAULT_MESSAGE =
   "We're currently performing scheduled maintenance to bring you a faster, smoother TimesAuto. We'll be back on the road shortly — thanks for your patience.";

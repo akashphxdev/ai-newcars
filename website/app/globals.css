@@ -27,6 +27,12 @@
 
   --color-ev: #0d9488;
   --color-ev-hover: #0b7d73;
+  --color-ev-soft: #e6f6f4;
+
+  /* Ordinary in-body links, distinct from the brand accent so a link is
+     not mistaken for a call to action. */
+  --color-link: #2563eb;
+  --color-danger: #ef4444;
 
   --color-ink: #111827;
   --color-muted: #6b7280;
@@ -66,6 +72,23 @@
   --radius-2xl: 0.375rem; /*  6px — panels, modals */
   --radius-3xl: 0.5rem; /*  8px */
   --radius-4xl: 0.625rem; /* 10px */
+}
+
+/*
+ * Third-party brand colours. These are owned by the platforms, not by us:
+ * they are the same in light and dark mode and must never be re-themed,
+ * which is why they live here rather than in the semantic palette above.
+ * Kept as tokens purely so they are defined once instead of inline in
+ * Footer.tsx.
+ */
+@theme {
+  --color-social-facebook: #1877f2;
+  --color-social-linkedin: #0a66c2;
+  --color-social-youtube: #ff0000;
+  --color-social-x: #000000;
+  --color-social-instagram-a: #f9ce34;
+  --color-social-instagram-b: #ee2a7b;
+  --color-social-instagram-c: #6228d7;
 }
 
 .dark {

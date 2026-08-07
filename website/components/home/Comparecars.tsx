@@ -7,11 +7,11 @@ import { useScrollRail } from "@/components/common/useScrollRail";
 import { formatSinglePrice } from "@/lib/format";
 import type { RandomComparisonPair, RandomPairCar } from "@/features/compare/compare.types";
 
-const ORANGE = "#f2650f";
-const DARK = "#111827";
-const MUTED = "#6b7280";
-const BORDER = "#e5e7eb";
-const SURFACE = "#f4f5f9";
+const ORANGE = "var(--color-brand)";
+const DARK = "var(--color-ink)";
+const MUTED = "var(--color-muted)";
+const BORDER = "var(--color-border)";
+const SURFACE = "var(--color-page)";
 const FALLBACK_IMG =
   "data:image/svg+xml;charset=UTF-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='225' viewBox='0 0 300 225'%3E%3Crect width='300' height='225' fill='%23e5e7eb'/%3E%3Ctext x='50%25' y='50%25' text-anchor='middle' dy='.3em' font-family='sans-serif' font-size='13' fill='%239ca3af'%3EImage unavailable%3C/text%3E%3C/svg%3E";
 
@@ -59,7 +59,7 @@ const Card = ({ pair }: { pair: RandomComparisonPair }) => (
 
       <span
         className="absolute left-1/2 top-1/2 flex size-10 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full text-[11.5px] font-extrabold"
-        style={{ color: ORANGE, border: "1px solid " + ORANGE, background: "#f3f4f6" }}
+        style={{ color: ORANGE, border: "1px solid " + ORANGE, background: "var(--color-border-soft)" }}
       >
         VS
       </span>
@@ -67,7 +67,7 @@ const Card = ({ pair }: { pair: RandomComparisonPair }) => (
 
     <div className="flex items-start gap-3 px-4 pt-4">
       <CarSideBlock car={pair.carA} />
-      <div className="mt-1 h-10 w-px shrink-0" style={{ background: "#f0f1f4" }} />
+      <div className="mt-1 h-10 w-px shrink-0" style={{ background: "var(--color-border-soft)" }} />
       <CarSideBlock car={pair.carB} />
     </div>
 

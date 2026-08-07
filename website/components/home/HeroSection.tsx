@@ -25,9 +25,9 @@ const BUDGET_RANGES: Record<string, { minPrice?: number; maxPrice?: number }> = 
   a100: { minPrice: 10_000_000 },
 };
 
-const ORANGE = "#f2650f";
-const ORANGE_HOVER = "#d9560a";
-const DARK = "#111827";
+const ORANGE = "var(--color-brand)";
+const ORANGE_HOVER = "var(--color-brand-hover)";
+const DARK = "var(--color-ink)";
 
 export default function HeroSection({ banners, bodyTypes }: { banners: Banner[]; bodyTypes: BodyType[] }) {
   const router = useRouter();
@@ -186,7 +186,7 @@ export default function HeroSection({ banners, bodyTypes }: { banners: Banner[];
           <h2 className="font-head text-lg md:text-xl font-extrabold mb-3" style={{ color: ORANGE }}>
             {slide.highlightText}
           </h2>
-          <p className="text-[13px] text-[#c7ccd6] leading-relaxed mb-6 max-w-lg">{slide.description}</p>
+          <p className="text-[13px] text-faint leading-relaxed mb-6 max-w-lg">{slide.description}</p>
         </div>
 
         <div className="flex flex-col gap-3 w-full max-w-2xl">
@@ -197,13 +197,13 @@ export default function HeroSection({ banners, bodyTypes }: { banners: Banner[];
               style={
                 carTab === "new"
                   ? { background: ORANGE, color: "#fff" }
-                  : { background: "rgba(255,255,255,0.06)", color: "#9aa1ad", border: "1px solid rgba(255,255,255,0.12)" }
+                  : { background: "rgba(255,255,255,0.06)", color: "var(--color-subtle)", border: "1px solid rgba(255,255,255,0.12)" }
               }
               onMouseEnter={(e) => {
-                if (carTab !== "new") e.currentTarget.style.color = "#f4f5f9";
+                if (carTab !== "new") e.currentTarget.style.color = "var(--color-page)";
               }}
               onMouseLeave={(e) => {
-                if (carTab !== "new") e.currentTarget.style.color = "#9aa1ad";
+                if (carTab !== "new") e.currentTarget.style.color = "var(--color-subtle)";
               }}
             >
               New Car
@@ -214,13 +214,13 @@ export default function HeroSection({ banners, bodyTypes }: { banners: Banner[];
               style={
                 carTab === "used"
                   ? { background: ORANGE, color: "#fff" }
-                  : { background: "rgba(255,255,255,0.06)", color: "#9aa1ad", border: "1px solid rgba(255,255,255,0.12)" }
+                  : { background: "rgba(255,255,255,0.06)", color: "var(--color-subtle)", border: "1px solid rgba(255,255,255,0.12)" }
               }
               onMouseEnter={(e) => {
-                if (carTab !== "used") e.currentTarget.style.color = "#f4f5f9";
+                if (carTab !== "used") e.currentTarget.style.color = "var(--color-page)";
               }}
               onMouseLeave={(e) => {
-                if (carTab !== "used") e.currentTarget.style.color = "#9aa1ad";
+                if (carTab !== "used") e.currentTarget.style.color = "var(--color-subtle)";
               }}
             >
               Used Car
@@ -249,7 +249,7 @@ export default function HeroSection({ banners, bodyTypes }: { banners: Banner[];
                   </option>
                 ))}
               </select>
-              <span className="pointer-events-none absolute right-3.5 top-1/2 -translate-y-1/2 text-[10px]" style={{ color: "#9aa1ad" }}>
+              <span className="pointer-events-none absolute right-3.5 top-1/2 -translate-y-1/2 text-[10px]" style={{ color: "var(--color-subtle)" }}>
                 ▼
               </span>
             </div>
@@ -277,7 +277,7 @@ export default function HeroSection({ banners, bodyTypes }: { banners: Banner[];
                   </option>
                 ))}
               </select>
-              <span className="pointer-events-none absolute right-3.5 top-1/2 -translate-y-1/2 text-[10px]" style={{ color: "#9aa1ad" }}>
+              <span className="pointer-events-none absolute right-3.5 top-1/2 -translate-y-1/2 text-[10px]" style={{ color: "var(--color-subtle)" }}>
                 ▼
               </span>
             </div>

@@ -4,7 +4,7 @@
 // height (via minHeight) so content doesn't shift the page down once the
 // real cards stream in (avoids a layout-shift/CLS hit).
 
-const SURFACE = "#f4f5f9";
+const SURFACE = "var(--color-page)";
 
 export default function SectionSkeleton({ minHeight = 360 }: { minHeight?: number }) {
   return (

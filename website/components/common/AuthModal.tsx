@@ -4,12 +4,12 @@ import { signupRequestOtp, signupVerifyOtp, loginRequestOtp, loginVerifyOtp, res
 import { saveCurrentUser } from "@/features/auth/currentUser";
 import type { AuthUser } from "@/features/auth/auth.types";
 
-const ORANGE = "#f2650f";
-const DARK = "#111827";
-const MUTED = "#6b7280";
-const FAINT = "#9ca3af";
-const BORDER = "#e5e7eb";
-const SURFACE = "#ffffff";
+const ORANGE = "var(--color-brand)";
+const DARK = "var(--color-ink)";
+const MUTED = "var(--color-muted)";
+const FAINT = "var(--color-subtle)";
+const BORDER = "var(--color-border)";
+const SURFACE = "var(--color-surface)";
 
 function getErrorMessage(err: unknown): string {
   if (err instanceof Error && err.message) return err.message;
@@ -22,7 +22,7 @@ type Step = "form" | "otp";
 const ErrorText = ({ message }: { message: string }) => {
   if (!message) return null;
   return (
-    <p className="text-xs font-medium" style={{ color: "#ef4444" }}>
+    <p className="text-xs font-medium" style={{ color: "var(--color-danger)" }}>
       {message}
     </p>
   );
@@ -337,7 +337,7 @@ export default function AuthModal({ onClose }: { onClose: () => void }) {
     >
       <div className="w-full max-w-sm rounded-xl p-6" style={{ background: SURFACE }} onClick={(e) => e.stopPropagation()}>
         <div className="mb-5 flex items-center justify-between">
-          <div className="flex gap-1 rounded-lg p-1" style={{ background: "#f4f5f9" }}>
+          <div className="flex gap-1 rounded-lg p-1" style={{ background: "var(--color-page)" }}>
             {(["login", "signup"] as Tab[]).map((t) => (
               <button
                 key={t}

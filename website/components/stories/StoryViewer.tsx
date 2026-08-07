@@ -5,7 +5,7 @@ import StoryMedia from "./StoryMedia";
 import { CloseIcon } from "@/components/common/icons";
 import type { StoryGroup } from "@/features/stories/story.types";
 
-const ORANGE = "#f2650f";
+const ORANGE = "var(--color-brand)";
 const SLIDE_MS = 6000;
 
 // Full-screen viewer — pages through ONLY this group's items (never

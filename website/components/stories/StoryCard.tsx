@@ -1,7 +1,7 @@
 import StoryMedia from "./StoryMedia";
 import type { StoryGroup } from "@/features/stories/story.types";
 
-const ORANGE = "#f2650f";
+const ORANGE = "var(--color-brand)";
 
 // Editorial card: one per group (not per item) — clicking it opens the
 // group's own items in the viewer, starting from the first one. Shared by

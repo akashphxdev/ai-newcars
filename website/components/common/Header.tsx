@@ -58,14 +58,14 @@ function buildNavItems(bodyTypes: BodyType[], articleCategories: ArticleCategory
   ];
 }
 
-const ORANGE = "#f2650f";
+const ORANGE = "var(--color-brand)";
 const ORANGE_SOFT = "rgba(242,101,15,0.08)";
-const DARK = "#111827";
-const MUTED = "#6b7280";
-const FAINT = "#9ca3af";
-const BORDER = "#e5e7eb";
-const SURFACE = "#ffffff";
-const PAGE_BG = "#f4f5f9";
+const DARK = "var(--color-ink)";
+const MUTED = "var(--color-muted)";
+const FAINT = "var(--color-subtle)";
+const BORDER = "var(--color-border)";
+const SURFACE = "var(--color-surface)";
+const PAGE_BG = "var(--color-page)";
 
 const SearchIcon = () => (
   <svg width="15" height="15" viewBox="0 0 24 24" fill="none">

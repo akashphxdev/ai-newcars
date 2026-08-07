@@ -3,9 +3,9 @@ import { useState } from "react";
 import Image from "next/image";
 import type { HomeArticle } from "@/features/articles/article.types";
 
-const ORANGE = "#f2650f";
-const SURFACE = "#f4f5f9";
-const BORDER = "#e5e7eb";
+const ORANGE = "var(--color-brand)";
+const SURFACE = "var(--color-page)";
+const BORDER = "var(--color-border)";
 const FALLBACK_IMG =
   "data:image/svg+xml;charset=UTF-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='250' viewBox='0 0 400 250'%3E%3Crect width='400' height='250' fill='%23e5e7eb'/%3E%3Ctext x='50%25' y='50%25' text-anchor='middle' dy='.3em' font-family='sans-serif' font-size='13' fill='%239ca3af'%3EImage unavailable%3C/text%3E%3C/svg%3E";
 

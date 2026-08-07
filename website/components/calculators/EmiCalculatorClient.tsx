@@ -42,13 +42,13 @@ function DonutChart({ principal, interest }: { principal: number; interest: numb
 
   return (
     <svg viewBox="0 0 160 160" className="size-40 shrink-0">
-      <circle cx="80" cy="80" r={radius} fill="none" stroke="#f2650f" strokeWidth="20" />
+      <circle cx="80" cy="80" r={radius} fill="none" stroke="var(--color-brand)" strokeWidth="20" />
       <circle
         cx="80"
         cy="80"
         r={radius}
         fill="none"
-        stroke="#2563eb"
+        stroke="var(--color-link)"
         strokeWidth="20"
         strokeDasharray={`${principalLength} ${circumference - principalLength}`}
         strokeLinecap={principalLength > 0 && principalLength < circumference ? "round" : "butt"}
@@ -461,7 +461,7 @@ export default function EmiCalculatorClient({ brands }: { brands: Brand[] }) {
               <DonutChart principal={loanAmount} interest={totalInterest} />
               <div className="flex flex-col gap-2.5 text-[12px]">
                 <div className="flex items-center gap-2">
-                  <span className="size-2.5 shrink-0 rounded-full" style={{ background: "#2563eb" }} />
+                  <span className="size-2.5 shrink-0 rounded-full" style={{ background: "var(--color-link)" }} />
                   <span className="text-muted">Principal Amount</span>
                 </div>
                 <p className="-mt-1.5 pl-4.5 font-bold text-ink">
@@ -471,7 +471,7 @@ export default function EmiCalculatorClient({ brands }: { brands: Brand[] }) {
                   </span>
                 </p>
                 <div className="flex items-center gap-2">
-                  <span className="size-2.5 shrink-0 rounded-full" style={{ background: "#f2650f" }} />
+                  <span className="size-2.5 shrink-0 rounded-full" style={{ background: "var(--color-brand)" }} />
                   <span className="text-muted">Total Interest</span>
                 </div>
                 <p className="-mt-1.5 pl-4.5 font-bold text-ink">

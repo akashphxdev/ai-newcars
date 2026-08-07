@@ -8,11 +8,11 @@ import LaunchNotifyModal from "@/components/leads/LaunchNotifyModal";
 import { submitLaunchNotifyLead } from "@/features/leads/lead.api";
 import type { HomeCar } from "@/features/cars/car.types";
 
-const ORANGE = "#f2650f";
-const DARK = "#111827";
-const MUTED = "#6b7280";
-const BORDER = "#e5e7eb";
-const SURFACE = "#f4f5f9";
+const ORANGE = "var(--color-brand)";
+const DARK = "var(--color-ink)";
+const MUTED = "var(--color-muted)";
+const BORDER = "var(--color-border)";
+const SURFACE = "var(--color-page)";
 const FALLBACK_IMG =
   "data:image/svg+xml;charset=UTF-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='225' viewBox='0 0 300 225'%3E%3Crect width='300' height='225' fill='%23e5e7eb'/%3E%3Ctext x='50%25' y='50%25' text-anchor='middle' dy='.3em' font-family='sans-serif' font-size='13' fill='%239ca3af'%3EImage unavailable%3C/text%3E%3C/svg%3E";
 
@@ -32,7 +32,7 @@ const useDaysLeft = (date: string | null) => {
 
 const Spec = ({ icon, label }: { icon: React.ReactNode; label: string }) => (
   <div className="flex items-center gap-1.5">
-    <span style={{ color: "#9aa1ad" }}>{icon}</span>
+    <span style={{ color: "var(--color-subtle)" }}>{icon}</span>
     <span className="text-[11.5px] font-semibold" style={{ color: DARK }}>
       {label}
     </span>
@@ -96,7 +96,7 @@ export default function UpcomingCarCard({ car }: { car: HomeCar }) {
             className="absolute bottom-3 left-3 inline-flex items-center gap-1 rounded-md px-2.5 py-1 text-[10px] font-bold text-white backdrop-blur-sm"
             style={{ background: "rgba(17,24,39,0.78)" }}
           >
-            <span className="tabular-nums" style={{ color: "#ff8a3d" }}>
+            <span className="tabular-nums" style={{ color: "var(--color-brand)" }}>
               {days}
             </span>{" "}
             {days === 1 ? "day" : "days"} left
@@ -131,12 +131,12 @@ export default function UpcomingCarCard({ car }: { car: HomeCar }) {
               *est.
             </span>
           </p>
-          <p className="mt-1 text-[10px] font-medium" style={{ color: "#9aa1ad" }}>
+          <p className="mt-1 text-[10px] font-medium" style={{ color: "var(--color-subtle)" }}>
             Estimated price, subject to change
           </p>
         </div>
 
-        <div className="flex items-center gap-3 border-t pt-3" style={{ borderColor: "#f0f1f4" }}>
+        <div className="flex items-center gap-3 border-t pt-3" style={{ borderColor: "var(--color-border-soft)" }}>
           <Spec icon={<FuelIcon className="size-4" />} label={car.isElectric ? "Electric" : "Petrol/Diesel"} />
         </div>
       </div>

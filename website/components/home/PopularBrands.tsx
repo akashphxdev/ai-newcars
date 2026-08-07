@@ -6,7 +6,7 @@ import { useScrollRail } from "@/components/common/useScrollRail";
 import type { Brand } from "@/features/brands/brand.types";
 import { routes } from "@/lib/routes";
 
-const DARK = "#111827";
+const DARK = "var(--color-ink)";
 const FALLBACK_LOGO =
   "data:image/svg+xml;charset=UTF-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='96' height='96' viewBox='0 0 96 96'%3E%3Crect width='96' height='96' rx='16' fill='%23e5e7eb'/%3E%3C/svg%3E";
 

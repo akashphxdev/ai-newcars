@@ -1,8 +1,8 @@
 import type { Pagination as PaginationInfo } from "@/lib/apiClient";
 
-const ORANGE = "#f2650f";
-const BORDER = "#e5e7eb";
-const MUTED = "#6b7280";
+const ORANGE = "var(--color-brand)";
+const BORDER = "var(--color-border)";
+const MUTED = "var(--color-muted)";
 
 // Plain server-rendered <a> links (?page=N) — no client JS needed, works
 // with the page's own server-side data fetch on navigation. Reusable for

@@ -10,12 +10,12 @@ import type { Testimonial } from "@/features/testimonials/testimonial.types";
 
 const FILTERS = ["All Reviews", "5 Star", "4 Star", "3 Star & below"] as const;
 
-const ORANGE = "#f2650f";
-const DARK = "#111827";
-const MUTED = "#6b7280";
-const BORDER = "#e5e7eb";
-const PAGE_BG = "#f4f5f9";
-const PEACH = "#fde3d3";
+const ORANGE = "var(--color-brand)";
+const DARK = "var(--color-ink)";
+const MUTED = "var(--color-muted)";
+const BORDER = "var(--color-border)";
+const PAGE_BG = "var(--color-page)";
+const PEACH = "var(--color-brand-soft)";
 
 const DATE_FMT = new Intl.DateTimeFormat("en-IN", { day: "2-digit", month: "short", year: "numeric" });
 
@@ -76,7 +76,7 @@ const ReviewCard = ({ testimonial }: { testimonial: Testimonial }) => {
         &ldquo;{testimonial.quote}&rdquo;
       </p>
 
-      <div className="mt-auto flex items-center justify-between border-t pt-3.5" style={{ borderColor: "#f0f1f4" }}>
+      <div className="mt-auto flex items-center justify-between border-t pt-3.5" style={{ borderColor: "var(--color-border-soft)" }}>
         <div className="flex min-w-0 items-center gap-2.5">
           <Avatar name={testimonial.customerName} photoUrl={testimonial.photoUrl} />
           <div className="min-w-0">
@@ -92,13 +92,13 @@ const ReviewCard = ({ testimonial }: { testimonial: Testimonial }) => {
         </div>
         <div className="flex shrink-0 flex-col items-end gap-1">
           <StarRow rating={rating} />
-          <span className="text-[9.5px] font-medium" style={{ color: "#9ca3af" }}>
+          <span className="text-[9.5px] font-medium" style={{ color: "var(--color-subtle)" }}>
             {DATE_FMT.format(new Date(testimonial.createdAt))}
           </span>
         </div>
       </div>
 
-      <div className="flex items-center justify-end border-t pt-3" style={{ borderColor: "#f0f1f4" }}>
+      <div className="flex items-center justify-end border-t pt-3" style={{ borderColor: "var(--color-border-soft)" }}>
         <button
           type="button"
           onClick={() => setHelpful((h) => !h)}

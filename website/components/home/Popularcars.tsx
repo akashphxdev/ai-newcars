@@ -10,17 +10,17 @@ import { formatPriceRange } from "@/lib/format";
 import type { HomeCar } from "@/features/cars/car.types";
 import { routes } from "@/lib/routes";
 
-const ORANGE = "#f2650f";
-const DARK = "#111827";
-const MUTED = "#6b7280";
-const BORDER = "#e5e7eb";
-const SURFACE = "#f4f5f9";
+const ORANGE = "var(--color-brand)";
+const DARK = "var(--color-ink)";
+const MUTED = "var(--color-muted)";
+const BORDER = "var(--color-border)";
+const SURFACE = "var(--color-page)";
 const FALLBACK_IMG =
   "data:image/svg+xml;charset=UTF-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='225' viewBox='0 0 300 225'%3E%3Crect width='300' height='225' fill='%23e5e7eb'/%3E%3Ctext x='50%25' y='50%25' text-anchor='middle' dy='.3em' font-family='sans-serif' font-size='13' fill='%239ca3af'%3EImage unavailable%3C/text%3E%3C/svg%3E";
 
 const Spec = ({ icon, value, label }: { icon: React.ReactNode; value: string; label: string }) => (
   <div className="flex items-center gap-1.5">
-    <span style={{ color: "#9aa1ad" }}>{icon}</span>
+    <span style={{ color: "var(--color-subtle)" }}>{icon}</span>
     <div className="leading-tight">
       <p className="text-[12px] font-bold" style={{ color: DARK }}>
         {value}
@@ -85,7 +85,7 @@ const Card = ({ car }: { car: HomeCar }) => {
           </span>
         </p>
 
-        <div className="flex items-center justify-between border-t pt-3" style={{ borderColor: "#f0f1f4" }}>
+        <div className="flex items-center justify-between border-t pt-3" style={{ borderColor: "var(--color-border-soft)" }}>
           <Spec icon={<PowerIcon className="size-4" />} value={car.specs?.powerPs ? `${car.specs.powerPs} PS` : "-"} label="Power" />
           <Spec icon={<TorqueIcon className="size-4" />} value={car.specs?.torqueNm ? `${car.specs.torqueNm} Nm` : "-"} label="Torque" />
           <Spec icon={<GaugeIcon className="size-4" />} value={car.specs?.mileage ? `${car.specs.mileage} km/l` : "-"} label="Mileage" />

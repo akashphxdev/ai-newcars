@@ -5,8 +5,8 @@ import ScrollArrows from "@/components/common/ScrollArrows";
 import { useScrollRail } from "@/components/common/useScrollRail";
 import type { HomeCity } from "@/features/cities/city.types";
 
-const SURFACE = "#f4f5f9";
-const BORDER = "#e5e7eb";
+const SURFACE = "var(--color-page)";
+const BORDER = "var(--color-border)";
 // No per-city icon field on the City table — every city falls back to this
 // generic building icon unless it has its own logoUrl.
 const FALLBACK_ICON = "https://api.iconify.design/mdi:city.svg";

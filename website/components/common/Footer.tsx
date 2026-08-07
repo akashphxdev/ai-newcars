@@ -6,14 +6,14 @@ import type { PublicSiteSetting } from "@/features/siteSettings/siteSetting.type
 import type { BodyType } from "@/features/bodyTypes/bodyType.types";
 import type { ArticleCategory } from "@/features/articles/article.types";
 
-const ORANGE = "#f2650f";
-const DARK = "#111827";
-const MUTED = "#6b7280";
-const FAINT = "#9ca3af";
-const BORDER = "#e5e7eb";
-const SURFACE = "#ffffff";
-const PAGE_BG = "#f4f5f9";
-const PEACH = "#fde3d3";
+const ORANGE = "var(--color-brand)";
+const DARK = "var(--color-ink)";
+const MUTED = "var(--color-muted)";
+const FAINT = "var(--color-subtle)";
+const BORDER = "var(--color-border)";
+const SURFACE = "var(--color-surface)";
+const PAGE_BG = "var(--color-page)";
+const PEACH = "var(--color-brand-soft)";
 
 /* ---------------- Icons ---------------- */
 
@@ -93,7 +93,7 @@ function buildSocials(s: PublicSiteSetting): SocialDef[] {
     {
       label: "Facebook",
       href: s.facebookUrl,
-      brand: "#1877F2",
+      brand: "var(--color-social-facebook)",
       icon: (
         <svg viewBox="0 0 24 24" fill="currentColor">
           <path d="M13.5 21v-7.6h2.6l.4-3h-3v-1.9c0-.87.24-1.46 1.5-1.46h1.6V4.35A21.4 21.4 0 0 0 13.9 4.2c-2.24 0-3.77 1.37-3.77 3.87v2.16H7.5v3h2.63V21h3.37Z" />
@@ -103,7 +103,7 @@ function buildSocials(s: PublicSiteSetting): SocialDef[] {
     {
       label: "Instagram",
       href: s.instagramUrl,
-      brand: "linear-gradient(135deg,#f9ce34,#ee2a7b,#6228d7)",
+      brand: "linear-gradient(135deg,var(--color-social-instagram-a),var(--color-social-instagram-b),var(--color-social-instagram-c))",
       icon: (
         <svg viewBox="0 0 24 24" fill="none">
           <rect x="3.5" y="3.5" width="17" height="17" rx="5" stroke="currentColor" strokeWidth="1.6" />
@@ -115,7 +115,7 @@ function buildSocials(s: PublicSiteSetting): SocialDef[] {
     {
       label: "X",
       href: s.twitterUrl,
-      brand: "#000000",
+      brand: "var(--color-social-x)",
       icon: (
         <svg viewBox="0 0 24 24" fill="currentColor">
           <path d="M17.5 3h3l-7.3 8.3L21.5 21h-6.7l-5.2-6.6L3.6 21H.6l7.8-8.9L2.5 3h6.9l4.7 6.1L17.5 3Zm-1.2 16h1.6L7.9 4.9H6.2L16.3 19Z" />
@@ -125,7 +125,7 @@ function buildSocials(s: PublicSiteSetting): SocialDef[] {
     {
       label: "YouTube",
       href: s.youtubeUrl,
-      brand: "#FF0000",
+      brand: "var(--color-social-youtube)",
       icon: (
         <svg viewBox="0 0 24 24" fill="none">
           <rect x="2.5" y="5.5" width="19" height="13" rx="4" stroke="currentColor" strokeWidth="1.6" />
@@ -136,7 +136,7 @@ function buildSocials(s: PublicSiteSetting): SocialDef[] {
     {
       label: "LinkedIn",
       href: s.linkedinUrl,
-      brand: "#0A66C2",
+      brand: "var(--color-social-linkedin)",
       icon: (
         <svg viewBox="0 0 24 24" fill="currentColor">
           <path d="M6.94 8.5H3.56V20h3.38V8.5ZM5.25 3.5a1.96 1.96 0 1 0 0 3.92 1.96 1.96 0 0 0 0-3.92ZM20.5 20v-6.4c0-3.43-1.83-5.02-4.27-5.02-1.97 0-2.85 1.08-3.34 1.84V8.5H9.5c.04.96 0 11.5 0 11.5h3.39v-6.42c0-.34.02-.68.12-.93.27-.68.9-1.38 1.94-1.38 1.37 0 1.92 1.04 1.92 2.57V20h3.63Z" />
