@@ -10,6 +10,10 @@ import type { AuthUser } from "@/features/auth/auth.types";
 import type { SearchCarResult } from "@/features/search/search.types";
 import type { BodyType } from "@/features/bodyTypes/bodyType.types";
 import type { ArticleCategory } from "@/features/articles/article.types";
+import {
+  CompareIcon, BoltIcon, ClockIcon, TagIcon, CalculatorIcon, PercentIcon,
+  GaugeIcon, FuelIcon, BatteryIcon, RoadIcon, StarIcon, ShieldIcon,
+} from "@/components/common/icons";
 
 
 // Token references, kept as constants purely because the remaining inline
@@ -40,7 +44,7 @@ const PinIcon = () => (
 
 /* ---------------- Search results dropdown ---------------- */
 
-type NavLink = { label: string; href: string; desc?: string };
+type NavLink = { label: string; href: string; desc?: string; icon?: React.ReactNode };
 type NavColumn = { heading: string; links: NavLink[] };
 
 type NavItem = {
@@ -67,12 +71,12 @@ const BUDGET_BANDS: NavLink[] = [
 ];
 
 const TOOL_LINKS: NavLink[] = [
-  { label: "EMI Calculator", href: "/car-loan-emi-calculator", desc: "Monthly payment by tenure and rate" },
-  { label: "Down Payment", href: "/down-payment-calculator", desc: "How much to put down upfront" },
-  { label: "Affordability", href: "/car-affordability-calculator", desc: "What your budget really buys" },
-  { label: "Mileage", href: "/mileage-calculator", desc: "Running cost per kilometre" },
-  { label: "EV Charging Time", href: "/ev-charging-time-calculator", desc: "Charge duration by charger type" },
-  { label: "Fuel Comparison", href: "/fuel-comparison-calculator", desc: "Petrol vs diesel vs CNG vs EV" },
+  { label: "EMI Calculator", href: "/car-loan-emi-calculator", desc: "Monthly payment by tenure and rate", icon: <CalculatorIcon className="size-4" /> },
+  { label: "Down Payment", href: "/down-payment-calculator", desc: "How much to put down upfront", icon: <PercentIcon className="size-4" /> },
+  { label: "Affordability", href: "/car-affordability-calculator", desc: "What your budget really buys", icon: <ShieldIcon className="size-4" /> },
+  { label: "Mileage", href: "/mileage-calculator", desc: "Running cost per kilometre", icon: <GaugeIcon className="size-4" /> },
+  { label: "EV Charging Time", href: "/ev-charging-time-calculator", desc: "Charge duration by charger type", icon: <BatteryIcon className="size-4" /> },
+  { label: "Fuel Comparison", href: "/fuel-comparison-calculator", desc: "Petrol vs diesel vs CNG vs EV", icon: <FuelIcon className="size-4" /> },
 ];
 
 function buildNavItems(bodyTypes: BodyType[], articleCategories: ArticleCategory[]): NavItem[] {
@@ -83,11 +87,11 @@ function buildNavItems(bodyTypes: BodyType[], articleCategories: ArticleCategory
         {
           heading: "Browse",
           links: [
-            { label: "All New Cars", href: "/new-cars", desc: "Every model on sale in India" },
-            { label: "Upcoming Cars", href: "/upcoming-cars", desc: "Launch dates and expected prices" },
-            { label: "Electric Cars", href: "/electric-cars", desc: "Ranked by real-world range" },
-            { label: "Compare Cars", href: "/compare-cars", desc: "Two cars, one spec table" },
-            { label: "All Brands", href: "/brands", desc: "Browse by manufacturer" },
+            { label: "All New Cars", href: "/new-cars", desc: "Every model on sale in India", icon: <RoadIcon className="size-4" /> },
+            { label: "Upcoming Cars", href: "/upcoming-cars", desc: "Launch dates and expected prices", icon: <ClockIcon className="size-4" /> },
+            { label: "Electric Cars", href: "/electric-cars", desc: "Ranked by real-world range", icon: <BoltIcon className="size-4" /> },
+            { label: "Compare Cars", href: "/compare-cars", desc: "Two cars, one spec table", icon: <CompareIcon className="size-4" /> },
+            { label: "All Brands", href: "/brands", desc: "Browse by manufacturer", icon: <StarIcon className="size-4" /> },
           ],
         },
         {
@@ -177,6 +181,40 @@ export default function Header({ bodyTypes, articleCategories }: { bodyTypes: Bo
   const router = useRouter();
 
   const NAV_ITEMS = buildNavItems(bodyTypes, articleCategories);
+
+  // Hover intent. The panel used to be pure CSS :hover, which closed the
+  // moment the cursor left the trigger — including while travelling the
+  // few pixels down into the panel, or diagonally across it toward a
+  // column on the far side. That made sub-items genuinely hard to click.
+  // A short close delay keeps the panel open across those gaps; entering
+  // the panel cancels the pending close outright.
+  const [openMenu, setOpenMenu] = useState<string | null>(null);
+  const closeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const cancelClose = () => {
+    if (closeTimer.current) clearTimeout(closeTimer.current);
+    closeTimer.current = null;
+  };
+  const openNow = (label: string) => {
+    cancelClose();
+    setOpenMenu(label);
+  };
+  const closeSoon = () => {
+    cancelClose();
+    closeTimer.current = setTimeout(() => setOpenMenu(null), 220);
+  };
+
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setOpenMenu(null);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => {
+      window.removeEventListener("keydown", onKey);
+      cancelClose();
+    };
+  }, []);
+
 
   const isActive = (href?: string) => !!href && href !== "#" && pathname === href;
 
@@ -276,9 +314,17 @@ export default function Header({ bodyTypes, articleCategories }: { bodyTypes: Bo
           <nav className="hidden items-center gap-0.5 lg:flex">
             {NAV_ITEMS.map((item) => {
               const active = isActive(item.href);
+              const hasPanel = Boolean(item.columns || item.dropdown);
+              const isOpen = openMenu === item.label;
+
               return (
-                <div key={item.label} className="group relative">
-                  {item.href && !item.dropdown ? (
+                <div
+                  key={item.label}
+                  className="relative"
+                  onMouseEnter={() => (hasPanel ? openNow(item.label) : closeSoon())}
+                  onMouseLeave={closeSoon}
+                >
+                  {item.href && !hasPanel ? (
                     <Link
                       href={item.href}
                       className="relative flex items-center rounded-md px-3 py-2 text-[13px] font-semibold transition-colors"
@@ -287,69 +333,93 @@ export default function Header({ bodyTypes, articleCategories }: { bodyTypes: Bo
                       {item.label}
                     </Link>
                   ) : (
-                    <button className="flex cursor-pointer items-center gap-1 rounded-md border-none bg-transparent px-3 py-2 text-[13px] font-semibold transition-colors" style={{ color: DARK }}>
+                    <button
+                      className="flex cursor-pointer items-center gap-1 rounded-md border-none bg-transparent px-3 py-2 text-[13px] font-semibold transition-colors"
+                      style={{ color: isOpen ? ORANGE : DARK }}
+                      aria-expanded={isOpen}
+                      aria-haspopup="true"
+                      onFocus={() => openNow(item.label)}
+                      onClick={() => (isOpen ? setOpenMenu(null) : openNow(item.label))}
+                    >
                       {item.label}
-                      <svg className="size-2.5 transition-transform group-hover:rotate-180" style={{ color: FAINT }} viewBox="0 0 12 8" fill="none">
+                      <svg
+                        className="size-2.5 transition-transform"
+                        style={{ color: FAINT, transform: isOpen ? "rotate(180deg)" : "none" }}
+                        viewBox="0 0 12 8"
+                        fill="none"
+                      >
                         <path d="M1 1.5L6 6.5L11 1.5" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />
                       </svg>
                     </button>
-                  )}
-
-                  {(item.columns || item.dropdown) && (
-                    <div
-                      className={`invisible absolute top-full z-50 mt-1 overflow-hidden rounded-lg border border-border bg-surface opacity-0 shadow-lg transition-opacity duration-150 group-hover:visible group-hover:opacity-100 group-focus-within:visible group-focus-within:opacity-100 ${
-                        item.columns ? "left-0" : "left-0 min-w-45 py-1.5"
-                      }`}
-                    >
-                      {item.columns ? (
-                        <div className="flex gap-8 p-5">
-                          {item.columns.map((col) => (
-                            <div key={col.heading} className="min-w-45">
-                              <p className="mb-2 text-[10px] font-bold uppercase tracking-[0.1em] text-subtle">
-                                {col.heading}
-                              </p>
-                              {/* Body types can run long, so the column
-                                  scrolls rather than stretching the panel
-                                  past the viewport. */}
-                              <ul className="max-h-72 space-y-0.5 overflow-y-auto">
-                                {col.links.map((link) => (
-                                  <li key={link.href}>
-                                    <Link
-                                      href={link.href}
-                                      className="block rounded-md px-2.5 py-1.5 no-underline transition-colors hover:bg-page"
-                                    >
-                                      <span className="block text-[13px] font-semibold capitalize text-ink">
-                                        {link.label}
-                                      </span>
-                                      {link.desc && (
-                                        <span className="mt-0.5 block text-[11px] leading-snug text-muted">
-                                          {link.desc}
-                                        </span>
-                                      )}
-                                    </Link>
-                                  </li>
-                                ))}
-                              </ul>
-                            </div>
-                          ))}
-                        </div>
-                      ) : (
-                        item.dropdown!.map((link) => (
-                          <Link
-                            key={link.href}
-                            href={link.href}
-                            className="block whitespace-nowrap px-3.5 py-2 text-[13px] font-medium capitalize text-muted no-underline transition-colors hover:bg-page hover:text-brand"
-                          >
-                            {link.label}
-                          </Link>
-                        ))
-                      )}
-                    </div>
                   )}
                 </div>
               );
             })}
           </nav>
+
+          {/* Mega panel. Rendered here rather than inside each trigger so
+              it can span the full header width, and so there is no gap
+              between trigger and panel for the cursor to fall through. */}
+          {NAV_ITEMS.filter((i) => i.columns || i.dropdown).map((item) => {
+            const cols = item.columns ?? [{ heading: item.label, links: item.dropdown! }];
+            return (
+              <div
+                key={`panel-${item.label}`}
+                onMouseEnter={cancelClose}
+                onMouseLeave={closeSoon}
+                className={`absolute inset-x-0 top-full z-50 hidden border-t border-border bg-surface shadow-lg lg:block ${
+                  openMenu === item.label ? "opacity-100" : "pointer-events-none invisible opacity-0"
+                } transition-opacity duration-150`}
+              >
+                <div className="mx-auto flex max-w-7xl gap-10 px-6 py-6">
+                  {cols.map((col) => (
+                    <div key={col.heading || item.label} className={cols.length === 1 ? "flex-1" : col.links.length > 8 && !col.links[0]?.icon ? "min-w-96" : "min-w-52"}>
+                      {col.heading && (
+                        <p className="mb-3 text-[10px] font-bold uppercase tracking-[0.12em] text-subtle">
+                          {col.heading}
+                        </p>
+                      )}
+                      <ul
+                        className={
+                          cols.length === 1
+                            ? "grid flex-1 grid-cols-3 gap-x-8 gap-y-0.5"
+                            : col.links.length > 8 && !col.links[0]?.icon
+                              ? "columns-2 gap-8 space-y-0.5 pr-2"
+                              : "space-y-0.5 pr-2"
+                        }
+                      >
+                        {col.links.map((link) => (
+                          <li key={link.href}>
+                            <Link
+                              href={link.href}
+                              onClick={() => setOpenMenu(null)}
+                              className="flex items-start gap-2.5 rounded-md px-2.5 py-2 no-underline transition-colors hover:bg-page"
+                            >
+                              {link.icon && (
+                                <span className="mt-0.5 flex size-7 shrink-0 items-center justify-center rounded-md bg-page text-brand">
+                                  {link.icon}
+                                </span>
+                              )}
+                              <span className="min-w-0">
+                                <span className="block text-[13px] font-semibold capitalize text-ink">
+                                  {link.label}
+                                </span>
+                                {link.desc && (
+                                  <span className="mt-0.5 block text-[11px] leading-snug text-muted">
+                                    {link.desc}
+                                  </span>
+                                )}
+                              </span>
+                            </Link>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            );
+          })}
         </div>
 
         {/* Right group: search + location + login + hamburger */}
