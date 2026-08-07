@@ -15,7 +15,6 @@ import SectionSkeleton from "@/components/common/SectionSkeleton";
 import { getBanners } from "@/features/banners/banner.api";
 import { getBrands } from "@/features/brands/brand.api";
 import { getHomeCars } from "@/features/cars/car.api";
-import { getHomeCities } from "@/features/cities/city.api";
 import { getHomeArticles } from "@/features/articles/article.api";
 import { getHomeTestimonials } from "@/features/testimonials/testimonial.api";
 import { getHomeStories } from "@/features/stories/story.api";
@@ -70,14 +69,6 @@ async function CompareCarsData() {
   return <CompareCars pairs={pairs} />;
 }
 
-async function TrustedUsedCarsData() {
-  // No "View All" page for this section — the scroll rail itself is meant
-  // to carry every top city, so this asks for the backend's max (50)
-  // instead of the smaller unscoped default.
-  const cities = await getHomeCities(50);
-  return <TrustedUsedCars cities={cities} />;
-}
-
 async function ArticlesData() {
   const articles = await getHomeArticles();
   return <Articles articles={articles} />;
@@ -120,9 +111,7 @@ export default function HomePage() {
       <Suspense fallback={<SectionSkeleton />}>
         <CompareCarsData />
       </Suspense>
-      <Suspense fallback={<SectionSkeleton />}>
-        <TrustedUsedCarsData />
-      </Suspense>
+      <TrustedUsedCars />
       <Suspense fallback={<SectionSkeleton />}>
         <StoriesData />
       </Suspense>

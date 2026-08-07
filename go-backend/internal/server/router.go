@@ -103,6 +103,8 @@ func New(h *handler.Handler, c *cache.Cache, cfg *config.Config) http.Handler {
 		r.With(middleware.PublicCache(c, ttlCatalogue)).Get("/cities/options", h.CityOptions)
 		r.With(middleware.PublicCache(c, ttlCatalogue)).Get("/lenders/options", h.LenderOptions)
 
+		r.With(middleware.PublicCache(c, ttlListing)).Get("/used-cars", h.UsedCarsByCity)
+
 		r.Route("/location", func(r chi.Router) {
 			r.With(middleware.PublicCache(c, ttlCatalogue)).Get("/cities", h.LocationCities)
 			// Both are per-visitor and set no-store themselves; caching

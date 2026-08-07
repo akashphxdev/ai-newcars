@@ -40,6 +40,7 @@ export const routes = {
   bodyType: (slug: string) => `/new-cars/${slug}`,
   electricCars: () => "/electric-cars",
   upcomingCars: () => "/upcoming-cars",
+  usedCarsInCity: (citySlug: string) => `/used-cars/${citySlug}`,
 
   // ---- Editorial ----------------------------------------------------
   newsCategory: (categorySlug: string) => `/news/${categorySlug}`,
