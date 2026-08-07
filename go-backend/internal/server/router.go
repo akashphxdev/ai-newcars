@@ -102,6 +102,14 @@ func New(h *handler.Handler, c *cache.Cache, cfg *config.Config) http.Handler {
 		r.With(middleware.PublicCache(c, ttlCatalogue)).Get("/states/options", h.StateOptions)
 		r.With(middleware.PublicCache(c, ttlCatalogue)).Get("/cities/options", h.CityOptions)
 		r.With(middleware.PublicCache(c, ttlCatalogue)).Get("/lenders/options", h.LenderOptions)
+
+		r.Route("/location", func(r chi.Router) {
+			r.With(middleware.PublicCache(c, ttlCatalogue)).Get("/cities", h.LocationCities)
+			// Both are per-visitor and set no-store themselves; caching
+			// either would leak one visitor's location to the next.
+			r.Get("/detect", h.DetectCity)
+			r.Get("/reverse", h.ReverseGeocode)
+		})
 		r.With(middleware.PublicCache(c, ttlSettings)).Get("/site-settings", h.SiteSettings)
 
 		// Uncached: the result set is as varied as the query string, so a

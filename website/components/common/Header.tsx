@@ -13,7 +13,9 @@ import type { ArticleCategory } from "@/features/articles/article.types";
 import {
   CompareIcon, BoltIcon, ClockIcon, TagIcon, CalculatorIcon, PercentIcon,
   GaugeIcon, FuelIcon, BatteryIcon, RoadIcon, StarIcon, ShieldIcon,
+  PinIcon, SearchIcon,
 } from "@/components/common/icons";
+import CitySelector from "@/components/common/CitySelector";
 
 
 // Token references, kept as constants purely because the remaining inline
@@ -27,20 +29,6 @@ const FAINT = "var(--color-subtle)";
 const BORDER = "var(--color-border)";
 const SURFACE = "var(--color-surface)";
 const PAGE_BG = "var(--color-page)";
-
-const SearchIcon = () => (
-  <svg width="15" height="15" viewBox="0 0 24 24" fill="none">
-    <circle cx="11" cy="11" r="7" stroke="currentColor" strokeWidth="1.8" />
-    <path d="m20 20-3.5-3.5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
-  </svg>
-);
-
-const PinIcon = () => (
-  <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
-    <path d="M12 21s7-6.3 7-11.5A7 7 0 0 0 5 9.5C5 14.7 12 21 12 21Z" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" />
-    <circle cx="12" cy="9.5" r="2.2" stroke="currentColor" strokeWidth="1.8" />
-  </svg>
-);
 
 /* ---------------- Search results dropdown ---------------- */
 
@@ -455,15 +443,7 @@ export default function Header({ bodyTypes, articleCategories }: { bodyTypes: Bo
             )}
           </div>
 
-          <button
-            className="flex shrink-0 items-center gap-1 text-[13px] font-semibold"
-            style={{ color: DARK }}
-          >
-            <span style={{ color: ORANGE }}>
-              <PinIcon />
-            </span>
-            Jaipur
-          </button>
+          <CitySelector />
 
           {user ? (
             <div className="relative hidden sm:block" ref={profileMenuRef}>
@@ -620,15 +600,7 @@ export default function Header({ bodyTypes, articleCategories }: { bodyTypes: Bo
             </div>
           ))}
 
-          <button
-            className="my-2 flex w-full items-center gap-1.5 py-2 text-[13px] font-semibold"
-            style={{ color: DARK }}
-          >
-            <span style={{ color: ORANGE }}>
-              <PinIcon />
-            </span>
-            Jaipur
-          </button>
+          <CitySelector variant="mobile" />
 
           {user ? (
             <div className="my-2 flex flex-col">

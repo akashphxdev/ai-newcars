@@ -11,6 +11,28 @@ import (
 	"github.com/shopspring/decimal"
 )
 
+const findCityByName = `-- name: FindCityByName :one
+SELECT id, name, slug
+FROM cities
+WHERE LOWER(name) = LOWER($1)
+   OR LOWER($1) LIKE LOWER(name) || ' %'
+ORDER BY (LOWER(name) = LOWER($1)) DESC, length(name) DESC
+LIMIT 1
+`
+
+type FindCityByNameRow struct {
+	ID   int32  `json:"id"`
+	Name string `json:"name"`
+	Slug string `json:"slug"`
+}
+
+func (q *Queries) FindCityByName(ctx context.Context, name string) (FindCityByNameRow, error) {
+	row := q.db.QueryRow(ctx, findCityByName, name)
+	var i FindCityByNameRow
+	err := row.Scan(&i.ID, &i.Name, &i.Slug)
+	return i, err
+}
+
 const getBodyTypeBySlug = `-- name: GetBodyTypeBySlug :one
 SELECT id, name, slug, icon_url, description
 FROM body_types
@@ -262,6 +284,44 @@ func (q *Queries) ListBrandsWithCounts(ctx context.Context) ([]ListBrandsWithCou
 			&i.Slug,
 			&i.LogoUrl,
 			&i.Count,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listCitiesForSelector = `-- name: ListCitiesForSelector :many
+SELECT id, name, slug, is_top_city
+FROM cities
+ORDER BY is_top_city DESC, name ASC
+`
+
+type ListCitiesForSelectorRow struct {
+	ID        int32  `json:"id"`
+	Name      string `json:"name"`
+	Slug      string `json:"slug"`
+	IsTopCity bool   `json:"is_top_city"`
+}
+
+func (q *Queries) ListCitiesForSelector(ctx context.Context) ([]ListCitiesForSelectorRow, error) {
+	rows, err := q.db.Query(ctx, listCitiesForSelector)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []ListCitiesForSelectorRow{}
+	for rows.Next() {
+		var i ListCitiesForSelectorRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.Name,
+			&i.Slug,
+			&i.IsTopCity,
 		); err != nil {
 			return nil, err
 		}

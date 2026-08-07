@@ -249,3 +249,22 @@ export const CalculatorIcon = ({ className = "size-4" }: IconProps) => (
     />
   </svg>
 );
+
+export const SearchIcon = ({ className = "size-[15px]" }: IconProps) => (
+  <svg className={className} viewBox="0 0 24 24" fill="none">
+    <circle cx="11" cy="11" r="7" stroke="currentColor" strokeWidth="1.8" />
+    <path d="m20 20-3.5-3.5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+  </svg>
+);
+
+export const PinIcon = ({ className = "size-3.5" }: IconProps) => (
+  <svg className={className} viewBox="0 0 24 24" fill="none">
+    <path
+      d="M12 21s7-6.3 7-11.5A7 7 0 0 0 5 9.5C5 14.7 12 21 12 21Z"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinejoin="round"
+    />
+    <circle cx="12" cy="9.5" r="2.2" stroke="currentColor" strokeWidth="1.8" />
+  </svg>
+);

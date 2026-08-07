@@ -93,3 +93,16 @@ INSERT INTO search_logs (search_query, results_count, page_url, device_type,
                          ip_address, session_id, user_agent, created_at)
 VALUES (@search_query, @results_count, @page_url, @device_type,
         @ip_address, @session_id, @user_agent, NOW());
+
+-- name: ListCitiesForSelector :many
+SELECT id, name, slug, is_top_city
+FROM cities
+ORDER BY is_top_city DESC, name ASC;
+
+-- name: FindCityByName :one
+SELECT id, name, slug
+FROM cities
+WHERE LOWER(name) = LOWER(@name)
+   OR LOWER(@name) LIKE LOWER(name) || ' %'
+ORDER BY (LOWER(name) = LOWER(@name)) DESC, length(name) DESC
+LIMIT 1;
