@@ -575,6 +575,16 @@ type FeatureCategory struct {
 	CreatedAt time.Time `json:"created_at"`
 }
 
+type FuelPrice struct {
+	ID           int64           `json:"id"`
+	CityID       int32           `json:"city_id"`
+	FuelType     int16           `json:"fuel_type"`
+	Price        decimal.Decimal `json:"price"`
+	PriceChange  decimal.Decimal `json:"price_change"`
+	ApplicableOn time.Time       `json:"applicable_on"`
+	CreatedAt    time.Time       `json:"created_at"`
+}
+
 type InsuranceLead struct {
 	ID                      int32      `json:"id"`
 	UserID                  *int32     `json:"user_id"`

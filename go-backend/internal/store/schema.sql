@@ -5897,3 +5897,33 @@ ALTER TABLE ONLY public.variant_features
 -- PostgreSQL database dump complete
 --
 
+\restrict lXmU4GEt7mx7LvAbBjpC06bEConofDmMhzUEb90Fk7S0vbi8xthvXgstiqx5dbn
+CREATE TABLE public.fuel_prices (
+    id bigint NOT NULL,
+    city_id integer NOT NULL,
+    fuel_type smallint NOT NULL,
+    price numeric(10,2) NOT NULL,
+    price_change numeric(10,2) DEFAULT 0 NOT NULL,
+    applicable_on date NOT NULL,
+    created_at timestamp(3) without time zone DEFAULT now() NOT NULL,
+    CONSTRAINT fuel_prices_fuel_type_check CHECK ((fuel_type = ANY (ARRAY[1, 2, 3])))
+);
+ALTER TABLE public.fuel_prices OWNER TO postgres;
+CREATE SEQUENCE public.fuel_prices_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+ALTER SEQUENCE public.fuel_prices_id_seq OWNER TO postgres;
+ALTER SEQUENCE public.fuel_prices_id_seq OWNED BY public.fuel_prices.id;
+ALTER TABLE ONLY public.fuel_prices ALTER COLUMN id SET DEFAULT nextval('public.fuel_prices_id_seq'::regclass);
+ALTER TABLE ONLY public.fuel_prices
+    ADD CONSTRAINT fuel_prices_pkey PRIMARY KEY (id);
+ALTER TABLE ONLY public.fuel_prices
+    ADD CONSTRAINT fuel_prices_unique UNIQUE (city_id, fuel_type, applicable_on);
+CREATE INDEX fuel_prices_day_idx ON public.fuel_prices USING btree (applicable_on DESC);
+CREATE INDEX fuel_prices_latest_idx ON public.fuel_prices USING btree (city_id, fuel_type, applicable_on DESC);
+ALTER TABLE ONLY public.fuel_prices
+    ADD CONSTRAINT fuel_prices_city_id_fkey FOREIGN KEY (city_id) REFERENCES public.cities(id);
+\unrestrict lXmU4GEt7mx7LvAbBjpC06bEConofDmMhzUEb90Fk7S0vbi8xthvXgstiqx5dbn
