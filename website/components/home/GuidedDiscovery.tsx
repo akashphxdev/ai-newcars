@@ -197,11 +197,10 @@ export default function GuidedDiscovery({
             Smart filters • Real results • Zero guesswork
           </p>
 
-          <ConnectorTrace />
         </div>
 
         <div className="rounded-2xl border border-border p-4 sm:p-5">
-          <div className="grid gap-4 sm:grid-cols-2">
+          <div className="grid items-start gap-4 sm:grid-cols-2">
             <Card
               icon={<WalletIcon className="size-5" />}
               title="Budget first"
@@ -353,37 +352,6 @@ export default function GuidedDiscovery({
 // clicks meant for the upper one.
 // Decorative only, and hidden from assistive tech: it carries no
 // information the copy does not already give.
-function ConnectorTrace() {
-  return (
-    <div aria-hidden className="pointer-events-none relative mt-8 hidden h-40 lg:block">
-      <svg viewBox="0 0 320 160" fill="none" className="size-full overflow-visible">
-        <defs>
-          <pattern id="gd-grid" width="26" height="26" patternUnits="userSpaceOnUse">
-            <path d="M26 0H0v26" stroke="var(--color-border)" strokeWidth="1" opacity=".5" />
-          </pattern>
-        </defs>
-        <rect width="320" height="160" fill="url(#gd-grid)" />
-        <path
-          d="M8 34h120a20 20 0 0 1 20 20v34a20 20 0 0 0 20 20h144"
-          stroke="var(--color-border)"
-          strokeWidth="1.5"
-        />
-        <path
-          d="M8 118h74a20 20 0 0 0 20-20V72a20 20 0 0 1 20-20h190"
-          stroke="var(--color-brand)"
-          strokeWidth="1.5"
-          strokeDasharray="5 6"
-          opacity=".55"
-        />
-        <circle cx="148" cy="52" r="3.5" fill="var(--color-surface)" stroke="var(--color-border)" strokeWidth="1.5" />
-        <circle cx="102" cy="98" r="3.5" fill="var(--color-surface)" stroke="var(--color-brand)" strokeWidth="1.5" />
-        <circle cx="8" cy="34" r="3" fill="var(--color-border)" />
-        <circle cx="8" cy="118" r="3" fill="var(--color-brand)" opacity=".55" />
-      </svg>
-    </div>
-  );
-}
-
 function RangeSlider({
   min,
   max,
