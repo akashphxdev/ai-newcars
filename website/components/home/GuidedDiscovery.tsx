@@ -24,9 +24,12 @@ import type { CarBrowseFilterOptions } from "@/features/cars/car.types";
 import type { Brand } from "@/features/brands/brand.types";
 import { routes } from "@/lib/routes";
 
-const FLOOR = 100_000;
+// The catalogue reaches 12.25 crore, but nearly every car sits under one,
+// and a linear track over the full span would spend nine tenths of its
+// travel on the ~90 cars above that. So the floor is the real cheapest
+// car and the top handle means "and above".
 const CEILING = 10_000_000;
-const STEP = 100_000;
+const STEP = 50_000;
 
 function lakh(v: number): string {
   if (v >= 10_000_000) return "₹1.00 Cr+";
@@ -100,9 +103,11 @@ export default function GuidedDiscovery({
   brandLogos: Brand[];
 }) {
   const router = useRouter();
-  const [minPrice, setMinPrice] = useState(FLOOR);
+  // Floor comes from the cheapest car actually listed, not a round number.
+  const floor = Math.floor(Number(initialFilters.priceRange.min) / STEP) * STEP;
+  const [minPrice, setMinPrice] = useState(floor);
   const [maxPrice, setMaxPrice] = useState(CEILING);
-  const budgetTouched = minPrice !== FLOOR || maxPrice !== CEILING;
+  const budgetTouched = minPrice !== floor || maxPrice !== CEILING;
   const [bodyType, setBodyType] = useState<string | null>(null);
   const [fuelType, setFuelType] = useState<string | null>(null);
   const [brand, setBrand] = useState<string | null>(null);
@@ -118,7 +123,7 @@ export default function GuidedDiscovery({
     getCarsBrowse({
       page: 1,
       limit: 1,
-      minPrice: minPrice > FLOOR ? minPrice : undefined,
+      minPrice: minPrice > floor ? minPrice : undefined,
       // At the ceiling the handle means "and above", so no cap is sent.
       maxPrice: maxPrice < CEILING ? maxPrice : undefined,
       bodyType: bodyType ? [bodyType] : undefined,
@@ -138,13 +143,13 @@ export default function GuidedDiscovery({
       .finally(() => {
         if (id === runId.current) setLoading(false);
       });
-  }, [minPrice, maxPrice, bodyType, fuelType, brand]);
+  }, [floor, minPrice, maxPrice, bodyType, fuelType, brand]);
 
   const chosen: { label: string; clear: () => void }[] = [
     budgetTouched && {
       label: `${lakh(minPrice)} – ${lakh(maxPrice)}`,
       clear: () => {
-        setMinPrice(FLOOR);
+        setMinPrice(floor);
         setMaxPrice(CEILING);
       },
     },
@@ -164,6 +169,7 @@ export default function GuidedDiscovery({
 
   const viewMatches = () => {
     const p = new URLSearchParams();
+    if (minPrice > floor) p.set("minPrice", String(minPrice));
     if (maxPrice < CEILING) p.set("maxPrice", String(maxPrice));
     if (bodyType) p.set("bodyType", bodyType);
     if (fuelType) p.set("fuelType", fuelType);
@@ -173,7 +179,11 @@ export default function GuidedDiscovery({
   };
 
   const toggle = <T,>(current: T | null, next: T) => (current === next ? null : next);
-  const topBrands = brandLogos.slice(0, 8);
+
+  const logoBySlug = new Map(brandLogos.map((b) => [b.slug, b.logoUrl]));
+  const topBrands = facets.brands
+    .slice(0, 8)
+    .map((b) => ({ ...b, logoUrl: logoBySlug.get(b.slug) ?? null }));
 
   return (
     <section className="bg-surface py-12 sm:py-16">
@@ -211,6 +221,7 @@ export default function GuidedDiscovery({
                 {lakh(minPrice)} – {lakh(maxPrice)}
               </p>
               <RangeSlider
+                floor={floor}
                 min={minPrice}
                 max={maxPrice}
                 onMin={(v) => setMinPrice(Math.min(v, maxPrice - STEP))}
@@ -353,17 +364,19 @@ export default function GuidedDiscovery({
 // Decorative only, and hidden from assistive tech: it carries no
 // information the copy does not already give.
 function RangeSlider({
+  floor,
   min,
   max,
   onMin,
   onMax,
 }: {
+  floor: number;
   min: number;
   max: number;
   onMin: (v: number) => void;
   onMax: (v: number) => void;
 }) {
-  const pct = (v: number) => ((v - FLOOR) / (CEILING - FLOOR)) * 100;
+  const pct = (v: number) => ((v - floor) / (CEILING - floor)) * 100;
   const thumb =
     "pointer-events-none absolute inset-0 h-1.5 w-full appearance-none bg-transparent " +
     "[&::-webkit-slider-thumb]:pointer-events-auto [&::-webkit-slider-thumb]:size-4 " +
@@ -384,7 +397,7 @@ function RangeSlider({
       <input
         type="range"
         aria-label="Minimum budget"
-        min={FLOOR}
+        min={floor}
         max={CEILING}
         step={STEP}
         value={min}
@@ -394,7 +407,7 @@ function RangeSlider({
       <input
         type="range"
         aria-label="Maximum budget"
-        min={FLOOR}
+        min={floor}
         max={CEILING}
         step={STEP}
         value={max}
