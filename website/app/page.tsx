@@ -1,6 +1,7 @@
 import { Suspense } from "react";
 import HeroSection from "@/components/home/HeroSection";
 import CuratedCars from "@/components/home/CuratedCars";
+import GuidedDiscovery from "@/components/home/GuidedDiscovery";
 import PopularBrands from "@/components/home/PopularBrands";
 import BodyTypes from "@/components/home/BodyTypes";
 import UpcomingLaunches from "@/components/home/UpcomingLaunches";
@@ -11,7 +12,7 @@ import Reviews from "@/components/home/Reviews";
 import SectionSkeleton from "@/components/common/SectionSkeleton";
 import { getBanners } from "@/features/banners/banner.api";
 import { getBrands } from "@/features/brands/brand.api";
-import { getHomeCars } from "@/features/cars/car.api";
+import { getCarsBrowse, getHomeCars } from "@/features/cars/car.api";
 import { getHomeArticles } from "@/features/articles/article.api";
 import { getHomeTestimonials } from "@/features/testimonials/testimonial.api";
 import { getHomeStories } from "@/features/stories/story.api";
@@ -39,6 +40,13 @@ async function PopularBrandsData() {
 async function BodyTypesData() {
   const bodyTypes = await getBodyTypes();
   return <BodyTypes bodyTypes={bodyTypes} />;
+}
+
+async function GuidedDiscoveryData() {
+  // One row is all this needs — the facets and pagination.total come back
+  // regardless, and they are the whole payload.
+  const { filters } = await getCarsBrowse({ page: 1, limit: 1 });
+  return <GuidedDiscovery initialFilters={filters} />;
 }
 
 async function CuratedCarsData() {
@@ -82,6 +90,9 @@ export default function HomePage() {
       </Suspense>
       <Suspense fallback={<SectionSkeleton />}>
         <BodyTypesData />
+      </Suspense>
+      <Suspense fallback={<SectionSkeleton />}>
+        <GuidedDiscoveryData />
       </Suspense>
       <Suspense fallback={<SectionSkeleton />}>
         <CuratedCarsData />

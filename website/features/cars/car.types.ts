@@ -56,15 +56,17 @@ export interface BrowseCarsFuelTypeFilter {
 }
 
 // Mirrors admin-backend's BrowseCarsResult (modules/public/cars/car).
+export interface CarBrowseFilterOptions {
+  brands: BrowseCarsBrandFilter[];
+  bodyTypes: BrowseCarsBodyTypeFilter[];
+  fuelTypes: BrowseCarsFuelTypeFilter[];
+  priceRange: { min: string; max: string };
+}
+
 export interface BrowseCarsResult {
   cars: HomeCar[];
   pagination: Pagination;
-  filters: {
-    brands: BrowseCarsBrandFilter[];
-    bodyTypes: BrowseCarsBodyTypeFilter[];
-    fuelTypes: BrowseCarsFuelTypeFilter[];
-    priceRange: { min: string; max: string };
-  };
+  filters: CarBrowseFilterOptions;
 }
 
 // Mirrors admin-backend's CarDetail* types (modules/public/cars/car/car.service.ts).
