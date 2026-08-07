@@ -209,6 +209,15 @@ set is at `/root/vhost-backup-2026-08-06/`. FastPanel generated all four
 vhosts pointing at `127.0.0.1:8899`, a port belonging to another site
 entirely; each was repointed by hand.
 
+Two further traps on the api vhost. The Go prefix rule matches a whole
+path prefix, but Go implements only *some* endpoints beneath some of them
+— `/brands/{slug}/articles` is Node-only, so it needs its own location
+placed **above** the Go rule (nginx takes the first matching regex). And
+the rule must be split by method: every ported endpoint is a read, so a
+write under a ported prefix (`POST /home/testimonials`) otherwise reaches
+Go and 404s even though Node implements it. Both failures are silent —
+the endpoint simply 404s while every neighbouring path works.
+
 One trap worth remembering, because it cuts both ways: the api vhost must
 **not** use `location ^~` for the Go split (`^~` stops nginx before regex
 locations, so every request silently goes to Node and the Go service sits
