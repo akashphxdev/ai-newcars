@@ -76,7 +76,7 @@ export default function FeaturedCarCard({ car }: { car: HomeCar }) {
             <Spec
               icon={<BoltIcon className="size-4" />}
               value={car.specs?.range ? `${car.specs.range} km` : "Electric"}
-              label="Range"
+              label={car.specs?.rangeEstimated ? "Est. real-world range" : "Range"}
             />
           ) : (
             <Spec

@@ -29,8 +29,11 @@ type CarCardSpecs struct {
 	TorqueNm        *int32  `json:"torqueNm"`
 	BatteryCapacity *string `json:"batteryCapacity"`
 	Range           *int32  `json:"range"`
-	ChargeTime      *string `json:"chargeTime"`
-	TopSpeedKmph    *int32  `json:"topSpeedKmph"`
+	// True when Range was derived from the claimed figure rather than
+	// measured, so the UI can say "estimated" instead of implying a test.
+	RangeEstimated bool    `json:"rangeEstimated"`
+	ChargeTime     *string `json:"chargeTime"`
+	TopSpeedKmph   *int32  `json:"topSpeedKmph"`
 }
 
 type CardBrand struct {
@@ -339,10 +342,7 @@ func scanCards(rows pgx.Rows) ([]CarCard, error) {
 			if mileage == nil {
 				mileage = decStr(claimedFe)
 			}
-			rng := realRange
-			if rng == nil {
-				rng = claimedRange
-			}
+			rng, rngEstimated := usableRange(realRange, claimedRange)
 			c.Specs = &CarCardSpecs{
 				SeatingCapacity: seating,
 				EngineCc:        cubicCap,
@@ -351,6 +351,7 @@ func scanCards(rows pgx.Rows) ([]CarCard, error) {
 				TorqueNm:        torqueNm,
 				BatteryCapacity: decStr(batteryCap),
 				Range:           rng,
+				RangeEstimated:  rngEstimated,
 				ChargeTime:      chargeTime,
 				TopSpeedKmph:    evTopSpeed,
 			}
@@ -371,4 +372,30 @@ func decStr(d decimal.NullDecimal) *string {
 	}
 	s := d.Decimal.String()
 	return &s
+}
+
+// Real-world range for an EV, and whether it had to be estimated.
+//
+// No EV in the catalogue carries a measured figure yet, and the claimed
+// one is an ARAI/MIDC number that Indian driving does not reproduce --
+// showing it unqualified as "range" promises the buyer a distance the car
+// will not do. Until measured figures exist, the claimed value is
+// discounted and the caller is told the number is an estimate so it can
+// be labelled as one. A measured figure, once present, always wins.
+//
+// 0.70 is the widely-cited ARAI-to-real-world ratio for Indian
+// conditions. It understates imported EVs quoting WLTP, which is the
+// safer direction to be wrong in: a buyer stranded short of a charger is
+// a worse outcome than one pleasantly surprised.
+const araiToRealWorld = 0.70
+
+func usableRange(measured, claimed *int32) (*int32, bool) {
+	if measured != nil {
+		return measured, false
+	}
+	if claimed == nil {
+		return nil, false
+	}
+	est := int32(float64(*claimed)*araiToRealWorld + 0.5)
+	return &est, true
 }

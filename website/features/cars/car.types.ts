@@ -15,6 +15,9 @@ export interface CarSpecs {
   torqueNm: number | null;
   batteryCapacity: string | null;
   range: number | null;
+  /// True when range was derived from the claimed figure rather than
+  /// measured, so it must be labelled as an estimate.
+  rangeEstimated?: boolean;
   chargeTime: string | null;
   topSpeedKmph: number | null;
 }

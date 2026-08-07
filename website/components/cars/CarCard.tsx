@@ -160,7 +160,7 @@ export default function CarCard({
                 <Spec
                   icon={<GaugeIcon className="size-4" />}
                   value={car.specs?.range ? `${car.specs.range} km` : "-"}
-                  label="Range"
+                  label={car.specs?.rangeEstimated ? "Est. range" : "Range"}
                 />
                 <Spec
                   icon={<ClockIcon className="size-4" />}
