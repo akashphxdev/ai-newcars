@@ -4,6 +4,7 @@ import SectionHeader from "@/components/common/SectionHeader";
 import ScrollArrows from "@/components/common/ScrollArrows";
 import { useScrollRail } from "@/components/common/useScrollRail";
 import type { BodyType } from "@/features/bodyTypes/bodyType.types";
+import { routes } from "@/lib/routes";
 
 const DARK = "#111827";
 const BORDER = "#e5e7eb";
@@ -12,7 +13,7 @@ const FALLBACK_ICON =
 
 const BodyTypeCard = ({ bodyType }: { bodyType: BodyType }) => (
   <a
-    href={`/${bodyType.slug}-cars`}
+    href={routes.bodyType(bodyType.slug)}
     className="flex w-38.75 shrink-0 flex-col items-center gap-3 rounded-2xl bg-surface p-4 text-center transition-colors hover:border-brand"
     style={{ border: `1px solid ${BORDER}` }}
   >

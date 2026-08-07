@@ -15,6 +15,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
+import { routes } from "@/lib/routes";
 
 const TABS = [
   { label: "Overview", id: "overview", page: "model" },
@@ -41,8 +42,8 @@ export default function ModelDetailTabs({
   variantSlug: string;
   onVariantPage: boolean;
 }) {
-  const modelHref = `/${brandSlug}-cars/${modelSlug}`;
-  const variantHref = `/${brandSlug}-cars/${modelSlug}/${variantSlug}`;
+  const modelHref = routes.model(brandSlug, modelSlug);
+  const variantHref = routes.variant(brandSlug, modelSlug, variantSlug);
 
   const anchorTabs = TABS.map((t) => {
     const isLocal = t.page === "shared" ? true : t.page === "variant" ? onVariantPage : !onVariantPage;

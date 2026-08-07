@@ -8,6 +8,7 @@ import { WishlistButton } from "@/components/common/CardBits";
 import { PowerIcon, TorqueIcon, GaugeIcon, StarIcon } from "@/components/common/icons";
 import { formatPriceRange } from "@/lib/format";
 import type { HomeCar } from "@/features/cars/car.types";
+import { routes } from "@/lib/routes";
 
 const ORANGE = "#f2650f";
 const DARK = "#111827";
@@ -32,7 +33,7 @@ const Spec = ({ icon, value, label }: { icon: React.ReactNode; value: string; la
 );
 
 const Card = ({ car }: { car: HomeCar }) => {
-  const modelUrl = `/${car.brand.slug}-cars/${car.slug}`;
+  const modelUrl = routes.model(car.brand.slug, car.slug);
 
   return (
     <div

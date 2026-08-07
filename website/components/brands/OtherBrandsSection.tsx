@@ -1,6 +1,7 @@
 import Image from "next/image";
 import SectionHeader from "@/components/common/SectionHeader";
 import type { BrandWithCount } from "@/features/brands/brand.types";
+import { routes } from "@/lib/routes";
 
 const FALLBACK_LOGO =
   "data:image/svg+xml;charset=UTF-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='96' height='96' viewBox='0 0 96 96'%3E%3Crect width='96' height='96' rx='16' fill='%23e5e7eb'/%3E%3Ctext x='50%25' y='50%25' text-anchor='middle' dy='.3em' font-family='sans-serif' font-size='11' fill='%239ca3af'%3ELogo%3C/text%3E%3C/svg%3E";
@@ -28,7 +29,7 @@ export default function OtherBrandsSection({ brands, currentSlug }: { brands: Br
           {others.map((b) => (
             <a
               key={b.id}
-              href={`/${b.slug}-cars`}
+              href={routes.brand(b.slug)}
               className="flex w-[140px] shrink-0 flex-col items-center gap-3 rounded-2xl border border-border bg-white p-5 text-center shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-lg"
             >
               <div className="relative size-14">

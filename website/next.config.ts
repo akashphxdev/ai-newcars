@@ -14,51 +14,38 @@ const nextConfig: NextConfig = {
   // tree. Matters here because the host is memory- and disk-constrained.
   output: "standalone",
 
-  // "/tata-motors-cars" or "/suv-cars" -> internally served by
-  // app/listing-cars/[slug]/page.tsx (slug = "tata-motors" / "suv"). A
-  // plain [slug]-cars folder isn't valid Next.js routing syntax (dynamic
-  // segments must be the whole path segment), so this rewrite is what
-  // makes the vanity URL work — the browser still shows "/suv-cars",
-  // only the internal render path changes. One destination handles both
-  // brand and body-type slugs (see that page for how it decides which):
-  // a rewrite's source pattern can't branch by what the slug resolves to
-  // in the database, so the resolution has to happen at render time.
+  // The ONLY rewrite in the app.
+  //
+  // Brand paths are keyword-rich ("tata cars" is a real search query) but
+  // cannot be a folder — a Next.js dynamic segment must be a whole path
+  // segment, so `[brandSlug]-cars` is not a legal name. This maps the
+  // whole brand subtree onto app/brand/[brandSlug]/... in one rule, so
+  // model, photos and variant pages are all real nested folders rather
+  // than four separate rewrites that had to be ordered by hand.
+  //
+  // Returning a plain array means these are "afterFiles" rewrites, which
+  // are checked AFTER filesystem routes. That is what keeps /new-cars,
+  // /electric-cars, /upcoming-cars and /compare-cars resolving to their
+  // own pages instead of being read as a brand named "new"/"electric".
   async rewrites() {
     return [
       {
-        source: "/:slug([a-z0-9-]+)-cars",
-        destination: "/listing-cars/:slug",
-      },
-      // "/tata-motors-cars/nexon" -> app/car-model/[brandSlug]/[modelSlug]
-      // (same vanity-URL trick as the listing rewrite above — a
-      // "[brandSlug]-cars" folder isn't valid Next.js routing syntax, so
-      // the rewrite is what makes the nested vanity URL work). Distinct
-      // segment count from the rewrite above (2 segments vs 1), so no
-      // overlap between the two.
-      {
-        source: "/:brandSlug([a-z0-9-]+)-cars/:modelSlug([a-z0-9-]+)",
-        destination: "/car-model/:brandSlug/:modelSlug",
-      },
-      // "/tata-motors-cars/nexon/photos" — the model page's dedicated
-      // photos tab. Three segments vs two above, so no overlap with that
-      // rule — but SAME segment count as the variant rewrite below, so
-      // order matters here: this literal "photos" match must come first,
-      // otherwise the wildcard variant-slug rule below would swallow it.
-      {
-        source: "/:brandSlug([a-z0-9-]+)-cars/:modelSlug([a-z0-9-]+)/photos",
-        destination: "/car-model/:brandSlug/:modelSlug/photos",
-      },
-      // "/tata-motors-cars/nexon/xz-plus-dark-edition" — a specific
-      // variant's own page (see app/car-model/.../[variantSlug]). Must be
-      // registered after the "photos" rule immediately above (same
-      // 3-segment shape; Next.js rewrites match in array order, first
-      // match wins).
-      {
-        source: "/:brandSlug([a-z0-9-]+)-cars/:modelSlug([a-z0-9-]+)/:variantSlug([a-z0-9-]+)",
-        destination: "/car-model/:brandSlug/:modelSlug/:variantSlug",
+        // The negative lookahead is load-bearing. afterFiles rewrites run
+        // after static pages but BEFORE dynamic routes, so without it
+        // "/new-cars/suv" matches this rule as brand "new" and never
+        // reaches app/new-cars/[bodyType]. "/new-cars" itself is a static
+        // page and was unaffected, which makes the bug easy to miss.
+        //
+        // It excludes the full "<word>-cars" literal, not just "<word>".
+        // Writing it as (?!new$) does nothing here: the $ anchors to the
+        // end of the whole path, and the path continues "-cars/suv", so
+        // the lookahead passes and "new" is captured as the brand.
+        source: "/:brandSlug((?!new-cars|electric-cars|upcoming-cars|compare-cars|used-cars)[a-z0-9-]+)-cars/:path*",
+        destination: "/brand/:brandSlug/:path*",
       },
     ];
   },
+
   images: {
     // Next.js blocks image optimization for local/private IPs by default
     // as SSRF hardening. Only lifted for local development, where the

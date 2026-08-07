@@ -4,6 +4,7 @@ import { WishlistButton } from "@/components/common/CardBits";
 import { PowerIcon, TorqueIcon, GaugeIcon, BatteryIcon, ClockIcon, StarIcon } from "@/components/common/icons";
 import { formatPriceRange } from "@/lib/format";
 import type { HomeCar } from "@/features/cars/car.types";
+import { routes } from "@/lib/routes";
 
 const FALLBACK_IMG =
   "data:image/svg+xml;charset=UTF-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='225' viewBox='0 0 300 225'%3E%3Crect width='300' height='225' fill='%23e5e7eb'/%3E%3Ctext x='50%25' y='50%25' text-anchor='middle' dy='.3em' font-family='sans-serif' font-size='13' fill='%239ca3af'%3EImage unavailable%3C/text%3E%3C/svg%3E";
@@ -22,7 +23,7 @@ const Spec = ({ icon, value, label }: { icon: React.ReactNode; value: string; la
 // cards) — full width of its grid cell. Specs branch on isElectric since
 // a brand's lineup can mix ICE and EV models.
 export default function BrandCarCard({ car }: { car: HomeCar }) {
-  const modelUrl = `/${car.brand.slug}-cars/${car.slug}`;
+  const modelUrl = routes.model(car.brand.slug, car.slug);
 
   return (
     <div className="flex h-full flex-col overflow-hidden rounded-2xl border border-border bg-surface shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-lg">

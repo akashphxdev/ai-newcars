@@ -2,6 +2,7 @@
 import { useMemo, useState } from "react";
 import Image from "next/image";
 import type { Brand } from "@/features/brands/brand.types";
+import { routes } from "@/lib/routes";
 
 const DARK = "#111827";
 const MUTED = "#6b7280";
@@ -11,7 +12,7 @@ const FALLBACK_LOGO =
 
 const BrandCard = ({ brand }: { brand: Brand }) => (
   <a
-    href={`/${brand.slug}-cars`}
+    href={routes.brand(brand.slug)}
     className="flex flex-col items-center gap-3 rounded-2xl bg-surface p-5 text-center transition-colors hover:border-brand"
     style={{ border: `1px solid ${BORDER}` }}
   >

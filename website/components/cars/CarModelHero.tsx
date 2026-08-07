@@ -7,6 +7,7 @@ import { WishlistButton } from "@/components/common/CardBits";
 import { StarIcon, ShareIcon } from "@/components/common/icons";
 import { formatSinglePrice } from "@/lib/format";
 import type { CarDetailResult, CarDetailSelectedVariant } from "@/features/cars/car.types";
+import { routes } from "@/lib/routes";
 
 const DATE_FMT = new Intl.DateTimeFormat("en-IN", { day: "2-digit", month: "long", year: "numeric" });
 
@@ -24,7 +25,7 @@ export default function CarModelHero({ car, variant }: { car: CarDetailResult; v
           colors={car.colors}
           fallbackImage={car.coverImageUrl}
           alt={`${car.brand.name} ${car.name}`}
-          photosHref={`/${car.brand.slug}-cars/${car.slug}/photos`}
+          photosHref={routes.modelPhotos(car.brand.slug, car.slug)}
         />
 
         <CarLeadSecondaryActions

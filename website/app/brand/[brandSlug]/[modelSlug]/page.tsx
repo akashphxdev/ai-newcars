@@ -15,6 +15,7 @@ import { CheckIcon, BoltIcon, GearIcon, GaugeIcon, ChevronDownIcon } from "@/com
 import type { CarDetailResult, CarDetailFeatureGroup, CarFaq } from "@/features/cars/car.types";
 import type { HomeArticle } from "@/features/articles/article.types";
 import type { RandomComparisonPair } from "@/features/compare/compare.types";
+import { routes } from "@/lib/routes";
 
 // "/tata-motors-cars/nexon" -> app/car-model/[brandSlug]/[modelSlug] via the
 // rewrite in next.config.ts. Model-level content (Overview, Variants,
@@ -104,7 +105,7 @@ export default async function CarModelPage(props: Props) {
           <nav className="flex items-center gap-1.5 text-[12px] font-medium text-faint">
             <Link href="/" className="hover:text-brand">Home</Link>
             <span aria-hidden="true">/</span>
-            <Link href={`/${car.brand.slug}-cars`} className="hover:text-brand">{car.brand.name}</Link>
+            <Link href={routes.brand(car.brand.slug)} className="hover:text-brand">{car.brand.name}</Link>
             <span aria-hidden="true">/</span>
             <span className="text-ink">{car.name}</span>
           </nav>

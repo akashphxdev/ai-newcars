@@ -7,6 +7,7 @@ import { formatSinglePrice } from "@/lib/format";
 import VariantPicker from "./VariantPicker";
 import PowertrainPicker from "./PowertrainPicker";
 import type { CompareCarResult } from "@/features/compare/compare.types";
+import { routes } from "@/lib/routes";
 
 const FALLBACK_IMG =
   "data:image/svg+xml;charset=UTF-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='320' height='200' viewBox='0 0 320 200'%3E%3Crect width='320' height='200' fill='%23e5e7eb'/%3E%3Ctext x='50%25' y='50%25' text-anchor='middle' dy='.3em' font-family='sans-serif' font-size='13' fill='%239ca3af'%3EImage unavailable%3C/text%3E%3C/svg%3E";
@@ -35,7 +36,7 @@ export default function CompareCarHeader({
 
   return (
     <div className="flex flex-col items-center gap-1.5 rounded-2xl border border-border bg-surface p-2 text-center sm:gap-2 sm:p-3.5">
-      <Link href={`/${car.brand.slug}-cars/${car.slug}`} className="relative aspect-16/10 w-full overflow-hidden rounded-xl bg-page">
+      <Link href={routes.model(car.brand.slug, car.slug)} className="relative aspect-16/10 w-full overflow-hidden rounded-xl bg-page">
         <Image src={car.coverImageUrl ?? FALLBACK_IMG} alt={`${car.brand.name} ${car.name}`} fill sizes="260px" className="object-cover" />
       </Link>
 

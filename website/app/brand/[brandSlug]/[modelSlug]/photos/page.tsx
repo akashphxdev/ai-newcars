@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { getCarImages, getHomeCars } from "@/features/cars/car.api";
 import { ChevronIcon } from "@/components/common/icons";
 import CarPhotosViewer from "@/components/cars/CarPhotosViewer";
+import { routes } from "@/lib/routes";
 
 // "/tata-motors-cars/nexon/photos" via the rewrite in next.config.ts.
 // Dedicated page (own lean API call) so browsing all photos doesn't need
@@ -42,7 +43,7 @@ export default async function CarPhotosPage({ params }: Props) {
   return (
     <div className="flex h-screen flex-col overflow-hidden bg-black text-white">
       <div className="flex shrink-0 items-center justify-between border-b border-white/10 px-4 py-3">
-        <Link href={`/${brandSlug}-cars/${modelSlug}`} className="flex items-center gap-3" aria-label="Back to overview">
+        <Link href={routes.model(brandSlug, modelSlug)} className="flex items-center gap-3" aria-label="Back to overview">
           <ChevronIcon dir="left" className="size-4" />
           <span className="text-[15px] font-bold">{carLabel}</span>
         </Link>

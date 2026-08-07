@@ -7,6 +7,7 @@ import { getCarVariants } from "@/features/cars/car.api";
 import { CompareIcon, CheckIcon } from "@/components/common/icons";
 import { addToTray, removeFromTray, getTrayItems, subscribeTray, MAX_TRAY_ITEMS } from "@/features/compare/compareTray";
 import type { CarDetailVariantOption } from "@/features/cars/car.types";
+import { routes } from "@/lib/routes";
 
 // getCarDetail's own payload only ships a preview subset of variants
 // (VARIANT_OPTIONS_PREVIEW_LIMIT on the backend) — "View All" fetches the
@@ -84,7 +85,7 @@ export default function VariantsList({
               isSelected ? "border-brand bg-orange-50" : "border-border bg-white hover:border-brand"
             }`}
           >
-            <Link href={`/${brandSlug}-cars/${modelSlug}/${slugify(opt.variantName)}`} className="flex flex-1 items-center justify-between gap-2">
+            <Link href={routes.variant(brandSlug, modelSlug, slugify(opt.variantName))} className="flex flex-1 items-center justify-between gap-2">
               <div className="flex items-center gap-2">
                 <span className="text-[13.5px] font-bold text-ink">{opt.variantName}</span>
                 {opt.isTopSeller && (

@@ -6,6 +6,7 @@ import { slugify } from "@/lib/format";
 import { getCarVariants } from "@/features/cars/car.api";
 import { ChevronDownIcon } from "@/components/common/icons";
 import type { CarDetailVariantOption } from "@/features/cars/car.types";
+import { routes } from "@/lib/routes";
 
 // Rectangle below the hero's Ex-Showroom Price, showing the currently
 // viewed variant — click opens a dropdown of the model's other variants,
@@ -74,7 +75,7 @@ export default function VariantSwitcher({
               visible.map((opt) => (
                 <Link
                   key={opt.id}
-                  href={`/${brandSlug}-cars/${modelSlug}/${slugify(opt.variantName)}`}
+                  href={routes.variant(brandSlug, modelSlug, slugify(opt.variantName))}
                   onClick={() => setOpen(false)}
                   className={`block px-3.5 py-2.5 text-[12.5px] font-medium transition-colors hover:bg-page ${
                     opt.variantName === currentVariantName ? "text-brand" : "text-ink"

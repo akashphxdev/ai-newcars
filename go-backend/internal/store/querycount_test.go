@@ -5,6 +5,7 @@ import (
 	"os"
 	"sync/atomic"
 	"testing"
+	"time"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -129,4 +130,45 @@ func TestVariantDetailIsSingleQuery(t *testing.T) {
 	if got := tr.n.Load(); got != 1 {
 		t.Errorf("variant detail issued %d queries, want 1", got)
 	}
+}
+
+// The card scan reads expected_launch_date, a DATE column. It was
+// originally scanned into a *string, which pgx rejects outright — but the
+// synthetic benchmark data never populated that column, so every row came
+// back NULL and NULL scans into anything. The bug only surfaced against a
+// real catalogue. This seeds a row with a real date so the scan is
+// exercised rather than skipped.
+func TestCarCardScansLaunchDate(t *testing.T) {
+	pool, _ := newCountingPool(t)
+	ctx := context.Background()
+
+	var withDate int
+	if err := pool.QueryRow(ctx,
+		`SELECT count(*) FROM car_models WHERE expected_launch_date IS NOT NULL`).Scan(&withDate); err != nil {
+		t.Fatalf("probe: %v", err)
+	}
+	if withDate == 0 {
+		t.Skip("no model has an expected_launch_date — nothing to exercise")
+	}
+
+	cards, err := store.ListCarCards(ctx, pool, store.CarCardFilters{
+		LaunchStatus: "upcoming", Sort: "upcoming", Limit: 20,
+	})
+	if err != nil {
+		t.Fatalf("list upcoming cards: %v", err)
+	}
+
+	for _, c := range cards {
+		if c.ExpectedLaunchDate == nil {
+			continue
+		}
+		// Prisma serialised this with .toISOString(); the website compares
+		// the string, so the layout has to match exactly.
+		if _, err := time.Parse("2006-01-02T15:04:05.000Z", *c.ExpectedLaunchDate); err != nil {
+			t.Errorf("expectedLaunchDate %q is not in Prisma's toISOString layout: %v",
+				*c.ExpectedLaunchDate, err)
+		}
+		return
+	}
+	t.Skip("no upcoming model carried a date in this dataset")
 }

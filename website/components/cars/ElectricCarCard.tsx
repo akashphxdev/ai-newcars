@@ -3,6 +3,7 @@ import Link from "next/link";
 import { StarIcon, BoltIcon, ClockIcon, GaugeIcon, BatteryIcon } from "@/components/common/icons";
 import { formatSinglePrice } from "@/lib/format";
 import type { HomeCar } from "@/features/cars/car.types";
+import { routes } from "@/lib/routes";
 
 const ORANGE = "#f2650f";
 const DARK = "#0f172a";
@@ -31,7 +32,7 @@ const MiniSpec = ({ icon, value, label }: { icon: React.ReactNode; value: string
 );
 
 export default function ElectricCarCard({ car }: { car: HomeCar }) {
-  const modelUrl = `/${car.brand.slug}-cars/${car.slug}`;
+  const modelUrl = routes.model(car.brand.slug, car.slug);
 
   return (
     <div

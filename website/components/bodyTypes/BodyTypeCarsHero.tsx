@@ -2,6 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 import type { BodyType, BodyTypeCarsResult, BodyTypeWithCount } from "@/features/bodyTypes/bodyType.types";
 import { formatSinglePrice } from "@/lib/format";
+import { routes } from "@/lib/routes";
 
 // Same split layout as BrandCarsHero (text left, icon right) — plus an
 // "explore other body types" nav strip underneath, which is the one
@@ -66,7 +67,7 @@ export default function BodyTypeCarsHero({
               {others.map((bt) => (
                 <a
                   key={bt.id}
-                  href={`/${bt.slug}-cars`}
+                  href={routes.bodyType(bt.slug)}
                   className="rounded-full border border-border bg-surface px-3.5 py-1.5 text-[12px] font-semibold text-ink transition-colors hover:border-brand hover:text-brand"
                 >
                   {bt.name} <span className="text-muted">({bt.count})</span>

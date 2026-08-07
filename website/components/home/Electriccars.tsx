@@ -8,6 +8,7 @@ import { WishlistButton } from "@/components/common/CardBits";
 import { BoltIcon, ClockIcon, GaugeIcon, StarIcon, BatteryIcon } from "@/components/common/icons";
 import { formatSinglePrice } from "@/lib/format";
 import type { HomeCar } from "@/features/cars/car.types";
+import { routes } from "@/lib/routes";
 
 const ORANGE = "#f2650f";
 const DARK = "#0f172a";
@@ -60,7 +61,7 @@ function useSmartBadge(cars: HomeCar[]) {
 }
 
 const Card = ({ car, badge }: { car: HomeCar; badge: string | null }) => {
-  const modelUrl = `/${car.brand.slug}-cars/${car.slug}`;
+  const modelUrl = routes.model(car.brand.slug, car.slug);
 
   return (
     <div

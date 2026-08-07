@@ -4,6 +4,7 @@ import SectionHeader from "@/components/common/SectionHeader";
 import ScrollArrows from "@/components/common/ScrollArrows";
 import { useScrollRail } from "@/components/common/useScrollRail";
 import type { Brand } from "@/features/brands/brand.types";
+import { routes } from "@/lib/routes";
 
 const DARK = "#111827";
 const FALLBACK_LOGO =
@@ -11,7 +12,7 @@ const FALLBACK_LOGO =
 
 const BrandCard = ({ brand }: { brand: Brand }) => (
   <a
-    href={`/${brand.slug}-cars`}
+    href={routes.brand(brand.slug)}
     className="flex cursor-pointer flex-col items-center gap-2 p-2 text-center sm:gap-3 sm:p-4"
   >
     <div className="relative flex size-14 items-center justify-center rounded-2xl p-2 sm:size-20 sm:p-3 md:size-24">

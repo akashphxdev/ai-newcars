@@ -25,6 +25,7 @@ import type { CarDetailResult, HomeCar } from "@/features/cars/car.types";
 import ReviewsSection from "@/components/cars/reviews/ReviewsSection";
 import SoftLeadCapture from "@/components/leads/SoftLeadCapture";
 import { calculateRunningCost } from "@/lib/mileageMath";
+import { routes } from "@/lib/routes";
 
 function formatRupee(n: number): string {
   return `₹${n.toLocaleString("en-IN", { maximumFractionDigits: 2 })}`;
@@ -467,7 +468,7 @@ export default function MileageCalculatorClient({ brands }: { brands: Brand[] })
             {otherCars.map((car) => (
               <Link
                 key={car.id}
-                href={`/${car.brand.slug}-cars/${car.slug}`}
+                href={routes.model(car.brand.slug, car.slug)}
                 className="group relative block h-44 overflow-hidden rounded-xl border border-border bg-page"
               >
                 {car.coverImageUrl && (

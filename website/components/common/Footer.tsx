@@ -1,7 +1,7 @@
 "use client";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { isChromelessRoute } from "@/lib/routes";
+import { isChromelessRoute, routes } from "@/lib/routes";
 import type { PublicSiteSetting } from "@/features/siteSettings/siteSetting.types";
 import type { BodyType } from "@/features/bodyTypes/bodyType.types";
 import type { ArticleCategory } from "@/features/articles/article.types";
@@ -185,7 +185,7 @@ function buildFooterCols(bodyTypes: BodyType[], articleCategories: ArticleCatego
     {
       title: "New Cars",
       links: [
-        ...bodyTypes.map((bt) => ({ label: bt.name, href: `/${bt.slug}-cars` })),
+        ...bodyTypes.map((bt) => ({ label: bt.name, href: routes.bodyType(bt.slug) })),
         { label: "Electric", href: "/electric-cars" },
       ],
     },

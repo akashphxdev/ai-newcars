@@ -5,6 +5,7 @@ import Image from "next/image";
 import type { Banner } from "@/features/banners/banner.types";
 import { recordBannerClick } from "@/features/banners/banner.api";
 import type { BodyType } from "@/features/bodyTypes/bodyType.types";
+import { routes } from "@/lib/routes";
 
 const budgetOptions = [
   { value: "", label: "Select Budget" },
@@ -98,7 +99,7 @@ export default function HeroSection({ banners, bodyTypes }: { banners: Banner[];
     // A body type takes you straight to that type's own filtered page;
     // without one, /new-cars (unscoped, brand+body-type+price filters)
     // is the only page that can show "all cars under this budget".
-    const basePath = bodyType ? `/${bodyType}-cars` : "/new-cars";
+    const basePath = bodyType ? routes.bodyType(bodyType) : "/new-cars";
     router.push(qs ? `${basePath}?${qs}` : basePath);
   };
 

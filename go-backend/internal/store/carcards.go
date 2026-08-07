@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -254,7 +255,7 @@ func scanCards(rows pgx.Rows) ([]CarCard, error) {
 	for rows.Next() {
 		var (
 			c            CarCard
-			expLaunch    *string
+			expLaunch    *time.Time
 			priceMin     decimal.NullDecimal
 			priceMax     decimal.NullDecimal
 			ratingAvg    decimal.NullDecimal
@@ -287,7 +288,14 @@ func scanCards(rows pgx.Rows) ([]CarCard, error) {
 			return nil, fmt.Errorf("scan car card: %w", err)
 		}
 
-		c.ExpectedLaunchDate = expLaunch
+		// expected_launch_date is a DATE column, so it has to be scanned as
+		// a time and formatted here. Prisma serialised it with
+		// .toISOString(), and the website compares the string, so the
+		// layout has to match that exactly.
+		if expLaunch != nil {
+			iso := expLaunch.UTC().Format("2006-01-02T15:04:05.000Z")
+			c.ExpectedLaunchDate = &iso
+		}
 		c.PriceMin = decStr(priceMin)
 		c.PriceMax = decStr(priceMax)
 		c.RatingAvg = decStr(ratingAvg)

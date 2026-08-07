@@ -9,6 +9,7 @@ import CarModelSidebar from "@/components/cars/CarModelSidebar";
 import ReviewsSection from "@/components/cars/reviews/ReviewsSection";
 import { PowerIcon, TorqueIcon, CheckIcon } from "@/components/common/icons";
 import type { CarDetailResult, CarDetailFeatureGroup } from "@/features/cars/car.types";
+import { routes } from "@/lib/routes";
 
 // "/tata-motors-cars/nexon/xz-plus-dark-edition" -> app/car-model/[brandSlug]/
 // [modelSlug]/[variantSlug] via the rewrite in next.config.ts. Variant-level
@@ -123,9 +124,9 @@ export default async function CarVariantPage(props: Props) {
           <nav className="flex items-center gap-1.5 text-[12px] font-medium text-faint">
             <Link href="/" className="hover:text-brand">Home</Link>
             <span aria-hidden="true">/</span>
-            <Link href={`/${car.brand.slug}-cars`} className="hover:text-brand">{car.brand.name}</Link>
+            <Link href={routes.brand(car.brand.slug)} className="hover:text-brand">{car.brand.name}</Link>
             <span aria-hidden="true">/</span>
-            <Link href={`/${car.brand.slug}-cars/${car.slug}`} className="hover:text-brand">{car.name}</Link>
+            <Link href={routes.model(car.brand.slug, car.slug)} className="hover:text-brand">{car.name}</Link>
             <span aria-hidden="true">/</span>
             <span className="text-ink">{v.variantName}</span>
           </nav>

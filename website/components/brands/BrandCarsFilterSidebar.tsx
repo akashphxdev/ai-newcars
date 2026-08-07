@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { ChevronDownIcon, CloseIcon } from "@/components/common/icons";
 import type { BrandCarsBodyTypeFilter, BrandCarsFuelTypeFilter } from "@/features/brands/brand.types";
+import { routes } from "@/lib/routes";
 
 const MAX_PRICE_LAKH = 50;
 
@@ -145,7 +146,7 @@ export default function BrandCarsFilterSidebar({
   }, [sheetOpen]);
 
   const hasActiveFilters = !!(initial.bodyType?.length || initial.fuelType?.length || initial.maxPrice);
-  const basePath = `/${brandSlug}-cars`;
+  const basePath = routes.brand(brandSlug);
 
   const apply = () => {
     const params = new URLSearchParams();

@@ -3,7 +3,7 @@ import { useState, useEffect, useRef } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import Link from "next/link";
 import AuthModal from "./AuthModal";
-import { isChromelessRoute } from "@/lib/routes";
+import { isChromelessRoute, routes } from "@/lib/routes";
 import { getCurrentUser, getUserInitials, clearCurrentUser, subscribeAuthChange } from "@/features/auth/currentUser";
 import { searchCars } from "@/features/search/search.api";
 import type { AuthUser } from "@/features/auth/auth.types";
@@ -46,7 +46,7 @@ function buildNavItems(bodyTypes: BodyType[], articleCategories: ArticleCategory
     {
       label: "New Cars",
       dropdown: [
-        ...bodyTypes.map((bt) => ({ label: bt.name, href: `/${bt.slug}-cars` })),
+        ...bodyTypes.map((bt) => ({ label: bt.name, href: routes.bodyType(bt.slug) })),
         { label: "Electric", href: "/electric-cars" },
       ],
     },
@@ -222,7 +222,7 @@ export default function Header({ bodyTypes, articleCategories }: { bodyTypes: Bo
     setSearchResults([]);
     setSearchOpen(false);
     setMobileOpen(false);
-    router.push(`/${car.brand.slug}-cars/${car.slug}`);
+    router.push(routes.model(car.brand.slug, car.slug));
   };
 
   if (isChromelessRoute(pathname)) return null;
