@@ -134,6 +134,13 @@ func buildWhere(f CarCardFilters, args *[]any) string {
 	if f.LaunchStatus != "" {
 		w = append(w, "m.launch_status = "+add(f.LaunchStatus))
 	}
+	// A launch date that has passed means the car is out, whatever the
+	// status column still says. Without this a model whose status was
+	// never updated sits in "upcoming" for ever, counting down from a
+	// date in the past.
+	if f.LaunchStatus == "upcoming" {
+		w = append(w, "(m.expected_launch_date IS NULL OR m.expected_launch_date >= CURRENT_DATE)")
+	}
 	// Denormalised counter — replaces the EXISTS(SELECT 1 FROM
 	// car_variants ...) that every listing query used to carry.
 	if f.RequireVariants {
@@ -205,9 +212,28 @@ func orderBy(sort string) string {
 	case "rating":
 		return " ORDER BY m.rating_avg DESC NULLS LAST, m.id ASC"
 	case "upcoming":
-		return " ORDER BY m.expected_launch_date ASC, m.id ASC"
+		// Dated launches first, soonest first; the ones with no date yet
+		// trail them rather than being dropped.
+		return " ORDER BY m.expected_launch_date ASC NULLS LAST, m.id ASC"
 	case "popular":
-		return " ORDER BY m.rating_avg DESC NULLS LAST, m.created_at DESC, m.id ASC"
+		// There is no engagement signal to rank on -- no page views, and
+		// reviews is empty, so rating_avg is seeded rather than earned.
+		// Ranking by it would be ranking by invented data.
+		//
+		// This uses what is actually true instead: the brand's editorial
+		// standing, then how much of the model we carry. It surfaces the
+		// mass-market cars an Indian visitor expects, and it can be
+		// replaced the moment there are real views or leads to sort on.
+		//
+		// Ranked within its own brand first, so the rail alternates
+		// between brands instead of running six Marutis before the first
+		// Hyundai. The subquery is each model's 0-based position among its
+		// brand's models by breadth, which is cheap over a catalogue this
+		// size and the response is cached anyway.
+		return ` ORDER BY (
+			SELECT count(*) FROM car_models m2
+			WHERE m2.brand_id = m.brand_id AND m2.variant_count > m.variant_count
+		) ASC, b.display_order DESC, m.variant_count DESC, m.rating_avg DESC NULLS LAST, m.id ASC`
 	default: // latest
 		return " ORDER BY m.created_at DESC, m.id ASC"
 	}
