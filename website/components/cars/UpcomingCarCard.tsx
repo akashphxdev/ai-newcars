@@ -4,6 +4,8 @@ import Image from "next/image";
 import { WishlistButton } from "@/components/common/CardBits";
 import { FuelIcon, StarIcon } from "@/components/common/icons";
 import { formatSinglePrice } from "@/lib/format";
+import LaunchNotifyModal from "@/components/leads/LaunchNotifyModal";
+import { submitLaunchNotifyLead } from "@/features/leads/lead.api";
 import type { HomeCar } from "@/features/cars/car.types";
 
 const ORANGE = "#f2650f";
@@ -45,6 +47,7 @@ export default function UpcomingCarCard({ car }: { car: HomeCar }) {
   const days = useDaysLeft(car.expectedLaunchDate);
   const isUpcoming = days > 0;
   const price = formatSinglePrice(car.priceMin, "TBA");
+  const [notifyOpen, setNotifyOpen] = useState(false);
 
   return (
     <div
@@ -85,7 +88,7 @@ export default function UpcomingCarCard({ car }: { car: HomeCar }) {
             </span>
           </div>
 
-          <WishlistButton size="sm" />
+          <WishlistButton modelId={car.id} size="sm" />
         </div>
 
         {isUpcoming && (
@@ -141,12 +144,28 @@ export default function UpcomingCarCard({ car }: { car: HomeCar }) {
       <div className="mt-auto px-4 pb-4 pt-3.5">
         <button
           type="button"
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            setNotifyOpen(true);
+          }}
           className="flex w-full cursor-pointer items-center justify-center gap-1.5 whitespace-nowrap rounded-xl px-3 py-2.5 text-[12.5px] font-bold transition-colors hover:bg-orange-50"
           style={{ border: `1.5px solid ${ORANGE}`, color: ORANGE }}
         >
           Notify me at launch
         </button>
       </div>
+
+      {notifyOpen && (
+        <LaunchNotifyModal
+          carName={car.name}
+          imageUrl={car.coverImageUrl}
+          onClose={() => setNotifyOpen(false)}
+          onSubmit={async (values) => {
+            await submitLaunchNotifyLead({ ...values, brandId: car.brand.id, modelId: car.id });
+          }}
+        />
+      )}
     </div>
   );
 }

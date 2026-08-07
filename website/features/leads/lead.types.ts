@@ -35,6 +35,14 @@ export interface SubmitPriceDropAlertLeadInput {
   modelId: number;
 }
 
+export interface SubmitLaunchNotifyLeadInput {
+  mobile: string;
+  email?: string;
+  otp?: string;
+  brandId?: number;
+  modelId: number;
+}
+
 export type InsuranceType = "new" | "renew" | "expired";
 
 export interface SubmitInsuranceLeadInput {

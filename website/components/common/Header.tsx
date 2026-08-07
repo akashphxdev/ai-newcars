@@ -1,10 +1,10 @@
 "use client"
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import Link from "next/link";
 import AuthModal from "./AuthModal";
 import { isChromelessRoute } from "@/lib/routes";
-import { getCurrentUser, getUserInitials } from "@/features/auth/currentUser";
+import { getCurrentUser, getUserInitials, clearCurrentUser, subscribeAuthChange } from "@/features/auth/currentUser";
 import { searchCars } from "@/features/search/search.api";
 import type { AuthUser } from "@/features/auth/auth.types";
 import type { SearchCarResult } from "@/features/search/search.types";
@@ -143,6 +143,8 @@ export default function Header({ bodyTypes, articleCategories }: { bodyTypes: Bo
   const [authOpen, setAuthOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [user, setUser] = useState<AuthUser | null>(null);
+  const [profileMenuOpen, setProfileMenuOpen] = useState(false);
+  const profileMenuRef = useRef<HTMLDivElement>(null);
   const pathname = usePathname();
   const router = useRouter();
 
@@ -152,10 +154,35 @@ export default function Header({ bodyTypes, articleCategories }: { bodyTypes: Bo
 
   // Client-only — no cookie/SSR session, so this can only resolve after
   // hydration (a one-frame "Login / Signup" flash for already-logged-in
-  // users on a fresh page load is the accepted tradeoff of that).
+  // users on a fresh page load is the accepted tradeoff of that). Also
+  // re-syncs on "auth-change" — e.g. apiClient auto-clearing a dead
+  // token — so the avatar disappears immediately instead of only on the
+  // next full page load.
   useEffect(() => {
     setUser(getCurrentUser());
+    return subscribeAuthChange(() => setUser(getCurrentUser()));
   }, []);
+
+  useEffect(() => {
+    if (!profileMenuOpen) return;
+    const onClickOutside = (e: MouseEvent) => {
+      if (profileMenuRef.current && !profileMenuRef.current.contains(e.target as Node)) {
+        setProfileMenuOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", onClickOutside);
+    return () => document.removeEventListener("mousedown", onClickOutside);
+  }, [profileMenuOpen]);
+
+  const handleLogout = () => {
+    clearCurrentUser();
+    setProfileMenuOpen(false);
+    // Full reload (not router.push) — same convention as AuthModal's
+    // post-login reload, so every already-rendered "logged in" bit of
+    // UI on the page resets in one go instead of needing individual
+    // auth-change listeners everywhere.
+    window.location.href = "/";
+  };
 
   useEffect(() => {
     if (!mobileOpen) return;
@@ -315,14 +342,42 @@ export default function Header({ bodyTypes, articleCategories }: { bodyTypes: Bo
           </button>
 
           {user ? (
-            <Link
-              href="/profile"
-              aria-label="View profile"
-              className="hidden shrink-0 items-center justify-center rounded-full text-[13px] font-bold text-white sm:flex"
-              style={{ background: ORANGE, width: 36, height: 36 }}
-            >
-              {getUserInitials(user)}
-            </Link>
+            <div className="relative hidden sm:block" ref={profileMenuRef}>
+              <button
+                type="button"
+                onClick={() => setProfileMenuOpen((v) => !v)}
+                aria-label="Account menu"
+                aria-expanded={profileMenuOpen}
+                className="flex shrink-0 cursor-pointer items-center justify-center rounded-full border-none text-[13px] font-bold text-white"
+                style={{ background: ORANGE, width: 36, height: 36 }}
+              >
+                {getUserInitials(user)}
+              </button>
+
+              {profileMenuOpen && (
+                <div
+                  className="absolute right-0 top-full z-50 mt-2 w-44 overflow-hidden rounded-xl py-1.5"
+                  style={{ background: SURFACE, border: `1px solid ${BORDER}`, boxShadow: "0 12px 28px rgba(17,24,39,0.12)" }}
+                >
+                  <Link
+                    href="/profile"
+                    onClick={() => setProfileMenuOpen(false)}
+                    className="block px-3.5 py-2 text-[13px] font-medium no-underline"
+                    style={{ color: DARK }}
+                  >
+                    My Profile
+                  </Link>
+                  <button
+                    type="button"
+                    onClick={handleLogout}
+                    className="block w-full cursor-pointer border-none bg-transparent px-3.5 py-2 text-left text-[13px] font-medium"
+                    style={{ color: DARK }}
+                  >
+                    Logout
+                  </button>
+                </div>
+              )}
+            </div>
           ) : (
             <button
               onClick={() => setAuthOpen(true)}
@@ -437,20 +492,33 @@ export default function Header({ bodyTypes, articleCategories }: { bodyTypes: Bo
           </button>
 
           {user ? (
-            <Link
-              href="/profile"
-              onClick={() => setMobileOpen(false)}
-              className="my-2 flex w-full items-center gap-2 rounded-full py-2.5 pl-1 text-sm font-semibold"
-              style={{ color: DARK }}
-            >
-              <span
-                className="flex shrink-0 items-center justify-center rounded-full text-[13px] font-bold text-white"
-                style={{ background: ORANGE, width: 32, height: 32 }}
+            <div className="my-2 flex flex-col">
+              <Link
+                href="/profile"
+                onClick={() => setMobileOpen(false)}
+                className="flex w-full items-center gap-2 rounded-full py-2.5 pl-1 text-sm font-semibold no-underline"
+                style={{ color: DARK }}
               >
-                {getUserInitials(user)}
-              </span>
-              View profile
-            </Link>
+                <span
+                  className="flex shrink-0 items-center justify-center rounded-full text-[13px] font-bold text-white"
+                  style={{ background: ORANGE, width: 32, height: 32 }}
+                >
+                  {getUserInitials(user)}
+                </span>
+                My Profile
+              </Link>
+              <button
+                type="button"
+                onClick={() => {
+                  setMobileOpen(false);
+                  handleLogout();
+                }}
+                className="w-full cursor-pointer border-none bg-transparent py-2.5 pl-11 text-left text-sm font-semibold"
+                style={{ color: DARK }}
+              >
+                Logout
+              </button>
+            </div>
           ) : (
             <button
               onClick={() => setAuthOpen(true)}

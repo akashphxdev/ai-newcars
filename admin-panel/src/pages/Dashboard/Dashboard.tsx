@@ -59,8 +59,9 @@ function SectionCard({
 // Ai/Dashboard/Dashboard.tsx's TrendChart (kept local rather than shared
 // since the two callers' tooltip copy differs — "leads" vs "generated" —
 // and duplicating ~35 lines of JSX twice is cheaper than a prop-heavy
-// abstraction for just two call sites).
-function TrendChart({ trend }: { trend: { date: string; count: number }[] }) {
+// abstraction for just two call sites). A third caller (traffic) tipped
+// that calculus, so the tooltip noun is now a prop instead of a third copy.
+function TrendChart({ trend, unitLabel = "lead" }: { trend: { date: string; count: number }[]; unitLabel?: string }) {
   const [hoverIdx, setHoverIdx] = useState<number | null>(null);
   const max = Math.max(1, ...trend.map((t) => t.count));
   const labelEvery = trend.length > 14 ? 5 : 1;
@@ -86,7 +87,7 @@ function TrendChart({ trend }: { trend: { date: string; count: number }[] }) {
                 className="absolute -top-9 left-1/2 -translate-x-1/2 text-[10px] font-bold text-white px-2 py-1 rounded-md whitespace-nowrap z-10"
                 style={{ background: "#1c1a17" }}
               >
-                {point.count} lead{point.count === 1 ? "" : "s"}
+                {point.count} {unitLabel}{point.count === 1 ? "" : "s"}
                 <span className="block text-[9px] font-medium text-white/70">{fullLabel}</span>
               </div>
             )}
@@ -128,7 +129,7 @@ export default function Dashboard() {
     );
   }
 
-  const { kpis, leads, content, ads, seo, ai, recentActivity, pendingActions } = data;
+  const { kpis, leads, traffic, content, ads, seo, ai, recentActivity, pendingActions } = data;
   const staticTotal = STATIC_PAGE_SLUG_OPTIONS.length;
 
   return (
@@ -179,6 +180,24 @@ export default function Dashboard() {
           <span className="text-[11px] font-bold text-[#4a4640]">Last 30 days</span>
         </div>
         <TrendChart trend={leads.trend} />
+      </SectionCard>
+
+      {/* Traffic */}
+      <SectionCard
+        title={`Traffic — ${traffic.total} total`}
+        action={
+          <button
+            onClick={() => navigate("/analytics/page-views")}
+            className="cursor-pointer text-[11.5px] font-bold text-[#4a4640] hover:text-[#1c1a17]"
+          >
+            View all →
+          </button>
+        }
+      >
+        <div className="flex items-center justify-between mb-2">
+          <span className="text-[11px] font-bold text-[#4a4640]">Last 30 days</span>
+        </div>
+        <TrendChart trend={traffic.trend} unitLabel="view" />
       </SectionCard>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
@@ -277,31 +296,18 @@ export default function Dashboard() {
       </div>
 
       {/* Pending actions */}
-      {(pendingActions.reviewsPending > 0 || pendingActions.articleCommentsFlagged > 0) && (
+      {pendingActions.reviewsPending > 0 && (
         <SectionCard title="Needs Your Attention">
           <div className="flex flex-wrap gap-3">
-            {pendingActions.reviewsPending > 0 && (
-              <button
-                onClick={() => navigate("/reviews/all-reviews")}
-                className="cursor-pointer flex items-center gap-2 bg-[#fef2f0] hover:bg-[#fbe6e2] transition-colors rounded-lg px-3.5 py-2.5"
-              >
-                <span className="h-1.5 w-1.5 rounded-full" style={{ background: ACCENT }} />
-                <span className="text-[12px] font-bold text-[#1c1a17]">
-                  {pendingActions.reviewsPending} review{pendingActions.reviewsPending === 1 ? "" : "s"} pending
-                </span>
-              </button>
-            )}
-            {pendingActions.articleCommentsFlagged > 0 && (
-              <button
-                onClick={() => navigate("/articles/article-comments")}
-                className="cursor-pointer flex items-center gap-2 bg-[#fef2f0] hover:bg-[#fbe6e2] transition-colors rounded-lg px-3.5 py-2.5"
-              >
-                <span className="h-1.5 w-1.5 rounded-full" style={{ background: ACCENT }} />
-                <span className="text-[12px] font-bold text-[#1c1a17]">
-                  {pendingActions.articleCommentsFlagged} comment{pendingActions.articleCommentsFlagged === 1 ? "" : "s"} flagged
-                </span>
-              </button>
-            )}
+            <button
+              onClick={() => navigate("/reviews/all-reviews")}
+              className="cursor-pointer flex items-center gap-2 bg-[#fef2f0] hover:bg-[#fbe6e2] transition-colors rounded-lg px-3.5 py-2.5"
+            >
+              <span className="h-1.5 w-1.5 rounded-full" style={{ background: ACCENT }} />
+              <span className="text-[12px] font-bold text-[#1c1a17]">
+                {pendingActions.reviewsPending} review{pendingActions.reviewsPending === 1 ? "" : "s"} pending
+              </span>
+            </button>
           </div>
         </SectionCard>
       )}

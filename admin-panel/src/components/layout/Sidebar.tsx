@@ -165,6 +165,7 @@ const NAV: NavGroup[] = [
           { label: "Loan Leads", href: "/leads/buy/loan" },
           { label: "Soft Leads", href: "/leads/buy/soft" },
           { label: "Price Drop Alerts", href: "/leads/buy/price-drop" },
+          { label: "Launch Notify", href: "/leads/buy/launch-notify" },
         ],
       },
       {
@@ -227,7 +228,6 @@ const NAV: NavGroup[] = [
         children: [
           { label: "Category", href: "/articles/category" },
           { label: "All Articles", href: "/articles/all-articles" },
-          { label: "Article Comments", href: "articles/article-comments" },
         ],
       },
       {

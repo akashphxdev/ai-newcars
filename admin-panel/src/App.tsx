@@ -10,6 +10,7 @@ import AllPermissions from "./pages/AdminUsers/Permission/AllPermissions";
 import AllRoles from "./pages/AdminUsers/Roles/AllRoles";
 import AllAdminLogs from "./pages/AdminUsers/AdminLogs/AllAdminLogs";
 import AllSearchLogs from "./pages/Analytics/SearchLogs/AllSearchLogs";
+import AllPageViews from "./pages/Analytics/PageViews/AllPageViews";
 import { AuthProvider } from "./context/AuthContext";
 import AllCountries from "./pages/Locations/Countries/AllCountries";
 import AllStates from "./pages/Locations/States/AllStates";
@@ -29,7 +30,6 @@ import AllOffers from "./pages/newCars/Offers/AllOffers";
 import AllBodyTypes from "./pages/newCars/BodyTypes/AllBodyTypes";
 import AllAttributeOptions from "./pages/newCars/AttributeOptions/AllAttributeOptions";
 import AllArticleCategories from "./pages/Articles/ArticleCategories/AllArticleCategories";
-import AllArticleComments from "./pages/Articles/ArticleComments/AllArticleComments";
 import AllArticles from "./pages/Articles/Articles/AllArticles";
 import AllReviews from "./pages/Reviews/AllReviews/AllReviews";
 import AllNewCarLeads from "./pages/BuyLeads/NewCarLeads/AllNewCarLeads";
@@ -38,6 +38,7 @@ import AllPriceDropLeads from "./pages/BuyLeads/PriceDropAlerts/AllPriceDropLead
 import AllSoftLeads from "./pages/BuyLeads/SoftLeads/AllSoftLeads";
 import AllLenders from "./pages/BuyLeads/Lenders/AllLenders";
 import AllLoanLeads from "./pages/BuyLeads/LoanLeads/AllLoanLeads";
+import AllLaunchNotifyLeads from "./pages/BuyLeads/LaunchNotify/AllLaunchNotifyLeads";
 import UsedCarListings from "./pages/UsedCars/Listings";
 import UsedCarInspections from "./pages/UsedCars/Inspections";
 import AllSellLeads from "./pages/SellLeads/AllSellLeads";
@@ -61,6 +62,7 @@ import AllBanners from "./pages/Home/Banners/AllBanners";
 import AllTestimonials from "./pages/Home/Testimonials/AllTestimonials";
 import SiteSettings from "./pages/SiteSettings/SiteSettings";
 import AllSeoMetas from "./pages/Seo/SeoMeta/AllSeoMetas";
+import AllSeoRedirects from "./pages/Seo/SeoRedirects/AllSeoRedirects";
 // ── Auth guard — baad mein real auth logic lagao ──────────────────────────────
 function RequireAuth({ children }: { children: React.ReactNode }) {
   const isLoggedIn = !!localStorage.getItem("admin_token"); // apna auth check yahan
@@ -116,7 +118,6 @@ export default function App() {
 
           <Route path ="/articles/category" element={<AllArticleCategories/>}/>
           <Route path ="/articles/all-articles" element={<AllArticles/>}/>
-          <Route path ="/articles/article-comments" element={<AllArticleComments/>}/>
           <Route path ="/stories/story-groups" element={<AllStoryGroups/>}/>
           <Route path ="/stories/story-items" element={<AllStoryItems/>}/>
           <Route path ="/reviews/all-reviews" element={<AllReviews/>}/>
@@ -124,6 +125,7 @@ export default function App() {
           <Route path="/leads/buy/new-cars" element={<AllNewCarLeads />} />
           <Route path="/leads/buy/insurance" element={<AllInsuranceLeads />} />
           <Route path="/leads/buy/price-drop" element={<AllPriceDropLeads />} />
+          <Route path="/leads/buy/launch-notify" element={<AllLaunchNotifyLeads />} />
           <Route path="/leads/buy/soft" element={<AllSoftLeads />} />
           <Route path="/partners/lenders" element={<AllLenders />} />
           <Route path="/leads/buy/loan" element={<AllLoanLeads />} />
@@ -139,8 +141,10 @@ export default function App() {
           <Route path ="/ads/clicks" element={<AllClicks/>}/>
 
           <Route path="/seo/meta" element={<AllSeoMetas />} />
+          <Route path="/seo/redirects" element={<AllSeoRedirects />} />
 
           <Route path="/analytics/search-logs" element={<AllSearchLogs />} />
+          <Route path="/analytics/page-views" element={<AllPageViews />} />
 
           <Route path="/ai/dashboard" element={<AIDashboard />} />
           <Route path="/ai/car-faqs/review" element={<AllAiFaqs />} />

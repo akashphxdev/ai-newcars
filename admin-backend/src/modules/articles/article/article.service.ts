@@ -336,7 +336,6 @@ export async function deleteArticle(id: number, actorId: number, ipAddress?: str
   await prisma.$transaction([
     prisma.articleBrand.deleteMany({ where: { articleId: id } }),
     prisma.articleCarModel.deleteMany({ where: { articleId: id } }),
-    prisma.articleComment.deleteMany({ where: { articleId: id } }),
     prisma.article.delete({ where: { id } }),
   ]);
 

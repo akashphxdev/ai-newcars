@@ -18,6 +18,8 @@ import LeadsRoutes from './leads';
 import CitiesRoutes from './cities';
 import StatesRoutes from './states';
 import LendersRoutes from './lenders';
+import WishlistRoutes from './wishlist';
+import AnalyticsRoutes from './analytics';
 
 const router = Router();
 
@@ -35,5 +37,7 @@ router.use('/leads', LeadsRoutes);
 router.use('/cities', CitiesRoutes);
 router.use('/states', StatesRoutes);
 router.use('/lenders', LendersRoutes);
+router.use('/wishlist', WishlistRoutes);
+router.use('/analytics', AnalyticsRoutes);
 
 export default router;

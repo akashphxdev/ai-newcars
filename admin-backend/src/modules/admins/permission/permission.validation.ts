@@ -2,10 +2,10 @@
 
 import { z } from 'zod';
 
-// 'moderate'/'upload' added — reviews/article-comments/leads.moderate and
-// ai.image-pool.upload are real keys already checked by requirePermission()
-// in the routes (see prisma/seed-site-settings-and-permissions.ts's
-// PERMISSION_KEYS), but this enum didn't allow recreating them by hand.
+// 'moderate'/'upload' added — reviews/leads.moderate and ai.image-pool.upload
+// are real keys already checked by requirePermission() in the routes (see
+// prisma/seed-site-settings-and-permissions.ts's PERMISSION_KEYS), but this
+// enum didn't allow recreating them by hand.
 const ACTIONS = ['view', 'create', 'update', 'delete', 'moderate', 'upload'] as const;
 
 export const createPermissionSchema = z.object({

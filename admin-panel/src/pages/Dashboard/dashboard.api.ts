@@ -28,6 +28,11 @@ export interface DashboardLeads {
   trend: DashboardTrendPoint[];
 }
 
+export interface DashboardTraffic {
+  total: number;
+  trend: DashboardTrendPoint[];
+}
+
 export interface DashboardContent {
   totalArticles: number;
   publishedArticles: number;
@@ -70,12 +75,12 @@ export interface DashboardActivityItem {
 
 export interface DashboardPendingActions {
   reviewsPending: number;
-  articleCommentsFlagged: number;
 }
 
 export interface DashboardSummary {
   kpis: DashboardKpis;
   leads: DashboardLeads;
+  traffic: DashboardTraffic;
   content: DashboardContent;
   ads: DashboardAds;
   seo: DashboardSeo;

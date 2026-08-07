@@ -19,9 +19,7 @@ export interface ListPermissionsResponse {
 export interface CreatePermissionInput {
   module: string;
   // Mirrors ACTIONS in PermissionModal.tsx and the backend's
-  // permission.validation.ts. "moderate" and "upload" were added
-  // backend-side (e.g. reviews.moderate, ai.image-pool.upload) but never
-  // reached this type — keep all three lists in sync.
+  // permission.validation.ts — keep all three lists in sync.
   action: "view" | "create" | "update" | "delete" | "moderate" | "upload";
 }
 
