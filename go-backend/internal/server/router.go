@@ -105,6 +105,17 @@ func New(h *handler.Handler, c *cache.Cache, cfg *config.Config) http.Handler {
 
 		r.With(middleware.PublicCache(c, ttlListing)).Get("/used-cars", h.UsedCarsByCity)
 
+		// Prices change at most once a day, so the catalogue TTL is right;
+		// the daily cron is what makes them move, not request traffic.
+		r.Route("/fuel", func(r chi.Router) {
+			r.Use(middleware.PublicCache(c, ttlCatalogue))
+			r.Get("/metros", h.FuelMetros)
+			r.Get("/states", h.FuelStates)
+			r.Get("/states/{stateID}/cities", h.FuelPricesByState)
+			r.Get("/city/{citySlug}", h.FuelPricesForCity)
+			r.Get("/city/{citySlug}/history", h.FuelPriceHistory)
+		})
+
 		r.Route("/location", func(r chi.Router) {
 			r.With(middleware.PublicCache(c, ttlCatalogue)).Get("/cities", h.LocationCities)
 			// Both are per-visitor and set no-store themselves; caching
