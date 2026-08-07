@@ -197,7 +197,6 @@ const LEGAL_LINKS = [
   { label: "About Us", href: "#" },
   { label: "Privacy Policy", href: "#" },
   { label: "Terms of Use", href: "#" },
-  { label: "Sitemap", href: "#" },
 ];
 
 /* ---------------- Component ---------------- */

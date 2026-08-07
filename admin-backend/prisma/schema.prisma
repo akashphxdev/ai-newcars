@@ -280,10 +280,8 @@ model User {
   reviews             Review[]
   reviewReplies       ReviewReply[]
   reviewHelpfulVotes  ReviewHelpfulVote[]
-  mileageLogs         MileageLog[]
   adImpressions       AdImpression[]
   adClicks            AdClick[]
-  notifications       Notification[]
   searchLogs          SearchLog[]
   userAddresses       UserAddress[]
   testimonials        Testimonial[] 
@@ -367,7 +365,6 @@ model CarModel {
   wishlists           Wishlist[]
   launchNotifyLeads   LaunchNotifyLead[]
   reviews             Review[]
-  mileageLogs         MileageLog[]
   articleCarModels    ArticleCarModel[]
   aiFaqs              AiFaq[]
   aiArticles          AiArticle[]
@@ -646,23 +643,12 @@ model UsedCarListing {
   status              String      @default("active") @db.VarChar(20)
   createdAt           DateTime    @default(now()) @map("created_at")
 
-  images          UsedCarListingImage[]
   buyUsedCarLeads BuyUsedCarLead[]
   @@index([modelId])
   @@index([cityId])
   @@index([sellerId])
   @@index([status])
   @@map("used_car_listings")
-}
-
-model UsedCarListingImage {
-  id        Int            @id @default(autoincrement())
-  listingId Int            @map("listing_id")
-  listing   UsedCarListing @relation(fields: [listingId], references: [id])
-  imageUrl  String         @map("image_url") @db.VarChar(255)
-  isPrimary Boolean        @default(false) @map("is_primary")
-
-  @@map("used_car_listing_images")
 }
 
 // ============================================================
@@ -1055,26 +1041,6 @@ model ReviewReply {
 }
 
 // ============================================================
-// MILEAGE LOGS
-// ============================================================
-
-model MileageLog {
-  id              Int       @id @default(autoincrement())
-  userId          Int       @map("user_id")
-  user            User      @relation(fields: [userId], references: [id])
-  modelId         Int?      @map("model_id")
-  model           CarModel? @relation(fields: [modelId], references: [id])
-  odometer        Int
-  fuelFilled      Decimal   @map("fuel_filled") @db.Decimal(5, 2)
-  distanceCovered Int?      @map("distance_covered")
-  mileageResult   Decimal?  @map("mileage_result") @db.Decimal(5, 2)
-  loggedAt        DateTime  @map("logged_at")
-  createdAt       DateTime  @default(now()) @map("created_at")
-
-  @@map("mileage_logs")
-}
-
-// ============================================================
 // ADVERTISEMENT
 // ============================================================
 
@@ -1192,25 +1158,6 @@ model AdClick {
   @@index([impressionId])
 }
 
-// ============================================================
-// NOTIFICATIONS & ANALYTICS
-// ============================================================
-
-model Notification {
-  id            BigInt    @id @default(autoincrement())
-  userId        Int       @map("user_id")
-  user          User      @relation(fields: [userId], references: [id])
-  title         String?   @db.VarChar(150)
-  message       String?   @db.VarChar(300)
-  type          String?   @db.VarChar(30)
-  referenceType String?   @map("reference_type") @db.VarChar(30)
-  referenceId   Int?      @map("reference_id")
-  isRead        Boolean   @default(false) @map("is_read")
-  readAt        DateTime? @map("read_at")
-  createdAt     DateTime  @default(now()) @map("created_at")
-
-  @@map("notifications")
-}
 model PageViewDailyStat {
   id        Int      @id @default(autoincrement())
   pageUrl   String   @map("page_url") @db.VarChar(255)
@@ -1297,19 +1244,6 @@ model SeoRedirect {
 
   @@index([isActive, createdAt])
   @@map("seo_redirects")
-}
-
-model SitemapEntry {
-  id              Int       @id @default(autoincrement())
-  pageType        String    @map("page_type") @db.VarChar(30)
-  pageId          Int?      @map("page_id")
-  urlPath         String    @map("url_path") @db.VarChar(255)
-  priority        Decimal?  @default(0.5) @db.Decimal(2, 1)
-  changeFrequency String?   @map("change_frequency") @db.VarChar(20)
-  isIncluded      Boolean   @default(true) @map("is_included")
-  lastModified    DateTime? @map("last_modified")
-
-  @@map("sitemap_entries")
 }
 
 // ============================================================

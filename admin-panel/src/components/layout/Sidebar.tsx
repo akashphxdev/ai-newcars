@@ -308,7 +308,6 @@ const NAV: NavGroup[] = [
         children: [
           { label: "Meta Tags", href: "/seo/meta" },
           { label: "Redirects", href: "/seo/redirects" },
-          { label: "Sitemap", href: "/seo/sitemap" },
         ],
       },
       {

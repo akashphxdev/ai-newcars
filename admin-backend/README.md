@@ -35,17 +35,16 @@ src/
     # same pattern above (validation -> controller -> service -> routes)
     # to extend:
     users/            (User)
-    cars-used/         (UsedCarListing, UsedCarListingImage)
+    cars-used/         (UsedCarListing)
     leads/             (SellCarLead, BuyNewCarLead, BuyUsedCarLead,
                         InsuranceLead, LoanLead, SoftLead,
                         PriceDropAlertLead, LeadActivity)
     reviews/            (Review, ReviewCategoryScore, ReviewImage,
                         ReviewHelpfulVote)
-    mileage/            (MileageLog)
     ads/                (AdPlacement, Advertiser, AdCampaign,
                         AdImpression, AdClick)
-    analytics/          (PageView, SearchLog, Notification)
-    seo/                (SeoMeta, SeoRedirect, SitemapEntry)
+    analytics/          (PageView, SearchLog)
+    seo/                (SeoMeta, SeoRedirect)
   prisma/client.ts  Prisma client singleton
   routes/
     v1/               per-domain routers, mounted in v1.ts
