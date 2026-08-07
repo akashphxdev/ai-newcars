@@ -1,9 +1,9 @@
 import SectionHeader from "@/components/common/SectionHeader";
 import { BoltIcon } from "@/components/common/icons";
-import BrandCarCard from "./BrandCarCard";
+import CarCard from "@/components/cars/CarCard";
 import type { HomeCar } from "@/features/cars/car.types";
 
-// Deliberately a different card (BrandCarCard, built for this page) in a
+// Uses the shared CarCard in rail form (fixed width, snap-scroll) in a
 // plain scroll rail — not a copy of the home page's ElectricCars section,
 // which uses its own bigger rail card with an "Electric" ribbon + smart
 // badges. Same data, different look, so this page doesn't feel like a
@@ -37,7 +37,7 @@ export default function BrandElectricCarsRail({
         <div className="flex gap-5 overflow-x-auto pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
           {cars.map((car) => (
             <div key={car.id} className="w-[270px] shrink-0">
-              <BrandCarCard car={car} />
+              <CarCard car={car} variant="rail" />
             </div>
           ))}
         </div>

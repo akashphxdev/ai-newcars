@@ -2,7 +2,7 @@
 import SectionHeader from "@/components/common/SectionHeader";
 import ScrollArrows from "@/components/common/ScrollArrows";
 import { useScrollRail } from "@/components/common/useScrollRail";
-import UpcomingCarCard from "@/components/cars/UpcomingCarCard";
+import CarCard from "@/components/cars/CarCard";
 import type { HomeCar } from "@/features/cars/car.types";
 
 const SURFACE = "var(--color-page)";
@@ -37,7 +37,7 @@ export default function UpcomingLaunches({ cars }: { cars: HomeCar[] }) {
           className="flex snap-x snap-mandatory gap-4 overflow-x-auto pb-2 scrollbar-none"
         >
           {cars.map((car) => (
-            <UpcomingCarCard key={car.id} car={car} />
+            <CarCard key={car.id} car={car} variant="rail" />
           ))}
         </div>
       </div>

@@ -8,7 +8,7 @@ import type { BodyType } from "@/features/bodyTypes/bodyType.types";
 import { calculatePrincipalFromEmi } from "@/lib/emiMath";
 import { formatRupee, formatLakh } from "@/lib/calculatorFormat";
 import { Label, inputClass, selectClass } from "@/components/calculators/CalculatorFormControls";
-import BrandCarCard from "@/components/brands/BrandCarCard";
+import CarCard from "@/components/cars/CarCard";
 import ScrollArrows from "@/components/common/ScrollArrows";
 import { useScrollRail } from "@/components/common/useScrollRail";
 import SoftLeadCapture from "@/components/leads/SoftLeadCapture";
@@ -83,7 +83,7 @@ function BudgetCarsRail({
         >
           {cars.map((car) => (
             <div key={car.id} className={RAIL_CARD_WIDTH}>
-              <BrandCarCard car={car} />
+              <CarCard car={car} />
             </div>
           ))}
         </div>

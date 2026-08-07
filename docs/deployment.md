@@ -198,7 +198,7 @@ at 1–2 GB.
 | Go API | `/var/www/timesauto/go-backend` (systemd `timesauto-go`) | 5001 |
 | Admin panel | `/var/www/timesauto_ne_usr/data/www/admin.timesauto.net` | static |
 | Assets | `…/data/www/static.timesauto.net/uploads` | static |
-| Website | not deployed yet | 3002 reserved (3000 is taken) |
+| Website | `/var/www/timesauto/website` (systemd `timesauto-web`, Next standalone) | 3002 (3000 belongs to another site) |
 
 ### nginx is FastPanel-managed
 

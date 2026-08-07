@@ -64,7 +64,7 @@ export default async function UpcomingCarsPage({ searchParams }: Props) {
             initialPagination={pagination}
             source={{ kind: "browse", filters }}
             cardType="upcoming"
-            // UpcomingCarCard's h-full is fine in its original single-row
+            // CarCard's h-full is fine in its original single-row
             // horizontal rail (home page), but fights flexbox's cross-axis
             // stretch once wrapped onto multiple rows (every card in a row
             // stretching to match the tallest, cascading oddly across

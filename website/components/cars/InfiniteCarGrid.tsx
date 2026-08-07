@@ -4,8 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { getCarsBrowse, type BrowseCarsFilters } from "@/features/cars/car.api";
 import { getBrandCars, type BrandCarsFilters } from "@/features/brands/brand.api";
 import { getBodyTypeCars, type BodyTypeCarsFilters } from "@/features/bodyTypes/bodyType.api";
-import BrandCarCard from "@/components/brands/BrandCarCard";
-import UpcomingCarCard from "@/components/cars/UpcomingCarCard";
+import CarCard from "@/components/cars/CarCard";
 import type { HomeCar } from "@/features/cars/car.types";
 import type { Pagination } from "@/lib/apiClient";
 
@@ -18,7 +17,7 @@ const DEFAULT_GRID_CLASS = "grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-3
 type CardType = "standard" | "upcoming";
 
 function renderCard(car: HomeCar, cardType: CardType) {
-  return cardType === "upcoming" ? <UpcomingCarCard key={car.id} car={car} /> : <BrandCarCard key={car.id} car={car} />;
+  return cardType === "upcoming" ? <CarCard key={car.id} car={car} /> : <CarCard key={car.id} car={car} />;
 }
 
 // The un-scoped browse endpoint and the brand-/body-type-scoped ones all
@@ -45,7 +44,7 @@ async function fetchPage(source: CarSource, page: number): Promise<{ cars: HomeC
 // Replaces click-through Previous/Next pagination — scrolling near the
 // bottom auto-loads the next page and appends it, same data source the
 // server already used for the first page. cardType picks between the two
-// card designs in use (UpcomingCarCard's countdown vs BrandCarCard's
+// card states in use (an upcoming car's countdown vs a launched car's
 // price/CTAs) since different browse pages want different ones.
 //
 // The parent page is expected to pass a `key` that changes whenever the
