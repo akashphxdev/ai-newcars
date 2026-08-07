@@ -11,53 +11,10 @@ import type { SearchCarResult } from "@/features/search/search.types";
 import type { BodyType } from "@/features/bodyTypes/bodyType.types";
 import type { ArticleCategory } from "@/features/articles/article.types";
 
-type NavItem = {
-  label: string;
-  href?: string;
-  dropdown?: { label: string; href: string }[];
-};
 
-// Compare/Tools never change — "New Cars" and "News" are both data-driven
-// (body types / article categories come from the DB, see buildNavItems).
-const STATIC_NAV_ITEMS: NavItem[] = [
-  {
-    label: "Compare",
-    href: "/compare-cars",
-  },
-  {
-    label: "Tools",
-    dropdown: [
-      { label: "EMI Calculator", href: "/car-loan-emi-calculator" },
-      { label: "Mileage Calculator", href: "/mileage-calculator" },
-      { label: "Down Payment Calculator", href: "/down-payment-calculator" },
-      { label: "Car Affordability Calculator", href: "/car-affordability-calculator" },
-      { label: "EV Charging Time Calculator", href: "/ev-charging-time-calculator" },
-      { label: "Fuel Type Comparison", href: "/fuel-comparison-calculator" },
-      { label: "Compare Cars", href: "/compare-cars" },
-    ],
-  },
-];
-
-// "Electric" is a fuel-type page, not a body type, but it's kept in this
-// same dropdown (matches how the site already groups "browse by new car
-// category") — appended after whatever body types the DB has right now.
-function buildNavItems(bodyTypes: BodyType[], articleCategories: ArticleCategory[]): NavItem[] {
-  return [
-    {
-      label: "New Cars",
-      dropdown: [
-        ...bodyTypes.map((bt) => ({ label: bt.name, href: routes.bodyType(bt.slug) })),
-        { label: "Electric", href: "/electric-cars" },
-      ],
-    },
-    ...STATIC_NAV_ITEMS,
-    {
-      label: "News",
-      dropdown: articleCategories.map((c) => ({ label: c.name, href: `/news/${c.slug}` })),
-    },
-  ];
-}
-
+// Token references, kept as constants purely because the remaining inline
+// styles in this file read them. New markup below uses the Tailwind token
+// utilities (text-ink, bg-surface, ...) directly instead.
 const ORANGE = "var(--color-brand)";
 const ORANGE_SOFT = "rgba(242,101,15,0.08)";
 const DARK = "var(--color-ink)";
@@ -80,6 +37,77 @@ const PinIcon = () => (
     <circle cx="12" cy="9.5" r="2.2" stroke="currentColor" strokeWidth="1.8" />
   </svg>
 );
+
+/* ---------------- Search results dropdown ---------------- */
+
+type NavLink = { label: string; href: string; desc?: string };
+type NavColumn = { heading: string; links: NavLink[] };
+
+type NavItem = {
+  label: string;
+  href?: string;
+  // A mega panel of grouped columns. Preferred for menus with more than a
+  // handful of entries: "New Cars" used to be a single scrolling column of
+  // 15 body types, which buried the things people actually arrive wanting
+  // (upcoming, electric, by budget) beneath a taxonomy list.
+  columns?: NavColumn[];
+  // Flat list, still right for a short menu like news categories.
+  dropdown?: NavLink[];
+};
+
+// Budget bands in rupees. These map to the /new-cars maxPrice filter, so
+// they need no new route.
+const BUDGET_BANDS: NavLink[] = [
+  { label: "Under \u20b95 Lakh", href: "/new-cars?maxPrice=500000" },
+  { label: "Under \u20b910 Lakh", href: "/new-cars?maxPrice=1000000" },
+  { label: "Under \u20b915 Lakh", href: "/new-cars?maxPrice=1500000" },
+  { label: "Under \u20b920 Lakh", href: "/new-cars?maxPrice=2000000" },
+  { label: "Under \u20b940 Lakh", href: "/new-cars?maxPrice=4000000" },
+  { label: "Above \u20b940 Lakh", href: "/new-cars?minPrice=4000000" },
+];
+
+const TOOL_LINKS: NavLink[] = [
+  { label: "EMI Calculator", href: "/car-loan-emi-calculator", desc: "Monthly payment by tenure and rate" },
+  { label: "Down Payment", href: "/down-payment-calculator", desc: "How much to put down upfront" },
+  { label: "Affordability", href: "/car-affordability-calculator", desc: "What your budget really buys" },
+  { label: "Mileage", href: "/mileage-calculator", desc: "Running cost per kilometre" },
+  { label: "EV Charging Time", href: "/ev-charging-time-calculator", desc: "Charge duration by charger type" },
+  { label: "Fuel Comparison", href: "/fuel-comparison-calculator", desc: "Petrol vs diesel vs CNG vs EV" },
+];
+
+function buildNavItems(bodyTypes: BodyType[], articleCategories: ArticleCategory[]): NavItem[] {
+  return [
+    {
+      label: "New Cars",
+      columns: [
+        {
+          heading: "Browse",
+          links: [
+            { label: "All New Cars", href: "/new-cars", desc: "Every model on sale in India" },
+            { label: "Upcoming Cars", href: "/upcoming-cars", desc: "Launch dates and expected prices" },
+            { label: "Electric Cars", href: "/electric-cars", desc: "Ranked by real-world range" },
+            { label: "Compare Cars", href: "/compare-cars", desc: "Two cars, one spec table" },
+            { label: "All Brands", href: "/brands", desc: "Browse by manufacturer" },
+          ],
+        },
+        {
+          heading: "By Body Type",
+          links: bodyTypes.map((bt) => ({ label: bt.name, href: routes.bodyType(bt.slug) })),
+        },
+        { heading: "By Budget", links: BUDGET_BANDS },
+      ],
+    },
+    { label: "Compare", href: "/compare-cars" },
+    {
+      label: "Tools",
+      columns: [{ heading: "Calculators", links: TOOL_LINKS }],
+    },
+    {
+      label: "News",
+      dropdown: articleCategories.map((c) => ({ label: c.name, href: routes.newsCategory(c.slug) })),
+    },
+  ];
+}
 
 /* ---------------- Search results dropdown ---------------- */
 
@@ -267,29 +295,55 @@ export default function Header({ bodyTypes, articleCategories }: { bodyTypes: Bo
                     </button>
                   )}
 
-                  {item.dropdown && (
+                  {(item.columns || item.dropdown) && (
                     <div
-                      className="invisible absolute left-0 top-full z-50 mt-1 max-h-[70vh] min-w-45 overflow-y-auto rounded-lg py-1.5 opacity-0 transition-opacity duration-150 group-hover:visible group-hover:opacity-100"
-                      style={{ background: SURFACE, border: `1px solid ${BORDER}`, boxShadow: "0 12px 28px rgba(17,24,39,0.10)" }}
+                      className={`invisible absolute top-full z-50 mt-1 overflow-hidden rounded-lg border border-border bg-surface opacity-0 shadow-lg transition-opacity duration-150 group-hover:visible group-hover:opacity-100 group-focus-within:visible group-focus-within:opacity-100 ${
+                        item.columns ? "left-0" : "left-0 min-w-45 py-1.5"
+                      }`}
                     >
-                      {item.dropdown.map((link) => (
-                        <Link
-                          key={link.label}
-                          href={link.href}
-                          className="block whitespace-nowrap px-3.5 py-2 text-[13px] font-medium capitalize no-underline transition-colors"
-                          style={{ color: MUTED }}
-                          onMouseEnter={(e) => {
-                            e.currentTarget.style.background = ORANGE_SOFT;
-                            e.currentTarget.style.color = ORANGE;
-                          }}
-                          onMouseLeave={(e) => {
-                            e.currentTarget.style.background = "transparent";
-                            e.currentTarget.style.color = MUTED;
-                          }}
-                        >
-                          {link.label}
-                        </Link>
-                      ))}
+                      {item.columns ? (
+                        <div className="flex gap-8 p-5">
+                          {item.columns.map((col) => (
+                            <div key={col.heading} className="min-w-45">
+                              <p className="mb-2 text-[10px] font-bold uppercase tracking-[0.1em] text-subtle">
+                                {col.heading}
+                              </p>
+                              {/* Body types can run long, so the column
+                                  scrolls rather than stretching the panel
+                                  past the viewport. */}
+                              <ul className="max-h-72 space-y-0.5 overflow-y-auto">
+                                {col.links.map((link) => (
+                                  <li key={link.href}>
+                                    <Link
+                                      href={link.href}
+                                      className="block rounded-md px-2.5 py-1.5 no-underline transition-colors hover:bg-page"
+                                    >
+                                      <span className="block text-[13px] font-semibold capitalize text-ink">
+                                        {link.label}
+                                      </span>
+                                      {link.desc && (
+                                        <span className="mt-0.5 block text-[11px] leading-snug text-muted">
+                                          {link.desc}
+                                        </span>
+                                      )}
+                                    </Link>
+                                  </li>
+                                ))}
+                              </ul>
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        item.dropdown!.map((link) => (
+                          <Link
+                            key={link.href}
+                            href={link.href}
+                            className="block whitespace-nowrap px-3.5 py-2 text-[13px] font-medium capitalize text-muted no-underline transition-colors hover:bg-page hover:text-brand"
+                          >
+                            {link.label}
+                          </Link>
+                        ))
+                      )}
                     </div>
                   )}
                 </div>
@@ -436,12 +490,13 @@ export default function Header({ bodyTypes, articleCategories }: { bodyTypes: Bo
 
           {NAV_ITEMS.map((item) => (
             <div key={item.label} style={{ borderBottom: `1px solid ${BORDER}` }} className="last:border-none">
-              {item.dropdown ? (
+              {item.columns || item.dropdown ? (
                 <>
                   <button
                     className="flex w-full items-center justify-between border-none bg-transparent py-3 text-sm font-semibold"
                     style={{ color: DARK }}
                     onClick={() => setMobileExpanded((v) => (v === item.label ? null : item.label))}
+                    aria-expanded={mobileExpanded === item.label}
                   >
                     {item.label}
                     <svg
@@ -453,17 +508,31 @@ export default function Header({ bodyTypes, articleCategories }: { bodyTypes: Bo
                     </svg>
                   </button>
                   {mobileExpanded === item.label && (
-                    <div className="pb-2 pl-3">
-                      {item.dropdown.map((link) => (
-                        <Link
-                          key={link.label}
-                          href={link.href}
-                          onClick={() => setMobileOpen(false)}
-                          className="block py-1.5 text-[13px] capitalize no-underline"
-                          style={{ color: MUTED }}
-                        >
-                          {link.label}
-                        </Link>
+                    <div className="pb-3">
+                      {/* The desktop mega panel's columns become labelled
+                          groups here — stacking them unlabelled would run
+                          "Browse", body types and budgets together into one
+                          undifferentiated list of 25 links. */}
+                      {(item.columns ?? [{ heading: "", links: item.dropdown! }]).map((col) => (
+                        <div key={col.heading} className="mb-2 last:mb-0">
+                          {col.heading && (
+                            <p className="px-3 pb-1 pt-2 text-[10px] font-bold uppercase tracking-[0.1em] text-subtle">
+                              {col.heading}
+                            </p>
+                          )}
+                          <div className="grid grid-cols-2 gap-x-2">
+                            {col.links.map((link) => (
+                              <Link
+                                key={link.href}
+                                href={link.href}
+                                onClick={() => setMobileOpen(false)}
+                                className="block rounded-md px-3 py-2 text-[13px] capitalize text-muted no-underline active:bg-page"
+                              >
+                                {link.label}
+                              </Link>
+                            ))}
+                          </div>
+                        </div>
                       ))}
                     </div>
                   )}
