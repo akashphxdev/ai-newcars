@@ -68,6 +68,12 @@ const TOOL_LINKS: NavLink[] = [
   { label: "Fuel Comparison", href: "/fuel-comparison-calculator", desc: "Petrol vs diesel vs CNG vs EV", icon: <FuelIcon className="size-4" /> },
 ];
 
+// Not a calculator — a daily data page, so it gets its own group rather
+// than sitting under "Calculators" where it would misdescribe itself.
+const PRICE_LINKS: NavLink[] = [
+  { label: "Fuel Price in India", href: routes.fuelPrice(), desc: "Petrol, diesel and CNG, updated daily", icon: <FuelIcon className="size-4" /> },
+];
+
 function buildNavItems(bodyTypes: BodyType[], articleCategories: ArticleCategory[]): NavItem[] {
   return [
     {
@@ -93,7 +99,10 @@ function buildNavItems(bodyTypes: BodyType[], articleCategories: ArticleCategory
     { label: "Compare", href: "/compare-cars" },
     {
       label: "Tools",
-      columns: [{ heading: "Calculators", links: TOOL_LINKS }],
+      columns: [
+        { heading: "Calculators", links: TOOL_LINKS },
+        { heading: "Prices", links: PRICE_LINKS },
+      ],
     },
     {
       label: "News",

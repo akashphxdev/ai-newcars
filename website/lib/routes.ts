@@ -42,6 +42,10 @@ export const routes = {
   upcomingCars: () => "/upcoming-cars",
   usedCarsInCity: (citySlug: string) => `/used-cars/${citySlug}`,
 
+  // ---- Fuel ---------------------------------------------------------
+  fuelPrice: () => "/fuel-price",
+  fuelPriceInCity: (citySlug: string) => `/fuel-price/${citySlug}`,
+
   // ---- Editorial ----------------------------------------------------
   newsCategory: (categorySlug: string) => `/news/${categorySlug}`,
   article: (categorySlug: string, articleSlug: string) =>
