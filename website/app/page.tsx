@@ -1,11 +1,9 @@
 import { Suspense } from "react";
 import HeroSection from "@/components/home/HeroSection";
+import CuratedCars from "@/components/home/CuratedCars";
 import PopularBrands from "@/components/home/PopularBrands";
 import BodyTypes from "@/components/home/BodyTypes";
 import UpcomingLaunches from "@/components/home/UpcomingLaunches";
-import LatestCars from "@/components/home/LatestCars";
-import PopularCars from "@/components/home/Popularcars";
-import ElectricCars from "@/components/home/Electriccars";
 import CompareCars from "@/components/home/Comparecars";
 import Stories from "@/components/home/Stories";
 import Articles from "@/components/home/Articles";
@@ -43,24 +41,14 @@ async function BodyTypesData() {
   return <BodyTypes bodyTypes={bodyTypes} />;
 }
 
-async function LatestCarsData() {
-  const cars = await getHomeCars("latest");
-  return <LatestCars cars={cars} />;
-}
-
-async function PopularCarsData() {
-  const cars = await getHomeCars("popular");
-  return <PopularCars cars={cars} href="/new-cars" linkLabel="View all popular cars" />;
+async function CuratedCarsData() {
+  const cars = await getHomeCars("latest", 4);
+  return <CuratedCars initialCars={cars} />;
 }
 
 async function UpcomingLaunchesData() {
   const cars = await getHomeCars("upcoming");
   return <UpcomingLaunches cars={cars} />;
-}
-
-async function ElectricCarsData() {
-  const cars = await getHomeCars("electric");
-  return <ElectricCars cars={cars} />;
 }
 
 async function CompareCarsData() {
@@ -96,16 +84,10 @@ export default function HomePage() {
         <BodyTypesData />
       </Suspense>
       <Suspense fallback={<SectionSkeleton />}>
-        <LatestCarsData />
-      </Suspense>
-      <Suspense fallback={<SectionSkeleton />}>
-        <PopularCarsData />
+        <CuratedCarsData />
       </Suspense>
       <Suspense fallback={<SectionSkeleton />}>
         <UpcomingLaunchesData />
-      </Suspense>
-      <Suspense fallback={<SectionSkeleton />}>
-        <ElectricCarsData />
       </Suspense>
       <Suspense fallback={<SectionSkeleton />}>
         <CompareCarsData />

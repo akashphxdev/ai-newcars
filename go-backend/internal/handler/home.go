@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/go-chi/chi/v5"
+	"github.com/shopspring/decimal"
 	"github.com/timesauto/go-backend/internal/httpx"
 	"github.com/timesauto/go-backend/internal/store"
 )
@@ -62,7 +63,7 @@ func isoTime(t *time.Time) *string {
 }
 
 func (h *Handler) HomeCars(w http.ResponseWriter, r *http.Request) {
-	typ := qEnum(r, "type", "latest", "latest", "popular", "upcoming", "electric")
+	typ := qEnum(r, "type", "latest", "latest", "popular", "upcoming", "electric", "luxury")
 	limit := qInt(r, "limit", 10, 1, 50)
 
 	f := store.CarCardFilters{Limit: limit, BrandSlug: qStr(r, "brand")}
@@ -73,6 +74,11 @@ func (h *Handler) HomeCars(w http.ResponseWriter, r *http.Request) {
 		f.LaunchStatus, f.Sort, f.OnlyElectric = "available", "latest", true
 	case "popular":
 		f.LaunchStatus, f.Sort, f.RequireVariants = "available", "popular", true
+	case "luxury":
+		// 50 lakh ex-showroom is where the Indian market itself draws the
+		// line, and it leaves 145 models to rank rather than a handful.
+		lux := decimal.NewFromInt(5000000)
+		f.LaunchStatus, f.Sort, f.RequireVariants, f.MinPrice = "available", "price-desc", true, &lux
 	default:
 		f.LaunchStatus, f.Sort, f.RequireVariants = "available", "latest", true
 	}

@@ -5,7 +5,7 @@
 
 import type { Pagination } from "@/lib/apiClient";
 
-export type HomeCarType = "latest" | "popular" | "upcoming" | "electric";
+export type HomeCarType = "latest" | "popular" | "upcoming" | "electric" | "luxury";
 
 export interface CarSpecs {
   seatingCapacity: number | null;
