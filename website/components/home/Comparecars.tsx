@@ -205,7 +205,7 @@ function ShowcaseCarHeader({ car }: { car: ShowcaseCar }) {
   const variant = hasDetails(car) ? car.selectedVariant?.variantName : null;
   return (
     <div className="relative z-10 min-w-0 text-center">
-      <Link href={href} className="group/car relative mx-auto block h-24 w-full sm:h-28 lg:h-32">
+      <Link href={href} className="group/car relative mx-auto block aspect-[3/2] w-full max-w-[200px] sm:max-w-[228px] lg:max-w-[250px]">
         <Image
           src={car.coverImageUrl ?? FALLBACK_IMG}
           alt={`${car.brand.name} ${car.name}`}
