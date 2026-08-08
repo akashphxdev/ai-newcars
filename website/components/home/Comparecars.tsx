@@ -158,12 +158,12 @@ function CarSelector({
         aria-label={label}
         value={value}
         onChange={(event) => onChange(event.target.value)}
-        className="h-full w-full cursor-pointer appearance-none bg-transparent py-4 pl-12 pr-11 text-[13px] font-semibold text-ink outline-none"
+        className="h-full w-full cursor-pointer appearance-none bg-transparent py-3 pl-11 pr-10 text-[12.5px] font-semibold text-ink outline-none"
       >
         <option value="">{label}</option>
         {options.map((car) => (
           <option key={car.id} value={car.slug} disabled={car.slug === exclude}>
-            {car.brand.name} {car.name}
+            {car.name.startsWith(car.brand.name) ? car.name : `${car.brand.name} ${car.name}`}
           </option>
         ))}
       </select>
@@ -177,7 +177,7 @@ function PopularComparison({ pair }: { pair: RandomComparisonPair }) {
   return (
     <Link
       href={href}
-      className="group/quick grid min-h-[66px] grid-cols-[84px_minmax(0,1fr)_20px] items-center gap-3 rounded-[7px] border border-border bg-surface px-3 py-2.5 no-underline transition-[border-color,transform,box-shadow] hover:-translate-y-0.5 hover:border-faint hover:shadow-[0_10px_28px_-24px_rgba(17,24,39,0.55)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand active:translate-y-0"
+      className="group/quick grid min-h-[56px] grid-cols-[72px_minmax(0,1fr)_20px] items-center gap-2.5 rounded-[7px] border border-border bg-surface px-2.5 py-2 no-underline transition-[border-color,transform,box-shadow] hover:-translate-y-0.5 hover:border-faint hover:shadow-[0_10px_28px_-24px_rgba(17,24,39,0.55)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand active:translate-y-0"
     >
       <div className="flex -space-x-4">
         {[pair.carA, pair.carB].map((car) => (
@@ -205,7 +205,7 @@ function ShowcaseCarHeader({ car }: { car: ShowcaseCar }) {
   const variant = hasDetails(car) ? car.selectedVariant?.variantName : null;
   return (
     <div className="min-w-0 text-center">
-      <Link href={href} className="group/car relative mx-auto block h-32 w-full sm:h-40 lg:h-44">
+      <Link href={href} className="group/car relative mx-auto block h-24 w-full sm:h-28 lg:h-32">
         <Image
           src={car.coverImageUrl ?? FALLBACK_IMG}
           alt={`${car.brand.name} ${car.name}`}
@@ -215,12 +215,12 @@ function ShowcaseCarHeader({ car }: { car: ShowcaseCar }) {
         />
       </Link>
       <div className="mt-1 flex items-center justify-center gap-2">
-        <h3 className="truncate font-head text-[18px] font-extrabold text-ink sm:text-[21px]">
-          {car.brand.name} {car.name}
+        <h3 className="truncate font-head text-[16px] font-extrabold text-ink sm:text-[18px]">
+          {car.name.startsWith(car.brand.name) ? car.name : `${car.brand.name} ${car.name}`}
         </h3>
         <EditIcon className="size-3.5 shrink-0 text-muted" />
       </div>
-      <p className="mt-1 truncate text-[12.5px] text-muted sm:text-[13px]">
+      <p className="mt-0.5 truncate text-[12px] text-muted sm:text-[12.5px]">
         {variant ?? (hasDetails(car) && car.isElectric ? "Electric" : "Featured model")}
       </p>
     </div>
@@ -229,7 +229,7 @@ function ShowcaseCarHeader({ car }: { car: ShowcaseCar }) {
 
 function TrustItem({ icon, title, text }: { icon: React.ReactNode; title: string; text: string }) {
   return (
-    <div className="flex min-w-0 items-center gap-3 px-4 py-3.5 sm:px-5">
+    <div className="flex min-w-0 items-center gap-3 px-4 py-2.5 sm:px-5">
       <span className="flex size-9 shrink-0 items-center justify-center text-muted">{icon}</span>
       <div className="min-w-0">
         <p className="truncate text-[12px] font-bold text-ink">{title}</p>
@@ -276,42 +276,42 @@ export default function CompareCars({
   }
 
   return (
-    <section className="relative overflow-hidden bg-surface py-16 sm:py-20 lg:py-24">
+    <section className="relative overflow-hidden bg-surface py-9 sm:py-10 lg:py-11">
       <div aria-hidden className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_8%_12%,rgba(242,101,15,0.045),transparent_25%)]" />
-      <div className="relative mx-auto grid max-w-[1536px] gap-9 px-5 sm:px-8 lg:grid-cols-[360px_minmax(0,1fr)] lg:gap-12 xl:grid-cols-[405px_minmax(0,1fr)] xl:gap-16 xl:px-10 2xl:px-0">
+      <div className="relative mx-auto grid max-w-[1536px] gap-7 px-5 sm:px-8 lg:grid-cols-[320px_minmax(0,1fr)] lg:gap-9 xl:grid-cols-[350px_minmax(0,1fr)] xl:gap-10 xl:px-10 2xl:px-0">
         <div className="lg:py-1">
           <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-brand sm:text-[12px]">Compare lab</p>
-          <span aria-hidden className="mt-4 block h-0.5 w-10 bg-brand" />
-          <h2 className="mt-6 max-w-[390px] text-balance font-head text-[39px] font-extrabold leading-[1.02] text-ink sm:text-[48px] xl:text-[54px]">
+          <span aria-hidden className="mt-3 block h-0.5 w-9 bg-brand" />
+          <h2 className="mt-3 max-w-[340px] text-balance font-head text-[27px] font-extrabold leading-[1.06] text-ink sm:text-[32px] xl:text-[35px]">
             Compare cars without the guesswork
           </h2>
-          <p className="mt-5 max-w-[370px] text-[15px] leading-7 text-muted sm:text-[16px]">
+          <p className="mt-3 max-w-[340px] text-[13.5px] leading-6 text-muted sm:text-[14.5px]">
             Stack models side by side across price, mileage, ratings, space, and powertrain.
           </p>
 
-          <div className="mt-7 space-y-3">
+          <div className="mt-5 space-y-2.5">
             <CarSelector label="Choose first car" value={firstCar} options={options} exclude={secondCar} onChange={setFirstCar} />
             <CarSelector label="Choose second car" value={secondCar} options={options} exclude={firstCar} onChange={setSecondCar} />
             <button
               type="button"
               onClick={compareSelected}
               disabled={!canCompare}
-              className="flex min-h-14 w-full cursor-pointer items-center justify-center gap-3 rounded-[7px] bg-brand px-5 text-[13.5px] font-bold text-white shadow-[0_16px_32px_-20px_rgba(242,101,15,0.95)] transition-[background-color,transform,opacity] hover:-translate-y-0.5 hover:bg-brand-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand active:translate-y-0 disabled:cursor-not-allowed disabled:opacity-45 disabled:hover:translate-y-0"
+              className="flex min-h-12 w-full cursor-pointer items-center justify-center gap-3 rounded-[7px] bg-brand px-5 text-[13px] font-bold text-white shadow-[0_16px_32px_-20px_rgba(242,101,15,0.95)] transition-[background-color,transform,opacity] hover:-translate-y-0.5 hover:bg-brand-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand active:translate-y-0 disabled:cursor-not-allowed disabled:opacity-45 disabled:hover:translate-y-0"
             >
               Compare now <ChevronIcon className="size-4" />
             </button>
           </div>
 
-          <div className="mt-7">
+          <div className="mt-5">
             <p className="mb-3 text-[13px] font-bold text-ink">Popular comparisons</p>
             <div className="space-y-2.5">
-              {pairs.slice(1, 4).map((pair) => (
+              {pairs.slice(1, 3).map((pair) => (
                 <PopularComparison key={`${pair.carA.id}-${pair.carB.id}`} pair={pair} />
               ))}
             </div>
           </div>
 
-          <p className="mt-6 flex items-center gap-2.5 text-[12px] text-muted">
+          <p className="mt-4 flex items-center gap-2 text-[11.5px] text-muted">
             <span className="flex size-5 items-center justify-center rounded-full border border-brand text-brand">
               <CompareIcon className="size-3" />
             </span>
@@ -337,16 +337,16 @@ export default function CompareCars({
               {rows.map((row) => {
                 const insight = insightFor(row.key, carA, carB);
                 return (
-                  <div key={row.key} className="grid min-h-[72px] grid-cols-[190px_minmax(180px,1fr)_minmax(230px,1.25fr)] border-b border-border-soft last:border-b-0">
-                    <div className="flex items-center gap-3.5 bg-page px-5 py-3 text-muted">
+                  <div key={row.key} className="grid min-h-[56px] grid-cols-[160px_minmax(150px,1fr)_minmax(200px,1.25fr)] border-b border-border-soft last:border-b-0">
+                    <div className="flex items-center gap-3 bg-page px-4 py-2 text-muted">
                       <span className="flex size-8 shrink-0 items-center justify-center">{row.icon}</span>
                       <div>
                         <p className="text-[13px] font-bold text-ink">{row.title}</p>
                         <p className="mt-0.5 text-[10.5px] text-muted">{row.sub}</p>
                       </div>
                     </div>
-                    <div className="flex items-center border-l border-border-soft px-6 py-3 text-[13.5px] font-bold text-ink sm:text-[14px]">{row.a}</div>
-                    <div className="flex items-center justify-between gap-3 border-l border-border-soft px-6 py-3 text-[13.5px] font-bold text-ink sm:text-[14px]">
+                    <div className="flex items-center border-l border-border-soft px-5 py-2 text-[13px] font-bold text-ink sm:text-[13.5px]">{row.a}</div>
+                    <div className="flex items-center justify-between gap-3 border-l border-border-soft px-5 py-2 text-[13px] font-bold text-ink sm:text-[13.5px]">
                       <span>{row.b}</span>
                       <span className={`shrink-0 rounded-full px-3 py-1 text-[10px] font-bold ${insight.positive ? "bg-emerald-50 text-emerald-700" : "bg-page text-muted"}`}>
                         {insight.label}
@@ -358,7 +358,7 @@ export default function CompareCars({
             </div>
           </div>
 
-          <div className="mt-7 grid border-t border-border-soft bg-page sm:grid-cols-2 lg:grid-cols-4 lg:divide-x lg:divide-border-soft">
+          <div className="mt-5 grid border-t border-border-soft bg-page sm:grid-cols-2 lg:grid-cols-4 lg:divide-x lg:divide-border-soft">
             <TrustItem icon={<CompareIcon className="size-5" />} title="Unbiased" text="Independent view" />
             <TrustItem icon={<ShieldIcon className="size-5" />} title="Expert verified" text="Data you can trust" />
             <TrustItem icon={<PercentIcon className="size-5" />} title="Total cost view" text="Beyond sticker price" />
