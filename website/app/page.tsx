@@ -1,6 +1,7 @@
 import { Suspense } from "react";
 import HeroSection from "@/components/home/HeroSection";
 import CuratedCars from "@/components/home/CuratedCars";
+import ElectricCars from "@/components/home/Electriccars";
 import GuidedDiscovery from "@/components/home/GuidedDiscovery";
 import PopularBrands from "@/components/home/PopularBrands";
 import UpcomingLaunches from "@/components/home/UpcomingLaunches";
@@ -52,6 +53,11 @@ async function CuratedCarsData() {
   return <CuratedCars initialCars={cars} />;
 }
 
+async function ElectricCarsData() {
+  const cars = await getHomeCars("electric", 4);
+  return <ElectricCars cars={cars} />;
+}
+
 async function UpcomingLaunchesData() {
   const cars = await getHomeCars("upcoming");
   return <UpcomingLaunches cars={cars} />;
@@ -97,6 +103,9 @@ export default function HomePage() {
       </Suspense>
       <Suspense fallback={<SectionSkeleton />}>
         <CuratedCarsData />
+      </Suspense>
+      <Suspense fallback={<SectionSkeleton minHeight={760} />}>
+        <ElectricCarsData />
       </Suspense>
       <Suspense fallback={<SectionSkeleton />}>
         <UpcomingLaunchesData />
