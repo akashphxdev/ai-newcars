@@ -50,15 +50,15 @@ export default function FeaturedCarCard({ car }: { car: HomeCar }) {
           nothing to butt against, and lifts to white under the copy. */}
       <div className="relative flex flex-1 flex-col overflow-hidden bg-surface">
         <Image
-          src={`${ASSET_BASE}/uploads/design/curated-model-1-bg.png`}
+          src={`${ASSET_BASE}/uploads/design/featured-car-reveal-studio-bg.png`}
           alt=""
           fill
           sizes="(max-width: 1024px) 100vw, 830px"
-          className="pointer-events-none object-cover object-right-top"
+          className="pointer-events-none object-cover object-right"
         />
         <div
           aria-hidden
-          className="pointer-events-none absolute inset-0 z-[2] bg-[linear-gradient(90deg,rgb(255,255,255)_0%,rgba(255,255,255,0.94)_16%,rgba(255,255,255,0)_34%),linear-gradient(180deg,rgba(224,224,226,0)_0%,rgba(224,224,226,0)_30%,rgba(224,224,226,0.75)_46%,rgb(224,224,226)_58%,rgb(224,224,226)_100%)]"
+          className="pointer-events-none absolute inset-0 z-[2] bg-[linear-gradient(90deg,rgba(255,255,255,0.97)_0%,rgba(255,255,255,0.86)_22%,rgba(255,255,255,0)_46%)]"
         />
 
         <div className="relative z-10 flex max-w-[520px] flex-col p-5 sm:p-6 lg:max-w-[52%]">
@@ -84,7 +84,7 @@ export default function FeaturedCarCard({ car }: { car: HomeCar }) {
           </div>
         </div>
 
-        <div className="relative z-[3] mt-auto min-h-52 sm:min-h-60 lg:absolute lg:inset-y-0 lg:left-[20%] lg:right-[14%] lg:mt-0 lg:w-auto">
+        <div className="relative z-[3] mt-auto min-h-52 sm:min-h-60 lg:absolute lg:inset-y-0 lg:left-[28%] lg:right-[6%] lg:mt-0 lg:w-auto">
           <Link
             href={href}
             className="absolute inset-0 block focus-visible:outline-2 focus-visible:outline-offset-[-3px] focus-visible:outline-brand"
