@@ -204,14 +204,14 @@ function ShowcaseCarHeader({ car }: { car: ShowcaseCar }) {
   const href = hasDetails(car) ? routes.model(car.brand.slug, car.slug) : routes.compare();
   const variant = hasDetails(car) ? car.selectedVariant?.variantName : null;
   return (
-    <div className="min-w-0 text-center">
+    <div className="relative z-10 min-w-0 text-center">
       <Link href={href} className="group/car relative mx-auto block h-24 w-full sm:h-28 lg:h-32">
         <Image
           src={car.coverImageUrl ?? FALLBACK_IMG}
           alt={`${car.brand.name} ${car.name}`}
           fill
           sizes="(max-width: 640px) 42vw, 360px"
-          className="object-contain p-2 transition-transform duration-500 group-hover/car:scale-[1.025]"
+          className="featured-car-cover object-contain p-2 transition-transform duration-500 group-hover/car:scale-[1.025]"
         />
       </Link>
       <div className="mt-1 flex items-center justify-center gap-2">
@@ -320,9 +320,17 @@ export default function CompareCars({
         </div>
 
         <article className="self-start overflow-hidden rounded-[8px] border border-border bg-white shadow-[0_28px_80px_-64px_rgba(17,24,39,0.6)]">
-          <div className="relative grid grid-cols-[1fr_56px_1fr] items-start gap-2 px-4 pb-7 pt-6 sm:grid-cols-[1fr_90px_1fr] sm:px-8 sm:pb-9 sm:pt-8 lg:px-10">
+          <div className="relative grid grid-cols-[1fr_56px_1fr] items-start gap-2 overflow-hidden px-4 pb-7 pt-6 sm:grid-cols-[1fr_90px_1fr] sm:px-8 sm:pb-9 sm:pt-8 lg:px-10">
+            <div
+              aria-hidden
+              className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_25%_46%,rgba(224,224,226,0.95),transparent_34%),radial-gradient(circle_at_75%_46%,rgba(224,224,226,0.95),transparent_34%),radial-gradient(circle,rgba(17,24,39,0.07)_1px,transparent_1px)] [background-size:auto,auto,17px_17px]"
+            />
+            <div
+              aria-hidden
+              className="pointer-events-none absolute inset-x-0 bottom-0 h-16 bg-[linear-gradient(to_bottom,transparent,white)]"
+            />
             <ShowcaseCarHeader car={carA} />
-            <div className="flex h-40 items-center sm:h-44">
+            <div className="relative z-10 flex h-40 items-center sm:h-44">
               <span aria-hidden className="h-px flex-1 border-t border-dashed border-brand" />
               <span className="flex size-12 shrink-0 items-center justify-center rounded-full border border-brand bg-white font-head text-[16px] font-extrabold text-brand shadow-[0_10px_24px_-18px_rgba(242,101,15,0.9)] sm:size-16 sm:text-[22px]">
                 VS
