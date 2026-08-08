@@ -2,6 +2,7 @@
 import { useState, useEffect, useRef } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import Link from "next/link";
+import Image from "next/image";
 import AuthModal from "./AuthModal";
 import { isChromelessRoute, routes } from "@/lib/routes";
 import { getCurrentUser, getUserInitials, clearCurrentUser, subscribeAuthChange } from "@/features/auth/currentUser";
@@ -44,6 +45,7 @@ type NavItem = {
   // 15 body types, which buried the things people actually arrive wanting
   // (upcoming, electric, by budget) beneath a taxonomy list.
   columns?: NavColumn[];
+  promo?: { eyebrow: string; title: string; sub: string; cta: string; href: string; image: string };
   // Flat list, still right for a short menu like news categories.
   dropdown?: NavLink[];
 };
@@ -91,10 +93,18 @@ function buildNavItems(bodyTypes: BodyType[], articleCategories: ArticleCategory
         },
         {
           heading: "By Body Type",
-          links: bodyTypes.map((bt) => ({ label: bt.name, href: routes.bodyType(bt.slug) })),
+          links: bodyTypes.slice(0, 8).map((bt) => ({ label: bt.name, href: routes.bodyType(bt.slug) })),
         },
         { heading: "By Budget", links: BUDGET_BANDS },
       ],
+      promo: {
+        eyebrow: "EV guide",
+        title: "Go farther on every charge",
+        sub: "Compare estimated real-world range and charging time.",
+        cta: "Explore electric cars",
+        href: routes.electricCars(),
+        image: "/design/ev-charging.png",
+      },
     },
     { label: "Compare", href: "/compare-cars" },
     {
@@ -318,7 +328,7 @@ export default function Header({ bodyTypes, articleCategories }: { bodyTypes: Bo
                   openMenu === item.label ? "opacity-100" : "pointer-events-none invisible opacity-0"
                 } transition-opacity duration-150`}
               >
-                <div className="mx-auto flex max-w-7xl gap-10 px-6 py-6">
+                <div className="mx-auto flex max-w-7xl items-start gap-10 px-6 py-6">
                   {cols.map((col) => (
                     <div key={col.heading || item.label} className={cols.length === 1 ? "flex-1" : col.links.length > 8 && !col.links[0]?.icon ? "min-w-96" : "min-w-52"}>
                       {col.heading && (
@@ -363,6 +373,40 @@ export default function Header({ bodyTypes, articleCategories }: { bodyTypes: Bo
                       </ul>
                     </div>
                   ))}
+
+                  {item.promo && (
+                    <Link
+                      href={item.promo.href}
+                      onClick={() => setOpenMenu(null)}
+                      className="relative ml-auto hidden min-h-[196px] w-[300px] shrink-0 overflow-hidden rounded-xl bg-ink no-underline xl:block"
+                    >
+                      <Image
+                        src={item.promo.image}
+                        alt=""
+                        fill
+                        sizes="300px"
+                        className="pointer-events-none object-cover object-right"
+                      />
+                      <span
+                        aria-hidden
+                        className="pointer-events-none absolute inset-0 bg-[linear-gradient(90deg,rgba(9,11,16,0.94)_0%,rgba(9,11,16,0.72)_52%,transparent_100%)]"
+                      />
+                      <span className="relative flex h-full flex-col p-5">
+                        <span className="text-[10px] font-bold uppercase tracking-[0.12em] text-ev">
+                          {item.promo.eyebrow}
+                        </span>
+                        <span className="mt-2 font-head text-[19px] font-extrabold leading-tight text-white">
+                          {item.promo.title}
+                        </span>
+                        <span className="mt-2 text-[12px] leading-5 text-white/70">
+                          {item.promo.sub}
+                        </span>
+                        <span className="mt-auto pt-4 text-[12px] font-bold text-ev">
+                          {item.promo.cta} →
+                        </span>
+                      </span>
+                    </Link>
+                  )}
                 </div>
               </div>
             );
