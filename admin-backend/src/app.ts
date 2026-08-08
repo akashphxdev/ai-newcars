@@ -4,7 +4,6 @@ import helmet from 'helmet';
 import compression from 'compression';
 import morgan from 'morgan';
 import cookieParser from 'cookie-parser';
-import rateLimit from 'express-rate-limit';
 import { env } from '@/config/env';
 import routes from '@/routes/index';
 import { errorHandler, notFoundHandler } from '@/core/middleware/errorHandler';
@@ -43,15 +42,10 @@ export function createApp() {
   app.use(cookieParser());
   app.use(morgan(env.isProd ? 'combined' : 'dev'));
 
-  // Basic rate limiting — tune per-route later for auth/leads endpoints
-  app.use(
-    rateLimit({
-      windowMs: 15 * 60 * 1000,
-      limit: 1000,
-      standardHeaders: true,
-      legacyHeaders: false,
-    })
-  );
+  // No blanket per-IP limit. The auth routes keep their own much
+  // tighter limiters (10 per 15 min) — those stop password guessing and
+  // are unrelated to traffic volume. Throttling everything else belongs
+  // at the edge, by path, where the real client IP is visible.
 
   app.use(
     '/uploads',

@@ -7,7 +7,6 @@ import (
 	"github.com/go-chi/chi/v5"
 	chimw "github.com/go-chi/chi/v5/middleware"
 	"github.com/go-chi/cors"
-	"github.com/go-chi/httprate"
 
 	"github.com/timesauto/go-backend/internal/cache"
 	"github.com/timesauto/go-backend/internal/config"
@@ -43,7 +42,12 @@ func New(h *handler.Handler, c *cache.Cache, cfg *config.Config) http.Handler {
 	// Matches the Node app's global limiter (1000 per 15 minutes per IP).
 	// Lead and OTP endpoints need their own far tighter bucket — see the
 	// note in README.md; this one alone is too loose to stop abuse there.
-	r.Use(httprate.LimitByIP(1000, 15*time.Minute))
+	// No blanket per-IP limit here. A static build is one IP making a few
+	// hundred requests in a couple of minutes — indistinguishable from
+	// abuse to a counter, so it locked out deploys while doing nothing a
+	// determined scraper could not walk around with more addresses.
+	// Throttling belongs at the edge, where it can be scoped by path and
+	// see the real client IP.
 
 	r.NotFound(httpx.NotFoundHandler)
 	r.MethodNotAllowed(httpx.NotFoundHandler)
