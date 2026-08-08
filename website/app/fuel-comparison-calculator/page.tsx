@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { getAllBrands } from "@/features/brands/brand.api";
+import { leadModelSeed } from "@/features/calculators/calculatorSeed";
 import FuelComparisonCalculatorClient from "@/components/calculators/FuelComparisonCalculatorClient";
 import FuelComparisonCalculatorFaq from "@/components/calculators/FuelComparisonCalculatorFaq";
 import CalculatorPageShell from "@/components/calculators/CalculatorPageShell";
@@ -10,7 +11,7 @@ export const metadata: Metadata = {
 };
 
 export default async function FuelComparisonCalculatorPage() {
-  const brands = await getAllBrands();
+  const [brands, seed] = await Promise.all([getAllBrands(), leadModelSeed()]);
 
   return (
     <CalculatorPageShell
@@ -19,7 +20,7 @@ export default async function FuelComparisonCalculatorPage() {
       description="Compare real monthly running costs for every fuel type available on the same car."
       breadcrumb="Fuel Type Comparison"
     >
-      <FuelComparisonCalculatorClient brands={brands} />
+      <FuelComparisonCalculatorClient brands={brands} seed={seed} />
       <FuelComparisonCalculatorFaq />
     </CalculatorPageShell>
   );

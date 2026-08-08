@@ -9,8 +9,9 @@ import type { EmiCalculatorModel } from "@/features/calculators/emiCalculator.ty
 import { FUEL_TYPES, FUEL_TYPE_LABELS, FUEL_PRICE_UNIT_LABELS, MILEAGE_UNIT_LABELS } from "@/features/calculators/mileageCalculator.types";
 import type { FuelType, MileageCalculatorVariant } from "@/features/calculators/mileageCalculator.types";
 import type { Brand } from "@/features/brands/brand.types";
+import type { ModelSeed } from "@/features/calculators/calculatorSeed";
 import { getCarDetail } from "@/features/cars/car.api";
-import { calculateRunningCost } from "@/lib/mileageMath";
+import { calculateRunningCost, ratedFigure } from "@/lib/mileageMath";
 import { formatRupee } from "@/lib/calculatorFormat";
 import { Label, selectClass, inputClass } from "@/components/calculators/CalculatorFormControls";
 import SoftLeadCapture from "@/components/leads/SoftLeadCapture";
@@ -41,10 +42,16 @@ interface FuelOption {
   fuelPrice: string;
 }
 
-export default function FuelComparisonCalculatorClient({ brands }: { brands: Brand[] }) {
-  const [brandId, setBrandId] = useState<number | "">("");
-  const [models, setModels] = useState<EmiCalculatorModel[]>([]);
-  const [modelId, setModelId] = useState<number | "">("");
+export default function FuelComparisonCalculatorClient({
+  brands,
+  seed = null,
+}: {
+  brands: Brand[];
+  seed?: ModelSeed | null;
+}) {
+  const [brandId, setBrandId] = useState<number | "">(seed?.brandId ?? "");
+  const [models, setModels] = useState<EmiCalculatorModel[]>(seed?.models ?? []);
+  const [modelId, setModelId] = useState<number | "">(seed?.modelId ?? "");
 
   const [city, setCity] = useState<LocationCity | null>(null);
   const [cityPrices, setCityPrices] = useState<Partial<Record<FuelName, string>>>({});
@@ -54,10 +61,18 @@ export default function FuelComparisonCalculatorClient({ brands }: { brands: Bra
   const [loadingOptions, setLoadingOptions] = useState(false);
   const [monthlyDistance, setMonthlyDistance] = useState("1200");
 
+  // Changing brand must clear the model beneath it, but that same reset
+  // runs on mount and would discard the server-seeded car.
+  const hydrating = useRef(seed != null);
+
   useEffect(() => {
     if (brandId === "") {
       setModels([]);
       setModelId("");
+      return;
+    }
+    if (hydrating.current) {
+      hydrating.current = false;
       return;
     }
     getModelsByBrand(brandId).then((list) => {
@@ -100,7 +115,7 @@ export default function FuelComparisonCalculatorClient({ brands }: { brands: Bra
         const options: FuelOption[] = representatives.map(({ fuelType, variant }, i) => {
           const detail = details[i];
           const sv = detail?.selectedVariant;
-          const rated = sv ? (sv.isElectric ? sv.electric?.realWorldRange : sv.ice?.realWorldMileage) : null;
+          const rated = sv ? ratedFigure(sv) : null;
           return {
             fuelType,
             variant,

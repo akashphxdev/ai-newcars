@@ -26,7 +26,7 @@ import { getCarDetail, getCarsBrowse } from "@/features/cars/car.api";
 import type { CarDetailResult, HomeCar } from "@/features/cars/car.types";
 import ReviewsSection from "@/components/cars/reviews/ReviewsSection";
 import SoftLeadCapture from "@/components/leads/SoftLeadCapture";
-import { calculateRunningCost } from "@/lib/mileageMath";
+import { ratedFigure, calculateRunningCost } from "@/lib/mileageMath";
 import { routes } from "@/lib/routes";
 
 function formatRupee(n: number): string {
@@ -58,18 +58,6 @@ const AFFECTED_BY = [
   { Icon: ThermometerIcon, title: "AC Usage", desc: "Running the AC constantly increases fuel/energy consumption." },
   { Icon: GearIcon, title: "Maintenance", desc: "Regular servicing and correct tyre pressure help sustain mileage." },
 ];
-
-// realWorldMileage is empty for every ICE variant in the catalogue (0 of
-// 1,743), so reading it alone meant the pre-fill never fired for any car.
-// claimedFe is the manufacturer's rated figure and is present for most
-// variants — which is exactly what the "straight from the spec sheet"
-// wording next to this value already describes.
-function ratedFigure(variant: NonNullable<CarDetailResult["selectedVariant"]>): number | null {
-  if (variant.isElectric) return variant.electric?.realWorldRange ?? null;
-  // claimedFe arrives as a decimal string from the API.
-  const rated = variant.ice?.realWorldMileage ?? Number(variant.ice?.claimedFe);
-  return Number.isFinite(rated) && rated ? Number(rated) : null;
-}
 
 export default function MileageCalculatorClient({
   brands,
