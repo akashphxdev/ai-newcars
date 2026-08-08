@@ -68,7 +68,11 @@ func (h *Handler) HomeCars(w http.ResponseWriter, r *http.Request) {
 
 	// Six-card rails: interleave brands so one manufacturer cannot fill
 	// the row just because its models were added together.
-	f := store.CarCardFilters{Limit: limit, BrandSlug: qStr(r, "brand"), DiverseBrands: true}
+	f := store.CarCardFilters{
+		Limit: limit, BrandSlug: qStr(r, "brand"),
+		DiverseBrands:    true,
+		PreferMassMarket: typ != "luxury",
+	}
 	switch typ {
 	case "upcoming":
 		f.LaunchStatus, f.Sort = "upcoming", "upcoming"

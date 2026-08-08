@@ -168,17 +168,18 @@ func (q *Queries) FuelStateBySlug(ctx context.Context, slug string) (FuelStateBy
 }
 
 const fuelStates = `-- name: FuelStates :many
-SELECT s.id, s.name, count(DISTINCT f.city_id) AS city_count
+SELECT s.id, s.name, s.slug, count(DISTINCT f.city_id) AS city_count
 FROM states s
 JOIN cities c ON c.state_id = s.id
 JOIN fuel_prices f ON f.city_id = c.id
-GROUP BY s.id, s.name
+GROUP BY s.id, s.name, s.slug
 ORDER BY s.name
 `
 
 type FuelStatesRow struct {
 	ID        int32  `json:"id"`
 	Name      string `json:"name"`
+	Slug      string `json:"slug"`
 	CityCount int64  `json:"city_count"`
 }
 
@@ -192,7 +193,12 @@ func (q *Queries) FuelStates(ctx context.Context) ([]FuelStatesRow, error) {
 	items := []FuelStatesRow{}
 	for rows.Next() {
 		var i FuelStatesRow
-		if err := rows.Scan(&i.ID, &i.Name, &i.CityCount); err != nil {
+		if err := rows.Scan(
+			&i.ID,
+			&i.Name,
+			&i.Slug,
+			&i.CityCount,
+		); err != nil {
 			return nil, err
 		}
 		items = append(items, i)
@@ -300,9 +306,11 @@ func (q *Queries) LatestFuelPricesForCity(ctx context.Context, cityID int32) ([]
 const metroFuelPrices = `-- name: MetroFuelPrices :many
 SELECT DISTINCT ON (c.id, f.fuel_type)
        c.id AS city_id, c.name AS city_name, c.slug AS city_slug,
+       s.slug AS state_slug,
        f.fuel_type, f.price, f.price_change, f.applicable_on
 FROM fuel_prices f
 JOIN cities c ON c.id = f.city_id
+JOIN states s ON s.id = c.state_id
 WHERE c.slug = ANY($1::text[])
 ORDER BY c.id, f.fuel_type, f.applicable_on DESC
 `
@@ -311,6 +319,7 @@ type MetroFuelPricesRow struct {
 	CityID       int32           `json:"city_id"`
 	CityName     string          `json:"city_name"`
 	CitySlug     string          `json:"city_slug"`
+	StateSlug    string          `json:"state_slug"`
 	FuelType     int16           `json:"fuel_type"`
 	Price        decimal.Decimal `json:"price"`
 	PriceChange  decimal.Decimal `json:"price_change"`
@@ -331,6 +340,7 @@ func (q *Queries) MetroFuelPrices(ctx context.Context, dollar_1 []string) ([]Met
 			&i.CityID,
 			&i.CityName,
 			&i.CitySlug,
+			&i.StateSlug,
 			&i.FuelType,
 			&i.Price,
 			&i.PriceChange,

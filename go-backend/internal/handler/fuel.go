@@ -36,8 +36,31 @@ func (h *Handler) FuelStateDetail(w http.ResponseWriter, r *http.Request) {
 		httpx.Fail(w, r, err)
 		return
 	}
+	fuel, err := strconv.Atoi(r.URL.Query().Get("fuelType"))
+	if err != nil || fuelNames[int16(fuel)] == "" {
+		fuel = 1
+	}
+	rows, err := h.Q.LatestFuelPricesByState(r.Context(), store.LatestFuelPricesByStateParams{
+		StateID: st.ID, FuelType: int16(fuel),
+	})
+	if err != nil {
+		httpx.Fail(w, r, err)
+		return
+	}
+
+	cities := make([]map[string]any, 0, len(rows))
+	for _, c := range rows {
+		cities = append(cities, map[string]any{
+			"cityId": c.CityID, "cityName": c.CityName, "citySlug": c.CitySlug,
+			"price": decStrReq(c.Price), "change": decStrReq(c.PriceChange),
+			"updatedOn": day(c.ApplicableOn),
+		})
+	}
+
 	httpx.Success(w, map[string]any{
-		"id": st.ID, "name": st.Name, "slug": st.Slug, "cityCount": st.CityCount,
+		"state":    map[string]any{"id": st.ID, "name": st.Name, "slug": st.Slug, "cityCount": st.CityCount},
+		"fuelType": fuel,
+		"cities":   cities,
 	}, "State fetched successfully")
 }
 
@@ -188,7 +211,7 @@ func (h *Handler) FuelStates(w http.ResponseWriter, r *http.Request) {
 	}
 	out := make([]map[string]any, 0, len(rows))
 	for _, s := range rows {
-		out = append(out, map[string]any{"id": s.ID, "name": s.Name, "cityCount": s.CityCount})
+		out = append(out, map[string]any{"id": s.ID, "name": s.Name, "slug": s.Slug, "cityCount": s.CityCount})
 	}
 	httpx.Success(w, out, "States fetched successfully")
 }

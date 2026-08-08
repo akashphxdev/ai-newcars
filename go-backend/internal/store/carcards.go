@@ -82,8 +82,11 @@ type CarCardFilters struct {
 	// Round-robins brands so one manufacturer cannot fill a short list.
 	// Only for the homepage rails; listing pages want the true order.
 	DiverseBrands bool
-	Limit         int
-	Offset        int
+	// Rotates brands in display_order sequence, so the mass market leads.
+	// Off for luxury, where the niche marques are the point.
+	PreferMassMarket bool
+	Limit            int
+	Offset           int
 }
 
 // The representative variant and its default powertrain come back in the
@@ -247,17 +250,26 @@ func orderBy(sort string) string {
 
 func ListCarCards(ctx context.Context, db *pgxpool.Pool, f CarCardFilters) ([]CarCard, error) {
 	args := make([]any, 0, 8)
-	q := carCardSelect + buildWhere(f, &args) + orderBy(f.Sort)
+	sortSQL := orderBy(f.Sort)
+	if f.PreferMassMarket {
+		// Leading with display_order makes the pool arrive brand-ranked,
+		// so the interleave below rotates Maruti, Hyundai, Tata... before
+		// the imports. The chosen sort still orders each brand's own cars,
+		// so "latest" still returns that brand's latest.
+		sortSQL = " ORDER BY b.display_order DESC," + strings.TrimPrefix(sortSQL, " ORDER BY")
+	}
+	q := carCardSelect + buildWhere(f, &args) + sortSQL
 
 	// Interleaving can only shuffle the rows it is handed. Asking for
 	// exactly six when the newest six are all one brand leaves nothing to
 	// interleave, so widen the pool and trim after.
 	fetch := f.Limit
 	if f.DiverseBrands {
-		fetch = f.Limit * 6
-		if fetch > 120 {
-			fetch = 120
-		}
+		// The pool has to reach past the biggest brands' back catalogues
+		// before it sees the next brand: Maruti alone has 26 models, so a
+		// 36-row pool ordered by market rank contained two brands and the
+		// interleave could only alternate between them.
+		fetch = 250
 	}
 	args = append(args, fetch)
 	q += " LIMIT $" + strconv.Itoa(len(args))

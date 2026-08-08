@@ -94,15 +94,18 @@ INSERT INTO search_logs (search_query, results_count, page_url, device_type,
 VALUES (@search_query, @results_count, @page_url, @device_type,
         @ip_address, @session_id, @user_agent, NOW());
 
+-- City slugs are only unique within a state, so every city we hand the
+-- frontend carries its state slug — that pair is what addresses a city.
+
 -- name: ListCitiesForSelector :many
-SELECT id, name, slug, is_top_city
-FROM cities
-ORDER BY is_top_city DESC, name ASC;
+SELECT c.id, c.name, c.slug, c.is_top_city, s.slug AS state_slug
+FROM cities c JOIN states s ON s.id = c.state_id
+ORDER BY c.is_top_city DESC, c.name ASC;
 
 -- name: FindCityByName :one
-SELECT id, name, slug
-FROM cities
-WHERE LOWER(name) = LOWER(@name)
-   OR LOWER(@name) LIKE LOWER(name) || ' %'
-ORDER BY (LOWER(name) = LOWER(@name)) DESC, length(name) DESC
+SELECT c.id, c.name, c.slug, s.slug AS state_slug
+FROM cities c JOIN states s ON s.id = c.state_id
+WHERE LOWER(c.name) = LOWER(@name)
+   OR LOWER(@name) LIKE LOWER(c.name) || ' %'
+ORDER BY (LOWER(c.name) = LOWER(@name)) DESC, length(c.name) DESC
 LIMIT 1;

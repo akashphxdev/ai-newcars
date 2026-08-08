@@ -116,8 +116,12 @@ func New(h *handler.Handler, c *cache.Cache, cfg *config.Config) http.Handler {
 			r.Get("/metros", h.FuelMetros)
 			r.Get("/states", h.FuelStates)
 			r.Get("/states/{stateID}/cities", h.FuelPricesByState)
-			r.Get("/city/{citySlug}", h.FuelPricesForCity)
-			r.Get("/city/{citySlug}/history", h.FuelPriceHistory)
+			// City slugs repeat across states (two Aurangabads, two
+			// Hamirpurs), so every city path carries its state.
+			r.Get("/{stateSlug}", h.FuelStateDetail)
+			r.Get("/{stateSlug}/{citySlug}", h.FuelPricesForCity)
+			r.Get("/{stateSlug}/{citySlug}/history", h.FuelPriceHistory)
+			r.Get("/resolve/{citySlug}", h.FuelCityRedirect)
 		})
 
 		r.Route("/location", func(r chi.Router) {

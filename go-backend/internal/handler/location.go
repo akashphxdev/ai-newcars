@@ -25,7 +25,7 @@ func (h *Handler) LocationCities(w http.ResponseWriter, r *http.Request) {
 	out := make([]map[string]any, 0, len(rows))
 	for _, c := range rows {
 		out = append(out, map[string]any{
-			"id": c.ID, "name": c.Name, "slug": c.Slug, "isTopCity": c.IsTopCity,
+			"id": c.ID, "name": c.Name, "slug": c.Slug, "isTopCity": c.IsTopCity, "stateSlug": c.StateSlug,
 		})
 	}
 	httpx.Success(w, out, "Cities fetched successfully")
@@ -54,7 +54,7 @@ func (h *Handler) DetectCity(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		if err == nil {
-			city = map[string]any{"id": row.ID, "name": row.Name, "slug": row.Slug}
+			city = map[string]any{"id": row.ID, "name": row.Name, "slug": row.Slug, "stateSlug": row.StateSlug}
 		}
 	}
 
@@ -101,7 +101,7 @@ func (h *Handler) ReverseGeocode(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		if dbErr == nil {
-			city = map[string]any{"id": row.ID, "name": row.Name, "slug": row.Slug}
+			city = map[string]any{"id": row.ID, "name": row.Name, "slug": row.Slug, "stateSlug": row.StateSlug}
 		}
 	}
 

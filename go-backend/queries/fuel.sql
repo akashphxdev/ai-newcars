@@ -26,11 +26,11 @@ ORDER BY c.id, f.applicable_on DESC;
 
 -- name: FuelStates :many
 -- Only states we actually hold prices for, so the list never offers a dead end.
-SELECT s.id, s.name, count(DISTINCT f.city_id) AS city_count
+SELECT s.id, s.name, s.slug, count(DISTINCT f.city_id) AS city_count
 FROM states s
 JOIN cities c ON c.state_id = s.id
 JOIN fuel_prices f ON f.city_id = c.id
-GROUP BY s.id, s.name
+GROUP BY s.id, s.name, s.slug
 ORDER BY s.name;
 
 -- name: FuelCityBySlug :one
@@ -42,9 +42,11 @@ WHERE c.slug = $1 LIMIT 1;
 -- The four metros every fuel page leads with.
 SELECT DISTINCT ON (c.id, f.fuel_type)
        c.id AS city_id, c.name AS city_name, c.slug AS city_slug,
+       s.slug AS state_slug,
        f.fuel_type, f.price, f.price_change, f.applicable_on
 FROM fuel_prices f
 JOIN cities c ON c.id = f.city_id
+JOIN states s ON s.id = c.state_id
 WHERE c.slug = ANY($1::text[])
 ORDER BY c.id, f.fuel_type, f.applicable_on DESC;
 
