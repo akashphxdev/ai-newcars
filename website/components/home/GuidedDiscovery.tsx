@@ -51,26 +51,26 @@ function Card({
 }) {
   return (
     <div
-      className={`relative min-h-[228px] rounded-[8px] border p-5 transition-[border-color,background-color,box-shadow,transform] duration-300 sm:min-h-[248px] sm:p-6 ${
+      className={`relative rounded-[8px] border p-4 transition-[border-color,background-color,box-shadow,transform] duration-300 sm:p-[18px] ${
         active
           ? "border-brand bg-brand-soft/30 shadow-[0_16px_42px_-30px_rgba(242,101,15,0.75)]"
           : "border-border bg-surface/85 hover:-translate-y-0.5 hover:border-faint"
       }`}
     >
-      <div className="mb-6 flex items-start gap-4">
+      <div className="mb-4 flex items-start gap-3">
         <span
-          className={`flex size-14 shrink-0 items-center justify-center rounded-[8px] transition-colors ${
+          className={`flex size-11 shrink-0 items-center justify-center rounded-[7px] transition-colors ${
             active ? "bg-brand-soft text-brand" : "bg-page text-muted"
           }`}
         >
           {icon}
         </span>
         <div className="min-w-0 flex-1 pt-0.5">
-          <p className="font-head text-[17px] font-bold leading-tight text-ink sm:text-[18px]">{title}</p>
-          <p className="mt-1 text-[13px] leading-snug text-muted sm:text-[14px]">{hint}</p>
+          <p className="font-head text-[15px] font-bold leading-tight text-ink sm:text-[15.5px]">{title}</p>
+          <p className="mt-0.5 text-[12px] leading-snug text-muted sm:text-[12.5px]">{hint}</p>
         </div>
         <span
-          className={`flex size-7 shrink-0 items-center justify-center rounded-full transition-colors ${
+          className={`flex size-6 shrink-0 items-center justify-center rounded-full transition-colors ${
             active ? "bg-brand text-white" : "border border-border text-transparent"
           }`}
         >
@@ -88,7 +88,7 @@ function Chip({ label, active, onClick }: { label: string; active: boolean; onCl
       type="button"
       onClick={onClick}
       aria-pressed={active}
-      className={`min-h-11 cursor-pointer rounded-[7px] border px-4 py-2.5 text-[13px] font-semibold transition-[color,border-color,background-color,transform] duration-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand active:scale-[0.98] sm:text-[14px] ${
+      className={`min-h-9 cursor-pointer rounded-[6px] border px-3 py-1.5 text-[12.5px] font-semibold transition-[color,border-color,background-color,transform] duration-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand active:scale-[0.98] ${
         active
           ? "border-brand bg-surface text-brand"
           : "border-border bg-surface text-ink hover:border-faint hover:bg-page/70"
@@ -327,11 +327,11 @@ export default function GuidedDiscovery({
                     }}
                     aria-pressed={brand === b.slug}
                     title={b.name}
-                    className={`flex min-h-[72px] cursor-pointer flex-col items-center justify-center gap-1.5 rounded-[7px] border bg-surface px-1.5 py-2 transition-[border-color,background-color,transform] duration-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand active:scale-[0.98] ${
+                    className={`flex min-h-[58px] cursor-pointer flex-col items-center justify-center gap-1 rounded-[6px] border bg-surface px-1.5 py-1.5 transition-[border-color,background-color,transform] duration-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand active:scale-[0.98] ${
                       brand === b.slug ? "border-brand bg-brand-soft/20" : "border-border hover:border-faint hover:bg-page/70"
                     }`}
                   >
-                    <span className="relative h-7 w-full">
+                    <span className="relative h-5 w-full">
                       {b.logoUrl ? (
                         <Image src={b.logoUrl} alt="" fill sizes="48px" className="object-contain" />
                       ) : (
@@ -349,7 +349,7 @@ export default function GuidedDiscovery({
 
           <div className="mt-6 grid gap-5 border-t border-border pt-5 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center">
             <div className="flex min-w-0 items-center gap-4">
-              <span className="flex size-14 shrink-0 items-center justify-center rounded-full bg-brand-soft text-brand">
+              <span className="flex size-11 shrink-0 items-center justify-center rounded-full bg-brand-soft text-brand">
                 <SparkleIcon className="size-6" />
               </span>
               <div className="min-w-0">
@@ -414,24 +414,24 @@ function CarAndTrace() {
       <svg
         viewBox="0 0 500 320"
         fill="none"
-        className="absolute inset-0 h-full w-[calc(100%+96px)] overflow-visible"
+        className="absolute inset-0 h-full w-full"
         preserveAspectRatio="none"
       >
         {/* Four runs, alternating solid grey and dashed brand, each
             leaving the car at a different height and arriving at the
             panel edge. One line reads as a stray rule; several read as a
             harness, which is what the reference is doing. */}
-        <path d="M40 84h150a22 22 0 0 1 22 22v34a22 22 0 0 0 22 22h266" stroke="var(--color-border)" strokeWidth="1.3" />
+        <path d="M40 84h150a22 22 0 0 1 22 22v34a22 22 0 0 0 22 22h146" stroke="var(--color-border)" strokeWidth="1.3" />
         <path
-          d="M64 138h96a22 22 0 0 1 22 22v18a22 22 0 0 0 22 22h296"
+          d="M64 138h96a22 22 0 0 1 22 22v18a22 22 0 0 0 22 22h176"
           stroke="var(--color-brand)"
           strokeWidth="1.3"
           strokeDasharray="5 6"
           opacity=".55"
         />
-        <path d="M58 236h118a22 22 0 0 0 22-22v-20a22 22 0 0 1 22-22h280" stroke="var(--color-border)" strokeWidth="1.3" />
+        <path d="M58 236h118a22 22 0 0 0 22-22v-20a22 22 0 0 1 22-22h160" stroke="var(--color-border)" strokeWidth="1.3" />
         <path
-          d="M84 286h84a22 22 0 0 0 22-22v-46a22 22 0 0 1 22-22h288"
+          d="M84 286h84a22 22 0 0 0 22-22v-46a22 22 0 0 1 22-22h168"
           stroke="var(--color-brand)"
           strokeWidth="1.3"
           strokeDasharray="5 6"
