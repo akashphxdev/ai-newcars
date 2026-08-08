@@ -5,6 +5,7 @@ import { isChromelessRoute, routes } from "@/lib/routes";
 import type { PublicSiteSetting } from "@/features/siteSettings/siteSetting.types";
 import type { BodyType } from "@/features/bodyTypes/bodyType.types";
 import type { ArticleCategory } from "@/features/articles/article.types";
+import FooterCta from "@/components/common/FooterCta";
 
 const ORANGE = "var(--color-brand)";
 const DARK = "var(--color-ink)";
@@ -219,7 +220,9 @@ export default function Footer({
   const footerCols = buildFooterCols(bodyTypes, articleCategories);
 
   return (
-    <footer className="font-body" style={{ background: SURFACE, borderTop: `1px solid ${BORDER}` }}>
+    <footer className="font-body" style={{ background: SURFACE }}>
+      <FooterCta />
+
       {/* Trust strip */}
       <div className="border-b" style={{ borderColor: BORDER, background: PAGE_BG }}>
         <div className="mx-auto grid max-w-7xl grid-cols-2 gap-6 px-6 py-6 sm:grid-cols-4">
