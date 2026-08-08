@@ -58,7 +58,7 @@ export default function FeaturedCarCard({ car }: { car: HomeCar }) {
         />
         <div
           aria-hidden
-          className="pointer-events-none absolute inset-0 z-[2] bg-[linear-gradient(90deg,rgba(255,255,255,0.97)_0%,rgba(255,255,255,0.86)_22%,rgba(255,255,255,0)_46%)]"
+          className="pointer-events-none absolute inset-0 z-[2] bg-[linear-gradient(90deg,rgba(255,255,255,0.97)_0%,rgba(255,255,255,0.82)_14%,rgba(255,255,255,0)_26%)]"
         />
 
         <div className="relative z-10 flex max-w-[520px] flex-col p-5 sm:p-6 lg:max-w-[52%]">
