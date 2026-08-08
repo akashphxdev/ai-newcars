@@ -241,7 +241,7 @@ export default function Reviews({ testimonials }: { testimonials: Testimonial[] 
               </div>
               <div className="flex shrink-0 items-center gap-2">
                 <ScrollArrows canScrollLeft={canScrollLeft} canScrollRight={canScrollRight} onLeft={() => scrollBy("left")} onRight={() => scrollBy("right")} />
-                <button type="button" onClick={() => setShowForm(true)} className="inline-flex min-h-11 cursor-pointer items-center justify-center gap-2 rounded-[7px] bg-brand px-5 text-[12px] font-bold text-white transition-[background-color,transform] hover:-translate-y-0.5 hover:bg-brand-hover active:translate-y-0"><EditIcon className="size-4" />Write a review</button>
+                <button type="button" aria-label="Write an owner review" onClick={() => setShowForm(true)} className="inline-flex min-h-11 cursor-pointer items-center justify-center gap-2 rounded-[7px] bg-brand px-5 text-[12px] font-bold text-white transition-[background-color,transform] hover:-translate-y-0.5 hover:bg-brand-hover active:translate-y-0"><EditIcon className="size-4" />Write a review</button>
               </div>
             </div>
 
@@ -254,7 +254,7 @@ export default function Reviews({ testimonials }: { testimonials: Testimonial[] 
                 <span className="flex size-12 items-center justify-center rounded-full bg-brand-soft text-brand"><EditIcon className="size-5" /></span>
                 <h3 className="mt-5 font-head text-xl font-extrabold text-ink">No reviews in this rating yet</h3>
                 <p className="mt-2 max-w-sm text-sm leading-6 text-muted">Choose another rating or share the first approved owner review.</p>
-                <button type="button" onClick={() => setShowForm(true)} className="mt-5 min-h-11 rounded-[7px] bg-brand px-5 text-[12px] font-bold text-white">Write a review</button>
+                <button type="button" aria-label="Write the first owner review" onClick={() => setShowForm(true)} className="mt-5 min-h-11 rounded-[7px] bg-brand px-5 text-[12px] font-bold text-white">Write a review</button>
               </div>
             )}
           </div>

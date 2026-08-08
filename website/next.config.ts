@@ -9,6 +9,11 @@ const assetBase = process.env.NEXT_PUBLIC_ASSET_BASE_URL;
 const assetPattern = assetBase ? new URL(assetBase) : null;
 
 const nextConfig: NextConfig = {
+  // Local visual-review servers can run beside a standalone production
+  // preview without both processes mutating the same generated files.
+  // Production and ordinary builds keep Next's standard `.next` output.
+  distDir: process.env.NODE_ENV === "development" ? ".next-dev" : ".next",
+
   // Emits .next/standalone with only the modules actually reached at
   // runtime, so a deploy ships that instead of the whole node_modules
   // tree. Matters here because the host is memory- and disk-constrained.

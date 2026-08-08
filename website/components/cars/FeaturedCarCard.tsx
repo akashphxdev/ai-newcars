@@ -43,10 +43,11 @@ export default function FeaturedCarCard({ car }: { car: HomeCar }) {
 
   return (
     <article className="group flex min-h-[430px] h-full flex-col overflow-hidden rounded-[8px] border border-border bg-surface shadow-[0_24px_70px_-58px_rgba(92,67,45,0.6)]">
-      {/* Backdrop, car and copy are stacked across the whole card rather
-          than split into a text half and an image half. The cover is 3:2;
-          giving it the full width instead of 68% means object-cover barely
-          has to crop it, and the car gets room to sit against the wall. */}
+      {/* The covers carry a baked-in #E0E0E2 studio plate that cannot be
+          keyed out reliably — on a light car the flood fill eats the body.
+          So the card is tinted *to* that colour instead: a shadow settles
+          the backdrop onto #E0E0E2 where the car sits, leaving its plate
+          nothing to butt against, and lifts to white under the copy. */}
       <div className="relative flex flex-1 flex-col overflow-hidden bg-surface">
         <Image
           src={`${ASSET_BASE}/uploads/design/curated-model-1-bg.png`}
@@ -57,10 +58,10 @@ export default function FeaturedCarCard({ car }: { car: HomeCar }) {
         />
         <div
           aria-hidden
-          className="pointer-events-none absolute inset-0 z-[2] bg-[linear-gradient(90deg,rgba(255,255,255,0.96)_0%,rgba(255,255,255,0.86)_34%,rgba(255,255,255,0)_60%)]"
+          className="pointer-events-none absolute inset-0 z-[2] bg-[linear-gradient(90deg,rgb(255,255,255)_0%,rgb(255,255,255)_14%,rgb(224,224,226)_32%,rgb(224,224,226)_100%)]"
         />
 
-        <div className="pointer-events-none relative z-10 flex max-w-[520px] flex-col p-5 sm:p-6 lg:max-w-[52%]">
+        <div className="relative z-10 flex max-w-[520px] flex-col p-5 sm:p-6 lg:max-w-[52%]">
           <span className="w-fit rounded-[5px] bg-brand-soft px-3 py-1.5 text-[10px] font-bold uppercase tracking-[0.1em] text-brand">
             {isUpcoming ? "Featured launch" : "Featured pick"}
           </span>
@@ -69,7 +70,7 @@ export default function FeaturedCarCard({ car }: { car: HomeCar }) {
             {car.brand.name}
           </p>
           <h3 className="mt-1 font-head text-[24px] font-extrabold leading-tight tracking-[-0.025em] text-ink sm:text-[27px]">
-            <Link href={href} className="pointer-events-auto text-ink no-underline transition-colors hover:text-brand focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand">
+            <Link href={href} className="text-ink no-underline transition-colors hover:text-brand focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand">
               {car.name}
             </Link>
           </h3>
@@ -83,22 +84,21 @@ export default function FeaturedCarCard({ car }: { car: HomeCar }) {
           </div>
         </div>
 
-        <Link
-          href={href}
-          className="absolute inset-0 z-[1] block focus-visible:outline-2 focus-visible:outline-offset-[-3px] focus-visible:outline-brand"
-          aria-label={`View ${car.brand.name} ${car.name}`}
-        >
-          <Image
-            src={car.coverImageUrl ?? FALLBACK_IMG}
-            alt={`${car.brand.name} ${car.name}`}
-            fill
-            sizes="(max-width: 1024px) 100vw, 830px"
-            className="object-cover object-right-bottom mix-blend-multiply transition-transform duration-500 group-hover:scale-[1.025]"
-          />
-        </Link>
-        {/* Reserves height for the now-absolute image so the card body
-            cannot collapse to the height of the copy alone. */}
-        <div aria-hidden className="pointer-events-none mt-auto min-h-52 sm:min-h-60 lg:min-h-0" />
+        <div className="relative z-[3] mt-auto min-h-52 sm:min-h-60 lg:absolute lg:inset-y-0 lg:right-0 lg:mt-0 lg:w-[68%]">
+          <Link
+            href={href}
+            className="absolute inset-0 block focus-visible:outline-2 focus-visible:outline-offset-[-3px] focus-visible:outline-brand"
+            aria-label={`View ${car.brand.name} ${car.name}`}
+          >
+            <Image
+              src={car.coverImageUrl ?? FALLBACK_IMG}
+              alt={`${car.brand.name} ${car.name}`}
+              fill
+              sizes="(max-width: 1024px) 100vw, 560px"
+              className="object-contain object-bottom p-4 transition-transform duration-500 group-hover:scale-[1.025] lg:p-5"
+            />
+          </Link>
+        </div>
       </div>
 
       <div className="grid gap-4 border-t border-border-soft px-5 py-4 sm:px-6 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center">
