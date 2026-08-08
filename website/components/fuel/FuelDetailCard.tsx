@@ -8,6 +8,10 @@ const IMAGE_BY_FUEL: Record<FuelName, string> = {
   cng: "/design/fuel-prices/cng-detail.png",
 };
 
+// Typical national split, not this city's. We hold no tax data, and the
+// share that actually varies between cities is state VAT — which is the
+// reason the prices above differ in the first place. Labelled as a
+// national illustration so the card cannot be read as a local breakdown.
 const COMPOSITION: Record<FuelName, { label: string; value: number; color: string }[]> = {
   petrol: [
     { label: "Base", value: 56, color: "bg-brand" },
@@ -71,7 +75,7 @@ export default function FuelDetailCard({
         </dl>
 
         <div className="mt-4">
-          <p className="text-[9px] font-semibold text-muted">Indicative price composition</p>
+          <p className="text-[9px] font-semibold text-muted">Typical price composition (India average)</p>
           <div className="mt-2 flex h-2 overflow-hidden rounded-[2px] bg-page">
             {COMPOSITION[fuel].map((item) => (
               <span key={item.label} className={item.color} style={{ width: `${item.value}%` }} />

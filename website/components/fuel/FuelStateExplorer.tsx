@@ -41,6 +41,9 @@ export default function FuelStateExplorer({
   const [fuelFilter, setFuelFilter] = useState<"all" | FuelName>("all");
   const [sortOrder, setSortOrder] = useState<"name" | "petrol-low">("name");
   const [alertsOn, setAlertsOn] = useState(false);
+  // The table showed 12 of however many the state holds, with no way to
+  // reach the rest — Uttar Pradesh has 76, so 64 were unreachable.
+  const [showAllCities, setShowAllCities] = useState(false);
 
   const visibleStates = useMemo(() => {
     const query = stateQuery.trim().toLowerCase();
@@ -172,7 +175,7 @@ export default function FuelStateExplorer({
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border-soft">
-                  {visibleCities.slice(0, 12).map((city, index) => {
+                  {(showAllCities ? visibleCities : visibleCities.slice(0, 12)).map((city, index) => {
                     const update = city.prices.petrol?.updatedOn ?? city.prices.diesel?.updatedOn ?? city.prices.cng?.updatedOn;
                     return (
                       <tr key={city.cityId} className={index === 0 ? "bg-[#fffaf7]" : "hover:bg-page/60"}>
@@ -200,6 +203,17 @@ export default function FuelStateExplorer({
                 </tbody>
               </table>
             </div>
+              {visibleCities.length > 12 && (
+                <button
+                  type="button"
+                  onClick={() => setShowAllCities((v) => !v)}
+                  className="mt-3 w-full cursor-pointer rounded-[6px] border border-border py-2.5 text-[12px] font-bold text-ink transition-colors hover:border-faint hover:bg-page"
+                >
+                  {showAllCities
+                    ? "Show fewer cities"
+                    : `Show all ${visibleCities.length} cities`}
+                </button>
+              )}
             {visibleCities.length === 0 && (
               <div className="flex min-h-48 items-center justify-center px-6 text-center text-[13px] text-muted">No cities match this search.</div>
             )}
