@@ -1,22 +1,16 @@
 // components/home/CuratedCars.tsx
 //
-// One tabbed section in place of the three near-identical rails that ran
-// down the homepage (LatestCars, Popularcars, Electriccars). They asked
-// the same question of the same endpoint with a different `type`, so a
-// visitor scrolled past three headings to see three shuffles of the same
-// catalogue. Tabs put the choice in their hands and buy back the height.
-//
-// The first tab's cars are rendered on the server so the section is
-// filled on arrival; switching tabs fetches client-side and caches, so
-// going back to a tab already seen is instant.
+// One tabbed, filterable showcase in place of the three near-identical
+// homepage rails. The first tab is rendered on the server; later tabs are
+// fetched once and cached in memory so returning to them is instant.
 
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
-import SectionHeader from "@/components/common/SectionHeader";
 import CarCard from "@/components/cars/CarCard";
 import FeaturedCarCard from "@/components/cars/FeaturedCarCard";
+import { ChevronDownIcon, ChevronIcon, FuelIcon, GaugeIcon } from "@/components/common/icons";
 import { getHomeCars } from "@/features/cars/car.api";
 import type { HomeCar } from "@/features/cars/car.types";
 import { routes } from "@/lib/routes";
@@ -29,6 +23,50 @@ const TABS = [
 ] as const;
 
 type TabKey = (typeof TABS)[number]["key"];
+type FuelFilter = "all" | "electric" | "combustion";
+type SortKey = "latest" | "price-asc" | "price-desc" | "rating";
+
+function FilterSelect({
+  label,
+  value,
+  onChange,
+  icon,
+  children,
+}: {
+  label: string;
+  value: string;
+  onChange: (value: string) => void;
+  icon: React.ReactNode;
+  children: React.ReactNode;
+}) {
+  return (
+    <label className="relative flex min-h-12 min-w-[154px] items-center rounded-[7px] border border-border bg-surface transition-colors hover:border-faint focus-within:border-brand focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-brand/20">
+      <span className="pointer-events-none absolute left-3.5 text-ink">{icon}</span>
+      <select
+        aria-label={label}
+        value={value}
+        onChange={(event) => onChange(event.target.value)}
+        className="h-full w-full cursor-pointer appearance-none bg-transparent py-3 pl-10 pr-9 text-[12.5px] font-semibold text-ink outline-none"
+      >
+        {children}
+      </select>
+      <ChevronDownIcon className="pointer-events-none absolute right-3 size-3.5 text-muted" />
+    </label>
+  );
+}
+
+function CuratedSkeleton() {
+  return (
+    <div className="grid min-h-[550px] animate-pulse gap-4 lg:grid-cols-[1.08fr_0.92fr]">
+      <div className="rounded-[8px] bg-border/70" />
+      <div className="grid gap-4 sm:grid-cols-2">
+        <div className="rounded-[8px] bg-border/70" />
+        <div className="rounded-[8px] bg-border/70" />
+        <div className="min-h-56 rounded-[8px] bg-border/70 sm:col-span-2" />
+      </div>
+    </div>
+  );
+}
 
 export default function CuratedCars({
   initialCars,
@@ -41,9 +79,14 @@ export default function CuratedCars({
   const [loading, setLoading] = useState(false);
   const cache = useRef<Partial<Record<TabKey, HomeCar[]>>>({ [initialTab]: initialCars });
   const [cars, setCars] = useState<HomeCar[]>(initialCars);
+  const [bodyFilter, setBodyFilter] = useState("all");
+  const [fuelFilter, setFuelFilter] = useState<FuelFilter>("all");
+  const [sort, setSort] = useState<SortKey>("latest");
 
   const select = useCallback((next: TabKey) => {
     setTab(next);
+    setBodyFilter("all");
+    setFuelFilter("all");
     const cached = cache.current[next];
     if (cached) {
       setCars(cached);
@@ -72,53 +115,139 @@ export default function CuratedCars({
     };
   }, [loading, tab]);
 
-  const [featured, ...rest] = cars;
+  const bodyTypes = useMemo(
+    () => Array.from(new Set(cars.flatMap((car) => (car.bodyType ? [car.bodyType.name] : [])))),
+    [cars],
+  );
+
+  const visibleCars = useMemo(() => {
+    const filtered = cars.filter((car) => {
+      if (bodyFilter !== "all" && car.bodyType?.name !== bodyFilter) return false;
+      if (fuelFilter === "electric" && !car.isElectric) return false;
+      if (fuelFilter === "combustion" && car.isElectric) return false;
+      return true;
+    });
+
+    if (sort === "latest") return filtered;
+    return [...filtered].sort((a, b) => {
+      if (sort === "rating") return Number(b.ratingAvg ?? 0) - Number(a.ratingAvg ?? 0);
+      const aPrice = Number(a.priceMin ?? Number.MAX_SAFE_INTEGER);
+      const bPrice = Number(b.priceMin ?? Number.MAX_SAFE_INTEGER);
+      return sort === "price-asc" ? aPrice - bPrice : bPrice - aPrice;
+    });
+  }, [bodyFilter, cars, fuelFilter, sort]);
+
+  const [featured, ...rest] = visibleCars;
 
   return (
-    <section className="bg-page py-12 sm:py-16">
-      <div className="mx-auto max-w-7xl px-4">
-        <SectionHeader
-          eyebrow="Curated for you"
-          title="Curated cars for every driver"
-          subtitle="New launches, popular picks, and expert-shortlisted models in one place."
-          after={
-            <div className="flex flex-wrap gap-1" role="tablist">
-              {TABS.map((t) => (
+    <section className="relative overflow-hidden bg-page py-16 sm:py-20 lg:py-24">
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_12%_18%,rgba(242,101,15,0.04),transparent_28%)]"
+      />
+
+      <div className="relative mx-auto max-w-[1536px] px-5 sm:px-8 xl:px-10 2xl:px-0">
+        <div className="grid gap-8 lg:grid-cols-[390px_minmax(0,1fr)] lg:items-end xl:grid-cols-[430px_minmax(0,1fr)]">
+          <div>
+            <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-brand sm:text-[12px]">
+              Curated for you
+            </p>
+            <h2 className="mt-4 max-w-[430px] text-balance font-head text-[38px] font-extrabold leading-[1.03] tracking-[-0.035em] text-ink sm:text-[48px] xl:text-[54px]">
+              Curated cars for every driver
+            </h2>
+            <p className="mt-5 max-w-[390px] text-pretty text-[15px] leading-7 text-muted sm:text-[16px]">
+              New launches, popular picks, and expert-shortlisted models in one place.
+            </p>
+          </div>
+
+          <div className="flex flex-col gap-5 xl:flex-row xl:items-end xl:justify-between">
+            <div className="flex min-w-0 overflow-x-auto border-b border-border scrollbar-none" role="tablist" aria-label="Car collections">
+              {TABS.map((item) => (
                 <button
-                  key={t.key}
+                  key={item.key}
+                  type="button"
                   role="tab"
-                  aria-selected={tab === t.key}
-                  onClick={() => select(t.key)}
-                  className={`cursor-pointer border-b-2 px-3.5 py-2 text-[13px] font-bold transition-colors ${
-                    tab === t.key
-                      ? "border-brand text-brand"
-                      : "border-transparent text-muted hover:text-ink"
+                  aria-selected={tab === item.key}
+                  onClick={() => select(item.key)}
+                  className={`relative min-h-12 shrink-0 cursor-pointer px-5 py-3 text-[13.5px] font-bold transition-colors focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-brand ${
+                    tab === item.key ? "text-brand" : "text-muted hover:text-ink"
                   }`}
                 >
-                  {t.label}
+                  {item.label}
+                  <span
+                    className={`absolute inset-x-0 -bottom-px h-0.5 bg-brand transition-transform duration-300 ${
+                      tab === item.key ? "scale-x-100" : "scale-x-0"
+                    }`}
+                  />
                 </button>
               ))}
             </div>
-          }
-        />
 
-        {/* Height is held steady while a tab loads so the page below does
-            not jump as the cards swap. */}
-        <div className={`mt-6 transition-opacity ${loading ? "opacity-50" : "opacity-100"}`}>
-          {cars.length === 0 && !loading ? (
-            <p className="rounded-xl border border-border bg-surface p-8 text-center text-sm text-muted">
-              Nothing to show here yet.
-            </p>
+            <div className="flex flex-wrap gap-2.5">
+              <FilterSelect
+                label="Filter by body type"
+                value={bodyFilter}
+                onChange={setBodyFilter}
+                icon={<GaugeIcon className="size-4" />}
+              >
+                <option value="all">All body types</option>
+                {bodyTypes.map((bodyType) => (
+                  <option key={bodyType} value={bodyType}>{bodyType}</option>
+                ))}
+              </FilterSelect>
+              <FilterSelect
+                label="Filter by fuel type"
+                value={fuelFilter}
+                onChange={(value) => setFuelFilter(value as FuelFilter)}
+                icon={<FuelIcon className="size-4" />}
+              >
+                <option value="all">All fuel types</option>
+                <option value="electric">Electric</option>
+                <option value="combustion">Combustion</option>
+              </FilterSelect>
+              <FilterSelect
+                label="Sort cars"
+                value={sort}
+                onChange={(value) => setSort(value as SortKey)}
+                icon={<span aria-hidden className="text-[17px] leading-none">↕</span>}
+              >
+                <option value="latest">Sort: Latest</option>
+                <option value="price-asc">Price: Low to high</option>
+                <option value="price-desc">Price: High to low</option>
+                <option value="rating">Top rated</option>
+              </FilterSelect>
+            </div>
+          </div>
+        </div>
+
+        <div className="mt-8" aria-busy={loading}>
+          {loading ? (
+            <CuratedSkeleton />
+          ) : visibleCars.length === 0 ? (
+            <div className="flex min-h-72 flex-col items-center justify-center rounded-[8px] border border-dashed border-faint bg-surface px-6 text-center">
+              <p className="font-head text-xl font-bold text-ink">No cars match these filters</p>
+              <p className="mt-2 text-sm text-muted">Try another body or fuel type.</p>
+              <button
+                type="button"
+                onClick={() => {
+                  setBodyFilter("all");
+                  setFuelFilter("all");
+                }}
+                className="mt-5 cursor-pointer rounded-[7px] border border-brand px-4 py-2.5 text-[13px] font-bold text-brand transition-colors hover:bg-brand-soft focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
+              >
+                Clear filters
+              </button>
+            </div>
           ) : (
-            <div className="grid items-stretch gap-4 lg:grid-cols-2">
+            <div className="grid items-stretch gap-4 lg:grid-cols-[1.08fr_0.92fr]">
               {featured && <FeaturedCarCard car={featured} />}
               <div className="grid content-start gap-4 sm:grid-cols-2">
                 {rest.slice(0, 2).map((car) => (
-                  <CarCard key={car.id} car={car} />
+                  <CarCard key={car.id} car={car} variant="curated" />
                 ))}
                 {rest[2] && (
                   <div className="sm:col-span-2">
-                    <CarCard car={rest[2]} variant="wide" />
+                    <CarCard car={rest[2]} variant="curated-wide" />
                   </div>
                 )}
               </div>
@@ -126,12 +255,12 @@ export default function CuratedCars({
           )}
         </div>
 
-        <div className="mt-6 flex justify-end">
+        <div className="mt-7 flex justify-end">
           <Link
             href={routes.newCars()}
-            className="inline-flex items-center gap-2 rounded-md bg-brand px-5 py-2.5 text-[13px] font-bold text-white no-underline transition-colors hover:bg-brand-hover"
+            className="inline-flex min-h-12 items-center gap-3 rounded-[7px] bg-brand px-6 py-3 text-[13.5px] font-bold text-white no-underline shadow-[0_14px_30px_-18px_rgba(242,101,15,0.9)] transition-[background-color,transform,box-shadow] duration-200 hover:-translate-y-0.5 hover:bg-brand-hover hover:shadow-[0_18px_36px_-20px_rgba(242,101,15,0.95)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand active:translate-y-0 active:scale-[0.98]"
           >
-            Explore all cars <span aria-hidden>→</span>
+            Explore all cars <ChevronIcon className="size-4" />
           </Link>
         </div>
       </div>

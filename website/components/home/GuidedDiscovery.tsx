@@ -17,7 +17,7 @@ import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import {
-  CheckIcon, WalletIcon, SparkleIcon, FuelIcon, ShieldIcon, CloseIcon,
+  CheckIcon, WalletIcon, SparkleIcon, FuelIcon, ShieldIcon, CloseIcon, ChevronIcon,
 } from "@/components/common/icons";
 import { getCarsBrowse } from "@/features/cars/car.api";
 import type { CarBrowseFilterOptions } from "@/features/cars/car.types";
@@ -51,28 +51,30 @@ function Card({
 }) {
   return (
     <div
-      className={`rounded-xl border p-3.5 transition-colors ${
-        active ? "border-brand bg-brand-soft/40" : "border-border bg-surface"
+      className={`relative min-h-[228px] rounded-[8px] border p-5 transition-[border-color,background-color,box-shadow,transform] duration-300 sm:min-h-[248px] sm:p-6 ${
+        active
+          ? "border-brand bg-brand-soft/30 shadow-[0_16px_42px_-30px_rgba(242,101,15,0.75)]"
+          : "border-border bg-surface/85 hover:-translate-y-0.5 hover:border-faint"
       }`}
     >
-      <div className="mb-3 flex items-start gap-2.5">
+      <div className="mb-6 flex items-start gap-4">
         <span
-          className={`flex size-10 shrink-0 items-center justify-center rounded-lg ${
+          className={`flex size-14 shrink-0 items-center justify-center rounded-[8px] transition-colors ${
             active ? "bg-brand-soft text-brand" : "bg-page text-muted"
           }`}
         >
           {icon}
         </span>
-        <div className="min-w-0 flex-1">
-          <p className="text-[14px] font-bold text-ink">{title}</p>
-          <p className="text-[12px] text-muted">{hint}</p>
+        <div className="min-w-0 flex-1 pt-0.5">
+          <p className="font-head text-[17px] font-bold leading-tight text-ink sm:text-[18px]">{title}</p>
+          <p className="mt-1 text-[13px] leading-snug text-muted sm:text-[14px]">{hint}</p>
         </div>
         <span
-          className={`flex size-5 shrink-0 items-center justify-center rounded-full ${
+          className={`flex size-7 shrink-0 items-center justify-center rounded-full transition-colors ${
             active ? "bg-brand text-white" : "border border-border text-transparent"
           }`}
         >
-          <CheckIcon className="size-3" />
+          <CheckIcon className="size-3.5" />
         </span>
       </div>
       {children}
@@ -86,8 +88,10 @@ function Chip({ label, active, onClick }: { label: string; active: boolean; onCl
       type="button"
       onClick={onClick}
       aria-pressed={active}
-      className={`cursor-pointer rounded-md border px-3.5 py-2 text-[12.5px] font-semibold transition-colors ${
-        active ? "border-brand bg-surface text-brand" : "border-border bg-surface text-ink hover:border-subtle"
+      className={`min-h-11 cursor-pointer rounded-[7px] border px-4 py-2.5 text-[13px] font-semibold transition-[color,border-color,background-color,transform] duration-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand active:scale-[0.98] sm:text-[14px] ${
+        active
+          ? "border-brand bg-surface text-brand"
+          : "border-border bg-surface text-ink hover:border-faint hover:bg-page/70"
       }`}
     >
       {label}
@@ -114,12 +118,11 @@ export default function GuidedDiscovery({
 
   const [facets, setFacets] = useState(initialFilters);
   const [total, setTotal] = useState<number | null>(null);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const runId = useRef(0);
 
   useEffect(() => {
     const id = ++runId.current;
-    setLoading(true);
     getCarsBrowse({
       page: 1,
       limit: 1,
@@ -149,21 +152,31 @@ export default function GuidedDiscovery({
     budgetTouched && {
       label: `${lakh(minPrice)} – ${lakh(maxPrice)}`,
       clear: () => {
+        setLoading(true);
         setMinPrice(floor);
         setMaxPrice(CEILING);
       },
     },
     bodyType && {
       label: facets.bodyTypes.find((b) => b.slug === bodyType)?.name ?? bodyType,
-      clear: () => setBodyType(null),
+      clear: () => {
+        setLoading(true);
+        setBodyType(null);
+      },
     },
     fuelType && {
       label: facets.fuelTypes.find((f) => f.value === fuelType)?.label ?? fuelType,
-      clear: () => setFuelType(null),
+      clear: () => {
+        setLoading(true);
+        setFuelType(null);
+      },
     },
     brand && {
       label: facets.brands.find((b) => b.slug === brand)?.name ?? brand,
-      clear: () => setBrand(null),
+      clear: () => {
+        setLoading(true);
+        setBrand(null);
+      },
     },
   ].filter(Boolean) as { label: string; clear: () => void }[];
 
@@ -186,37 +199,42 @@ export default function GuidedDiscovery({
     .map((b) => ({ ...b, logoUrl: logoBySlug.get(b.slug) ?? null }));
 
   return (
-    <section className="relative overflow-hidden bg-surface py-12 sm:py-16">
+    <section className="relative isolate overflow-hidden bg-surface py-12 sm:py-14 lg:py-16">
       {/* Road grid sits under the left column only, fading out before it
           reaches the panel so the cards keep a clean background. */}
       <div
         aria-hidden
-        className="pointer-events-none absolute inset-y-0 left-0 hidden w-[46%] opacity-[0.5] lg:block"
+        className="pointer-events-none absolute inset-y-0 left-0 hidden w-[52%] opacity-[0.42] lg:block"
         style={{
           backgroundImage: "url(/design/road-grid.png)",
           backgroundSize: "cover",
           backgroundPosition: "left bottom",
-          maskImage: "linear-gradient(to right, black 55%, transparent)",
-          WebkitMaskImage: "linear-gradient(to right, black 55%, transparent)",
+          maskImage: "linear-gradient(to right, black 42%, transparent 92%)",
+          WebkitMaskImage: "linear-gradient(to right, black 42%, transparent 92%)",
         }}
       />
 
-      <div className="relative mx-auto grid max-w-7xl gap-8 px-4 lg:grid-cols-[minmax(0,300px)_minmax(0,1fr)] lg:gap-10">
-        <div className="lg:pt-4">
-          <p className="flex items-center gap-3 text-[11px] font-bold uppercase tracking-[0.16em] text-brand">
-            Find your perfect car <span className="h-px w-8 bg-brand" />
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_24%_36%,rgba(242,101,15,0.045),transparent_32%)]"
+      />
+
+      <div className="relative mx-auto grid max-w-[1536px] gap-8 px-5 sm:px-8 lg:grid-cols-[minmax(330px,430px)_minmax(0,1fr)] lg:gap-8 xl:px-10 2xl:px-0">
+        <div className="relative lg:min-h-[588px] lg:pt-4">
+          <p className="flex items-center gap-4 text-[11px] font-bold uppercase tracking-[0.24em] text-brand sm:text-[12px]">
+            Find your perfect car <span className="h-px w-9 bg-brand sm:w-12" />
           </p>
-          <h2 className="mt-4 font-head text-3xl font-bold leading-[1.1] tracking-tight text-ink sm:text-4xl">
+          <h2 className="mt-5 max-w-[430px] text-balance font-head text-[36px] font-extrabold leading-[1.03] tracking-[-0.035em] text-ink sm:text-[44px] lg:text-[48px] xl:text-[52px]">
             Start with
             <br />
             what matters
           </h2>
-          <p className="mt-4 max-w-sm text-[14px] leading-relaxed text-muted">
+          <p className="mt-4 max-w-[400px] text-pretty text-[14.5px] leading-6.5 text-muted sm:text-[15.5px]">
             Choose by budget, body style, fuel type, or brand. TimesAuto narrows the list for you.
           </p>
-          <p className="mt-6 flex items-center gap-2.5 text-[12.5px] font-semibold text-muted">
-            <span className="flex size-8 items-center justify-center rounded-full bg-ev-soft text-ev">
-              <SparkleIcon className="size-4" />
+          <p className="mt-8 flex items-center gap-3 text-[13px] font-semibold text-ink sm:text-[14px]">
+            <span className="flex size-10 items-center justify-center rounded-full bg-ev-soft text-ev">
+              <SparkleIcon className="size-[18px]" />
             </span>
             Smart filters • Real results • Zero guesswork
           </p>
@@ -224,113 +242,128 @@ export default function GuidedDiscovery({
           <CarAndTrace />
         </div>
 
-        <div className="rounded-2xl border border-border p-3.5 sm:p-4">
-          <div className="grid items-start gap-3 sm:grid-cols-2">
+        <div className="self-start rounded-[8px] border border-border bg-surface/80 p-3 shadow-[0_36px_90px_-66px_rgba(92,67,45,0.55)] backdrop-blur-[2px] sm:p-5 lg:p-6">
+          <div className="grid items-stretch gap-4 md:grid-cols-2">
             <Card
-              icon={<WalletIcon className="size-5" />}
+              icon={<WalletIcon className="size-6" />}
               title="Budget first"
               hint="Set your range"
               active={budgetTouched}
             >
-              <p className="mb-3 text-lg font-bold text-brand tabular-nums">
+              <p className="mb-5 text-[21px] font-bold text-brand tabular-nums sm:text-[23px]">
                 {lakh(minPrice)} – {lakh(maxPrice)}
               </p>
               <RangeSlider
                 floor={floor}
                 min={minPrice}
                 max={maxPrice}
-                onMin={(v) => setMinPrice(Math.min(v, maxPrice - STEP))}
-                onMax={(v) => setMaxPrice(Math.max(v, minPrice + STEP))}
+                onMin={(v) => {
+                  setLoading(true);
+                  setMinPrice(Math.min(v, maxPrice - STEP));
+                }}
+                onMax={(v) => {
+                  setLoading(true);
+                  setMaxPrice(Math.max(v, minPrice + STEP));
+                }}
               />
             </Card>
 
             <Card
-              icon={<CarGlyph />}
+              icon={<CarGlyph className="size-6" />}
               title="Body style"
               hint="Pick what fits you"
               active={bodyType != null}
             >
-              <div className="flex flex-wrap gap-2">
+              <div className="flex flex-wrap gap-2.5">
                 {facets.bodyTypes.slice(0, 6).map((b) => (
                   <Chip
                     key={b.slug}
                     label={b.name}
                     active={bodyType === b.slug}
-                    onClick={() => setBodyType(toggle(bodyType, b.slug))}
+                    onClick={() => {
+                      setLoading(true);
+                      setBodyType(toggle(bodyType, b.slug));
+                    }}
                   />
                 ))}
               </div>
             </Card>
 
             <Card
-              icon={<FuelIcon className="size-5" />}
+              icon={<FuelIcon className="size-6" />}
               title="Fuel type"
               hint="Choose your fuel"
               active={fuelType != null}
             >
-              <div className="flex flex-wrap gap-2">
+              <div className="flex flex-wrap gap-2.5">
                 {facets.fuelTypes.map((f) => (
                   <Chip
                     key={f.value}
                     label={f.label}
                     active={fuelType === f.value}
-                    onClick={() => setFuelType(toggle(fuelType, f.value))}
+                    onClick={() => {
+                      setLoading(true);
+                      setFuelType(toggle(fuelType, f.value));
+                    }}
                   />
                 ))}
               </div>
             </Card>
 
             <Card
-              icon={<ShieldIcon className="size-5" />}
+              icon={<ShieldIcon className="size-6" />}
               title="Trusted brands"
               hint="Select your preferred brands"
               active={brand != null}
             >
-              <div className="grid grid-cols-4 gap-2">
+              <div className="grid grid-cols-3 gap-2 sm:grid-cols-4">
                 {topBrands.map((b) => (
                   <button
                     key={b.slug}
                     type="button"
-                    onClick={() => setBrand(toggle(brand, b.slug))}
+                    onClick={() => {
+                      setLoading(true);
+                      setBrand(toggle(brand, b.slug));
+                    }}
                     aria-pressed={brand === b.slug}
                     title={b.name}
-                    className={`flex cursor-pointer flex-col items-center gap-1 rounded-md border bg-surface px-1.5 py-2 transition-colors ${
-                      brand === b.slug ? "border-brand" : "border-border hover:border-subtle"
+                    className={`flex min-h-[72px] cursor-pointer flex-col items-center justify-center gap-1.5 rounded-[7px] border bg-surface px-1.5 py-2 transition-[border-color,background-color,transform] duration-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand active:scale-[0.98] ${
+                      brand === b.slug ? "border-brand bg-brand-soft/20" : "border-border hover:border-faint hover:bg-page/70"
                     }`}
                   >
-                    <span className="relative h-6 w-full">
+                    <span className="relative h-7 w-full">
                       {b.logoUrl ? (
                         <Image src={b.logoUrl} alt="" fill sizes="48px" className="object-contain" />
                       ) : (
                         <span className="flex h-full items-center justify-center text-[11px] font-bold text-muted">
-                          {b.name.slice(0, 2)}
+                          {b.name.slice(0, 2).toUpperCase()}
                         </span>
                       )}
                     </span>
-                    <span className="w-full truncate text-center text-[10px] font-semibold text-ink">{b.name}</span>
+                    <span className="w-full truncate text-center text-[10.5px] font-semibold text-ink">{b.name}</span>
                   </button>
                 ))}
               </div>
             </Card>
           </div>
 
-          <div className="mt-4 flex flex-wrap items-center justify-between gap-4 border-t border-border pt-4">
-            <div className="flex min-w-0 flex-1 items-center gap-3">
-              <span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-brand-soft text-brand">
-                <SparkleIcon className="size-4" />
+          <div className="mt-6 grid gap-5 border-t border-border pt-5 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center">
+            <div className="flex min-w-0 items-center gap-4">
+              <span className="flex size-14 shrink-0 items-center justify-center rounded-full bg-brand-soft text-brand">
+                <SparkleIcon className="size-6" />
               </span>
               <div className="min-w-0">
-                <p className="text-[12px] font-semibold text-muted">Your selection</p>
-                <div className="mt-1 flex flex-wrap gap-1.5">
+                <p className="text-[13px] font-semibold text-ink">Your selection</p>
+                <div className="mt-2 flex flex-wrap gap-2">
                   {chosen.length === 0 ? (
-                    <span className="text-[12.5px] text-subtle">Nothing yet — every car qualifies</span>
+                    <span className="text-[13px] text-muted">Nothing yet — every car qualifies</span>
                   ) : (
                     chosen.slice(0, 3).map((c) => (
                       <button
                         key={c.label}
                         type="button"
                         onClick={c.clear}
-                        className="flex cursor-pointer items-center gap-1 rounded-md border border-border px-2 py-1 text-[11.5px] font-semibold text-ink transition-colors hover:border-subtle"
+                        className="flex min-h-8 cursor-pointer items-center gap-1.5 rounded-[6px] border border-border bg-page/60 px-2.5 py-1 text-[12px] font-semibold text-ink transition-colors hover:border-faint focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
                       >
                         {c.label}
                         <CloseIcon className="size-3 text-subtle" />
@@ -338,7 +371,7 @@ export default function GuidedDiscovery({
                     ))
                   )}
                   {chosen.length > 3 && (
-                    <span className="rounded-md border border-dashed border-border px-2 py-1 text-[11.5px] font-semibold text-muted">
+                    <span className="rounded-[6px] border border-dashed border-faint px-2.5 py-1 text-[12px] font-semibold text-muted">
                       +{chosen.length - 3} more
                     </span>
                   )}
@@ -346,12 +379,12 @@ export default function GuidedDiscovery({
               </div>
             </div>
 
-            <div className="flex items-center gap-5">
-              <div className="text-right">
-                <p className="text-[12px] font-semibold text-muted">Matching cars</p>
-                <p className={`text-2xl font-bold tabular-nums ${loading ? "text-subtle" : "text-brand"}`}>
+            <div className="flex items-center justify-between gap-5 sm:justify-end">
+              <div className="min-w-[118px] sm:text-right" aria-live="polite">
+                <p className="text-[12px] font-semibold text-ink">Matching cars</p>
+                <p className={`mt-0.5 text-[30px] font-bold leading-none tabular-nums sm:text-[34px] ${loading ? "text-subtle" : "text-brand"}`}>
                   {total ?? "—"}
-                  <span className="ml-1.5 text-[13px] font-semibold text-ink">
+                  <span className="ml-1.5 text-[13px] font-semibold text-ink sm:text-[14px]">
                     {total === 1 ? "match" : "matches"}
                   </span>
                 </p>
@@ -360,9 +393,9 @@ export default function GuidedDiscovery({
                 type="button"
                 onClick={viewMatches}
                 disabled={total === 0}
-                className="cursor-pointer whitespace-nowrap rounded-md bg-brand px-5 py-3 text-[13px] font-bold text-white transition-colors hover:bg-brand-hover disabled:cursor-not-allowed disabled:opacity-50"
+                className="flex min-h-12 cursor-pointer items-center gap-2 whitespace-nowrap rounded-[7px] bg-brand px-5 py-3 text-[13px] font-bold text-white shadow-[0_12px_28px_-16px_rgba(242,101,15,0.85)] transition-[background-color,transform,box-shadow] duration-200 hover:-translate-y-0.5 hover:bg-brand-hover hover:shadow-[0_16px_34px_-18px_rgba(242,101,15,0.9)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand active:translate-y-0 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50"
               >
-                View matches →
+                View matches <ChevronIcon className="size-4" />
               </button>
             </div>
           </div>
@@ -377,34 +410,49 @@ export default function GuidedDiscovery({
 // together. Decorative: it carries nothing the copy does not already say.
 function CarAndTrace() {
   return (
-    <div aria-hidden className="pointer-events-none relative mt-10 hidden h-56 lg:block">
+    <div aria-hidden className="pointer-events-none absolute inset-x-0 bottom-0 hidden h-[320px] lg:block">
       <svg
-        viewBox="0 0 300 224"
+        viewBox="0 0 500 320"
         fill="none"
-        className="absolute inset-0 size-full overflow-visible"
+        className="absolute inset-0 h-full w-[calc(100%+96px)] overflow-visible"
         preserveAspectRatio="none"
       >
-        <path d="M40 60h96a22 22 0 0 1 22 22v40a22 22 0 0 0 22 22h150" stroke="var(--color-border)" strokeWidth="1.5" />
+        {/* Four runs, alternating solid grey and dashed brand, each
+            leaving the car at a different height and arriving at the
+            panel edge. One line reads as a stray rule; several read as a
+            harness, which is what the reference is doing. */}
+        <path d="M40 84h150a22 22 0 0 1 22 22v34a22 22 0 0 0 22 22h266" stroke="var(--color-border)" strokeWidth="1.3" />
         <path
-          d="M40 158h54a22 22 0 0 0 22-22V96a22 22 0 0 1 22-22h192"
+          d="M64 138h96a22 22 0 0 1 22 22v18a22 22 0 0 0 22 22h296"
           stroke="var(--color-brand)"
-          strokeWidth="1.5"
+          strokeWidth="1.3"
           strokeDasharray="5 6"
-          opacity=".6"
+          opacity=".55"
         />
-        <circle cx="158" cy="82" r="4" fill="var(--color-surface)" stroke="var(--color-border)" strokeWidth="1.5" />
-        <circle cx="116" cy="136" r="4" fill="var(--color-surface)" stroke="var(--color-brand)" strokeWidth="1.5" />
+        <path d="M58 236h118a22 22 0 0 0 22-22v-20a22 22 0 0 1 22-22h280" stroke="var(--color-border)" strokeWidth="1.3" />
+        <path
+          d="M84 286h84a22 22 0 0 0 22-22v-46a22 22 0 0 1 22-22h288"
+          stroke="var(--color-brand)"
+          strokeWidth="1.3"
+          strokeDasharray="5 6"
+          opacity=".55"
+        />
+
+        <circle cx="212" cy="106" r="3.6" fill="var(--color-surface)" stroke="var(--color-border)" strokeWidth="1.3" />
+        <circle cx="182" cy="160" r="3.6" fill="var(--color-surface)" stroke="var(--color-brand)" strokeWidth="1.3" />
+        <circle cx="198" cy="214" r="3.6" fill="var(--color-surface)" stroke="var(--color-border)" strokeWidth="1.3" />
+        <circle cx="190" cy="264" r="3.6" fill="var(--color-surface)" stroke="var(--color-brand)" strokeWidth="1.3" />
       </svg>
 
-      {/* -left-24 pulls it past the max-w-7xl gutter so it runs off the
-          viewport edge instead of stopping at the container. */}
+      {/* The wide cutout is deliberately shifted off-canvas so only the
+          front half enters the composition, matching the design reference. */}
       <Image
         src="/design/guided-suv.png"
         alt=""
-        width={1050}
-        height={760}
-        sizes="420px"
-        className="absolute -left-24 bottom-0 w-[420px] max-w-none"
+        width={1536}
+        height={1024}
+        sizes="690px"
+        className="absolute -left-[330px] -bottom-[70px] w-[640px] max-w-none drop-shadow-[0_18px_12px_rgba(17,24,39,0.12)] xl:-left-[350px] xl:w-[690px]"
         priority={false}
       />
     </div>
@@ -442,7 +490,7 @@ function RangeSlider({
     "[&::-moz-range-thumb]:border-2 [&::-moz-range-thumb]:border-brand [&::-moz-range-thumb]:bg-surface";
 
   return (
-    <div className="relative h-4">
+    <div className="relative h-5">
       <div className="absolute inset-x-0 top-1/2 h-1.5 -translate-y-1/2 rounded-full bg-border" />
       <div
         className="absolute top-1/2 h-1.5 -translate-y-1/2 rounded-full bg-brand"
@@ -472,9 +520,9 @@ function RangeSlider({
   );
 }
 
-function CarGlyph() {
+function CarGlyph({ className = "size-5" }: { className?: string }) {
   return (
-    <svg className="size-5" viewBox="0 0 24 24" fill="none">
+    <svg className={className} viewBox="0 0 24 24" fill="none">
       <path
         d="M4 15v2m16-2v2M3 14l1.6-4.6A2 2 0 0 1 6.5 8h11a2 2 0 0 1 1.9 1.4L21 14v3a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1v-3Z"
         stroke="currentColor"
