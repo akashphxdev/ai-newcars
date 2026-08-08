@@ -58,7 +58,7 @@ export default function FeaturedCarCard({ car }: { car: HomeCar }) {
         />
         <div
           aria-hidden
-          className="pointer-events-none absolute inset-0 z-[2] bg-[linear-gradient(90deg,rgb(255,255,255)_0%,rgba(255,255,255,0.94)_16%,rgba(255,255,255,0.18)_30%,rgba(224,224,226,0.55)_40%,rgb(224,224,226)_46%,rgb(224,224,226)_100%)]"
+          className="pointer-events-none absolute inset-0 z-[2] bg-[linear-gradient(90deg,rgb(255,255,255)_0%,rgb(255,255,255)_12%,rgb(224,224,226)_24%,rgb(224,224,226)_74%,rgba(224,224,226,0.35)_84%,rgba(224,224,226,0)_92%)]"
         />
 
         <div className="relative z-10 flex max-w-[520px] flex-col p-5 sm:p-6 lg:max-w-[52%]">
@@ -84,7 +84,7 @@ export default function FeaturedCarCard({ car }: { car: HomeCar }) {
           </div>
         </div>
 
-        <div className="relative z-[3] mt-auto min-h-52 sm:min-h-60 lg:absolute lg:inset-y-0 lg:right-0 lg:mt-0 lg:w-[54%]">
+        <div className="relative z-[3] mt-auto min-h-52 sm:min-h-60 lg:absolute lg:inset-y-0 lg:left-[26%] lg:right-[24%] lg:mt-0 lg:w-auto">
           <Link
             href={href}
             className="absolute inset-0 block focus-visible:outline-2 focus-visible:outline-offset-[-3px] focus-visible:outline-brand"
