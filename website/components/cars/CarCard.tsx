@@ -126,7 +126,7 @@ export default function CarCard({
               alt={`${car.brand.name} ${car.name}`}
               fill
               sizes={sizes}
-              className={isCurated ? "object-contain p-3 transition-transform duration-500 group-hover:scale-[1.025]" : "object-cover"}
+              className={isCurated ? "object-cover transition-transform duration-500 group-hover:scale-[1.025]" : "object-cover"}
             />
           </Link>
 

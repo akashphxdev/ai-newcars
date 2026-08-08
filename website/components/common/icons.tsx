@@ -76,6 +76,14 @@ export const GaugeIcon = ({ className = "size-3" }: IconProps) => (
   </svg>
 );
 
+export const SeatIcon = ({ className = "size-4" }: IconProps) => (
+  <svg className={className} viewBox="0 0 24 24" fill="none">
+    <path d="M8 4.5v7.8c0 1.5 1.2 2.7 2.7 2.7H17" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />
+    <path d="M7.8 9.5H13c1.7 0 3 1.3 3 3V15M7.8 15l-1.4 5M16 15l1.4 5M5 20h14" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />
+    <circle cx="8" cy="4.5" r="2" stroke="currentColor" strokeWidth="1.7" />
+  </svg>
+);
+
 export const FuelIcon = ({ className = "size-3" }: IconProps) => (
   <svg className={className} viewBox="0 0 24 24" fill="none">
     <path d="M5 21V8l5-5h4v3h2a2 2 0 0 1 2 2v9.5a1.5 1.5 0 0 1-3 0V13a1 1 0 0 0-1-1h-1" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />

@@ -16,7 +16,7 @@ import { getHomeArticles } from "@/features/articles/article.api";
 import { getHomeTestimonials } from "@/features/testimonials/testimonial.api";
 import { getHomeStories } from "@/features/stories/story.api";
 import { getBodyTypes } from "@/features/bodyTypes/bodyType.api";
-import { getRandomPairs } from "@/features/compare/compare.api";
+import { getCarOptions, getCompareData, getRandomPairs } from "@/features/compare/compare.api";
 
 // Each of these is its own async Server Component, fetching only the data
 // its section needs. Wrapping each one in its own <Suspense> below means a
@@ -59,7 +59,13 @@ async function UpcomingLaunchesData() {
 
 async function CompareCarsData() {
   const { pairs } = await getRandomPairs({ count: 6 });
-  return <CompareCars pairs={pairs} />;
+  const [comparison, options] = await Promise.all([
+    pairs[0]
+      ? getCompareData([pairs[0].carA.slug, pairs[0].carB.slug])
+      : Promise.resolve(null),
+    getCarOptions(),
+  ]);
+  return <CompareCars pairs={pairs} featuredCars={comparison?.cars ?? []} options={options} />;
 }
 
 async function ArticlesData() {

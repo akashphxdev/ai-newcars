@@ -40,13 +40,13 @@ function FilterSelect({
   children: React.ReactNode;
 }) {
   return (
-    <label className="relative flex min-h-12 min-w-[154px] items-center rounded-[7px] border border-border bg-surface transition-colors hover:border-faint focus-within:border-brand focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-brand/20">
+    <label className="relative flex min-h-10 min-w-[136px] items-center rounded-[6px] border border-border bg-surface transition-colors hover:border-faint focus-within:border-brand focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-brand/20">
       <span className="pointer-events-none absolute left-3.5 text-ink">{icon}</span>
       <select
         aria-label={label}
         value={value}
         onChange={(event) => onChange(event.target.value)}
-        className="h-full w-full cursor-pointer appearance-none bg-transparent py-3 pl-10 pr-9 text-[12.5px] font-semibold text-ink outline-none"
+        className="h-full w-full cursor-pointer appearance-none bg-transparent py-2 pl-9 pr-8 text-[12px] font-semibold text-ink outline-none"
       >
         {children}
       </select>
@@ -57,12 +57,12 @@ function FilterSelect({
 
 function CuratedSkeleton() {
   return (
-    <div className="grid min-h-[550px] animate-pulse gap-4 lg:grid-cols-[1.08fr_0.92fr]">
+    <div className="grid min-h-[430px] animate-pulse gap-3.5 lg:grid-cols-[1.08fr_0.92fr]">
       <div className="rounded-[8px] bg-border/70" />
       <div className="grid gap-4 sm:grid-cols-2">
         <div className="rounded-[8px] bg-border/70" />
         <div className="rounded-[8px] bg-border/70" />
-        <div className="min-h-56 rounded-[8px] bg-border/70 sm:col-span-2" />
+        <div className="min-h-44 rounded-[8px] bg-border/70 sm:col-span-2" />
       </div>
     </div>
   );
@@ -140,27 +140,27 @@ export default function CuratedCars({
   const [featured, ...rest] = visibleCars;
 
   return (
-    <section className="relative overflow-hidden bg-page py-16 sm:py-20 lg:py-24">
+    <section className="relative overflow-hidden bg-page py-12 sm:py-14 lg:py-16">
       <div
         aria-hidden
         className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_12%_18%,rgba(242,101,15,0.04),transparent_28%)]"
       />
 
       <div className="relative mx-auto max-w-[1536px] px-5 sm:px-8 xl:px-10 2xl:px-0">
-        <div className="grid gap-8 lg:grid-cols-[390px_minmax(0,1fr)] lg:items-end xl:grid-cols-[430px_minmax(0,1fr)]">
+        <div className="grid gap-6 lg:grid-cols-[330px_minmax(0,1fr)] lg:items-end xl:grid-cols-[370px_minmax(0,1fr)]">
           <div>
-            <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-brand sm:text-[12px]">
+            <p className="text-[10.5px] font-bold uppercase tracking-[0.2em] text-brand sm:text-[11px]">
               Curated for you
             </p>
-            <h2 className="mt-4 max-w-[430px] text-balance font-head text-[38px] font-extrabold leading-[1.03] tracking-[-0.035em] text-ink sm:text-[48px] xl:text-[54px]">
+            <h2 className="mt-3 max-w-[370px] text-balance font-head text-[30px] font-extrabold leading-[1.05] tracking-[-0.03em] text-ink sm:text-[36px] xl:text-[40px]">
               Curated cars for every driver
             </h2>
-            <p className="mt-5 max-w-[390px] text-pretty text-[15px] leading-7 text-muted sm:text-[16px]">
+            <p className="mt-3 max-w-[350px] text-pretty text-[13.5px] leading-6 text-muted sm:text-[14.5px]">
               New launches, popular picks, and expert-shortlisted models in one place.
             </p>
           </div>
 
-          <div className="flex flex-col gap-5 xl:flex-row xl:items-end xl:justify-between">
+          <div className="flex flex-col gap-3.5 xl:flex-row xl:items-end xl:justify-between">
             <div className="flex min-w-0 overflow-x-auto border-b border-border scrollbar-none" role="tablist" aria-label="Car collections">
               {TABS.map((item) => (
                 <button
@@ -169,7 +169,7 @@ export default function CuratedCars({
                   role="tab"
                   aria-selected={tab === item.key}
                   onClick={() => select(item.key)}
-                  className={`relative min-h-12 shrink-0 cursor-pointer px-5 py-3 text-[13.5px] font-bold transition-colors focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-brand ${
+                  className={`relative min-h-10 shrink-0 cursor-pointer px-4 py-2.5 text-[12.5px] font-bold transition-colors focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-brand ${
                     tab === item.key ? "text-brand" : "text-muted hover:text-ink"
                   }`}
                 >

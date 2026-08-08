@@ -1,0 +1,3 @@
+{
+  "/news/[categorySlug]/[articleSlug]/page": "app/news/[categorySlug]/[articleSlug]/page.js"
+}
