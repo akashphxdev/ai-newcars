@@ -66,7 +66,9 @@ func (h *Handler) HomeCars(w http.ResponseWriter, r *http.Request) {
 	typ := qEnum(r, "type", "latest", "latest", "popular", "upcoming", "electric", "luxury")
 	limit := qInt(r, "limit", 10, 1, 50)
 
-	f := store.CarCardFilters{Limit: limit, BrandSlug: qStr(r, "brand")}
+	// Six-card rails: interleave brands so one manufacturer cannot fill
+	// the row just because its models were added together.
+	f := store.CarCardFilters{Limit: limit, BrandSlug: qStr(r, "brand"), DiverseBrands: true}
 	switch typ {
 	case "upcoming":
 		f.LaunchStatus, f.Sort = "upcoming", "upcoming"

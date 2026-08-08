@@ -941,6 +941,7 @@ type State struct {
 	CountryID int32   `json:"country_id"`
 	Name      string  `json:"name"`
 	Code      *string `json:"code"`
+	Slug      string  `json:"slug"`
 }
 
 type StoryGroup struct {

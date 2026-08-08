@@ -39,6 +39,66 @@ func (q *Queries) FuelCityBySlug(ctx context.Context, slug string) (FuelCityBySl
 	return i, err
 }
 
+const fuelCityInState = `-- name: FuelCityInState :one
+SELECT c.id, c.name, c.slug, s.id AS state_id, s.name AS state_name, s.slug AS state_slug
+FROM cities c JOIN states s ON s.id = c.state_id
+WHERE s.slug = $1 AND c.slug = $2
+LIMIT 1
+`
+
+type FuelCityInStateParams struct {
+	Slug   string `json:"slug"`
+	Slug_2 string `json:"slug_2"`
+}
+
+type FuelCityInStateRow struct {
+	ID        int32  `json:"id"`
+	Name      string `json:"name"`
+	Slug      string `json:"slug"`
+	StateID   int32  `json:"state_id"`
+	StateName string `json:"state_name"`
+	StateSlug string `json:"state_slug"`
+}
+
+// Slugs are unique per state, not globally, so both halves are needed.
+func (q *Queries) FuelCityInState(ctx context.Context, arg FuelCityInStateParams) (FuelCityInStateRow, error) {
+	row := q.db.QueryRow(ctx, fuelCityInState, arg.Slug, arg.Slug_2)
+	var i FuelCityInStateRow
+	err := row.Scan(
+		&i.ID,
+		&i.Name,
+		&i.Slug,
+		&i.StateID,
+		&i.StateName,
+		&i.StateSlug,
+	)
+	return i, err
+}
+
+const fuelCityStateBySlug = `-- name: FuelCityStateBySlug :one
+SELECT c.slug AS city_slug, s.slug AS state_slug
+FROM cities c JOIN states s ON s.id = c.state_id
+JOIN fuel_prices f ON f.city_id = c.id
+WHERE c.slug = $1
+GROUP BY c.slug, s.slug
+ORDER BY count(f.id) DESC
+LIMIT 1
+`
+
+type FuelCityStateBySlugRow struct {
+	CitySlug  string `json:"city_slug"`
+	StateSlug string `json:"state_slug"`
+}
+
+// Resolves a bare city slug to its state, for redirecting legacy
+// /fuel-price/{city} URLs to the state-scoped path.
+func (q *Queries) FuelCityStateBySlug(ctx context.Context, slug string) (FuelCityStateBySlugRow, error) {
+	row := q.db.QueryRow(ctx, fuelCityStateBySlug, slug)
+	var i FuelCityStateBySlugRow
+	err := row.Scan(&i.CitySlug, &i.StateSlug)
+	return i, err
+}
+
 const fuelPriceHistory = `-- name: FuelPriceHistory :many
 SELECT f.applicable_on, f.price, f.price_change
 FROM fuel_prices f
@@ -77,6 +137,34 @@ func (q *Queries) FuelPriceHistory(ctx context.Context, arg FuelPriceHistoryPara
 		return nil, err
 	}
 	return items, nil
+}
+
+const fuelStateBySlug = `-- name: FuelStateBySlug :one
+SELECT s.id, s.name, s.slug, count(DISTINCT f.city_id) AS city_count
+FROM states s
+JOIN cities c ON c.state_id = s.id
+JOIN fuel_prices f ON f.city_id = c.id
+WHERE s.slug = $1
+GROUP BY s.id, s.name, s.slug
+`
+
+type FuelStateBySlugRow struct {
+	ID        int32  `json:"id"`
+	Name      string `json:"name"`
+	Slug      string `json:"slug"`
+	CityCount int64  `json:"city_count"`
+}
+
+func (q *Queries) FuelStateBySlug(ctx context.Context, slug string) (FuelStateBySlugRow, error) {
+	row := q.db.QueryRow(ctx, fuelStateBySlug, slug)
+	var i FuelStateBySlugRow
+	err := row.Scan(
+		&i.ID,
+		&i.Name,
+		&i.Slug,
+		&i.CityCount,
+	)
+	return i, err
 }
 
 const fuelStates = `-- name: FuelStates :many

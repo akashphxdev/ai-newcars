@@ -79,6 +79,9 @@ type CarCardFilters struct {
 	MaxPrice      *decimal.Decimal
 	OnlyElectric  bool
 	Sort          string // latest | popular | price-asc | price-desc | rating | upcoming
+	// Round-robins brands so one manufacturer cannot fill a short list.
+	// Only for the homepage rails; listing pages want the true order.
+	DiverseBrands bool
 	Limit         int
 	Offset        int
 }
@@ -246,7 +249,17 @@ func ListCarCards(ctx context.Context, db *pgxpool.Pool, f CarCardFilters) ([]Ca
 	args := make([]any, 0, 8)
 	q := carCardSelect + buildWhere(f, &args) + orderBy(f.Sort)
 
-	args = append(args, f.Limit)
+	// Interleaving can only shuffle the rows it is handed. Asking for
+	// exactly six when the newest six are all one brand leaves nothing to
+	// interleave, so widen the pool and trim after.
+	fetch := f.Limit
+	if f.DiverseBrands {
+		fetch = f.Limit * 6
+		if fetch > 120 {
+			fetch = 120
+		}
+	}
+	args = append(args, fetch)
 	q += " LIMIT $" + strconv.Itoa(len(args))
 	if f.Offset > 0 {
 		args = append(args, f.Offset)
@@ -259,7 +272,50 @@ func ListCarCards(ctx context.Context, db *pgxpool.Pool, f CarCardFilters) ([]Ca
 	}
 	defer rows.Close()
 
-	return scanCards(rows)
+	cards, err := scanCards(rows)
+	if err != nil || !f.DiverseBrands {
+		return cards, err
+	}
+	return roundRobinByBrand(cards, f.Limit), nil
+}
+
+// roundRobinByBrand takes every brand's best card before any brand's
+// second, preserving the sort's order within each brand.
+//
+// Homepage rails are six cards wide and the catalogue arrives in
+// brand-shaped batches, so "newest first" put five Volvos in a row of
+// six and "electric" showed three Volvos then three VinFasts. The order
+// is still the one the sort chose — it is interleaved, not re-sorted.
+//
+// Done in Go rather than SQL because the ranking columns a window
+// function needs would shift scanCards' fixed destination list, and
+// these lists are a handful of rows.
+func roundRobinByBrand(cards []CarCard, limit int) []CarCard {
+	if len(cards) <= 1 {
+		return cards
+	}
+
+	byBrand := make(map[int32][]CarCard)
+	order := make([]int32, 0, len(cards))
+	for _, c := range cards {
+		if _, seen := byBrand[c.Brand.ID]; !seen {
+			order = append(order, c.Brand.ID)
+		}
+		byBrand[c.Brand.ID] = append(byBrand[c.Brand.ID], c)
+	}
+
+	out := make([]CarCard, 0, len(cards))
+	for round := 0; len(out) < len(cards); round++ {
+		for _, id := range order {
+			if round < len(byBrand[id]) {
+				out = append(out, byBrand[id][round])
+			}
+		}
+	}
+	if limit > 0 && len(out) > limit {
+		out = out[:limit]
+	}
+	return out
 }
 
 func CountCarCards(ctx context.Context, db *pgxpool.Pool, f CarCardFilters) (int64, error) {

@@ -25,9 +25,45 @@ type fuelPoint struct {
 
 func day(t time.Time) string { return t.UTC().Format("2006-01-02") }
 
+// FuelStateDetail is one state and its cities for a single fuel.
+func (h *Handler) FuelStateDetail(w http.ResponseWriter, r *http.Request) {
+	st, err := h.Q.FuelStateBySlug(r.Context(), chi.URLParam(r, "stateSlug"))
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			httpx.Fail(w, r, httpx.NotFound("State not found"))
+			return
+		}
+		httpx.Fail(w, r, err)
+		return
+	}
+	httpx.Success(w, map[string]any{
+		"id": st.ID, "name": st.Name, "slug": st.Slug, "cityCount": st.CityCount,
+	}, "State fetched successfully")
+}
+
+// FuelCityRedirect resolves a bare city slug to its state so legacy
+// /fuel-price/{city} links can be redirected rather than 404'd.
+func (h *Handler) FuelCityRedirect(w http.ResponseWriter, r *http.Request) {
+	row, err := h.Q.FuelCityStateBySlug(r.Context(), chi.URLParam(r, "citySlug"))
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			httpx.Fail(w, r, httpx.NotFound("City not found"))
+			return
+		}
+		httpx.Fail(w, r, err)
+		return
+	}
+	httpx.Success(w, map[string]any{
+		"stateSlug": row.StateSlug, "citySlug": row.CitySlug,
+	}, "City resolved")
+}
+
 // FuelPricesForCity returns all three fuels for one city.
 func (h *Handler) FuelPricesForCity(w http.ResponseWriter, r *http.Request) {
-	city, err := h.Q.FuelCityBySlug(r.Context(), chi.URLParam(r, "citySlug"))
+	city, err := h.Q.FuelCityInState(r.Context(), store.FuelCityInStateParams{
+		Slug:   chi.URLParam(r, "stateSlug"),
+		Slug_2: chi.URLParam(r, "citySlug"),
+	})
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			httpx.Fail(w, r, httpx.NotFound("City not found"))
@@ -62,14 +98,17 @@ func (h *Handler) FuelPricesForCity(w http.ResponseWriter, r *http.Request) {
 
 	httpx.Success(w, map[string]any{
 		"city":   map[string]any{"id": city.ID, "name": city.Name, "slug": city.Slug},
-		"state":  map[string]any{"id": city.StateID, "name": city.StateName},
+		"state":  map[string]any{"id": city.StateID, "name": city.StateName, "slug": city.StateSlug},
 		"prices": prices,
 	}, "Fuel prices fetched successfully")
 }
 
 // FuelPriceHistory is the series behind a city's trend chart.
 func (h *Handler) FuelPriceHistory(w http.ResponseWriter, r *http.Request) {
-	city, err := h.Q.FuelCityBySlug(r.Context(), chi.URLParam(r, "citySlug"))
+	city, err := h.Q.FuelCityInState(r.Context(), store.FuelCityInStateParams{
+		Slug:   chi.URLParam(r, "stateSlug"),
+		Slug_2: chi.URLParam(r, "citySlug"),
+	})
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			httpx.Fail(w, r, httpx.NotFound("City not found"))

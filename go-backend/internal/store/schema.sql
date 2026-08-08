@@ -2558,7 +2558,8 @@ CREATE TABLE public.states (
     country_id integer NOT NULL,
     name character varying(100) NOT NULL,
     code character varying(10)
-);
+,
+    slug character varying(100) NOT NULL);
 
 
 --
