@@ -236,7 +236,7 @@ export default function Reviews({ testimonials }: { testimonials: Testimonial[] 
               <div className="scrollbar-none flex min-w-0 gap-2 overflow-x-auto pb-1">
                 {FILTERS.map((filter) => {
                   const active = filter === activeFilter;
-                  return <button key={filter} type="button" onClick={() => setActiveFilter(filter)} className={`min-h-11 shrink-0 cursor-pointer rounded-[7px] border px-5 text-[12px] font-bold transition-colors ${active ? "border-brand bg-brand-soft text-brand" : "border-border bg-white text-ink hover:border-faint"}`}>{filter}</button>;
+                  return <button key={filter} type="button" aria-pressed={active} onClick={() => setActiveFilter(filter)} className={`min-h-11 shrink-0 cursor-pointer rounded-[7px] border px-5 text-[12px] font-bold transition-colors ${active ? "border-brand bg-brand-soft text-brand" : "border-border bg-white text-ink hover:border-faint"}`}>{filter}</button>;
                 })}
               </div>
               <div className="flex shrink-0 items-center gap-2">

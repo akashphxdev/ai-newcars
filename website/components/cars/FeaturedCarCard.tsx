@@ -14,10 +14,6 @@ import { formatPriceRange, formatSinglePrice } from "@/lib/format";
 import { routes } from "@/lib/routes";
 import type { HomeCar } from "@/features/cars/car.types";
 
-// Design assets are served from the CDN like every other upload rather
-// than shipped in the Next bundle.
-const ASSET_BASE = process.env.NEXT_PUBLIC_ASSET_BASE_URL ?? "";
-
 const FALLBACK_IMG =
   "data:image/svg+xml;charset=UTF-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='600' height='450' viewBox='0 0 600 450'%3E%3Crect width='600' height='450' fill='%23e5e7eb'/%3E%3Ctext x='50%25' y='50%25' text-anchor='middle' dy='.3em' font-family='sans-serif' font-size='16' fill='%239ca3af'%3EImage unavailable%3C/text%3E%3C/svg%3E";
 
@@ -43,25 +39,23 @@ export default function FeaturedCarCard({ car }: { car: HomeCar }) {
 
   return (
     <article className="group flex min-h-[430px] h-full flex-col overflow-hidden rounded-[8px] border border-border bg-surface shadow-[0_24px_70px_-58px_rgba(92,67,45,0.6)]">
-      {/* The covers carry a baked-in #E0E0E2 studio plate that cannot be
-          keyed out reliably — on a light car the flood fill eats the body.
-          So the card is tinted *to* that colour instead: a shadow settles
-          the backdrop onto #E0E0E2 where the car sits, leaving its plate
-          nothing to butt against, and lifts to white under the copy. */}
+      {/* Car covers arrive with a baked-in #E0E0E2 studio plate. The
+          background has a matching reveal bay; the image mask below only
+          feathers the JPEG boundary, without changing the car itself. */}
       <div className="relative flex flex-1 flex-col overflow-hidden bg-surface">
         <Image
-          src={`${ASSET_BASE}/uploads/design/featured-car-reveal-studio-bg.png`}
+          src="/design/featured-car-reveal-studio-bg.png"
           alt=""
           fill
           sizes="(max-width: 1024px) 100vw, 830px"
-          className="pointer-events-none object-cover object-right"
+          className="pointer-events-none object-cover object-center"
         />
         <div
           aria-hidden
-          className="pointer-events-none absolute inset-0 z-[2] bg-[linear-gradient(90deg,rgba(255,255,255,0.97)_0%,rgba(255,255,255,0.82)_14%,rgba(255,255,255,0)_26%)]"
+          className="pointer-events-none absolute inset-0 z-[2] bg-[linear-gradient(90deg,rgba(255,255,255,0.98)_0%,rgba(255,255,255,0.96)_18%,rgba(255,255,255,0.8)_28%,rgba(255,255,255,0)_42%)]"
         />
 
-        <div className="relative z-10 flex max-w-[520px] flex-col p-5 sm:p-6 lg:max-w-[52%]">
+        <div className="relative z-10 flex max-w-[520px] flex-col p-5 sm:p-6 md:max-w-[40%]">
           <span className="w-fit rounded-[5px] bg-brand-soft px-3 py-1.5 text-[10px] font-bold uppercase tracking-[0.1em] text-brand">
             {isUpcoming ? "Featured launch" : "Featured pick"}
           </span>
@@ -84,7 +78,7 @@ export default function FeaturedCarCard({ car }: { car: HomeCar }) {
           </div>
         </div>
 
-        <div className="relative z-[3] mt-auto min-h-52 sm:min-h-60 lg:absolute lg:inset-y-0 lg:left-[28%] lg:right-[6%] lg:mt-0 lg:w-auto">
+        <div className="relative z-[3] mt-auto min-h-52 sm:min-h-60 md:absolute md:inset-y-0 md:left-[36%] md:right-[4%] md:mt-0 md:w-auto">
           <Link
             href={href}
             className="absolute inset-0 block focus-visible:outline-2 focus-visible:outline-offset-[-3px] focus-visible:outline-brand"
@@ -95,7 +89,7 @@ export default function FeaturedCarCard({ car }: { car: HomeCar }) {
               alt={`${car.brand.name} ${car.name}`}
               fill
               sizes="(max-width: 1024px) 100vw, 560px"
-              className="object-contain object-bottom p-2 transition-transform duration-500 group-hover:scale-[1.025] lg:p-3"
+              className="featured-car-cover object-contain object-bottom p-2 transition-transform duration-500 group-hover:scale-[1.025] md:p-3"
             />
           </Link>
         </div>

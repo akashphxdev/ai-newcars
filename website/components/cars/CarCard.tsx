@@ -109,7 +109,7 @@ export default function CarCard({
           className={`relative overflow-hidden bg-page ${
             isWide
               ? isCurated
-                ? "aspect-[16/10] w-full shrink-0 sm:min-h-[230px] sm:w-[46%] sm:aspect-auto"
+                ? "aspect-[16/10] w-full shrink-0 sm:min-h-[210px] sm:w-[38%] sm:aspect-auto"
                 : "w-2/5 shrink-0"
               : isCurated
                 ? "aspect-[16/10]"
@@ -156,7 +156,8 @@ export default function CarCard({
           )}
         </div>
 
-        <div className={`flex min-w-0 flex-1 flex-col ${isCurated ? "gap-3 px-4 pt-4" : "gap-2.5 px-3.5 pt-3"}`}>
+        <div className="flex min-w-0 flex-1 flex-col">
+        <div className={`flex min-w-0 flex-col ${isCurated ? "gap-3 px-4 pt-4" : "gap-2.5 px-3.5 pt-3"}`}>
           <div className="flex items-start justify-between gap-2">
             <div className="min-w-0">
               <p className="truncate text-[10.5px] font-semibold uppercase tracking-[0.06em] text-muted">
@@ -253,6 +254,7 @@ export default function CarCard({
               Check price
             </Link>
           )}
+        </div>
         </div>
       </div>
 
