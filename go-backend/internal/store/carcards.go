@@ -256,7 +256,13 @@ func ListCarCards(ctx context.Context, db *pgxpool.Pool, f CarCardFilters) ([]Ca
 		// so the interleave below rotates Maruti, Hyundai, Tata... before
 		// the imports. The chosen sort still orders each brand's own cars,
 		// so "latest" still returns that brand's latest.
-		sortSQL = " ORDER BY b.display_order DESC," + strings.TrimPrefix(sortSQL, " ORDER BY")
+		// Brand rank first, then how much of the model we carry. Insert
+		// order alone gave each brand's most recently imported car, which
+		// is arbitrary — it surfaced Tata's single-variant fleet taxi over
+		// the Nexon EV. Variant count is a real signal of how central a
+		// model is to its maker's range.
+		sortSQL = " ORDER BY b.display_order DESC, m.variant_count DESC NULLS LAST," +
+			strings.TrimPrefix(sortSQL, " ORDER BY")
 	}
 	q := carCardSelect + buildWhere(f, &args) + sortSQL
 

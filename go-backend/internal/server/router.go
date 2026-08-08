@@ -115,12 +115,14 @@ func New(h *handler.Handler, c *cache.Cache, cfg *config.Config) http.Handler {
 			r.Use(middleware.PublicCache(c, ttlCatalogue))
 			r.Get("/metros", h.FuelMetros)
 			r.Get("/states", h.FuelStates)
+			r.Get("/cities", h.FuelCityIndex)
 			r.Get("/states/{stateID}/cities", h.FuelPricesByState)
 			// City slugs repeat across states (two Aurangabads, two
 			// Hamirpurs), so every city path carries its state.
 			r.Get("/{stateSlug}", h.FuelStateDetail)
 			r.Get("/{stateSlug}/{citySlug}", h.FuelPricesForCity)
 			r.Get("/{stateSlug}/{citySlug}/history", h.FuelPriceHistory)
+			r.Get("/{stateSlug}/{citySlug}/context", h.FuelCityContext)
 			r.Get("/resolve/{citySlug}", h.FuelCityRedirect)
 		})
 

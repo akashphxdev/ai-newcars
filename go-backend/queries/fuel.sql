@@ -75,3 +75,38 @@ WHERE c.slug = $1
 GROUP BY c.slug, s.slug
 ORDER BY count(f.id) DESC
 LIMIT 1;
+
+-- name: FuelCityIndex :many
+-- Every city we hold a price for, with its state, for the city search.
+-- Fetched once on first interaction rather than shipped with the page.
+SELECT c.name AS city_name, c.slug AS city_slug,
+       s.name AS state_name, s.slug AS state_slug
+FROM cities c
+JOIN states s ON s.id = c.state_id
+WHERE EXISTS (SELECT 1 FROM fuel_prices f WHERE f.city_id = c.id)
+ORDER BY c.name;
+
+-- name: FuelPriceBenchmarks :many
+-- What a city's price should be read against: its state's average today
+-- and India's. Restricted to the last week so a city whose feed stalled
+-- cannot drag an average down with a month-old number.
+WITH latest AS (
+    SELECT DISTINCT ON (f.city_id, f.fuel_type)
+           f.fuel_type, f.price, c.state_id
+    FROM fuel_prices f
+    JOIN cities c ON c.id = f.city_id
+    WHERE f.applicable_on >= CURRENT_DATE - 7
+    ORDER BY f.city_id, f.fuel_type, f.applicable_on DESC
+)
+SELECT fuel_type,
+       round(coalesce(avg(price) FILTER (WHERE state_id = @state_id), 0), 2)::numeric AS state_avg,
+       round(avg(price), 2)::numeric AS national_avg
+FROM latest
+GROUP BY fuel_type;
+
+-- name: FuelCityRange :many
+-- The city's own 30-day low and high, per fuel.
+SELECT fuel_type, min(price)::numeric AS low, max(price)::numeric AS high
+FROM fuel_prices
+WHERE city_id = $1 AND applicable_on >= CURRENT_DATE - 30
+GROUP BY fuel_type;

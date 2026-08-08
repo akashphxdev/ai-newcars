@@ -75,6 +75,83 @@ func (q *Queries) FuelCityInState(ctx context.Context, arg FuelCityInStateParams
 	return i, err
 }
 
+const fuelCityIndex = `-- name: FuelCityIndex :many
+SELECT c.name AS city_name, c.slug AS city_slug,
+       s.name AS state_name, s.slug AS state_slug
+FROM cities c
+JOIN states s ON s.id = c.state_id
+WHERE EXISTS (SELECT 1 FROM fuel_prices f WHERE f.city_id = c.id)
+ORDER BY c.name
+`
+
+type FuelCityIndexRow struct {
+	CityName  string `json:"city_name"`
+	CitySlug  string `json:"city_slug"`
+	StateName string `json:"state_name"`
+	StateSlug string `json:"state_slug"`
+}
+
+// Every city we hold a price for, with its state, for the city search.
+// Fetched once on first interaction rather than shipped with the page.
+func (q *Queries) FuelCityIndex(ctx context.Context) ([]FuelCityIndexRow, error) {
+	rows, err := q.db.Query(ctx, fuelCityIndex)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []FuelCityIndexRow{}
+	for rows.Next() {
+		var i FuelCityIndexRow
+		if err := rows.Scan(
+			&i.CityName,
+			&i.CitySlug,
+			&i.StateName,
+			&i.StateSlug,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const fuelCityRange = `-- name: FuelCityRange :many
+SELECT fuel_type, min(price)::numeric AS low, max(price)::numeric AS high
+FROM fuel_prices
+WHERE city_id = $1 AND applicable_on >= CURRENT_DATE - 30
+GROUP BY fuel_type
+`
+
+type FuelCityRangeRow struct {
+	FuelType int16           `json:"fuel_type"`
+	Low      decimal.Decimal `json:"low"`
+	High     decimal.Decimal `json:"high"`
+}
+
+// The city's own 30-day low and high, per fuel.
+func (q *Queries) FuelCityRange(ctx context.Context, cityID int32) ([]FuelCityRangeRow, error) {
+	rows, err := q.db.Query(ctx, fuelCityRange, cityID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []FuelCityRangeRow{}
+	for rows.Next() {
+		var i FuelCityRangeRow
+		if err := rows.Scan(&i.FuelType, &i.Low, &i.High); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const fuelCityStateBySlug = `-- name: FuelCityStateBySlug :one
 SELECT c.slug AS city_slug, s.slug AS state_slug
 FROM cities c JOIN states s ON s.id = c.state_id
@@ -97,6 +174,51 @@ func (q *Queries) FuelCityStateBySlug(ctx context.Context, slug string) (FuelCit
 	var i FuelCityStateBySlugRow
 	err := row.Scan(&i.CitySlug, &i.StateSlug)
 	return i, err
+}
+
+const fuelPriceBenchmarks = `-- name: FuelPriceBenchmarks :many
+WITH latest AS (
+    SELECT DISTINCT ON (f.city_id, f.fuel_type)
+           f.fuel_type, f.price, c.state_id
+    FROM fuel_prices f
+    JOIN cities c ON c.id = f.city_id
+    WHERE f.applicable_on >= CURRENT_DATE - 7
+    ORDER BY f.city_id, f.fuel_type, f.applicable_on DESC
+)
+SELECT fuel_type,
+       round(coalesce(avg(price) FILTER (WHERE state_id = $1), 0), 2)::numeric AS state_avg,
+       round(avg(price), 2)::numeric AS national_avg
+FROM latest
+GROUP BY fuel_type
+`
+
+type FuelPriceBenchmarksRow struct {
+	FuelType    int16           `json:"fuel_type"`
+	StateAvg    decimal.Decimal `json:"state_avg"`
+	NationalAvg decimal.Decimal `json:"national_avg"`
+}
+
+// What a city's price should be read against: its state's average today
+// and India's. Restricted to the last week so a city whose feed stalled
+// cannot drag an average down with a month-old number.
+func (q *Queries) FuelPriceBenchmarks(ctx context.Context, stateID int32) ([]FuelPriceBenchmarksRow, error) {
+	rows, err := q.db.Query(ctx, fuelPriceBenchmarks, stateID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []FuelPriceBenchmarksRow{}
+	for rows.Next() {
+		var i FuelPriceBenchmarksRow
+		if err := rows.Scan(&i.FuelType, &i.StateAvg, &i.NationalAvg); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
 }
 
 const fuelPriceHistory = `-- name: FuelPriceHistory :many

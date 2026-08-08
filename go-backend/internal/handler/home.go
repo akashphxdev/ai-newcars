@@ -78,6 +78,11 @@ func (h *Handler) HomeCars(w http.ResponseWriter, r *http.Request) {
 		f.LaunchStatus, f.Sort = "upcoming", "upcoming"
 	case "electric":
 		f.LaunchStatus, f.Sort, f.OnlyElectric = "available", "latest", true
+		// The EV rail is for buyers, not the flagship shelf. Capping it
+		// keeps a 1.3 crore EV9 and a 55 lakh IONIQ 5 out of a row whose
+		// job is the 8-30 lakh cars people actually cross-shop.
+		evCap := decimal.NewFromInt(3000000)
+		f.MaxPrice = &evCap
 	case "popular":
 		f.LaunchStatus, f.Sort, f.RequireVariants = "available", "popular", true
 	case "luxury":

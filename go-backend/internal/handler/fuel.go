@@ -232,7 +232,7 @@ func (h *Handler) FuelMetros(w http.ResponseWriter, r *http.Request) {
 		if !ok {
 			c = map[string]any{
 				"cityId": p.CityID, "cityName": p.CityName, "citySlug": p.CitySlug,
-				"prices": map[string]fuelPoint{},
+				"stateSlug": p.StateSlug, "prices": map[string]fuelPoint{},
 			}
 			byCity[p.CitySlug] = c
 		}
@@ -250,4 +250,75 @@ func (h *Handler) FuelMetros(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	httpx.Success(w, out, "Metro fuel prices fetched successfully")
+}
+
+// FuelCityIndex is the flat city list behind the fuel city search.
+func (h *Handler) FuelCityIndex(w http.ResponseWriter, r *http.Request) {
+	rows, err := h.Q.FuelCityIndex(r.Context())
+	if err != nil {
+		httpx.Fail(w, r, err)
+		return
+	}
+	out := make([]map[string]any, 0, len(rows))
+	for _, c := range rows {
+		out = append(out, map[string]any{
+			"cityName": c.CityName, "citySlug": c.CitySlug,
+			"stateName": c.StateName, "stateSlug": c.StateSlug,
+		})
+	}
+	httpx.Success(w, out, "Cities fetched successfully")
+}
+
+// FuelCityContext is what a city's price should be read against: the
+// state and national averages, and the city's own 30-day range.
+func (h *Handler) FuelCityContext(w http.ResponseWriter, r *http.Request) {
+	city, err := h.Q.FuelCityInState(r.Context(), store.FuelCityInStateParams{
+		Slug:   chi.URLParam(r, "stateSlug"),
+		Slug_2: chi.URLParam(r, "citySlug"),
+	})
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			httpx.Fail(w, r, httpx.NotFound("City not found"))
+			return
+		}
+		httpx.Fail(w, r, err)
+		return
+	}
+
+	benchmarks, err := h.Q.FuelPriceBenchmarks(r.Context(), city.StateID)
+	if err != nil {
+		httpx.Fail(w, r, err)
+		return
+	}
+	ranges, err := h.Q.FuelCityRange(r.Context(), city.ID)
+	if err != nil {
+		httpx.Fail(w, r, err)
+		return
+	}
+
+	out := map[string]map[string]any{}
+	entry := func(fuel int16) map[string]any {
+		name, ok := fuelNames[fuel]
+		if !ok {
+			return nil
+		}
+		if out[name] == nil {
+			out[name] = map[string]any{}
+		}
+		return out[name]
+	}
+	for _, b := range benchmarks {
+		if e := entry(b.FuelType); e != nil {
+			e["stateAvg"] = decStrReq(b.StateAvg)
+			e["nationalAvg"] = decStrReq(b.NationalAvg)
+		}
+	}
+	for _, rg := range ranges {
+		if e := entry(rg.FuelType); e != nil {
+			e["low30"] = decStrReq(rg.Low)
+			e["high30"] = decStrReq(rg.High)
+		}
+	}
+
+	httpx.Success(w, out, "City context fetched successfully")
 }
