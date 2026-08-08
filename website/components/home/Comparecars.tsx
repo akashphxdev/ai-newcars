@@ -18,7 +18,7 @@ import {
   StarIcon,
   TagIcon,
 } from "@/components/common/icons";
-import { formatSinglePrice } from "@/lib/format";
+import { formatSinglePrice, carTitle } from "@/lib/format";
 import { routes } from "@/lib/routes";
 import type {
   CarOption,
@@ -163,7 +163,7 @@ function CarSelector({
         <option value="">{label}</option>
         {options.map((car) => (
           <option key={car.id} value={car.slug} disabled={car.slug === exclude}>
-            {car.name.startsWith(car.brand.name) ? car.name : `${car.brand.name} ${car.name}`}
+            {carTitle(car)}
           </option>
         ))}
       </select>
@@ -208,7 +208,7 @@ function ShowcaseCarHeader({ car }: { car: ShowcaseCar }) {
       <Link href={href} className="group/car relative mx-auto block aspect-[3/2] w-full max-w-[200px] sm:max-w-[228px] lg:max-w-[250px]">
         <Image
           src={car.coverImageUrl ?? FALLBACK_IMG}
-          alt={`${car.brand.name} ${car.name}`}
+          alt={`${carTitle(car)}`}
           fill
           sizes="(max-width: 640px) 42vw, 360px"
           className="featured-car-cover object-contain p-2 transition-transform duration-500 group-hover/car:scale-[1.025]"
@@ -216,7 +216,7 @@ function ShowcaseCarHeader({ car }: { car: ShowcaseCar }) {
       </Link>
       <div className="mt-1 flex items-center justify-center gap-2">
         <h3 className="truncate font-head text-[16px] font-extrabold text-ink sm:text-[18px]">
-          {car.name.startsWith(car.brand.name) ? car.name : `${car.brand.name} ${car.name}`}
+          {carTitle(car)}
         </h3>
         <EditIcon className="size-3.5 shrink-0 text-muted" />
       </div>

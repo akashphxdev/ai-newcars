@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useMemo, useState } from "react";
+import { carTitle } from "@/lib/format";
 import Image from "next/image";
 import Link from "next/link";
 import {
@@ -477,7 +478,7 @@ export default function MileageCalculatorClient({ brands }: { brands: Brand[] })
                 <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/25 to-transparent" />
                 <div className="absolute inset-x-0 bottom-0 p-2.5">
                   <p className="truncate text-[12px] font-bold text-white">
-                    {car.brand.name} {car.name}
+                    {carTitle(car)}
                   </p>
                   <p className="text-[10px] text-white/75">{FUEL_TYPE_LABELS[fuelType]}</p>
                   <p className="text-[14px] font-extrabold text-white">

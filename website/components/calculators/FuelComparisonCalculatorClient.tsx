@@ -121,9 +121,9 @@ export default function FuelComparisonCalculatorClient({ brands }: { brands: Bra
   }, []);
 
   useEffect(() => {
-    if (!city) return;
+    if (!city?.stateSlug) return;
     let alive = true;
-    getFuelPricesForCity(city.slug).then((res) => {
+    getFuelPricesForCity(city.stateSlug, city.slug).then((res) => {
       if (!alive || !res) return;
       const next: Partial<Record<FuelName, string>> = {};
       (Object.keys(res.prices) as FuelName[]).forEach((f) => {

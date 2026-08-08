@@ -10,7 +10,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { BoltIcon, GaugeIcon, StarIcon } from "@/components/common/icons";
-import { formatPriceRange, formatSinglePrice } from "@/lib/format";
+import { formatPriceRange, formatSinglePrice, carTitle } from "@/lib/format";
 import { routes } from "@/lib/routes";
 import type { HomeCar } from "@/features/cars/car.types";
 
@@ -82,11 +82,11 @@ export default function FeaturedCarCard({ car }: { car: HomeCar }) {
           <Link
             href={href}
             className="absolute inset-0 block focus-visible:outline-2 focus-visible:outline-offset-[-3px] focus-visible:outline-brand"
-            aria-label={`View ${car.brand.name} ${car.name}`}
+            aria-label={`View ${carTitle(car)}`}
           >
             <Image
               src={car.coverImageUrl ?? FALLBACK_IMG}
-              alt={`${car.brand.name} ${car.name}`}
+              alt={`${carTitle(car)}`}
               fill
               sizes="(max-width: 1024px) 100vw, 560px"
               className="featured-car-cover object-contain object-bottom p-2 transition-transform duration-500 group-hover:scale-[1.025] md:p-3"

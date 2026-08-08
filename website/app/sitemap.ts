@@ -3,6 +3,7 @@ import { getAllBrands } from "@/features/brands/brand.api";
 import { getBodyTypes } from "@/features/bodyTypes/bodyType.api";
 import { getCarsBrowse } from "@/features/cars/car.api";
 import { getArticleCategories } from "@/features/articles/article.api";
+import { getFuelState, getFuelStates } from "@/features/fuel/fuel.api";
 import { routes, absoluteUrl } from "@/lib/routes";
 
 // Generated from the API rather than the sitemap_entries table, which is
@@ -43,6 +44,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: absoluteUrl(routes.allBrands()), lastModified: now, changeFrequency: "weekly", priority: 0.7 },
     { url: absoluteUrl(routes.compare()), lastModified: now, changeFrequency: "weekly", priority: 0.7 },
     { url: absoluteUrl(routes.stories()), lastModified: now, changeFrequency: "weekly", priority: 0.5 },
+    { url: absoluteUrl(routes.fuelPrice()), lastModified: now, changeFrequency: "daily", priority: 0.8 },
     ...[
       "/car-loan-emi-calculator",
       "/mileage-calculator",
@@ -60,12 +62,27 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
   // A failure in any one source would otherwise drop the whole sitemap to
   // a 500. Partial is far better than none.
-  const [brands, bodyTypes, models, categories] = await Promise.all([
+  const [brands, bodyTypes, models, categories, fuelStates] = await Promise.all([
     getAllBrands().catch(() => []),
     getBodyTypes().catch(() => []),
     allModels().catch(() => []),
     getArticleCategories().catch(() => []),
+    getFuelStates().catch(() => []),
   ]);
+
+  // One entry per fuel city page. Petrol alone is enough to enumerate
+  // them — a city we hold any price for holds petrol.
+  const fuelCities = (
+    await Promise.all(
+      fuelStates.map(async (state) => {
+        const detail = await getFuelState(state.slug);
+        return (detail?.cities ?? []).map((city) => ({
+          stateSlug: state.slug,
+          citySlug: city.citySlug,
+        }));
+      }),
+    )
+  ).flat();
 
   return [
     ...staticEntries,
@@ -102,6 +119,19 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       lastModified: now,
       changeFrequency: "daily",
       priority: 0.6,
+    })),
+    ...fuelStates.map((state): Entry => ({
+      url: absoluteUrl(routes.fuelPriceInState(state.slug)),
+      lastModified: now,
+      changeFrequency: "daily",
+      priority: 0.6,
+    })),
+    // Prices move daily, so these are the freshest pages on the site.
+    ...fuelCities.map((city): Entry => ({
+      url: absoluteUrl(routes.fuelPriceInCity(city.stateSlug, city.citySlug)),
+      lastModified: now,
+      changeFrequency: "daily",
+      priority: 0.5,
     })),
   ];
 }

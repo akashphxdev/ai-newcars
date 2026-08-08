@@ -41,3 +41,13 @@ export function slugify(text: string): string {
 export function featureLabel(item: { name: string; value: string | null }): string {
   return item.value ? `${item.name}: ${item.value}` : item.name;
 }
+
+// Model names in the catalogue already carry the brand ("Maruti Suzuki
+// Victoris", "BMW X6"), so composing brand + name yields "Maruti Suzuki
+// Maruti Suzuki Victoris". Every caller that needs a full car label goes
+// through here rather than re-deriving the rule.
+export function carTitle(car: { name: string; brand: { name: string } }): string {
+  const brand = car.brand.name.trim();
+  const name = car.name.trim();
+  return name.toLowerCase().startsWith(brand.toLowerCase()) ? name : `${brand} ${name}`;
+}

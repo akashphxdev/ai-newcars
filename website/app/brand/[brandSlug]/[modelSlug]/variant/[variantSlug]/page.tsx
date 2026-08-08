@@ -2,7 +2,7 @@ import Link from "next/link";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { getCarDetail, getCarVariants, getHomeCars } from "@/features/cars/car.api";
-import { formatSinglePrice, slugify, featureLabel } from "@/lib/format";
+import { formatSinglePrice, slugify, featureLabel, carTitle } from "@/lib/format";
 import ModelDetailTabs from "@/components/common/ModelDetailTabs";
 import CarModelHero from "@/components/cars/CarModelHero";
 import CarModelSidebar from "@/components/cars/CarModelSidebar";
@@ -67,8 +67,8 @@ export async function generateMetadata(props: Props): Promise<Metadata> {
   if (!car || !car.selectedVariant) return {};
 
   const priceText = formatSinglePrice(car.selectedVariant.price);
-  const title = `${car.brand.name} ${car.name} ${car.selectedVariant.variantName} - Price & Specs`;
-  const description = `${car.brand.name} ${car.name} ${car.selectedVariant.variantName} price: ${priceText}. Full specifications, features, and safety details.`;
+  const title = `${carTitle(car)} ${car.selectedVariant.variantName} - Price & Specs`;
+  const description = `${carTitle(car)} ${car.selectedVariant.variantName} price: ${priceText}. Full specifications, features, and safety details.`;
 
   return {
     title,

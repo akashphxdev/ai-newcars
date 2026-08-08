@@ -3,7 +3,7 @@ import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { StarIcon, EditIcon } from "@/components/common/icons";
-import { formatSinglePrice } from "@/lib/format";
+import { formatSinglePrice, carTitle } from "@/lib/format";
 import VariantPicker from "./VariantPicker";
 import PowertrainPicker from "./PowertrainPicker";
 import type { CompareCarResult } from "@/features/compare/compare.types";
@@ -37,7 +37,7 @@ export default function CompareCarHeader({
   return (
     <div className="flex flex-col items-center gap-1.5 rounded-2xl border border-border bg-surface p-2 text-center sm:gap-2 sm:p-3.5">
       <Link href={routes.model(car.brand.slug, car.slug)} className="relative aspect-16/10 w-full overflow-hidden rounded-xl bg-page">
-        <Image src={car.coverImageUrl ?? FALLBACK_IMG} alt={`${car.brand.name} ${car.name}`} fill sizes="260px" className="object-cover" />
+        <Image src={car.coverImageUrl ?? FALLBACK_IMG} alt={`${carTitle(car)}`} fill sizes="260px" className="object-cover" />
       </Link>
 
       <div className="w-full">

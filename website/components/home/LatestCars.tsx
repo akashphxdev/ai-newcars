@@ -7,7 +7,7 @@ import ScrollArrows from "@/components/common/ScrollArrows";
 import { useScrollRail } from "@/components/common/useScrollRail";
 import { WishlistButton } from "@/components/common/CardBits";
 import { ChevronIcon, GaugeIcon, StarIcon } from "@/components/common/icons";
-import { formatPriceRange } from "@/lib/format";
+import { formatPriceRange, carTitle } from "@/lib/format";
 import { getHomeCars } from "@/features/cars/car.api";
 import type { HomeCar } from "@/features/cars/car.types";
 import { routes } from "@/lib/routes";
@@ -61,7 +61,7 @@ const Card = ({ car }: { car: HomeCar }) => {
       style={{ border: `1px solid ${BORDER}` }}
     >
       <div className="relative aspect-[4/3] overflow-hidden" style={{ background: PAGE_BG }}>
-        <Link href={modelUrl} className="absolute inset-0 z-0" aria-label={`View ${car.brand.name} ${car.name} details`}>
+        <Link href={modelUrl} className="absolute inset-0 z-0" aria-label={`View ${carTitle(car)} details`}>
           <Image src={car.coverImageUrl ?? FALLBACK_IMG} alt={car.name} fill sizes="290px" className="object-cover" />
         </Link>
 

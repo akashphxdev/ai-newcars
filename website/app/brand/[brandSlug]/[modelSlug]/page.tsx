@@ -3,7 +3,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { getCarDetail, getCarFaqs, getCarArticles, getHomeCars } from "@/features/cars/car.api";
 import { getModelCrossPairs } from "@/features/compare/compare.api";
-import { formatPriceRange, slugify, featureLabel } from "@/lib/format";
+import { formatPriceRange, slugify, featureLabel, carTitle } from "@/lib/format";
 import ModelDetailTabs from "@/components/common/ModelDetailTabs";
 import CarModelHero from "@/components/cars/CarModelHero";
 import CarModelColours from "@/components/cars/CarModelColours";
@@ -82,8 +82,8 @@ export async function generateMetadata(props: Props): Promise<Metadata> {
   if (!car) return {};
 
   const priceText = formatPriceRange(car.priceMin, car.priceMax);
-  const title = `${car.brand.name} ${car.name} - Price, Specs, Images & Variants`;
-  const description = `${car.brand.name} ${car.name} price in India: ${priceText}. Check variants, specifications, colours, and images.`;
+  const title = `${carTitle(car)} - Price, Specs, Images & Variants`;
+  const description = `${carTitle(car)} price in India: ${priceText}. Check variants, specifications, colours, and images.`;
 
   return {
     title,
@@ -202,7 +202,7 @@ export default async function CarModelPage(props: Props) {
             pairs={comparisonPairs}
             eyebrow="How It Compares"
             title={`Compare ${car.name} with other cars`}
-            subtitle={`See how the ${car.brand.name} ${car.name} stacks up against other popular models`}
+            subtitle={`See how the ${carTitle(car)} stacks up against other popular models`}
             cardWidthClass="w-full sm:w-1/2 lg:w-1/4"
           />
         </div>
@@ -216,7 +216,7 @@ export default async function CarModelPage(props: Props) {
             articles={articles}
             eyebrow="In The News"
             title={`${car.name} in the news`}
-            subtitle={`Reviews, comparisons, and updates about the ${car.brand.name} ${car.name}`}
+            subtitle={`Reviews, comparisons, and updates about the ${carTitle(car)}`}
           />
         </div>
       )}

@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { carTitle } from "@/lib/format";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { getCarImages, getHomeCars } from "@/features/cars/car.api";
@@ -29,8 +30,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const car = await getCarImages(brandSlug, modelSlug);
   if (!car) return {};
 
-  const title = `${car.brand.name} ${car.name} Images`;
-  return { title, description: `All photos of the ${car.brand.name} ${car.name} — exterior, interior, and colour options.` };
+  const title = `${carTitle(car)} Images`;
+  return { title, description: `All photos of the ${carTitle(car)} — exterior, interior, and colour options.` };
 }
 
 export default async function CarPhotosPage({ params }: Props) {
@@ -38,7 +39,7 @@ export default async function CarPhotosPage({ params }: Props) {
   const car = await getCarImages(brandSlug, modelSlug);
   if (!car) notFound();
 
-  const carLabel = `${car.brand.name} ${car.name}`;
+  const carLabel = `${carTitle(car)}`;
 
   return (
     <div className="flex h-screen flex-col overflow-hidden bg-black text-white">

@@ -1,5 +1,5 @@
 import Image from "next/image";
-import { formatSinglePrice } from "@/lib/format";
+import { formatSinglePrice, carTitle } from "@/lib/format";
 import type { RandomComparisonPair, RandomPairCar } from "@/features/compare/compare.types";
 
 const FALLBACK_IMG =
@@ -7,7 +7,7 @@ const FALLBACK_IMG =
 
 const CarImage = ({ car }: { car: RandomPairCar }) => (
   <div className="relative aspect-4/3 w-1/2 overflow-hidden">
-    <Image src={car.coverImageUrl ?? FALLBACK_IMG} alt={`${car.brand.name} ${car.name}`} fill sizes="160px" className="object-cover" />
+    <Image src={car.coverImageUrl ?? FALLBACK_IMG} alt={`${carTitle(car)}`} fill sizes="160px" className="object-cover" />
   </div>
 );
 

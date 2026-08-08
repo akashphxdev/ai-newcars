@@ -11,6 +11,7 @@ import PageViewTracker from "@/components/common/PageViewTracker";
 import { getBodyTypes } from "@/features/bodyTypes/bodyType.api";
 import { getArticleCategories } from "@/features/articles/article.api";
 import { getSiteSettingsCached } from "@/features/siteSettings/siteSetting.api";
+import { SITE_URL } from "@/lib/routes";
 
 const inter = Inter({
   variable: "--font-body",
@@ -26,6 +27,9 @@ const plusJakarta = Plus_Jakarta_Sans({
 });
 
 export const metadata: Metadata = {
+  // Without this every canonical and og:url a page declares is emitted as
+  // a bare path, which a crawler cannot resolve to one address.
+  metadataBase: new URL(SITE_URL),
   title: "TimesAuto",
   description: "India's most trusted auto portal",
 };

@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { carTitle } from "@/lib/format";
 import Image from "next/image";
 import Link from "next/link";
 import {
@@ -44,7 +45,7 @@ function CarThumb({ car, className = "" }: { car: HomeCar; className?: string })
   return (
     <Image
       src={src}
-      alt={`${car.brand.name} ${car.name}`}
+      alt={`${carTitle(car)}`}
       fill
       sizes="120px"
       onError={() => setSrc(FALLBACK_IMG)}

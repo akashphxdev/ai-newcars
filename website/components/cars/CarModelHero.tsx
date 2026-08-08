@@ -5,7 +5,7 @@ import CarLeadSecondaryActions from "./CarLeadSecondaryActions";
 import VariantSwitcher from "./VariantSwitcher";
 import { WishlistButton } from "@/components/common/CardBits";
 import { StarIcon, ShareIcon } from "@/components/common/icons";
-import { formatSinglePrice } from "@/lib/format";
+import { formatSinglePrice, carTitle } from "@/lib/format";
 import type { CarDetailResult, CarDetailSelectedVariant } from "@/features/cars/car.types";
 import { routes } from "@/lib/routes";
 
@@ -24,7 +24,7 @@ export default function CarModelHero({ car, variant }: { car: CarDetailResult; v
           images={car.images}
           colors={car.colors}
           fallbackImage={car.coverImageUrl}
-          alt={`${car.brand.name} ${car.name}`}
+          alt={`${carTitle(car)}`}
           photosHref={routes.modelPhotos(car.brand.slug, car.slug)}
         />
 
@@ -94,7 +94,7 @@ export default function CarModelHero({ car, variant }: { car: CarDetailResult; v
               />
             </div>
             <p className="mt-3 text-[12.5px] leading-relaxed text-ink">
-              Get the best price, exclusive offers, and a hassle-free booking experience for your {car.brand.name} {car.name}. Compare
+              Get the best price, exclusive offers, and a hassle-free booking experience for your {carTitle(car)}. Compare
               offers from verified dealers near you and drive home with the best deal today.
             </p>
           </div>

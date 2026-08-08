@@ -30,7 +30,7 @@ import {
   ClockIcon,
   StarIcon,
 } from "@/components/common/icons";
-import { formatPriceRange, formatSinglePrice } from "@/lib/format";
+import { formatPriceRange, formatSinglePrice, carTitle } from "@/lib/format";
 import { routes } from "@/lib/routes";
 import type { HomeCar } from "@/features/cars/car.types";
 
@@ -119,11 +119,11 @@ export default function CarCard({
           <Link
             href={modelUrl}
             className="absolute inset-0 z-0"
-            aria-label={`View ${car.brand.name} ${car.name} details`}
+            aria-label={`View ${carTitle(car)} details`}
           >
             <Image
               src={car.coverImageUrl ?? FALLBACK_IMG}
-              alt={`${car.brand.name} ${car.name}`}
+              alt={`${carTitle(car)}`}
               fill
               sizes={sizes}
               className={isCurated ? "object-cover transition-transform duration-500 group-hover:scale-[1.025]" : "object-cover"}
