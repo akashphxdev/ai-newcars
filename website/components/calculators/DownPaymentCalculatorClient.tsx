@@ -217,7 +217,7 @@ export default function DownPaymentCalculatorClient({
                     <option value="">Select Variant</option>
                     {variants.map((v) => (
                       <option key={v.id} value={v.id}>
-                        {v.variantName} ({formatLakh(Number(v.price))})
+                        {stripPrefix(v.variantName, selectedModel?.name ?? "")} ({formatLakh(Number(v.price))})
                       </option>
                     ))}
                   </select>

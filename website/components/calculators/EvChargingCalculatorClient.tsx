@@ -107,8 +107,29 @@ export default function EvChargingCalculatorClient({
   const chargeRangePct = Math.max(toValue - fromValue, 0);
   const hasValidRange = batteryCapacity > 0 && chargeRangePct > 0;
 
-  const acTime = hasValidRange && acOutput > 0 ? (batteryCapacity * chargeRangePct) / 100 / acOutput : 0;
+  // Charger output is missing for a lot of the catalogue (AC on 116 of 267
+  // electric variants), but the manufacturer's own 0-100% AC time usually
+  // is present. AC charging draws near-constant power, so dividing the
+  // pack by that time recovers an effective kW the range maths can use.
+  const acHours0to100 = electricSpecs?.acChargingTime ? Number(electricSpecs.acChargingTime) : 0;
+  const effectiveAcOutput =
+    acOutput > 0
+      ? acOutput
+      : acHours0to100 > 0 && batteryCapacity > 0
+        ? batteryCapacity / acHours0to100
+        : 0;
+
+  const acTime =
+    hasValidRange && effectiveAcOutput > 0
+      ? (batteryCapacity * chargeRangePct) / 100 / effectiveAcOutput
+      : 0;
   const dcTime = hasValidRange && dcOutput > 0 ? (batteryCapacity * chargeRangePct) / 100 / dcOutput : 0;
+
+  // DC fast-charge is stored as free text for a fixed window ("45 Min
+  // (10-80%)"). It cannot be rescaled to the range the visitor picked --
+  // fast charging tapers hard above 80% -- so it is shown as the
+  // manufacturer's own claim rather than folded into the estimate.
+  const dcStatedTime = !dcOutput && electricSpecs?.dcFastChargingTime ? electricSpecs.dcFastChargingTime : null;
 
   const handleReset = () => {
     setFromPct("20");
@@ -211,7 +232,7 @@ export default function EvChargingCalculatorClient({
                     <option value="">Select Variant</option>
                     {evVariants.map((v) => (
                       <option key={v.id} value={v.id}>
-                        {v.variantName}
+                        {stripPrefix(v.variantName, selectedModel?.name ?? "")}
                       </option>
                     ))}
                   </select>
@@ -253,9 +274,14 @@ export default function EvChargingCalculatorClient({
             {carDetail && (
               <div className="rounded-xl bg-page p-3.5 text-[12px] text-muted">
                 <p>
-                  Battery: <span className="font-semibold text-ink">{batteryCapacity || "—"} kWh</span> · AC Output:{" "}
-                  <span className="font-semibold text-ink">{acOutput || "—"} kW</span> · DC Output:{" "}
-                  <span className="font-semibold text-ink">{dcOutput || "—"} kW</span>
+                  Battery: <span className="font-semibold text-ink">{batteryCapacity || "—"} kWh</span> · AC:{" "}
+                  <span className="font-semibold text-ink">
+                    {effectiveAcOutput > 0 ? `${effectiveAcOutput.toFixed(1)} kW` : "—"}
+                  </span>{" "}
+                  · DC:{" "}
+                  <span className="font-semibold text-ink">
+                    {dcOutput ? `${dcOutput} kW` : (dcStatedTime ?? "—")}
+                  </span>
                 </p>
               </div>
             )}
@@ -302,7 +328,13 @@ export default function EvChargingCalculatorClient({
                     <p className="text-[12.5px] font-bold text-ink">AC Charging</p>
                   </div>
                   <p className="mt-3 text-[26px] font-extrabold text-ink">{formatDuration(acTime)}</p>
-                  <p className="mt-1 text-[11.5px] text-muted">at {acOutput || "—"} kW</p>
+                  <p className="mt-1 text-[11.5px] text-muted">
+                    {acOutput
+                      ? `at ${acOutput} kW`
+                      : effectiveAcOutput > 0
+                        ? `at about ${effectiveAcOutput.toFixed(1)} kW, from the claimed ${acHours0to100}h full charge`
+                        : "Charger output not published for this variant"}
+                  </p>
                 </div>
                 <div className="rounded-2xl border border-border bg-surface p-5">
                   <div className="flex items-center gap-2">
@@ -311,8 +343,16 @@ export default function EvChargingCalculatorClient({
                     </span>
                     <p className="text-[12.5px] font-bold text-ink">DC Fast Charging</p>
                   </div>
-                  <p className="mt-3 text-[26px] font-extrabold text-ink">{formatDuration(dcTime)}</p>
-                  <p className="mt-1 text-[11.5px] text-muted">at {dcOutput || "—"} kW</p>
+                  <p className="mt-3 text-[26px] font-extrabold text-ink">
+                    {dcTime > 0 ? formatDuration(dcTime) : (dcStatedTime ?? "—")}
+                  </p>
+                  <p className="mt-1 text-[11.5px] text-muted">
+                    {dcOutput
+                      ? `at ${dcOutput} kW`
+                      : dcStatedTime
+                        ? "Manufacturer's claim for its own charge window, not the range above"
+                        : "Charger output not published for this variant"}
+                  </p>
                 </div>
               </div>
 
