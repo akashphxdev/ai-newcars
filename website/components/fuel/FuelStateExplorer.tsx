@@ -38,6 +38,8 @@ export default function FuelStateExplorer({
   const [stateQuery, setStateQuery] = useState("");
   const [cityQuery, setCityQuery] = useState("");
   const [view, setView] = useState<"state" | "city">("state");
+  const [fuelFilter, setFuelFilter] = useState<"all" | FuelName>("all");
+  const [sortOrder, setSortOrder] = useState<"name" | "petrol-low">("name");
   const [alertsOn, setAlertsOn] = useState(false);
 
   const visibleStates = useMemo(() => {
@@ -48,9 +50,16 @@ export default function FuelStateExplorer({
 
   const visibleCities = useMemo(() => {
     const query = cityQuery.trim().toLowerCase();
-    if (!query) return cities;
-    return cities.filter((city) => city.cityName.toLowerCase().includes(query));
-  }, [cities, cityQuery]);
+    const filtered = query ? cities.filter((city) => city.cityName.toLowerCase().includes(query)) : cities;
+    return [...filtered].sort((a, b) => {
+      if (sortOrder === "petrol-low") {
+        return Number(a.prices.petrol?.price ?? Infinity) - Number(b.prices.petrol?.price ?? Infinity);
+      }
+      return a.cityName.localeCompare(b.cityName);
+    });
+  }, [cities, cityQuery, sortOrder]);
+
+  const visibleFuels: FuelName[] = fuelFilter === "all" ? ["petrol", "diesel", "cng"] : [fuelFilter];
 
   function downloadCsv() {
     const header = ["City", "Petrol", "Diesel", "CNG", "Updated"];
@@ -86,7 +95,7 @@ export default function FuelStateExplorer({
           <div className="inline-grid grid-cols-3 self-start overflow-hidden rounded-[7px] border border-border bg-surface lg:self-auto">
             <button type="button" onClick={() => setView("state")} className={`min-h-11 cursor-pointer border-r border-border px-5 text-[12px] font-bold ${view === "state" ? "bg-brand text-white" : "hover:bg-page"}`}>By state</button>
             <button type="button" onClick={() => setView("city")} className={`min-h-11 cursor-pointer border-r border-border px-5 text-[12px] font-bold ${view === "city" ? "bg-brand text-white" : "hover:bg-page"}`}>By city</button>
-            <button type="button" onClick={() => { setView("city"); setCityQuery(homeCity); }} className="min-h-11 cursor-pointer px-5 text-[12px] font-bold hover:bg-page">Near me</button>
+            <a href="#city-search" className="inline-flex min-h-11 items-center justify-center px-5 text-[12px] font-bold text-ink no-underline hover:bg-page">Near me</a>
           </div>
         </div>
 
@@ -134,14 +143,21 @@ export default function FuelStateExplorer({
               <p className="text-[10px] font-bold uppercase text-brand">{selectedState.name}</p>
               <h3 className="mt-2 font-head text-[23px] font-extrabold text-ink">Fuel prices in {selectedState.name}</h3>
               <p className="mt-2 text-[12px] text-muted">{selectedState.cityCount} cities · latest available daily rates</p>
-              <div className="mt-6 grid gap-3 sm:grid-cols-[minmax(0,1fr)_180px]">
+              <div className="mt-6 grid gap-3 sm:grid-cols-[minmax(0,1fr)_150px_170px]">
                 <label className="flex min-h-11 items-center gap-2 rounded-[6px] border border-border bg-surface px-3 focus-within:border-faint">
                   <SearchIcon className="size-4 text-muted" />
                   <input value={cityQuery} onChange={(event) => setCityQuery(event.target.value)} placeholder={`Search city in ${selectedState.name}`} className="min-w-0 flex-1 bg-transparent text-[12px] text-ink placeholder:text-subtle" />
                 </label>
-                <div className="flex min-h-11 items-center justify-between rounded-[6px] border border-border px-3 text-[12px] font-semibold text-ink">
-                  All fuels <span className="text-muted">⌄</span>
-                </div>
+                <select value={fuelFilter} onChange={(event) => setFuelFilter(event.target.value as "all" | FuelName)} className="min-h-11 rounded-[6px] border border-border bg-surface px-3 text-[12px] font-semibold text-ink">
+                  <option value="all">All fuels</option>
+                  <option value="petrol">Petrol</option>
+                  <option value="diesel">Diesel</option>
+                  <option value="cng">CNG</option>
+                </select>
+                <select value={sortOrder} onChange={(event) => setSortOrder(event.target.value as "name" | "petrol-low")} className="min-h-11 rounded-[6px] border border-border bg-surface px-3 text-[12px] font-semibold text-ink">
+                  <option value="name">Sort: City name</option>
+                  <option value="petrol-low">Petrol: Low to high</option>
+                </select>
               </div>
             </div>
 
@@ -150,9 +166,7 @@ export default function FuelStateExplorer({
                 <thead className="bg-page text-[10px] font-bold uppercase text-muted">
                   <tr>
                     <th className="px-5 py-3.5">City</th>
-                    <th className="px-4 py-3.5">Petrol</th>
-                    <th className="px-4 py-3.5">Diesel</th>
-                    <th className="px-4 py-3.5">CNG</th>
+                    {visibleFuels.map((fuel) => <th key={fuel} className="px-4 py-3.5">{fuel}</th>)}
                     <th className="px-4 py-3.5">Updated</th>
                     <th className="px-4 py-3.5">Action</th>
                   </tr>
@@ -166,7 +180,7 @@ export default function FuelStateExplorer({
                           <p className="text-[12px] font-bold text-ink">{city.cityName}</p>
                           {index === 0 && <p className="mt-0.5 text-[9px] font-semibold text-brand">Popular city</p>}
                         </td>
-                        {(["petrol", "diesel", "cng"] as FuelName[]).map((fuel) => {
+                        {visibleFuels.map((fuel) => {
                           const point = city.prices[fuel];
                           const change = formatFuelChange(point?.change);
                           return (

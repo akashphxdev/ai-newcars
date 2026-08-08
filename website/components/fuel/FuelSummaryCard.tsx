@@ -48,7 +48,7 @@ export default function FuelSummaryCard({
               <span className={`flex size-8 items-center justify-center rounded-[6px] ${ACCENT_BY_FUEL[fuel]}`}>
                 <FuelIcon className="size-4" />
               </span>
-              <p className="text-[12px] font-bold uppercase tracking-[0.08em] text-muted">
+              <p className="text-[12px] font-bold uppercase text-muted">
                 {FUEL_LABELS[fuel]}
               </p>
             </div>

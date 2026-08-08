@@ -323,7 +323,7 @@ export default function CompareCars({
           <div className="relative grid grid-cols-[1fr_56px_1fr] items-start gap-2 overflow-hidden px-4 pb-7 pt-6 sm:grid-cols-[1fr_90px_1fr] sm:px-8 sm:pb-9 sm:pt-8 lg:px-10">
             <div
               aria-hidden
-              className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_25%_46%,rgba(224,224,226,0.95),transparent_34%),radial-gradient(circle_at_75%_46%,rgba(224,224,226,0.95),transparent_34%),radial-gradient(circle,rgba(17,24,39,0.07)_1px,transparent_1px)] [background-size:auto,auto,17px_17px]"
+              className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_25%_44%,rgb(224,224,226)_0%,rgb(224,224,226)_18%,transparent_40%),radial-gradient(circle_at_75%_44%,rgb(224,224,226)_0%,rgb(224,224,226)_18%,transparent_40%),radial-gradient(circle,rgba(17,24,39,0.07)_1px,transparent_1px)] [background-size:auto,auto,17px_17px]"
             />
             <div
               aria-hidden
