@@ -39,18 +39,12 @@ export default function FeaturedCarCard({ car }: { car: HomeCar }) {
 
   return (
     <article className="group flex min-h-[550px] h-full flex-col overflow-hidden rounded-[8px] border border-border bg-surface shadow-[0_24px_70px_-58px_rgba(92,67,45,0.6)]">
+      {/* No backdrop here on purpose. Cover images are opaque JPEGs with
+          a flat grey studio background baked in, so anything placed behind
+          one is hidden by that rectangle — the card ended up showing two
+          competing backgrounds rather than a car standing in a room. A
+          backdrop only works once the covers are transparent cut-outs. */}
       <div className="relative flex flex-1 flex-col overflow-hidden bg-surface">
-        <Image
-          src="/design/curated-model-1-bg.png"
-          alt=""
-          fill
-          sizes="(max-width: 1024px) 100vw, 830px"
-          className="pointer-events-none object-cover object-right"
-        />
-        <div
-          aria-hidden
-          className="pointer-events-none absolute inset-0 bg-[linear-gradient(90deg,rgba(255,255,255,0.98)_0%,rgba(255,255,255,0.9)_42%,rgba(255,255,255,0)_68%)]"
-        />
 
         <div className="relative z-10 flex max-w-[520px] flex-col p-6 sm:p-8 lg:max-w-[54%]">
           <span className="w-fit rounded-[5px] bg-brand-soft px-3 py-1.5 text-[10px] font-bold uppercase tracking-[0.1em] text-brand">
