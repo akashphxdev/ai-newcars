@@ -44,7 +44,8 @@ export const routes = {
 
   // ---- Fuel ---------------------------------------------------------
   fuelPrice: () => "/fuel-price",
-  fuelPriceInCity: (citySlug: string) => `/fuel-price/${citySlug}`,
+  fuelPriceInState: (stateSlug: string) => `/fuel-price/${stateSlug}`,
+  fuelPriceInCity: (stateSlug: string, citySlug: string) => `/fuel-price/${stateSlug}/${citySlug}`,
 
   // ---- Editorial ----------------------------------------------------
   newsCategory: (categorySlug: string) => `/news/${categorySlug}`,

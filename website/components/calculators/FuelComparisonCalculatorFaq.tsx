@@ -16,7 +16,7 @@ const FAQS = [
   },
   {
     q: "Why do I have to enter the fuel price myself?",
-    a: "Petrol, diesel, CNG and electricity prices change often and vary by state and city, and we don't have a live price feed. Enter today's local price for each fuel type for an accurate comparison.",
+    a: "We prefill current petrol, diesel, and CNG rates when they are available for your selected city. You can edit any local rate, and should enter your own electricity tariff for an accurate EV comparison.",
   },
   {
     q: "Does this account for the price difference between fuel-type variants?",
@@ -41,19 +41,19 @@ export default function FuelComparisonCalculatorFaq() {
   };
 
   return (
-    <div className="mt-10">
+    <section className="mt-16 border-t border-border pt-10 sm:pt-12 lg:grid lg:grid-cols-[minmax(240px,0.45fr)_minmax(0,1fr)] lg:gap-12">
       <SectionHeader
         eyebrow="FAQs"
         title="Frequently Asked Questions"
         subtitle="Common questions about comparing fuel types and how this calculator works."
       />
 
-      <div className="flex flex-col gap-3">
+      <div className="border-t border-border">
         {FAQS.map((f, i) => (
           <details
             key={f.q}
             open={i === 0}
-            className="group rounded-2xl border border-border bg-surface p-4 [&_summary::-webkit-details-marker]:hidden"
+            className="group border-b border-border bg-transparent py-4 [&_summary::-webkit-details-marker]:hidden"
           >
             <summary className="flex cursor-pointer list-none items-center justify-between gap-3 text-[15px] font-semibold text-ink">
               {f.q}
@@ -65,6 +65,6 @@ export default function FuelComparisonCalculatorFaq() {
       </div>
 
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
-    </div>
+    </section>
   );
 }

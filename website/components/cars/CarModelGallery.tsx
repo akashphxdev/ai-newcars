@@ -48,15 +48,15 @@ export default function CarModelGallery({
   const showViewAllThumb = gallery.length > 3;
 
   return (
-    <div className="flex flex-col-reverse gap-3 sm:flex-row sm:items-start">
+    <div className="flex h-full min-h-[360px] flex-col-reverse bg-[#eef0f2] sm:min-h-[460px] sm:flex-row sm:items-stretch lg:min-h-[540px]">
       {gallery.length > 1 && (
-        <div className="flex gap-2 overflow-x-auto sm:w-20 sm:shrink-0 sm:flex-col sm:overflow-y-auto">
+        <div className="flex gap-2 overflow-x-auto border-t border-white/70 bg-white/85 p-2 sm:w-24 sm:shrink-0 sm:flex-col sm:overflow-y-auto sm:border-r sm:border-t-0 sm:p-3">
           {thumbs.map((img, i) => (
             <button
               key={img.id}
               type="button"
               onClick={() => setIndex(i)}
-              className={`relative aspect-4/3 w-16 shrink-0 cursor-pointer overflow-hidden rounded-lg border-2 transition-colors sm:w-full ${
+              className={`relative aspect-4/3 w-16 shrink-0 cursor-pointer overflow-hidden border-2 transition-colors sm:w-full ${
                 i === index ? "border-brand" : "border-transparent hover:border-border"
               }`}
             >
@@ -66,7 +66,7 @@ export default function CarModelGallery({
           {showViewAllThumb && (
             <Link
               href={photosHref}
-              className="relative flex aspect-4/3 w-16 shrink-0 cursor-pointer items-center justify-center rounded-lg border-2 border-transparent bg-ink/80 text-center text-[10.5px] font-bold leading-tight text-white transition-colors hover:bg-ink sm:w-full"
+              className="relative flex aspect-4/3 w-16 shrink-0 cursor-pointer items-center justify-center border-2 border-transparent bg-ink/80 text-center text-[10.5px] font-bold leading-tight text-white transition-colors hover:bg-ink sm:w-full"
             >
               View All
             </Link>
@@ -74,8 +74,8 @@ export default function CarModelGallery({
         </div>
       )}
 
-      <div className="relative aspect-2/1 w-full max-w-130 overflow-hidden rounded-2xl bg-surface">
-        <Image src={current} alt={alt} fill priority sizes="(min-width: 1024px) 520px, 100vw" className="object-cover" />
+      <div className="relative min-h-[300px] w-full flex-1 overflow-hidden bg-[#eef0f2] sm:min-h-0">
+        <Image src={current} alt={alt} fill priority sizes="(min-width: 1024px) 760px, 100vw" className="object-cover" />
 
         {gallery.length > 1 && (
           <>

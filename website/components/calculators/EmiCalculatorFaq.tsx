@@ -43,19 +43,19 @@ export default function EmiCalculatorFaq() {
   };
 
   return (
-    <div className="mt-10">
+    <section className="mt-16 border-t border-border pt-10 sm:pt-12 lg:grid lg:grid-cols-[minmax(240px,0.45fr)_minmax(0,1fr)] lg:gap-12">
       <SectionHeader
         eyebrow="FAQs"
         title="Frequently Asked Questions"
         subtitle="Common questions about car loan EMIs and how this calculator works."
       />
 
-      <div className="flex flex-col gap-3">
+      <div className="border-t border-border">
         {FAQS.map((f, i) => (
           <details
             key={f.q}
             open={i === 0}
-            className="group rounded-2xl border border-border bg-surface p-4 [&_summary::-webkit-details-marker]:hidden"
+            className="group border-b border-border bg-transparent py-4 [&_summary::-webkit-details-marker]:hidden"
           >
             <summary className="flex cursor-pointer list-none items-center justify-between gap-3 text-[15px] font-semibold text-ink">
               {f.q}
@@ -67,6 +67,6 @@ export default function EmiCalculatorFaq() {
       </div>
 
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
-    </div>
+    </section>
   );
 }

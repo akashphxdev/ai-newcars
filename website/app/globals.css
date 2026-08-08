@@ -112,6 +112,72 @@ body {
   color: var(--color-ink);
 }
 
+/* Calculator workspaces share the compact, data-first language used by the
+ * TimesAuto tool references. These rules refine existing components without
+ * changing their calculation or data-loading behaviour. */
+.tool-workspace {
+  font-variant-numeric: tabular-nums;
+}
+
+.tool-workspace :where(.rounded-2xl) {
+  border-radius: 0.5rem;
+}
+
+.tool-workspace :where(.rounded-xl) {
+  border-radius: 0.375rem;
+}
+
+.tool-workspace :where(button, a, input, select, summary) {
+  transition-duration: 200ms;
+}
+
+.tool-workspace :where(button, a, input, select, summary):focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--color-brand) 70%, white);
+  outline-offset: 2px;
+}
+
+.tool-workspace-ev :where(button, a, input, select, summary):focus-visible {
+  outline-color: color-mix(in srgb, var(--color-ev) 72%, white);
+}
+
+.tool-workspace-ev .text-brand {
+  color: var(--color-ev);
+}
+
+.tool-workspace-ev .bg-brand {
+  background-color: var(--color-ev);
+}
+
+.tool-workspace-ev .bg-brand-soft {
+  background-color: var(--color-ev-soft);
+}
+
+.tool-workspace-ev .border-brand {
+  border-color: var(--color-ev);
+}
+
+.tool-workspace-ev .accent-brand {
+  accent-color: var(--color-ev);
+}
+
+.tool-workspace :where(input[type="range"]) {
+  cursor: pointer;
+}
+
+.tool-workspace > :where(.border, [class*="border-border"]) {
+  box-shadow: 0 12px 34px -28px color-mix(in srgb, var(--color-ink) 30%, transparent);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .tool-workspace :where(button, a) {
+    transition-property: color, background-color, border-color, opacity, box-shadow, transform;
+  }
+
+  .tool-workspace :where(button, a):active {
+    transform: translateY(1px);
+  }
+}
+
 /* In-page anchor links (e.g. the model page's tabs) animate the scroll
    instead of jumping instantly, so it's clear a navigation happened. */
 @media (prefers-reduced-motion: no-preference) {

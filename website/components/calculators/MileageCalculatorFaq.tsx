@@ -12,7 +12,7 @@ const FAQS = [
   },
   {
     q: "Why isn't there a fuel price already filled in?",
-    a: "Fuel and electricity prices change often and vary by state and city, and we don't have a live fuel-price feed. Enter today's price from your local pump (or your electricity tariff for EVs) for an accurate result.",
+    a: "When your selected city has a current rate, we prefill petrol, diesel, or CNG pricing automatically. You can still edit the value to match your local pump, and EV users should enter their own electricity tariff.",
   },
   {
     q: "Does this include maintenance, insurance, or the effect of traffic and AC usage?",
@@ -41,19 +41,19 @@ export default function MileageCalculatorFaq() {
   };
 
   return (
-    <div className="mt-10">
+    <section className="mt-16 border-t border-border pt-10 sm:pt-12 lg:grid lg:grid-cols-[minmax(240px,0.45fr)_minmax(0,1fr)] lg:gap-12">
       <SectionHeader
         eyebrow="FAQs"
         title="Frequently Asked Questions"
         subtitle="Common questions about mileage, running cost, and how this calculator works."
       />
 
-      <div className="flex flex-col gap-3">
+      <div className="border-t border-border">
         {FAQS.map((f, i) => (
           <details
             key={f.q}
             open={i === 0}
-            className="group rounded-2xl border border-border bg-surface p-4 [&_summary::-webkit-details-marker]:hidden"
+            className="group border-b border-border bg-transparent py-4 [&_summary::-webkit-details-marker]:hidden"
           >
             <summary className="flex cursor-pointer list-none items-center justify-between gap-3 text-[15px] font-semibold text-ink">
               {f.q}
@@ -65,6 +65,6 @@ export default function MileageCalculatorFaq() {
       </div>
 
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
-    </div>
+    </section>
   );
 }

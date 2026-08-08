@@ -1,9 +1,11 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { getAllBrands } from "@/features/brands/brand.api";
+import { getVariantsByModel } from "@/features/calculators/emiCalculator.api";
+import { leadCarSeed } from "@/features/calculators/calculatorSeed";
 import EmiCalculatorClient from "@/components/calculators/EmiCalculatorClient";
 import EmiFormulaExplainer from "@/components/calculators/EmiFormulaExplainer";
 import EmiCalculatorFaq from "@/components/calculators/EmiCalculatorFaq";
+import CalculatorPageShell from "@/components/calculators/CalculatorPageShell";
 
 export const metadata: Metadata = {
   title: "Car EMI Calculator | TimesAuto",
@@ -12,33 +14,18 @@ export const metadata: Metadata = {
 };
 
 export default async function EmiCalculatorPage() {
-  const brands = await getAllBrands();
+  const [brands, seed] = await Promise.all([getAllBrands(), leadCarSeed(getVariantsByModel)]);
 
   return (
-    <div>
-      <div className="border-b border-border bg-surface">
-        <div className="mx-auto max-w-7xl px-4 py-8 sm:py-10">
-          <nav className="mb-3 flex items-center gap-1.5 text-[13px] font-semibold" aria-label="Breadcrumb">
-            <Link href="/" className="text-ink">
-              Home
-            </Link>
-            <span className="text-muted">{">"}</span>
-            <span className="text-ink">Tools</span>
-            <span className="text-muted">{">"}</span>
-            <span className="text-brand">EMI Calculator</span>
-          </nav>
-          <h1 className="text-2xl font-bold tracking-tight text-ink sm:text-[28px]">Car EMI Calculator</h1>
-          <p className="mt-2 max-w-2xl text-[14.5px] font-medium text-muted">
-            Calculate your monthly EMI and plan your car purchase better with our easy EMI calculator.
-          </p>
-        </div>
-      </div>
-
-      <div className="mx-auto max-w-7xl px-4 py-8 sm:py-10">
-        <EmiCalculatorClient brands={brands} />
-        <EmiFormulaExplainer />
-        <EmiCalculatorFaq />
-      </div>
-    </div>
+    <CalculatorPageShell
+      eyebrow="Smart finance"
+      title="Plan your car loan with confidence"
+      description="Estimate your monthly EMI, compare the true cost of borrowing, and shape a repayment plan around your budget."
+      breadcrumb="Car Loan EMI Calculator"
+    >
+      <EmiCalculatorClient brands={brands} seed={seed} />
+      <EmiFormulaExplainer />
+      <EmiCalculatorFaq />
+    </CalculatorPageShell>
   );
 }

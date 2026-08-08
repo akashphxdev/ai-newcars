@@ -17,15 +17,23 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { routes } from "@/lib/routes";
 
-const TABS = [
-  { label: "Overview", id: "overview", page: "model" },
-  { label: "Specifications", id: "specs", page: "variant" },
-  { label: "Features", id: "features", page: "variant" },
-  { label: "Safety", id: "safety", page: "variant" },
-  { label: "Variants", id: "variants", page: "model" },
-  { label: "Comparison", id: "comparison", page: "model" },
-  { label: "News", id: "news", page: "model" },
-  { label: "Reviews", id: "reviews", page: "shared" },
+const MODEL_TABS = [
+  { label: "Expert view", id: "overview" },
+  { label: "Variants & price", id: "variants" },
+  { label: "Colours", id: "colours" },
+  { label: "Compare", id: "comparison" },
+  { label: "Owner reviews", id: "reviews" },
+  { label: "News", id: "news" },
+  { label: "FAQs", id: "faqs" },
+] as const;
+
+const VARIANT_TABS = [
+  { label: "Performance", id: "performance" },
+  { label: "Dimensions", id: "dimensions" },
+  { label: "Cabin & features", id: "features" },
+  { label: "Safety", id: "safety" },
+  { label: "Ownership", id: "ownership" },
+  { label: "Reviews", id: "reviews" },
 ] as const;
 
 export default function ModelDetailTabs({
@@ -45,11 +53,7 @@ export default function ModelDetailTabs({
   const modelHref = routes.model(brandSlug, modelSlug);
   const variantHref = routes.variant(brandSlug, modelSlug, variantSlug);
 
-  const anchorTabs = TABS.map((t) => {
-    const isLocal = t.page === "shared" ? true : t.page === "variant" ? onVariantPage : !onVariantPage;
-    const basePath = t.page === "variant" ? variantHref : t.page === "model" ? modelHref : onVariantPage ? variantHref : modelHref;
-    return { ...t, isLocal, basePath };
-  });
+  const anchorTabs = (onVariantPage ? VARIANT_TABS : MODEL_TABS).map((tab) => ({ ...tab, isLocal: true }));
 
   const [activeId, setActiveId] = useState<string>(anchorTabs[0].id);
   const tabsRef = useRef<HTMLDivElement>(null);
@@ -83,21 +87,27 @@ export default function ModelDetailTabs({
 
   const tabs = [
     ...anchorTabs,
-    { label: "Photos", href: `${modelHref}/photos`, isLocal: false, id: "photos" as const, basePath: modelHref },
+    ...(onVariantPage
+      ? [{ label: "Model overview", href: modelHref, isLocal: false, id: "model" as const }]
+      : variantSlug
+        ? [{ label: "Specifications", href: variantHref, isLocal: false, id: "specifications" as const }]
+        : []),
+    { label: "Photos", href: `${modelHref}/photos`, isLocal: false, id: "photos" as const },
   ];
 
   return (
-    <div ref={tabsRef} className="sticky top-16 z-40 w-full rounded-xl border border-border bg-white">
-      <div className="flex items-center gap-1 overflow-x-auto px-3 text-[13.5px] font-medium text-ink scrollbar-none">
+    <div ref={tabsRef} className="sticky top-16 z-40 w-full border-y border-border bg-white/95 backdrop-blur-md">
+      <div className="mx-auto flex max-w-7xl items-center overflow-x-auto px-4 text-[12px] font-bold text-ink scrollbar-none sm:text-[13px]">
         {tabs.map((tab) => {
-          const isPhotos = tab.label === "Photos";
-          const href = isPhotos ? (tab as { href: string }).href : tab.isLocal ? `#${tab.id}` : `${tab.basePath}#${tab.id}`;
-          const isActive = tab.isLocal && !isPhotos && tab.id === activeId;
+          const href = tab.isLocal ? `#${tab.id}` : (tab as { href: string }).href;
+          const isActive = tab.isLocal && tab.id === activeId;
           return (
             <Link
               key={tab.label}
               href={href}
-              className={`whitespace-nowrap px-3 py-3 transition-colors hover:text-brand ${isActive ? "text-brand" : ""}`}
+              className={`relative whitespace-nowrap px-4 py-4 transition-colors hover:text-brand first:pl-0 ${
+                isActive ? "text-brand after:absolute after:inset-x-4 after:bottom-0 after:h-0.5 after:bg-brand after:content-[''] first:after:left-0" : ""
+              }`}
             >
               {tab.label}
             </Link>

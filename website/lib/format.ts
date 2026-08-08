@@ -51,3 +51,15 @@ export function carTitle(car: { name: string; brand: { name: string } }): string
   const name = car.name.trim();
   return name.toLowerCase().startsWith(brand.toLowerCase()) ? name : `${brand} ${name}`;
 }
+
+// The inverse of carTitle. Inside a brand- or model-scoped control the
+// prefix is already established by the control above it, so repeating it
+// only pushes the part that distinguishes the option out of view —
+// "Maruti Suzuki Victoris" in a model select under a Maruti brand select
+// truncates to "Maruti Suzuki Vic".
+export function stripPrefix(text: string, prefix: string): string {
+  const value = text.trim();
+  const lead = prefix.trim();
+  if (!lead || !value.toLowerCase().startsWith(lead.toLowerCase())) return value;
+  return value.slice(lead.length).trim() || value;
+}

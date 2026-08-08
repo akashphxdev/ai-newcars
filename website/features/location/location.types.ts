@@ -4,7 +4,10 @@ export interface LocationCity {
   id: number;
   name: string;
   slug: string;
-  isTopCity: boolean;
+  // City slugs repeat across states, so the pair is what identifies a
+  // city. Optional because cities stored before this existed lack it.
+  stateSlug?: string;
+  isTopCity?: boolean;
 }
 
 // Both /location/detect (Cloudflare IP hint) and /location/reverse (GPS)

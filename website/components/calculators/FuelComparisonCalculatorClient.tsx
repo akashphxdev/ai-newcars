@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { stripPrefix } from "@/lib/format";
 import Image from "next/image";
 import { FuelIcon, FlameIcon, BoltIcon, TagIcon, ShieldIcon, CheckIcon } from "@/components/common/icons";
 import { getModelsByBrand } from "@/features/calculators/emiCalculator.api";
@@ -23,6 +24,13 @@ const FUEL_TYPE_ICONS: Record<FuelType, React.ComponentType<{ className?: string
   diesel: FuelIcon,
   cng: FlameIcon,
   ev: BoltIcon,
+};
+
+const FUEL_TYPE_THEME: Record<FuelType, { header: string; value: string; bar: string }> = {
+  petrol: { header: "border-brand/35 bg-orange-50 text-brand", value: "text-brand", bar: "bg-brand" },
+  diesel: { header: "border-slate-300 bg-slate-50 text-slate-700", value: "text-slate-700", bar: "bg-slate-700" },
+  cng: { header: "border-green-300 bg-green-50 text-green-700", value: "text-green-700", bar: "bg-green-600" },
+  ev: { header: "border-cyan-300 bg-cyan-50 text-cyan-700", value: "text-cyan-700", bar: "bg-cyan-600" },
 };
 
 interface FuelOption {
@@ -179,7 +187,7 @@ export default function FuelComparisonCalculatorClient({ brands }: { brands: Bra
   };
 
   return (
-    <div>
+    <div className="tool-workspace tool-workspace-comparison">
       <div className="rounded-2xl border border-border bg-surface p-5 sm:p-6">
         <h2 className="mb-4 border-b border-border-soft pb-3 text-[15px] font-bold text-ink">Select a Car</h2>
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
@@ -205,7 +213,7 @@ export default function FuelComparisonCalculatorClient({ brands }: { brands: Bra
               <option value="">Select Model</option>
               {models.map((m) => (
                 <option key={m.id} value={m.id}>
-                  {m.name}
+                  {stripPrefix(m.name, selectedBrand?.name ?? "")}
                 </option>
               ))}
             </select>
@@ -253,29 +261,34 @@ export default function FuelComparisonCalculatorClient({ brands }: { brands: Bra
             </p>
           )}
 
-          <div className="mt-6 grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
+          <div className="mt-5 grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
             {results.map((opt) => {
               const Icon = FUEL_TYPE_ICONS[opt.fuelType];
+              const theme = FUEL_TYPE_THEME[opt.fuelType];
               const isCheapest = cheapestFuelType === opt.fuelType;
               return (
                 <div
                   key={opt.fuelType}
-                  className={`overflow-hidden rounded-2xl border bg-surface ${isCheapest ? "border-[1.5px] border-green-600" : "border-border"}`}
+                  className={`overflow-hidden rounded-lg border bg-surface transition-[border-color,box-shadow,transform] hover:-translate-y-0.5 hover:shadow-lg ${isCheapest ? "border-[1.5px] border-green-600" : "border-border"}`}
                 >
-                  <div className="relative aspect-4/3 w-full overflow-hidden bg-page">
-                    {opt.imageUrl && <Image src={opt.imageUrl} alt={opt.variant.variantName} fill sizes="(max-width: 640px) 50vw, 260px" className="object-cover" />}
+                  <div className={`flex h-11 items-center justify-between border-b px-4 ${theme.header}`}>
+                    <div className="flex items-center gap-2">
+                      <Icon className="size-4" />
+                      <p className="text-[13px] font-extrabold uppercase tracking-[0.08em]">{FUEL_TYPE_LABELS[opt.fuelType]}</p>
+                    </div>
                     {isCheapest && (
-                      <span className="absolute left-2 top-2 rounded-md bg-green-600 px-2 py-0.5 text-[10px] font-bold text-white">Cheapest</span>
+                      <span className="rounded-sm bg-green-600 px-2 py-1 text-[9px] font-bold uppercase tracking-wide text-white">Lowest cost</span>
                     )}
                   </div>
-                  <div className="p-3 sm:p-4">
-                    <div className="mb-3 flex items-center gap-1.5">
-                      <Icon className="size-4 text-brand" />
-                      <p className="text-[13px] font-bold text-ink">{FUEL_TYPE_LABELS[opt.fuelType]}</p>
+                  <div className="flex items-center gap-3 border-b border-border-soft bg-page/50 px-4 py-3">
+                    <div className="relative h-12 w-20 shrink-0 overflow-hidden rounded-md bg-surface">
+                      {opt.imageUrl && <Image src={opt.imageUrl} alt={opt.variant.variantName} fill sizes="80px" className="object-contain" />}
                     </div>
-                    <p className="truncate text-[11.5px] text-faint" title={opt.variant.variantName}>
+                    <p className="line-clamp-2 text-[11.5px] font-medium leading-4 text-muted" title={opt.variant.variantName}>
                       {opt.variant.variantName}
                     </p>
+                  </div>
+                  <div className="p-4">
 
                     <div className="mt-3">
                       <Label>Mileage ({MILEAGE_UNIT_LABELS[opt.fuelType]})</Label>
@@ -302,9 +315,15 @@ export default function FuelComparisonCalculatorClient({ brands }: { brands: Bra
                     <div className="mt-3 border-t border-border-soft pt-3">
                       {opt.hasCost ? (
                         <>
-                          <p className="text-[10.5px] font-bold uppercase tracking-wide text-faint">Monthly Cost</p>
-                          <p className="text-[20px] font-extrabold text-ink">{formatRupee(opt.cost.monthlyCost)}</p>
+                          <p className="text-[10px] font-bold uppercase tracking-[0.1em] text-muted">Monthly running cost</p>
+                          <p className={`mt-1 text-[26px] font-extrabold leading-none ${theme.value}`}>{formatRupee(opt.cost.monthlyCost)}</p>
                           <p className="text-[11px] text-muted">{formatRupee(opt.cost.costPerKm)} / km</p>
+                          <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-page">
+                            <div
+                              className={`h-full rounded-full ${theme.bar}`}
+                              style={{ width: `${Math.max(14, mostExpensive ? (opt.cost.monthlyCost / mostExpensive.cost.monthlyCost) * 100 : 100)}%` }}
+                            />
+                          </div>
                         </>
                       ) : (
                         <p className="text-[11.5px] text-faint">Enter mileage &amp; price to see cost</p>

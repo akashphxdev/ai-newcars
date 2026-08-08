@@ -74,34 +74,43 @@ export default function VariantsList({
   }
 
   return (
-    <div className="mt-4 flex flex-col gap-2.5">
+    <div className="mt-7 border-y border-border bg-white">
+      <div className="hidden grid-cols-[minmax(0,1fr)_160px_128px] border-b border-border bg-page px-5 py-3 text-[10.5px] font-black uppercase tracking-[0.12em] text-muted sm:grid">
+        <span>Variant</span>
+        <span className="text-right">Ex-showroom</span>
+        <span className="text-right">Compare</span>
+      </div>
       {visible.map((opt) => {
         const isSelected = opt.id === selectedVariantId;
         const isQueued = queuedVariantIds.has(opt.id);
         return (
           <div
             key={opt.id}
-            className={`flex items-center gap-2 rounded-xl border px-4 py-3.5 transition-colors ${
-              isSelected ? "border-brand bg-orange-50" : "border-border bg-white hover:border-brand"
+            className={`grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 border-b border-border px-4 py-4 transition-colors last:border-b-0 sm:grid-cols-[minmax(0,1fr)_160px_128px] sm:px-5 ${
+              isSelected ? "bg-orange-50" : "bg-white hover:bg-page"
             }`}
           >
-            <Link href={routes.variant(brandSlug, modelSlug, slugify(opt.variantName))} className="flex flex-1 items-center justify-between gap-2">
-              <div className="flex items-center gap-2">
+            <Link href={routes.variant(brandSlug, modelSlug, slugify(opt.variantName))} className="min-w-0">
+              <div className="flex flex-wrap items-center gap-2">
                 <span className="text-[13.5px] font-bold text-ink">{opt.variantName}</span>
                 {opt.isTopSeller && (
-                  <span className="rounded-md bg-brand/10 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-brand">
-                    Top Seller
+                  <span className="bg-brand px-2 py-0.5 text-[9px] font-black uppercase tracking-[0.08em] text-white">
+                    Best value
                   </span>
                 )}
               </div>
-              <span className="text-[13.5px] font-bold text-ink">{formatSinglePrice(opt.price)}</span>
+              <span className="mt-1 block text-[11px] font-medium text-muted sm:hidden">{formatSinglePrice(opt.price)}</span>
+            </Link>
+
+            <Link href={routes.variant(brandSlug, modelSlug, slugify(opt.variantName))} className="hidden text-right text-[13.5px] font-extrabold text-ink sm:block">
+              {formatSinglePrice(opt.price)}
             </Link>
 
             <button
               type="button"
               onClick={() => handleCompareClick(opt)}
               title={isQueued ? "Remove from comparison" : "Add to Compare"}
-              className={`flex shrink-0 items-center gap-1 rounded-lg border px-2 py-1.5 text-[11px] font-semibold transition-colors ${
+              className={`flex shrink-0 items-center justify-center gap-1 border px-2 py-2 text-[11px] font-bold transition-colors ${
                 isQueued ? "border-brand bg-orange-50 text-brand" : "border-border text-muted hover:border-brand hover:text-brand"
               }`}
             >
@@ -113,17 +122,19 @@ export default function VariantsList({
       })}
 
       {hasMore && (
-        <button
-          type="button"
-          onClick={loadAll}
-          disabled={loading}
-          className="cursor-pointer self-start text-[12.5px] font-bold text-brand hover:underline disabled:opacity-60"
-        >
-          {loading ? "Loading..." : `View All ${variantCount} Variants`}
-        </button>
+        <div className="border-t border-border px-5 py-4">
+          <button
+            type="button"
+            onClick={loadAll}
+            disabled={loading}
+            className="cursor-pointer text-[12px] font-black uppercase tracking-[0.08em] text-brand hover:underline disabled:opacity-60"
+          >
+            {loading ? "Loading..." : `View all ${variantCount} variants`}
+          </button>
+        </div>
       )}
 
-      <p className="text-[11px] text-muted">
+      <p className="border-t border-border px-5 py-3 text-[10.5px] text-muted">
         Up to {MAX_TRAY_ITEMS} cars can be compared at once — pick a variant above from any car&apos;s page to build your comparison.
       </p>
     </div>

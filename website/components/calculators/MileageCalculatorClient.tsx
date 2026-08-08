@@ -1,6 +1,6 @@
 "use client";
-import { useEffect, useMemo, useState } from "react";
-import { carTitle } from "@/lib/format";
+import { useEffect, useMemo, useState, useRef } from "react";
+import { carTitle, stripPrefix } from "@/lib/format";
 import Image from "next/image";
 import Link from "next/link";
 import {
@@ -21,6 +21,7 @@ import type { EmiCalculatorModel } from "@/features/calculators/emiCalculator.ty
 import { FUEL_TYPES, FUEL_TYPE_LABELS, FUEL_PRICE_UNIT_LABELS, MILEAGE_UNIT_LABELS } from "@/features/calculators/mileageCalculator.types";
 import type { FuelType, MileageCalculatorVariant } from "@/features/calculators/mileageCalculator.types";
 import type { Brand } from "@/features/brands/brand.types";
+import type { CalculatorSeed } from "@/features/calculators/calculatorSeed";
 import { getCarDetail, getCarsBrowse } from "@/features/cars/car.api";
 import type { CarDetailResult, HomeCar } from "@/features/cars/car.types";
 import ReviewsSection from "@/components/cars/reviews/ReviewsSection";
@@ -58,14 +59,32 @@ const AFFECTED_BY = [
   { Icon: GearIcon, title: "Maintenance", desc: "Regular servicing and correct tyre pressure help sustain mileage." },
 ];
 
-export default function MileageCalculatorClient({ brands }: { brands: Brand[] }) {
+// realWorldMileage is empty for every ICE variant in the catalogue (0 of
+// 1,743), so reading it alone meant the pre-fill never fired for any car.
+// claimedFe is the manufacturer's rated figure and is present for most
+// variants — which is exactly what the "straight from the spec sheet"
+// wording next to this value already describes.
+function ratedFigure(variant: NonNullable<CarDetailResult["selectedVariant"]>): number | null {
+  if (variant.isElectric) return variant.electric?.realWorldRange ?? null;
+  // claimedFe arrives as a decimal string from the API.
+  const rated = variant.ice?.realWorldMileage ?? Number(variant.ice?.claimedFe);
+  return Number.isFinite(rated) && rated ? Number(rated) : null;
+}
+
+export default function MileageCalculatorClient({
+  brands,
+  seed = null,
+}: {
+  brands: Brand[];
+  seed?: CalculatorSeed<MileageCalculatorVariant> | null;
+}) {
   const [fuelType, setFuelType] = useState<FuelType>("petrol");
 
-  const [brandId, setBrandId] = useState<number | "">("");
-  const [models, setModels] = useState<EmiCalculatorModel[]>([]);
-  const [modelId, setModelId] = useState<number | "">("");
-  const [variants, setVariants] = useState<MileageCalculatorVariant[]>([]);
-  const [variantId, setVariantId] = useState<number | "">("");
+  const [brandId, setBrandId] = useState<number | "">(seed?.brandId ?? "");
+  const [models, setModels] = useState<EmiCalculatorModel[]>(seed?.models ?? []);
+  const [modelId, setModelId] = useState<number | "">(seed?.modelId ?? "");
+  const [variants, setVariants] = useState<MileageCalculatorVariant[]>(seed?.variants ?? []);
+  const [variantId, setVariantId] = useState<number | "">(seed?.variantId ?? "");
 
   const [fuelPrice, setFuelPrice] = useState("");
   const [averageMileage, setAverageMileage] = useState("");
@@ -98,12 +117,18 @@ export default function MileageCalculatorClient({ brands }: { brands: Brand[] })
   }, [carDetail?.bodyType?.slug, fuelType]);
 
   // Nothing pre-selected on load.
+  // Changing brand must clear the model beneath it, but that same reset runs
+  // on mount and would discard the car seeded by the server. One pass is
+  // skipped so the page can render a worked example immediately.
+  const hydrating = useRef(seed != null);
+
   useEffect(() => {
     if (brandId === "") {
       setModels([]);
       setModelId("");
       return;
     }
+    if (hydrating.current) return;
     getModelsByBrand(brandId).then((list) => {
       setModels(list);
       setModelId("");
@@ -116,6 +141,10 @@ export default function MileageCalculatorClient({ brands }: { brands: Brand[] })
       setVariantId("");
       return;
     }
+    if (hydrating.current) {
+      hydrating.current = false;
+      return;
+    }
     getVariantsByModel(modelId).then((list) => {
       setVariants(list);
       setVariantId("");
@@ -123,8 +152,14 @@ export default function MileageCalculatorClient({ brands }: { brands: Brand[] })
   }, [modelId]);
 
   // Fuel type change invalidates whichever variant was picked under the
-  // old filter.
+  // old filter. It must not fire on mount, where it would discard the
+  // server-seeded variant before the page has rendered anything.
+  const fuelTouched = useRef(false);
   useEffect(() => {
+    if (!fuelTouched.current) {
+      fuelTouched.current = true;
+      return;
+    }
     setVariantId("");
   }, [fuelType]);
 
@@ -160,8 +195,7 @@ export default function MileageCalculatorClient({ brands }: { brands: Brand[] })
       setAverageMileage("");
       return;
     }
-    const v = carDetail.selectedVariant;
-    const rated = v.isElectric ? v.electric?.realWorldRange : v.ice?.realWorldMileage;
+    const rated = ratedFigure(carDetail.selectedVariant);
     setAverageMileage(rated ? String(rated) : "");
   }, [carDetail]);
 
@@ -179,8 +213,7 @@ export default function MileageCalculatorClient({ brands }: { brands: Brand[] })
     setFuelPrice("");
     setMonthlyDistance("");
     if (carDetail?.selectedVariant) {
-      const v = carDetail.selectedVariant;
-      const rated = v.isElectric ? v.electric?.realWorldRange : v.ice?.realWorldMileage;
+      const rated = ratedFigure(carDetail.selectedVariant);
       setAverageMileage(rated ? String(rated) : "");
     }
   };
@@ -188,7 +221,7 @@ export default function MileageCalculatorClient({ brands }: { brands: Brand[] })
   const otherCars = comparisonCars.filter((c) => c.id !== carDetail?.id).slice(0, 3);
 
   return (
-    <div>
+    <div className="tool-workspace">
       {carDetail && (
         <div className="mb-6 overflow-hidden rounded-2xl border border-border bg-surface">
           <div className="flex flex-row">
@@ -236,7 +269,7 @@ export default function MileageCalculatorClient({ brands }: { brands: Brand[] })
         </div>
       )}
 
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1fr_420px]">
+      <div className="grid grid-cols-1 gap-5 lg:grid-cols-[minmax(360px,0.78fr)_minmax(500px,1.22fr)]">
         {/* Left — Enter Details */}
         <div className="rounded-2xl border border-border bg-surface p-5 sm:p-6">
           <h2 className="mb-4 border-b border-border-soft pb-3 text-[15px] font-bold text-ink">Enter Details</h2>
@@ -289,7 +322,7 @@ export default function MileageCalculatorClient({ brands }: { brands: Brand[] })
                     <option value="">Select Model</option>
                     {models.map((m) => (
                       <option key={m.id} value={m.id}>
-                        {m.name}
+                        {stripPrefix(m.name, selectedBrand?.name ?? "")}
                       </option>
                     ))}
                   </select>
@@ -305,7 +338,7 @@ export default function MileageCalculatorClient({ brands }: { brands: Brand[] })
                     <option value="">Select Variant</option>
                     {filteredVariants.map((v) => (
                       <option key={v.id} value={v.id}>
-                        {v.variantName}
+                        {stripPrefix(v.variantName, selectedModel?.name ?? "")}
                       </option>
                     ))}
                   </select>

@@ -17,10 +17,15 @@ export default function CarModelSidebar({ variant }: { variant: CarDetailSelecte
     if (variant.dimensions.bootSpace) highlights.push({ icon: <GaugeIcon className="size-4" />, label: "Boot Space", value: `${variant.dimensions.bootSpace} L` });
   } else if (variant.ice) {
     const ice = variant.ice;
+    const rawDisplacement = ice.engineDisplacement ? Number(ice.engineDisplacement) : null;
+    const capacityCc = ice.cubicCapacity
+      ?? (rawDisplacement && Number.isFinite(rawDisplacement)
+        ? Math.round(rawDisplacement < 20 ? rawDisplacement * 1000 : rawDisplacement)
+        : null);
     highlights.push({
       icon: <FuelIcon className="size-4" />,
       label: "Engine",
-      value: ice.engineDisplacement ? `${Math.round(Number(ice.engineDisplacement))} cc ${ice.fuelType ?? ""}`.trim() : ice.fuelType ?? "-",
+      value: capacityCc ? `${capacityCc} cc ${ice.fuelType ?? ""}`.trim() : ice.fuelType ?? "-",
     });
     highlights.push({ icon: <PowerIcon className="size-4" />, label: "Power", value: ice.powerPs ? `${ice.powerPs} PS` : "-" });
     highlights.push({ icon: <GaugeIcon className="size-4" />, label: "Mileage", value: ice.claimedFe ? `${ice.claimedFe} km/l` : "-" });
@@ -38,13 +43,13 @@ export default function CarModelSidebar({ variant }: { variant: CarDetailSelecte
     .map((item) => (item.value ? `${item.name}: ${item.value}` : item.name));
 
   return (
-    <div className="flex flex-col gap-4 lg:sticky lg:top-20">
+    <div className="grid border-y border-border bg-white md:grid-cols-2">
       {highlights.length > 0 && (
-        <div className="rounded-2xl border border-border bg-white p-5">
-          <p className="text-[14px] font-extrabold text-ink">Key Highlights</p>
-          <div className="mt-3 flex flex-col gap-3">
+        <div className="p-5 sm:p-7 md:border-r md:border-border">
+          <p className="text-[10.5px] font-black uppercase tracking-[0.13em] text-brand">Key ownership facts</p>
+          <div className="mt-5 flex flex-col">
             {highlights.map((h) => (
-              <div key={h.label} className="flex items-center justify-between">
+              <div key={h.label} className="flex items-center justify-between gap-5 border-b border-border-soft py-3 last:border-b-0">
                 <span className="flex items-center gap-2 text-[12.5px] text-muted">
                   <span className="text-brand">{h.icon}</span>
                   {h.label}
@@ -53,16 +58,16 @@ export default function CarModelSidebar({ variant }: { variant: CarDetailSelecte
               </div>
             ))}
           </div>
-          <a href="#specs" className="mt-3 block text-[12.5px] font-semibold text-brand hover:underline">
-            View Complete Specs →
+          <a href="#performance" className="mt-5 block text-[11px] font-black uppercase tracking-[0.08em] text-brand hover:underline">
+            Review performance
           </a>
         </div>
       )}
 
       {safetyItems.length > 0 && (
-        <div className="rounded-2xl border border-border bg-white p-5">
-          <p className="text-[14px] font-extrabold text-ink">Safety Features</p>
-          <div className="mt-3 flex flex-col gap-2.5">
+        <div className="border-t border-border p-5 sm:p-7 md:border-t-0">
+          <p className="text-[10.5px] font-black uppercase tracking-[0.13em] text-ev">Safety included</p>
+          <div className="mt-5 flex flex-col gap-2.5">
             {safetyItems.map((label) => (
               <div key={label} className="flex items-center gap-2 text-[12.5px] font-medium text-ink">
                 <CheckIcon className="size-4 shrink-0 text-green-600" />
@@ -70,8 +75,8 @@ export default function CarModelSidebar({ variant }: { variant: CarDetailSelecte
               </div>
             ))}
           </div>
-          <a href="#safety" className="mt-3 block text-[12.5px] font-semibold text-brand hover:underline">
-            View All Features →
+          <a href="#safety" className="mt-5 block text-[11px] font-black uppercase tracking-[0.08em] text-brand hover:underline">
+            View all safety features
           </a>
         </div>
       )}

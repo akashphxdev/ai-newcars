@@ -31,7 +31,7 @@ export default function CarLeadSecondaryActions({
 
   return (
     <>
-      <div className="flex items-stretch divide-x divide-border rounded-2xl border border-border bg-white shadow-sm">
+      <div className="grid grid-cols-2 divide-x divide-y divide-border border border-border bg-white sm:grid-cols-4 sm:divide-y-0">
         <button
           type="button"
           onClick={() => setActive("price-drop")}

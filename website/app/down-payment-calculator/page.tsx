@@ -1,7 +1,10 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { getAllBrands } from "@/features/brands/brand.api";
+import { getVariantsByModel } from "@/features/calculators/emiCalculator.api";
+import { leadCarSeed } from "@/features/calculators/calculatorSeed";
 import DownPaymentCalculatorClient from "@/components/calculators/DownPaymentCalculatorClient";
+import CalculatorPageShell from "@/components/calculators/CalculatorPageShell";
+import DownPaymentCalculatorFaq from "@/components/calculators/DownPaymentCalculatorFaq";
 
 export const metadata: Metadata = {
   title: "Car Down Payment Calculator | TimesAuto",
@@ -9,31 +12,17 @@ export const metadata: Metadata = {
 };
 
 export default async function DownPaymentCalculatorPage() {
-  const brands = await getAllBrands();
+  const [brands, seed] = await Promise.all([getAllBrands(), leadCarSeed(getVariantsByModel)]);
 
   return (
-    <div>
-      <div className="border-b border-border bg-surface">
-        <div className="mx-auto max-w-7xl px-4 py-8 sm:py-10">
-          <nav className="mb-3 flex items-center gap-1.5 text-[13px] font-semibold" aria-label="Breadcrumb">
-            <Link href="/" className="text-ink">
-              Home
-            </Link>
-            <span className="text-muted">{">"}</span>
-            <span className="text-ink">Tools</span>
-            <span className="text-muted">{">"}</span>
-            <span className="text-brand">Down Payment Calculator</span>
-          </nav>
-          <h1 className="text-2xl font-bold tracking-tight text-ink sm:text-[28px]">Down Payment Calculator</h1>
-          <p className="mt-2 max-w-2xl text-[14.5px] font-medium text-muted">
-            Set your target monthly EMI and find out how much down payment you&apos;ll need.
-          </p>
-        </div>
-      </div>
-
-      <div className="mx-auto max-w-7xl px-4 py-8 sm:py-10">
-        <DownPaymentCalculatorClient brands={brands} />
-      </div>
-    </div>
+    <CalculatorPageShell
+      eyebrow="Plan the upfront cost"
+      title="How much should you put down?"
+      description="Set a comfortable monthly EMI and see the cash you need before you choose a loan."
+      breadcrumb="Car Down Payment Calculator"
+    >
+      <DownPaymentCalculatorClient brands={brands} seed={seed} />
+      <DownPaymentCalculatorFaq />
+    </CalculatorPageShell>
   );
 }

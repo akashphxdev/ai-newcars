@@ -33,9 +33,9 @@ export default function CarLeadActions({
       <button
         type="button"
         onClick={() => setActive("offer_check")}
-        className="cursor-pointer text-[14px] font-bold text-brand hover:underline"
+        className="cursor-pointer bg-brand px-5 py-3 text-[12px] font-black uppercase tracking-[0.08em] text-white transition-colors hover:bg-brand-hover"
       >
-        Check Offers
+        Get best offer
       </button>
 
       {active && (

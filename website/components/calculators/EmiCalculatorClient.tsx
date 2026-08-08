@@ -1,9 +1,10 @@
 "use client";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Image from "next/image";
 import { EditIcon, TagIcon, ShieldIcon, ClockIcon, GaugeIcon, StarIcon, LockIcon, CheckIcon } from "@/components/common/icons";
 import { getModelsByBrand, getVariantsByModel } from "@/features/calculators/emiCalculator.api";
 import type { EmiCalculatorModel, EmiCalculatorVariant } from "@/features/calculators/emiCalculator.types";
+import type { CalculatorSeed } from "@/features/calculators/calculatorSeed";
 import type { Brand } from "@/features/brands/brand.types";
 import { getCarDetail } from "@/features/cars/car.api";
 import type { CarDetailResult } from "@/features/cars/car.types";
@@ -13,6 +14,7 @@ import LoanLeadModal from "@/components/leads/LoanLeadModal";
 import { ChevronIcon } from "@/components/common/icons";
 import { submitLoanLead } from "@/features/leads/lead.api";
 import { calculateEmi, buildAmortizationSchedule } from "@/lib/emiMath";
+import { stripPrefix } from "@/lib/format";
 
 const TENURE_OPTIONS = [1, 2, 3, 4, 5, 7];
 const DEFAULT_INTEREST_RATE = 9;
@@ -27,11 +29,11 @@ function formatLakh(n: number): string {
 }
 
 const selectClass =
-  "w-full cursor-pointer rounded-xl border border-border bg-surface px-3 py-2.5 text-[13px] text-ink outline-none transition-colors focus:border-brand disabled:cursor-not-allowed disabled:opacity-50";
+  "h-11 w-full cursor-pointer rounded-md border border-border bg-surface px-3 text-[13px] font-medium text-ink outline-none transition-[border-color,box-shadow] hover:border-subtle focus:border-brand focus:ring-2 focus:ring-brand/10 disabled:cursor-not-allowed disabled:bg-page disabled:opacity-50";
 const inputClass =
-  "w-full rounded-xl border border-border bg-surface px-3 py-2.5 text-[13px] text-ink outline-none transition-colors focus:border-brand";
+  "h-11 w-full rounded-md border border-border bg-surface px-3 text-[13px] font-semibold tabular-nums text-ink outline-none transition-[border-color,box-shadow] hover:border-subtle focus:border-brand focus:ring-2 focus:ring-brand/10";
 const Label = ({ children }: { children: React.ReactNode }) => (
-  <span className="mb-1.5 block text-[12px] font-bold text-ink">{children}</span>
+  <span className="mb-1.5 block text-[12px] font-semibold text-ink">{children}</span>
 );
 
 function DonutChart({ principal, interest }: { principal: number; interest: number }) {
@@ -64,12 +66,20 @@ function DonutChart({ principal, interest }: { principal: number; interest: numb
   );
 }
 
-export default function EmiCalculatorClient({ brands }: { brands: Brand[] }) {
-  const [brandId, setBrandId] = useState<number | "">("");
-  const [models, setModels] = useState<EmiCalculatorModel[]>([]);
-  const [modelId, setModelId] = useState<number | "">("");
-  const [variants, setVariants] = useState<EmiCalculatorVariant[]>([]);
-  const [variantId, setVariantId] = useState<number | "">("");
+export type EmiSeed = CalculatorSeed<EmiCalculatorVariant>;
+
+export default function EmiCalculatorClient({
+  brands,
+  seed = null,
+}: {
+  brands: Brand[];
+  seed?: EmiSeed | null;
+}) {
+  const [brandId, setBrandId] = useState<number | "">(seed?.brandId ?? "");
+  const [models, setModels] = useState<EmiCalculatorModel[]>(seed?.models ?? []);
+  const [modelId, setModelId] = useState<number | "">(seed?.modelId ?? "");
+  const [variants, setVariants] = useState<EmiCalculatorVariant[]>(seed?.variants ?? []);
+  const [variantId, setVariantId] = useState<number | "">(seed?.variantId ?? "");
   const [loanModalOpen, setLoanModalOpen] = useState(false);
 
   const [exShowroomPrice, setExShowroomPrice] = useState(0);
@@ -80,12 +90,18 @@ export default function EmiCalculatorClient({ brands }: { brands: Brand[] }) {
 
   // Nothing pre-selected on load — brand/model/variant all start blank,
   // and each dropdown only populates once its parent is actually chosen.
+  // Changing brand must clear the model beneath it, but that same reset runs
+  // on mount and would discard the car seeded by the server. One pass is
+  // skipped so the page can render a real EMI immediately.
+  const hydrating = useRef(seed != null);
+
   useEffect(() => {
     if (brandId === "") {
       setModels([]);
       setModelId("");
       return;
     }
+    if (hydrating.current) return;
     getModelsByBrand(brandId).then((list) => {
       setModels(list);
       setModelId("");
@@ -96,6 +112,10 @@ export default function EmiCalculatorClient({ brands }: { brands: Brand[] }) {
     if (modelId === "") {
       setVariants([]);
       setVariantId("");
+      return;
+    }
+    if (hydrating.current) {
+      hydrating.current = false;
       return;
     }
     getVariantsByModel(modelId).then((list) => {
@@ -165,7 +185,7 @@ export default function EmiCalculatorClient({ brands }: { brands: Brand[] }) {
   };
 
   return (
-    <div>
+    <div className="tool-workspace">
       {carDetail && (
         <div className="mb-6 overflow-hidden rounded-2xl border border-border bg-surface">
           <div className="flex flex-col sm:flex-row">
@@ -213,7 +233,7 @@ export default function EmiCalculatorClient({ brands }: { brands: Brand[] }) {
         </div>
       )}
 
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1fr_420px]">
+      <div className="grid grid-cols-1 gap-5 lg:grid-cols-[minmax(360px,0.78fr)_minmax(500px,1.22fr)]">
         {/* Left — Configure Your Loan */}
         <div className="rounded-2xl border border-border bg-surface p-5 sm:p-6">
           <h2 className="mb-4 border-b border-border-soft pb-3 text-[15px] font-bold text-ink">Configure Your Loan</h2>
@@ -248,7 +268,7 @@ export default function EmiCalculatorClient({ brands }: { brands: Brand[] }) {
                     <option value="">Select Model</option>
                     {models.map((m) => (
                       <option key={m.id} value={m.id}>
-                        {m.name}
+                        {stripPrefix(m.name, selectedBrand?.name ?? "")}
                       </option>
                     ))}
                   </select>
@@ -264,7 +284,7 @@ export default function EmiCalculatorClient({ brands }: { brands: Brand[] }) {
                     <option value="">Select Variant</option>
                     {variants.map((v) => (
                       <option key={v.id} value={v.id}>
-                        {v.variantName} ({formatLakh(Number(v.price))})
+                        {stripPrefix(v.variantName, selectedModel?.name ?? "")} ({formatLakh(Number(v.price))})
                       </option>
                     ))}
                   </select>

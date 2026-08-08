@@ -73,14 +73,18 @@ export default function ReviewsSection({
   };
 
   return (
-    <section className="mx-auto max-w-7xl px-4 py-8 sm:py-10">
-      <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <h2 className="font-head text-lg font-extrabold text-ink">Owner Reviews</h2>
+    <section className="mx-auto max-w-7xl px-4 py-16 sm:py-24">
+      <div className="mb-8 flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
+        <div>
+          <p className="text-[10.5px] font-black uppercase tracking-[0.16em] text-brand">Real-world experience</p>
+          <h2 className="mt-2 font-head text-3xl font-extrabold text-ink sm:text-4xl">Owner reviews</h2>
+          <p className="mt-2 text-[13px] text-muted">Ratings and stories from people who live with this car.</p>
+        </div>
         <button
           type="button"
           onClick={handleWriteReviewClick}
           disabled={variantsLoading}
-          className="w-full cursor-pointer rounded-xl border-[1.5px] border-brand px-4 py-2.5 text-[13px] font-bold text-brand transition-colors hover:bg-orange-50 disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto sm:py-2"
+          className="w-full cursor-pointer border border-brand px-5 py-3 text-[11px] font-black uppercase tracking-[0.08em] text-brand transition-colors hover:bg-brand hover:text-white disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto"
         >
           {variantsLoading ? "Loading..." : "Write a Review"}
         </button>

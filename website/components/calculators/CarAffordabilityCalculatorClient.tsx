@@ -181,8 +181,8 @@ export default function CarAffordabilityCalculatorClient({ bodyTypes }: { bodyTy
   };
 
   return (
-    <div>
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1fr_420px]">
+    <div className="tool-workspace">
+      <div className="grid grid-cols-1 gap-5 lg:grid-cols-[minmax(360px,0.78fr)_minmax(500px,1.22fr)]">
         {/* Left — Enter Details */}
         <div className="rounded-2xl border border-border bg-surface p-5 sm:p-6">
           <h2 className="mb-4 border-b border-border-soft pb-3 text-[15px] font-bold text-ink">Enter Your Budget</h2>

@@ -89,7 +89,7 @@ export default function ReviewCard({
   };
 
   return (
-    <div className="rounded-2xl border border-border bg-white p-4 sm:p-5">
+    <article className="border-b border-border bg-white px-0 py-6 first:border-t sm:px-1">
       <div className="flex flex-col gap-2.5 sm:flex-row sm:items-start sm:justify-between">
         <div className="flex items-center gap-3">
           <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-brand/10 text-[11.5px] font-black text-brand sm:size-10 sm:text-[12px]">
@@ -203,6 +203,6 @@ export default function ReviewCard({
           </button>
         </div>
       )}
-    </div>
+    </article>
   );
 }

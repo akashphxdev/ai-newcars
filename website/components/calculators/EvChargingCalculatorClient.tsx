@@ -1,5 +1,6 @@
 "use client";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useRef } from "react";
+import { stripPrefix } from "@/lib/format";
 import Image from "next/image";
 import { BoltIcon, ClockIcon, StarIcon, CheckIcon, ShieldIcon } from "@/components/common/icons";
 import { getModelsByBrand } from "@/features/calculators/emiCalculator.api";
@@ -7,6 +8,7 @@ import { getVariantsByModel } from "@/features/calculators/mileageCalculator.api
 import type { EmiCalculatorModel } from "@/features/calculators/emiCalculator.types";
 import type { MileageCalculatorVariant } from "@/features/calculators/mileageCalculator.types";
 import type { Brand } from "@/features/brands/brand.types";
+import type { CalculatorSeed } from "@/features/calculators/calculatorSeed";
 import { getCarDetail } from "@/features/cars/car.api";
 import type { CarDetailResult } from "@/features/cars/car.types";
 import { formatLakh } from "@/lib/calculatorFormat";
@@ -23,17 +25,28 @@ function formatDuration(hours: number): string {
   return `${h}h ${m}m`;
 }
 
-export default function EvChargingCalculatorClient({ brands }: { brands: Brand[] }) {
-  const [brandId, setBrandId] = useState<number | "">("");
-  const [models, setModels] = useState<EmiCalculatorModel[]>([]);
-  const [modelId, setModelId] = useState<number | "">("");
-  const [variants, setVariants] = useState<MileageCalculatorVariant[]>([]);
-  const [variantId, setVariantId] = useState<number | "">("");
+export default function EvChargingCalculatorClient({
+  brands,
+  seed = null,
+}: {
+  brands: Brand[];
+  seed?: CalculatorSeed<MileageCalculatorVariant> | null;
+}) {
+  const [brandId, setBrandId] = useState<number | "">(seed?.brandId ?? "");
+  const [models, setModels] = useState<EmiCalculatorModel[]>(seed?.models ?? []);
+  const [modelId, setModelId] = useState<number | "">(seed?.modelId ?? "");
+  const [variants, setVariants] = useState<MileageCalculatorVariant[]>(seed?.variants ?? []);
+  const [variantId, setVariantId] = useState<number | "">(seed?.variantId ?? "");
 
   const [fromPct, setFromPct] = useState("20");
   const [toPct, setToPct] = useState("100");
 
   const [carDetail, setCarDetail] = useState<CarDetailResult | null>(null);
+
+  // Changing brand must clear the model beneath it, but that same reset runs
+  // on mount and would discard the car seeded by the server. One pass is
+  // skipped so the page can render a worked example immediately.
+  const hydrating = useRef(seed != null);
 
   useEffect(() => {
     if (brandId === "") {
@@ -41,6 +54,7 @@ export default function EvChargingCalculatorClient({ brands }: { brands: Brand[]
       setModelId("");
       return;
     }
+    if (hydrating.current) return;
     getModelsByBrand(brandId).then((list) => {
       setModels(list);
       setModelId("");
@@ -51,6 +65,10 @@ export default function EvChargingCalculatorClient({ brands }: { brands: Brand[]
     if (modelId === "") {
       setVariants([]);
       setVariantId("");
+      return;
+    }
+    if (hydrating.current) {
+      hydrating.current = false;
       return;
     }
     getVariantsByModel(modelId).then((list) => {
@@ -98,7 +116,7 @@ export default function EvChargingCalculatorClient({ brands }: { brands: Brand[]
   };
 
   return (
-    <div>
+    <div className="tool-workspace tool-workspace-ev">
       {carDetail && (
         <div className="mb-6 overflow-hidden rounded-2xl border border-border bg-surface">
           <div className="flex flex-row">
@@ -146,7 +164,7 @@ export default function EvChargingCalculatorClient({ brands }: { brands: Brand[]
         </div>
       )}
 
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1fr_420px]">
+      <div className="grid grid-cols-1 gap-5 lg:grid-cols-[minmax(360px,0.78fr)_minmax(500px,1.22fr)]">
         {/* Left — Enter Details */}
         <div className="rounded-2xl border border-border bg-surface p-5 sm:p-6">
           <h2 className="mb-4 border-b border-border-soft pb-3 text-[15px] font-bold text-ink">Enter Details</h2>
@@ -177,7 +195,7 @@ export default function EvChargingCalculatorClient({ brands }: { brands: Brand[]
                     <option value="">Select Model</option>
                     {models.map((m) => (
                       <option key={m.id} value={m.id}>
-                        {m.name}
+                        {stripPrefix(m.name, selectedBrand?.name ?? "")}
                       </option>
                     ))}
                   </select>

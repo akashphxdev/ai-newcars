@@ -19,15 +19,15 @@ const STEPS = [
 // data, same reason the site doesn't have an On-Road Price Calculator).
 export default function CarAffordabilityFormulaExplainer() {
   return (
-    <div className="mt-10">
+    <section className="mt-16 border-t border-border pt-10 sm:pt-12">
       <SectionHeader
         eyebrow="How It Works"
         title="How Is Your Budget Calculated?"
         subtitle="We work backwards from your monthly EMI to find the loan — and car price — it can support."
       />
 
-      <div className="rounded-2xl border border-border bg-surface p-6 sm:p-8">
-        <div className="flex flex-col items-center gap-2 rounded-xl bg-page px-6 py-6 text-center sm:py-8">
+      <div className="border-y border-border bg-surface p-5 sm:p-8">
+        <div className="flex flex-col items-center gap-2 border-b border-border bg-page px-6 py-6 text-center sm:py-8">
           <p className="text-[11px] font-bold uppercase tracking-wide text-faint">The Formula</p>
           <p className="font-head text-[18px] font-extrabold text-ink sm:text-[22px]">
             Max Loan = EMI × [(1+r)ⁿ − 1] ÷ [r × (1+r)ⁿ]
@@ -37,7 +37,7 @@ export default function CarAffordabilityFormulaExplainer() {
 
         <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2">
           {STEPS.map((step) => (
-            <div key={step.label} className="rounded-xl border border-border-soft p-4">
+            <div key={step.label} className="border-l-2 border-brand/30 p-4">
               <span className="flex size-9 items-center justify-center rounded-full bg-brand-soft text-[14px] font-extrabold text-brand">
                 {step.label}
               </span>
@@ -53,6 +53,6 @@ export default function CarAffordabilityFormulaExplainer() {
           from.
         </p>
       </div>
-    </div>
+    </section>
   );
 }
