@@ -34,7 +34,16 @@ export default function DownPaymentCalculatorClient({
   const [variantId, setVariantId] = useState<number | "">(seed?.variantId ?? "");
   const [loanModalOpen, setLoanModalOpen] = useState(false);
 
-  const [desiredEmi, setDesiredEmi] = useState("");
+  // This tool works backwards from a target EMI, so a seeded car alone
+  // still leaves the results empty. Opening on the EMI that car would cost
+  // at a conventional 20% down makes the example self-consistent — the
+  // answer it produces is a ~20% down payment — and it stays editable.
+  const [desiredEmi, setDesiredEmi] = useState(() => {
+    const price = seed ? Number(seed.variants[0]?.price ?? 0) : 0;
+    if (!price) return "";
+    const { emi } = calculateEmi(price * 0.8, DEFAULT_INTEREST_RATE, DEFAULT_TENURE_YEARS);
+    return emi > 0 ? String(Math.round(emi / 500) * 500) : "";
+  });
   const [interestRate, setInterestRate] = useState(DEFAULT_INTEREST_RATE);
   const [tenureYears, setTenureYears] = useState(DEFAULT_TENURE_YEARS);
 
