@@ -7,9 +7,30 @@ import { formatSinglePrice, slugify, featureLabel, isFeaturePresent, carTitle } 
 import ModelDetailTabs from "@/components/common/ModelDetailTabs";
 import CarModelHero from "@/components/cars/CarModelHero";
 import CarModelSidebar from "@/components/cars/CarModelSidebar";
+import KeySpecsStrip from "@/components/cars/KeySpecsStrip";
+import TrimLadder from "@/components/cars/TrimLadder";
+import OnRoadPriceCard from "@/components/cars/OnRoadPriceCard";
+import RunningCostStrip from "@/components/cars/RunningCostStrip";
 import ReviewsSection from "@/components/cars/reviews/ReviewsSection";
-import { CheckIcon } from "@/components/common/icons";
-import type { CarDetailResult, CarDetailFeatureGroup } from "@/features/cars/car.types";
+import { getMetroFuelPrices } from "@/features/fuel/fuel.api";
+import {
+  CheckIcon,
+  EngineIcon,
+  PowerIcon,
+  TorqueIcon,
+  GaugeIcon,
+  GearIcon,
+  CarIcon,
+  RoadIcon,
+  BatteryIcon,
+  PlugIcon,
+  FuelIcon,
+  RulerIcon,
+  BootIcon,
+  SeatIcon,
+} from "@/components/common/icons";
+import type { CarDetailResult, CarDetailFeatureGroup, CarDetailVariantOption } from "@/features/cars/car.types";
+import type { MetroFuelPrices } from "@/features/fuel/fuel.types";
 import { routes } from "@/lib/routes";
 
 type Props = {
@@ -37,12 +58,22 @@ async function resolveVariantId(brandSlug: string, modelSlug: string, variantSlu
   return match.id;
 }
 
-async function loadCar(props: Props): Promise<{ car: CarDetailResult; variantSlug: string }> {
+async function loadCar(props: Props): Promise<{
+  car: CarDetailResult;
+  variantSlug: string;
+  siblings: CarDetailVariantOption[];
+  metros: MetroFuelPrices[];
+}> {
   const { brandSlug, modelSlug, variantSlug } = await props.params;
-  const variantId = await resolveVariantId(brandSlug, modelSlug, variantSlug);
-  const car = await getCarDetail(brandSlug, modelSlug, variantId);
+  const siblings = await getCarVariants(brandSlug, modelSlug);
+  const match = siblings.find((variant) => slugify(variant.variantName) === variantSlug);
+  if (!match) notFound();
+  const [car, metros] = await Promise.all([
+    getCarDetail(brandSlug, modelSlug, match.id),
+    getMetroFuelPrices().catch(() => []),
+  ]);
   if (!car?.selectedVariant) notFound();
-  return { car, variantSlug };
+  return { car, variantSlug, siblings, metros };
 }
 
 export async function generateMetadata(props: Props): Promise<Metadata> {
@@ -72,20 +103,46 @@ function metric(label: string, value: string | number | null | undefined, suffix
   return { label, value: `${value}${suffix}` };
 }
 
+// One icon per metric, chosen by what the number means. A label with no
+// entry simply renders without one.
+const METRIC_ICONS: Record<string, React.ComponentType<{ className?: string }>> = {
+  Engine: EngineIcon,
+  Battery: BatteryIcon,
+  Power: PowerIcon,
+  Torque: TorqueIcon,
+  "ARAI mileage": GaugeIcon,
+  "Claimed range": RoadIcon,
+  "Top speed": GaugeIcon,
+  Transmission: GearIcon,
+  Drivetrain: CarIcon,
+  "AC charge time": PlugIcon,
+  "Charging port": PlugIcon,
+  "Fuel tank": FuelIcon,
+  Length: RulerIcon,
+  Width: RulerIcon,
+  Height: RulerIcon,
+  Wheelbase: RulerIcon,
+  "Ground clearance": RulerIcon,
+  "Boot space": BootIcon,
+  Seating: SeatIcon,
+};
+
+// gap-px over a line-colour backdrop draws every separator, including
+// between wrapped rows — per-cell borders left gaps there and painted
+// stray rules on row edges.
 function MetricGrid({ metrics, dark = false }: { metrics: Metric[]; dark?: boolean }) {
   return (
-    <div className={`grid grid-cols-2 border-y sm:grid-cols-3 lg:grid-cols-4 ${dark ? "border-white/20" : "border-border"}`}>
-      {metrics.map((item, index) => (
-        <div
-          key={`${item.label}-${item.value}`}
-          className={`min-w-0 px-4 py-5 sm:px-5 ${
-            index < metrics.length - 1 ? (dark ? "border-r border-white/20" : "border-r border-border") : ""
-          }`}
-        >
-          <p className={`break-words font-head text-xl font-extrabold sm:text-2xl ${dark ? "text-white" : "text-ink"}`}>{item.value}</p>
-          <p className={`mt-1 text-[9.5px] font-bold uppercase tracking-[0.1em] ${dark ? "text-white/50" : "text-muted"}`}>{item.label}</p>
-        </div>
-      ))}
+    <div className={`grid grid-cols-2 gap-px border-y sm:grid-cols-3 lg:grid-cols-4 ${dark ? "border-white/20 bg-white/20" : "border-border bg-border"}`}>
+      {metrics.map((item) => {
+        const Icon = METRIC_ICONS[item.label];
+        return (
+          <div key={`${item.label}-${item.value}`} className={`min-w-0 px-4 py-5 sm:px-5 ${dark ? "bg-[#101112]" : "bg-white"}`}>
+            {Icon && <Icon className="mb-2 size-4 text-brand" />}
+            <p className={`break-words font-head text-xl font-extrabold sm:text-2xl ${dark ? "text-white" : "text-ink"}`}>{item.value}</p>
+            <p className={`mt-1 text-[9.5px] font-bold uppercase tracking-[0.1em] ${dark ? "text-white/50" : "text-muted"}`}>{item.label}</p>
+          </div>
+        );
+      })}
     </div>
   );
 }
@@ -96,7 +153,7 @@ function buildSafetyItems(groups: CarDetailFeatureGroup[]): string[] {
 }
 
 export default async function CarVariantPage(props: Props) {
-  const { car, variantSlug } = await loadCar(props);
+  const { car, variantSlug, siblings, metros } = await loadCar(props);
   const variant = car.selectedVariant!;
   const safetyItems = buildSafetyItems(variant.features);
   const variantLabel = variant.variantName.toLowerCase().startsWith(car.name.toLowerCase())
@@ -173,7 +230,28 @@ export default async function CarVariantPage(props: Props) {
       </div>
 
       <CarModelHero car={car} variant={variant} mode="variant" />
+      <KeySpecsStrip variant={variant} />
       <ModelDetailTabs brandSlug={car.brand.slug} modelSlug={car.slug} variantSlug={variantSlug} onVariantPage />
+
+      {siblings.length > 1 && (
+        <section className="border-b border-border bg-white py-10 sm:py-14">
+          <div className="mx-auto max-w-7xl px-4">
+            <p className="text-[10.5px] font-black uppercase tracking-[0.16em] text-brand">Where this trim sits</p>
+            <h2 className="mt-2 font-head text-3xl font-extrabold leading-tight text-ink">
+              One step down, one step up.
+            </h2>
+            <div className="mt-7">
+              <TrimLadder
+                variants={siblings}
+                currentId={variant.id}
+                carName={car.name}
+                brandSlug={car.brand.slug}
+                modelSlug={car.slug}
+              />
+            </div>
+          </div>
+        </section>
+      )}
 
       {performanceMetrics.length > 0 && (
         <section id="performance" className="scroll-mt-32 bg-[#101112] py-16 text-white sm:py-24">
@@ -198,6 +276,14 @@ export default async function CarVariantPage(props: Props) {
             <div className="mt-10">
               <MetricGrid metrics={performanceMetrics} dark />
             </div>
+          </div>
+        </section>
+      )}
+
+      {!variant.isElectric && (
+        <section className="border-b border-border bg-white py-4 sm:py-8">
+          <div className="mx-auto max-w-7xl px-4">
+            <RunningCostStrip variant={variant} carName={car.name} metros={metros} />
           </div>
         </section>
       )}
@@ -310,6 +396,9 @@ export default async function CarVariantPage(props: Props) {
               <div className="mt-7 border-y border-border py-5">
                 <p className="text-[10px] font-black uppercase tracking-[0.12em] text-muted">Ex-showroom price</p>
                 <p className="mt-1 font-head text-3xl font-extrabold text-ink">{formatSinglePrice(variant.price)}</p>
+              </div>
+              <div className="mt-5">
+                <OnRoadPriceCard variantId={variant.id} />
               </div>
             </div>
             <CarModelSidebar variant={variant} />

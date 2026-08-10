@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { slugify } from "@/lib/format";
+import { slugify, formatSinglePrice } from "@/lib/format";
 import { getCarVariants } from "@/features/cars/car.api";
 import { ChevronDownIcon } from "@/components/common/icons";
 import type { CarDetailVariantOption } from "@/features/cars/car.types";
@@ -77,11 +77,14 @@ export default function VariantSwitcher({
                   key={opt.id}
                   href={routes.variant(brandSlug, modelSlug, slugify(opt.variantName))}
                   onClick={() => setOpen(false)}
-                  className={`block px-3.5 py-2.5 text-[12.5px] font-medium transition-colors hover:bg-page ${
+                  className={`flex items-baseline justify-between gap-3 px-3.5 py-2.5 text-[12.5px] font-medium transition-colors hover:bg-page ${
                     opt.variantName === currentVariantName ? "text-brand" : "text-ink"
                   }`}
                 >
-                  {opt.variantName}
+                  <span className="min-w-0 truncate">{opt.variantName}</span>
+                  <span className="shrink-0 text-[11.5px] font-semibold text-muted tabular-nums">
+                    {formatSinglePrice(opt.price)}
+                  </span>
                 </Link>
               ))
             )}
