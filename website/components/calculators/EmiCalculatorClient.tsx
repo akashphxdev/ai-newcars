@@ -390,25 +390,19 @@ export default function EmiCalculatorClient({
                   </button>
                 ))}
               </div>
-              <input
-                type="range"
-                min={1}
-                max={7}
-                step={1}
-                value={tenureYears}
-                onChange={(e) => setTenureYears(Number(e.target.value))}
-                className="mt-2.5 w-full accent-brand"
-              />
-              <p className="mt-1 text-[11px] text-faint">{tenureYears} Years</p>
             </div>
 
-            <div className="flex items-center gap-3 pt-1">
+            <div className="flex items-center gap-3 pt-1 lg:justify-end">
+              {/* The EMI recalculates on every input, so a "Calculate"
+                  button taught people their change had not registered.
+                  All this ever did was scroll, which only helps where the
+                  result is off-screen. */}
               <button
                 type="button"
                 onClick={() => document.getElementById("emi-summary")?.scrollIntoView({ behavior: "smooth", block: "start" })}
-                className="flex-1 cursor-pointer rounded-xl bg-brand py-3 text-sm font-bold text-white transition-opacity hover:opacity-90 active:scale-[0.98]"
+                className="flex-1 cursor-pointer rounded-xl bg-brand py-3 text-sm font-bold text-white transition-opacity hover:opacity-90 active:scale-[0.98] lg:hidden"
               >
-                Calculate EMI
+                See your EMI ↓
               </button>
               <button
                 type="button"
@@ -448,13 +442,36 @@ export default function EmiCalculatorClient({
             </p>
           </div>
 
+          {/* The three figures a borrower actually compares between
+              loans, given their own weight, with the inputs that produced
+              them kept underneath rather than competing for attention. */}
+          <div className="grid grid-cols-3 gap-3">
+            {[
+              { label: "Loan amount", value: formatRupee(loanAmount) },
+              { label: "Total interest", value: formatRupee(totalInterest), accent: true },
+              { label: "Total payable", value: formatRupee(totalPayable) },
+            ].map((tile) => (
+              <div key={tile.label} className="rounded-2xl border border-border bg-surface p-4">
+                <p className="text-[10.5px] font-semibold uppercase tracking-[0.08em] text-muted">
+                  {tile.label}
+                </p>
+                <p
+                  className={`mt-1.5 font-head text-[17px] font-extrabold leading-none tabular-nums sm:text-[19px] ${
+                    tile.accent ? "text-brand" : "text-ink"
+                  }`}
+                >
+                  {tile.value}
+                </p>
+              </div>
+            ))}
+          </div>
+
           <div className="rounded-2xl border border-border bg-surface p-5">
-            <h3 className="mb-3 text-[13.5px] font-bold text-ink">Loan Summary</h3>
+            <h3 className="mb-3 text-[13.5px] font-bold text-ink">What this is based on</h3>
             <dl className="flex flex-col gap-2 text-[12.5px]">
               {[
                 ["Ex-Showroom Price", formatRupee(exShowroomPrice)],
                 ["Down Payment", formatRupee(downPayment)],
-                ["Loan Amount", formatRupee(loanAmount)],
                 ["Interest Rate (p.a.)", `${interestRate.toFixed(2)}%`],
                 ["Loan Tenure", `${tenureYears} Years`],
               ].map(([label, value]) => (
@@ -463,15 +480,6 @@ export default function EmiCalculatorClient({
                   <dd className="font-semibold text-ink">{value}</dd>
                 </div>
               ))}
-              <div className="mt-1 border-t border-border-soft pt-2" />
-              <div className="flex items-center justify-between">
-                <dt className="font-semibold text-ink">Total Payable Amount</dt>
-                <dd className="font-bold text-ink">{formatRupee(totalPayable)}</dd>
-              </div>
-              <div className="flex items-center justify-between">
-                <dt className="text-muted">Total Interest Payable</dt>
-                <dd className="font-semibold text-brand">{formatRupee(totalInterest)}</dd>
-              </div>
             </dl>
           </div>
 
