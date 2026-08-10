@@ -508,6 +508,40 @@ export async function getRandomComparisonPairs(query: RandomPairsQueryParsed): P
 // there produces same-brand pairs), this deliberately draws carA from
 // the given brand and carB from every OTHER brand, so every pair is a
 // genuine cross-brand match-up.
+type RivalCandidate = { id: number; bodyTypeId: number | null; priceMin: Prisma.Decimal | null; brandId: number };
+
+// A rival is a car the same buyer could buy instead: the same body of car
+// at a price in the same conversation. Tiers relax that — cross-brand
+// first, then same-brand, then price alone — but never past the price
+// window: with no sane rival the rail goes empty rather than pairing a
+// city hatch with a Phantom.
+function pickRivals(model: RivalCandidate, pool: RivalCandidate[], count: number, seed: number): number[] {
+  const price = model.priceMin ? Number(model.priceMin) : null;
+  const inWindow = (c: RivalCandidate) => {
+    if (!price || !c.priceMin) return false;
+    const ratio = Number(c.priceMin) / price;
+    return ratio >= 0.55 && ratio <= 1.8;
+  };
+  const sameBody = (c: RivalCandidate) => model.bodyTypeId != null && c.bodyTypeId === model.bodyTypeId;
+  const tiers = [
+    pool.filter((c) => sameBody(c) && inWindow(c) && c.brandId !== model.brandId),
+    pool.filter((c) => sameBody(c) && inWindow(c)),
+    pool.filter(inWindow),
+  ];
+  const chosen: number[] = [];
+  const seen = new Set<number>();
+  for (const tier of tiers) {
+    for (const id of seededShuffle(tier.map((c) => c.id), seed)) {
+      if (chosen.length >= count) return chosen;
+      if (!seen.has(id)) {
+        seen.add(id);
+        chosen.push(id);
+      }
+    }
+  }
+  return chosen;
+}
+
 export async function getBrandCrossBrandPairs(
   brandSlug: string,
   count: number,
@@ -515,15 +549,21 @@ export async function getBrandCrossBrandPairs(
   const brand = await prisma.brand.findFirst({ where: { slug: brandSlug, isActive: true }, select: { id: true } });
   if (!brand) return [];
 
+  const rivalSelect = { id: true, bodyTypeId: true, priceMin: true, brandId: true } as const;
   const [brandCars, otherCars] = await Promise.all([
-    prisma.carModel.findMany({ where: { brandId: brand.id, launchStatus: 'available', variants: { some: {} } }, select: { id: true }, orderBy: { id: 'asc' } }),
-    prisma.carModel.findMany({ where: { brandId: { not: brand.id }, launchStatus: 'available', variants: { some: {} } }, select: { id: true }, orderBy: { id: 'asc' } }),
+    prisma.carModel.findMany({ where: { brandId: brand.id, launchStatus: 'available', variants: { some: {} } }, select: rivalSelect, orderBy: { id: 'asc' } }),
+    prisma.carModel.findMany({ where: { brandId: { not: brand.id }, launchStatus: 'available', variants: { some: {} } }, select: rivalSelect, orderBy: { id: 'asc' } }),
   ]);
 
-  const shuffledBrand = seededShuffle(brandCars.map((c) => c.id), daySeed());
-  const shuffledOther = seededShuffle(otherCars.map((c) => c.id), daySeed() + 1);
-  const n = Math.min(count, shuffledBrand.length, shuffledOther.length);
-  const idPairs: [number, number][] = Array.from({ length: n }, (_, i) => [shuffledBrand[i], shuffledOther[i]]);
+  const used = new Set<number>();
+  const idPairs: [number, number][] = [];
+  for (const own of seededShuffle(brandCars, daySeed())) {
+    if (idPairs.length >= count) break;
+    const rival = pickRivals(own, otherCars.filter((c) => !used.has(c.id)), 1, daySeed() + own.id)[0];
+    if (rival === undefined) continue;
+    used.add(rival);
+    idPairs.push([own.id, rival]);
+  }
 
   const cars = await prisma.carModel.findMany({
     where: { id: { in: idPairs.flat() } },
@@ -559,18 +599,17 @@ export async function getBrandCrossBrandPairs(
 export async function getModelCrossPairs(brandSlug: string, modelSlug: string, count: number): Promise<RandomComparisonPair[]> {
   const model = await prisma.carModel.findFirst({
     where: { slug: modelSlug, brand: { slug: brandSlug, isActive: true } },
-    select: { id: true },
+    select: { id: true, bodyTypeId: true, priceMin: true, brandId: true },
   });
   if (!model) return [];
 
   const others = await prisma.carModel.findMany({
     where: { id: { not: model.id }, launchStatus: 'available', variants: { some: {} } },
-    select: { id: true },
+    select: { id: true, bodyTypeId: true, priceMin: true, brandId: true },
     orderBy: { id: 'asc' },
   });
 
-  const shuffledOthers = seededShuffle(others.map((c) => c.id), daySeed());
-  const otherIds = shuffledOthers.slice(0, count);
+  const otherIds = pickRivals(model, others, count, daySeed());
 
   const cars = await prisma.carModel.findMany({
     where: { id: { in: [model.id, ...otherIds] } },
