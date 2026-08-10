@@ -28,7 +28,15 @@ const ORANGE = "#f2650f";
 const ORANGE_HOVER = "#d9560a";
 const DARK = "#111827";
 
-export default function HeroSection({ banners, bodyTypes }: { banners: Banner[]; bodyTypes: BodyType[] }) {
+export default function HeroSection({
+  banners,
+  bodyTypes,
+  h1Override,
+}: {
+  banners: Banner[];
+  bodyTypes: BodyType[];
+  h1Override?: string | null;
+}) {
   const router = useRouter();
   const [current, setCurrent] = useState(0);
   const [fade, setFade] = useState(true);
@@ -176,11 +184,13 @@ export default function HeroSection({ banners, bodyTypes }: { banners: Banner[];
             {slide.tagLabel}
           </p>
           <h1 className="font-head text-3xl md:text-[2.4rem] lg:text-[2.8rem] font-bold text-white leading-tight mb-1 tracking-tight">
-            {slide.heading.split("\n").map((line, i) => (
-              <span key={i} className="block">
-                {line}
-              </span>
-            ))}
+            {h1Override
+              ? h1Override
+              : slide.heading.split("\n").map((line, i) => (
+                  <span key={i} className="block">
+                    {line}
+                  </span>
+                ))}
           </h1>
           <h2 className="font-head text-lg md:text-xl font-extrabold mb-3" style={{ color: ORANGE }}>
             {slide.highlightText}

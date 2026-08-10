@@ -13,6 +13,10 @@ import BrandsGrid from "@/components/brands/BrandsGrid";
 import SectionHeader from "@/components/common/SectionHeader";
 import SectionSkeleton from "@/components/common/SectionSkeleton";
 import type { CompareCarResult } from "@/features/compare/compare.types";
+import { fillComparePlaceholders, fillCompareSchemaPlaceholders, getAllSchemas, getSeoMeta, parseRobotsMeta } from "@/features/seo/seo.api";
+import { SEO_PAGE_TYPE } from "@/features/seo/seo.types";
+import { getUploadUrl } from "@/lib/apiClient";
+import SeoJsonLd from "@/components/common/SeoJsonLd";
 
 const MIN_CARS = 2;
 const MAX_CARS = 4;
@@ -44,16 +48,45 @@ export async function generateStaticParams() {
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
-  const slugs = splitComparisonSlug((await params).comparisonSlug);
+  const comparisonSlug = (await params).comparisonSlug;
+  const slugs = splitComparisonSlug(comparisonSlug);
   if (!slugs) return {};
 
-  const data = await getCompareData(slugs);
+  const [data, seo] = await Promise.all([
+    getCompareData(slugs),
+    // "compare-detail" is the one static-page slug with no direct route —
+    // it's the shared SEO template applied to every /compare/[slug] pair,
+    // since each individual comparison can't realistically get its own
+    // admin row (see STATIC_PAGE_SLUG_OPTIONS in admin-panel/lib/lookups.ts).
+    getSeoMeta({ pageType: SEO_PAGE_TYPE.STATIC, staticPageSlug: "compare-detail" }),
+  ]);
   if (!data) return {};
 
   const names = data.cars.map((c) => c.name).join(" vs ");
+  // Admin's metaTitle/metaDescription/ogTitle/ogDescription on compare-detail
+  // (written with {{car1_name}} etc. tokens) take priority when set, same
+  // as every other page in this system — these computed strings are only
+  // the fallback for a pair the admin hasn't (or can't) tailor copy for.
+  const defaultTitle = `${names} — Compare | TimesAuto`;
+  const defaultDescription = `Compare ${names} side-by-side — price, specs, features and performance.`;
+  const title = fillComparePlaceholders(seo?.metaTitle, data.cars) ?? defaultTitle;
+  const description = fillComparePlaceholders(seo?.metaDescription, data.cars) ?? defaultDescription;
+  const ogImage = getUploadUrl(seo?.ogImage);
+
   return {
-    title: `${names} — Compare | TimesAuto`,
-    description: `Compare ${names} side-by-side — price, specs, features and performance.`,
+    title,
+    description,
+    keywords: fillComparePlaceholders(seo?.metaKeywords, data.cars) ?? undefined,
+    // Canonical is always this pair's own real path, never the admin's
+    // static template value — a shared canonical across every comparison
+    // page would tell search engines all pairs are duplicates of one URL.
+    alternates: { canonical: `/compare/${comparisonSlug}` },
+    robots: parseRobotsMeta(seo?.robotsMeta ?? null),
+    openGraph: {
+      title: fillComparePlaceholders(seo?.ogTitle, data.cars) ?? title,
+      description: fillComparePlaceholders(seo?.ogDescription, data.cars) ?? description,
+      images: ogImage ? [ogImage] : undefined,
+    },
   };
 }
 
@@ -145,14 +178,21 @@ export default async function ComparisonResultPage({ params }: Props) {
   const slugs = splitComparisonSlug(comparisonSlug);
   if (!slugs) notFound();
 
-  const [data, carOptions] = await Promise.all([getCompareData(slugs), getCarOptions()]);
+  const [data, carOptions, seo] = await Promise.all([
+    getCompareData(slugs),
+    getCarOptions(),
+    getSeoMeta({ pageType: SEO_PAGE_TYPE.STATIC, staticPageSlug: "compare-detail" }),
+  ]);
   if (!data) notFound();
 
   const { cars } = data;
   const names = cars.map((c) => c.name).join(" vs ");
 
+  const schemas = getAllSchemas(seo).map((s) => fillCompareSchemaPlaceholders(s, cars));
+
   return (
     <div className="bg-page">
+      <SeoJsonLd schemas={schemas} />
       <RecordRecentComparison comparisonSlug={comparisonSlug} cars={cars} />
 
       <div className="mx-auto max-w-7xl px-4 py-8 sm:py-12">
@@ -168,7 +208,7 @@ export default async function ComparisonResultPage({ params }: Props) {
           <span className="text-brand">{names}</span>
         </nav>
 
-        <CompareResults initialCars={cars} slugs={slugs} carOptions={carOptions} />
+        <CompareResults initialCars={cars} slugs={slugs} carOptions={carOptions} h1Override={fillComparePlaceholders(seo?.h1Tag, cars)} />
       </div>
 
       <Suspense fallback={<SectionSkeleton />}>

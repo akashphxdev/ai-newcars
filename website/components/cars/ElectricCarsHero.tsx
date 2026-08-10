@@ -85,7 +85,7 @@ const BottomFeature = ({ feature }: { feature: Feature }) => (
   </div>
 );
 
-export default function ElectricCarsHero() {
+export default function ElectricCarsHero({ h1Override }: { h1Override?: string | null }) {
   return (
     <div className="relative w-full overflow-hidden" style={{ minHeight: 460 }}>
       <Image src="/electric-page-image.png" alt="Electric cars" fill priority sizes="100vw" className="object-cover" />
@@ -102,7 +102,11 @@ export default function ElectricCarsHero() {
           </nav>
 
           <h1 className="mt-4 font-head text-4xl font-extrabold leading-tight text-ink sm:text-5xl">
-            All <span className="text-ev">Electric</span> Cars
+            {h1Override || (
+              <>
+                All <span className="text-ev">Electric</span> Cars
+              </>
+            )}
           </h1>
           <p className="mt-2 text-lg font-medium text-ink">Drive the future with zero emissions</p>
 

@@ -2,17 +2,30 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { getHomeStories } from "@/features/stories/story.api";
 import StoriesGrid from "@/components/stories/StoriesGrid";
+import { getAllSchemas, getSeoMeta, getStaticPageMetadata } from "@/features/seo/seo.api";
+import { SEO_PAGE_TYPE } from "@/features/seo/seo.types";
+import SeoJsonLd from "@/components/common/SeoJsonLd";
 
-export const metadata: Metadata = {
-  title: "Stories | TimesAuto",
-  description: "Tap through the latest news, road tests, and analysis from the TimesAuto newsroom.",
-};
+export async function generateMetadata(): Promise<Metadata> {
+  return getStaticPageMetadata(
+    "stories",
+    {
+      title: "Stories | TimesAuto",
+      description: "Tap through the latest news, road tests, and analysis from the TimesAuto newsroom.",
+    },
+    "/stories",
+  );
+}
 
 export default async function StoriesPage() {
-  const groups = await getHomeStories(30);
+  const [groups, seo] = await Promise.all([
+    getHomeStories(30),
+    getSeoMeta({ pageType: SEO_PAGE_TYPE.STATIC, staticPageSlug: "stories" }),
+  ]);
 
   return (
     <div>
+      <SeoJsonLd schemas={getAllSchemas(seo)} />
       <div className="border-b border-border bg-page">
         <div className="mx-auto max-w-7xl px-4 py-8 sm:py-10">
           <nav className="mb-6 flex flex-wrap items-center gap-1.5 text-[13px] font-semibold" aria-label="Breadcrumb">
@@ -23,7 +36,7 @@ export default async function StoriesPage() {
             <span className="text-brand">Stories</span>
           </nav>
 
-          <h1 className="text-2xl font-bold tracking-tight text-ink sm:text-[28px]">Stories</h1>
+          <h1 className="text-2xl font-bold tracking-tight text-ink sm:text-[28px]">{seo?.h1Tag || "Stories"}</h1>
           <p className="mt-2 max-w-xl text-[13.5px] leading-relaxed font-normal text-muted">
             Tap through news, road tests, and analysis in a minute — from the TimesAuto newsroom.
           </p>

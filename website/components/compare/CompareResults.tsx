@@ -20,10 +20,12 @@ export default function CompareResults({
   initialCars,
   slugs,
   carOptions,
+  h1Override,
 }: {
   initialCars: CompareCarResult[];
   slugs: string[];
   carOptions: CarOption[];
+  h1Override?: string | null;
 }) {
   const router = useRouter();
   const [cars, setCars] = useState(initialCars);
@@ -89,7 +91,7 @@ export default function CompareResults({
 
   return (
     <>
-      <h1 className="mb-2 text-2xl font-bold tracking-tight text-ink sm:text-[32px]">{names.join(" vs ")}</h1>
+      <h1 className="mb-2 text-2xl font-bold tracking-tight text-ink sm:text-[32px]">{h1Override || names.join(" vs ")}</h1>
       <p className="mb-6 max-w-3xl text-[15px] leading-relaxed text-ink/70">
         Should you buy {introNames}? Compare price, performance, features, and specifications side-by-side to find the
         car that fits you best.

@@ -26,6 +26,7 @@ const plusJakarta = Plus_Jakarta_Sans({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL ?? "https://www.timesauto.in"),
   title: "TimesAuto",
   description: "India's most trusted auto portal",
 };

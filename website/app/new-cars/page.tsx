@@ -5,11 +5,20 @@ import NewCarsFilterSidebar from "@/components/cars/NewCarsFilterSidebar";
 import BrandCarsSort from "@/components/brands/BrandCarsSort";
 import InfiniteCarGrid from "@/components/cars/InfiniteCarGrid";
 import { formatSinglePrice } from "@/lib/format";
+import { getAllSchemas, getSeoMeta, getStaticPageMetadata } from "@/features/seo/seo.api";
+import { SEO_PAGE_TYPE } from "@/features/seo/seo.types";
+import SeoJsonLd from "@/components/common/SeoJsonLd";
 
-export const metadata: Metadata = {
-  title: "New Cars in India | TimesAuto",
-  description: "Browse every new car available in India — filter by brand, body type, fuel type, and price.",
-};
+export async function generateMetadata(): Promise<Metadata> {
+  return getStaticPageMetadata(
+    "new-cars",
+    {
+      title: "New Cars in India | TimesAuto",
+      description: "Browse every new car available in India — filter by brand, body type, fuel type, and price.",
+    },
+    "/new-cars",
+  );
+}
 
 type Props = {
   searchParams: Promise<{
@@ -34,11 +43,15 @@ export default async function NewCarsPage({ searchParams }: Props) {
   const sort: SortValue = VALID_SORTS.includes(sp.sort as SortValue) ? (sp.sort as SortValue) : "popularity";
 
   const filters = { limit: 12, brand, bodyType, fuelType, maxPrice, sort };
-  const result = await getCarsBrowse({ page: 1, ...filters });
+  const [result, seo] = await Promise.all([
+    getCarsBrowse({ page: 1, ...filters }),
+    getSeoMeta({ pageType: SEO_PAGE_TYPE.STATIC, staticPageSlug: "new-cars" }),
+  ]);
   const { cars, pagination, filters: filterOptions } = result;
 
   return (
     <div>
+      <SeoJsonLd schemas={getAllSchemas(seo)} />
       <div className="border-b border-border bg-page">
         <div className="mx-auto max-w-7xl px-4 py-8 sm:py-10">
           <nav className="mb-6 flex flex-wrap items-center gap-1.5 text-[13px] font-semibold" aria-label="Breadcrumb">
@@ -49,7 +62,7 @@ export default async function NewCarsPage({ searchParams }: Props) {
             <span className="text-brand">New Cars</span>
           </nav>
 
-          <h1 className="text-2xl font-bold tracking-tight text-ink sm:text-[28px]">New Cars in India</h1>
+          <h1 className="text-2xl font-bold tracking-tight text-ink sm:text-[28px]">{seo?.h1Tag || "New Cars in India"}</h1>
           <p className="mt-2 max-w-xl text-[13.5px] leading-relaxed font-normal text-muted">
             Browse every new car available in India. Filter by brand, body type, fuel type, and budget to find
             detailed specifications, on-road prices, and mileage for the car that fits your needs.

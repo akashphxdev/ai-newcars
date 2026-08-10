@@ -15,6 +15,10 @@ import { CheckIcon, BoltIcon, GearIcon, GaugeIcon, ChevronDownIcon } from "@/com
 import type { CarDetailResult, CarDetailFeatureGroup, CarFaq } from "@/features/cars/car.types";
 import type { HomeArticle } from "@/features/articles/article.types";
 import type { RandomComparisonPair } from "@/features/compare/compare.types";
+import { fillPlaceholders, getEntityPageMetadata, getEntitySchemas, getSeoMeta } from "@/features/seo/seo.api";
+import { SEO_PAGE_TYPE } from "@/features/seo/seo.types";
+import SeoJsonLd from "@/components/common/SeoJsonLd";
+import { buildFaqPageSchema } from "@/lib/schema";
 
 // "/tata-motors-cars/nexon" -> app/car-model/[brandSlug]/[modelSlug] via the
 // rewrite in next.config.ts. Model-level content (Overview, Variants,
@@ -75,19 +79,29 @@ async function loadCar(props: Props): Promise<{
   return { car, faqs, articles, comparisonPairs };
 }
 
+function modelSeoVars(car: CarDetailResult): Record<string, string> {
+  return { brand_name: car.brand.name, brand_slug: car.brand.slug, model_name: car.name, model_slug: car.slug };
+}
+
 export async function generateMetadata(props: Props): Promise<Metadata> {
   const { brandSlug, modelSlug } = await props.params;
   const car = await getCarDetail(brandSlug, modelSlug);
   if (!car) return {};
 
   const priceText = formatPriceRange(car.priceMin, car.priceMax);
-  const title = `${car.brand.name} ${car.name} - Price, Specs, Images & Variants`;
-  const description = `${car.brand.name} ${car.name} price in India: ${priceText}. Check variants, specifications, colours, and images.`;
-
+  const meta = await getEntityPageMetadata(
+    SEO_PAGE_TYPE.MODEL,
+    car.id,
+    modelSeoVars(car),
+    {
+      title: `${car.brand.name} ${car.name} - Price, Specs, Images & Variants`,
+      description: `${car.brand.name} ${car.name} price in India: ${priceText}. Check variants, specifications, colours, and images.`,
+    },
+    `/${car.brand.slug}-cars/${car.slug}`,
+  );
   return {
-    title,
-    description,
-    openGraph: { title, description, images: car.coverImageUrl ? [car.coverImageUrl] : undefined },
+    ...meta,
+    openGraph: { ...meta.openGraph, images: meta.openGraph?.images ?? (car.coverImageUrl ? [car.coverImageUrl] : undefined) },
   };
 }
 
@@ -96,9 +110,19 @@ export default async function CarModelPage(props: Props) {
   const v = car.selectedVariant;
   const defaultVariantSlug = v ? slugify(v.variantName) : "";
   const overviewCards = buildOverviewCards(v?.features ?? []);
+  // FAQPage JSON-LD is generated straight from `faqs` — that's the same
+  // data this page already renders in the FAQs section below, so the
+  // schema can never drift out of sync with what's actually shown (see
+  // lib/schema.ts).
+  const [adminSchemas, seo] = await Promise.all([
+    getEntitySchemas(SEO_PAGE_TYPE.MODEL, car.id, modelSeoVars(car)),
+    getSeoMeta({ pageType: SEO_PAGE_TYPE.MODEL, entityId: car.id }),
+  ]);
+  const schemas = [...adminSchemas, buildFaqPageSchema(faqs)];
 
   return (
     <div className="bg-page">
+      <SeoJsonLd schemas={schemas} />
       <div className="border-b border-border bg-white">
         <div className="mx-auto max-w-7xl px-4 py-3">
           <nav className="flex items-center gap-1.5 text-[12px] font-medium text-faint">
@@ -112,7 +136,7 @@ export default async function CarModelPage(props: Props) {
       </div>
 
       <div className="mx-auto max-w-7xl px-4 py-6">
-        <CarModelHero car={car} variant={v} />
+        <CarModelHero car={car} variant={v} h1Override={fillPlaceholders(seo?.h1Tag, modelSeoVars(car))} />
       </div>
 
       <div className="mx-auto max-w-7xl px-4 py-8 sm:py-10">

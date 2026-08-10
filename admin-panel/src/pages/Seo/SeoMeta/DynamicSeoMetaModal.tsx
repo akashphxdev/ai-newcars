@@ -8,7 +8,13 @@
 import { useEffect, useRef, useState } from "react";
 import { useCreateSeoMetaMutation, useUpdateSeoMetaMutation, type SeoMetaRecord } from "./seoMeta.api";
 import { extractApiError } from "../../../lib/apiClient";
-import { DYNAMIC_SEO_PAGE_TYPE_OPTIONS } from "../../../lib/lookups";
+import {
+  DYNAMIC_SEO_PAGE_TYPE_OPTIONS,
+  DYNAMIC_PAGE_TYPE_PLACEHOLDER_TOKENS,
+  ROBOTS_PRESETS,
+  SCHEMA_FIELDS,
+  type SchemaFieldKey,
+} from "../../../lib/lookups";
 import EntityPicker from "../../../components/common/EntityPicker";
 import {
   Field,
@@ -20,24 +26,10 @@ import {
   InfoSectionIcon,
   SearchEngineSectionIcon,
   SocialSectionIcon,
+  CopyFromMetaButton,
 } from "../../../components/common/SeoFormFields";
 
 const ACCENT = "#D4300F";
-const ROBOTS_PRESETS = ["index,follow", "noindex,follow", "index,nofollow", "noindex,nofollow"];
-
-// One entry per JSON-LD schema.org type this form can author. Keys must
-// match the SeoMeta columns 1:1 (vehicleSchema, faqSchema, ...) — same
-// list as SeoMetaModal.tsx's SCHEMA_FIELDS.
-const SCHEMA_FIELDS = [
-  { key: "vehicleSchema", label: "Vehicle / Product schema", hint: "Specs, price & rating — schema.org/Car or /Product." },
-  { key: "faqSchema", label: "FAQ schema", hint: "schema.org/FAQPage — question/answer pairs shown on this page." },
-  { key: "reviewSchema", label: "Review schema", hint: "schema.org/Review or AggregateRating." },
-  { key: "articleSchema", label: "Article schema", hint: "schema.org/Article — for blog/news pages." },
-  { key: "authorSchema", label: "Author schema", hint: "schema.org/Person — content author profile." },
-  { key: "breadcrumbSchema", label: "Breadcrumb schema", hint: "schema.org/BreadcrumbList — navigation path." },
-] as const;
-
-type SchemaFieldKey = (typeof SCHEMA_FIELDS)[number]["key"];
 
 interface FieldErrors {
   pageType?: string;
@@ -89,6 +81,7 @@ function DynamicSeoMetaForm({
 
   const [pageType, setPageType] = useState<number | "">(seoMeta?.pageType ?? defaultPageType ?? "");
   const [entityId, setEntityId] = useState<number | null>(seoMeta?.entityId ?? null);
+  const placeholderTokens = pageType !== "" ? (DYNAMIC_PAGE_TYPE_PLACEHOLDER_TOKENS[pageType] ?? []) : [];
   const [metaTitle, setMetaTitle] = useState(seoMeta?.metaTitle ?? "");
   const [metaDescription, setMetaDescription] = useState(seoMeta?.metaDescription ?? "");
   const [metaKeywords, setMetaKeywords] = useState(seoMeta?.metaKeywords ?? "");
@@ -102,7 +95,6 @@ function DynamicSeoMetaForm({
 
   const [schemaValues, setSchemaValues] = useState<Record<SchemaFieldKey, string>>({
     vehicleSchema: seoMeta?.vehicleSchema ?? "",
-    faqSchema: seoMeta?.faqSchema ?? "",
     reviewSchema: seoMeta?.reviewSchema ?? "",
     articleSchema: seoMeta?.articleSchema ?? "",
     authorSchema: seoMeta?.authorSchema ?? "",
@@ -111,7 +103,7 @@ function DynamicSeoMetaForm({
   const setSchemaValue = (key: SchemaFieldKey, value: string) =>
     setSchemaValues((prev) => ({ ...prev, [key]: value }));
 
-  const filledSchemaCount = Object.values(schemaValues).filter((v) => v.trim()).length;
+  const filledSchemaCount = SCHEMA_FIELDS.filter((f) => schemaValues[f.key].trim()).length;
 
   const [errors, setErrors] = useState<FieldErrors>({});
   const [serverError, setServerError] = useState("");
@@ -182,7 +174,6 @@ function DynamicSeoMetaForm({
       ogImage: ogImage.trim() || null,
       robotsMeta: robotsMeta.trim() || null,
       vehicleSchema: schemaValues.vehicleSchema.trim() || null,
-      faqSchema: schemaValues.faqSchema.trim() || null,
       reviewSchema: schemaValues.reviewSchema.trim() || null,
       articleSchema: schemaValues.articleSchema.trim() || null,
       authorSchema: schemaValues.authorSchema.trim() || null,
@@ -263,6 +254,15 @@ function DynamicSeoMetaForm({
         </div>
 
         <form onSubmit={handleSubmit} className="px-6 pb-6 pt-5 space-y-4" noValidate>
+          {entityId === null && placeholderTokens.length > 0 && (
+            <div className="rounded-xl border border-[#f0d9d2] bg-[#fefaf9] px-3.5 py-2.5">
+              <p className="text-[11.5px] font-bold text-[#1c1a17]">No entity picked — this is the default template</p>
+              <p className="text-[11px] text-[#8a8579] mt-0.5 leading-snug">
+                It applies to every {DYNAMIC_SEO_PAGE_TYPE_OPTIONS.find((o) => o.value === pageType)?.label.toLowerCase()} that
+                doesn't have its own SEO entry, so write it with the tokens below instead of one specific name.
+              </p>
+            </div>
+          )}
           {/* ---------------- Meta Info tab ---------------- */}
           <div className={activeTab === "meta" ? "space-y-4" : "hidden"}>
             <SectionCard title="Page Target" icon={<InfoSectionIcon />}>
@@ -299,6 +299,7 @@ function DynamicSeoMetaForm({
                   placeholder="e.g. Maruti Suzuki Swift — Price, Specs & Mileage"
                   error={errors.metaTitle}
                   maxLength={255}
+                  tokens={placeholderTokens}
                 />
               </Field>
 
@@ -309,20 +310,21 @@ function DynamicSeoMetaForm({
                   placeholder="Short description shown in search results"
                   maxLength={500}
                   error={errors.metaDescription}
+                  tokens={placeholderTokens}
                 />
               </Field>
 
               <Field label="Meta keywords" hint="Optional, comma-separated.">
-                <TextField value={metaKeywords} onChange={setMetaKeywords} placeholder="e.g. maruti suzuki swift, price, mileage" />
+                <TextField value={metaKeywords} onChange={setMetaKeywords} placeholder="e.g. maruti suzuki swift, price, mileage" tokens={placeholderTokens} />
               </Field>
 
-              <Field label="H1 tag">
-                <TextField value={h1Tag} onChange={setH1Tag} placeholder="e.g. Maruti Suzuki Swift" maxLength={255} />
+              <Field label="H1 tag" hint="Overrides this page's on-page heading. Falls back to the page's own default if blank.">
+                <TextField value={h1Tag} onChange={setH1Tag} placeholder="e.g. Maruti Suzuki Swift" maxLength={255} tokens={placeholderTokens} />
               </Field>
             </SectionCard>
 
             <SectionCard title="Search Engine" icon={<SearchEngineSectionIcon />}>
-              <Field label="Canonical URL">
+              <Field label="Canonical URL" hint="Ignored — every page always canonicalizes to its own real URL, not this value.">
                 <TextField value={canonicalUrl} onChange={setCanonicalUrl} placeholder="https://example.com/car-model/maruti-suzuki/swift" />
               </Field>
 
@@ -354,10 +356,21 @@ function DynamicSeoMetaForm({
               </label>
             </SectionCard>
 
-            <SectionCard title="Social Preview" icon={<SocialSectionIcon />}>
+            <SectionCard
+              title="Social Preview"
+              icon={<SocialSectionIcon />}
+              headerAction={
+                <CopyFromMetaButton
+                  onClick={() => {
+                    setOgTitle(metaTitle);
+                    setOgDescription(metaDescription);
+                  }}
+                />
+              }
+            >
               <div className="grid grid-cols-2 gap-3">
                 <Field label="OG title" hint="Falls back to meta title if blank.">
-                  <TextField value={ogTitle} onChange={setOgTitle} maxLength={255} />
+                  <TextField value={ogTitle} onChange={setOgTitle} maxLength={255} tokens={placeholderTokens} />
                 </Field>
                 <Field label="OG image URL">
                   <TextField value={ogImage} onChange={setOgImage} placeholder="https://..." />
@@ -365,7 +378,7 @@ function DynamicSeoMetaForm({
               </div>
 
               <Field label="OG description" hint="Falls back to meta description if blank.">
-                <TextAreaField value={ogDescription} onChange={setOgDescription} maxLength={500} />
+                <TextAreaField value={ogDescription} onChange={setOgDescription} maxLength={500} tokens={placeholderTokens} />
               </Field>
             </SectionCard>
           </div>
@@ -383,6 +396,7 @@ function DynamicSeoMetaForm({
                 value={schemaValues[field.key]}
                 onChange={(v) => setSchemaValue(field.key, v)}
                 error={errors.schema?.[field.key]}
+                tokens={placeholderTokens}
               />
             ))}
           </div>

@@ -1,4 +1,5 @@
 import { Suspense } from "react";
+import type { Metadata } from "next";
 import HeroSection from "@/components/home/HeroSection";
 import PopularBrands from "@/components/home/PopularBrands";
 import BodyTypes from "@/components/home/BodyTypes";
@@ -21,6 +22,17 @@ import { getHomeTestimonials } from "@/features/testimonials/testimonial.api";
 import { getHomeStories } from "@/features/stories/story.api";
 import { getBodyTypes } from "@/features/bodyTypes/bodyType.api";
 import { getRandomPairs } from "@/features/compare/compare.api";
+import { getAllSchemas, getSeoMeta, getStaticPageMetadata } from "@/features/seo/seo.api";
+import { SEO_PAGE_TYPE } from "@/features/seo/seo.types";
+import SeoJsonLd from "@/components/common/SeoJsonLd";
+
+export async function generateMetadata(): Promise<Metadata> {
+  return getStaticPageMetadata(
+    "home",
+    { title: "TimesAuto", description: "India's most trusted auto portal" },
+    "/",
+  );
+}
 
 // Each of these is its own async Server Component, fetching only the data
 // its section needs. Wrapping each one in its own <Suspense> below means a
@@ -28,11 +40,11 @@ import { getRandomPairs } from "@/features/compare/compare.api";
 // showing up first — sections stream in as their data resolves instead of
 // the whole page waiting on the slowest fetch.
 
-async function HeroSectionData() {
+async function HeroSectionData({ h1Override }: { h1Override?: string | null }) {
   // getBodyTypes() is called again in BodyTypesData below — same URL/
   // revalidate window, so Next.js dedupes it into one request, not two.
   const [banners, bodyTypes] = await Promise.all([getBanners(), getBodyTypes()]);
-  return <HeroSection banners={banners} bodyTypes={bodyTypes} />;
+  return <HeroSection banners={banners} bodyTypes={bodyTypes} h1Override={h1Override} />;
 }
 
 async function PopularBrandsData() {
@@ -93,11 +105,14 @@ async function StoriesData() {
   return <Stories groups={groups} />;
 }
 
-export default function HomePage() {
+export default async function HomePage() {
+  const seo = await getSeoMeta({ pageType: SEO_PAGE_TYPE.STATIC, staticPageSlug: "home" });
+
   return (
     <div className="min-h-screen bg-page">
+      <SeoJsonLd schemas={getAllSchemas(seo)} />
       <Suspense fallback={<SectionSkeleton minHeight={560} />}>
-        <HeroSectionData />
+        <HeroSectionData h1Override={seo?.h1Tag} />
       </Suspense>
       <Suspense fallback={<SectionSkeleton />}>
         <PopularBrandsData />

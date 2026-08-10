@@ -3,6 +3,9 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getArticleCategories, getArticlesByCategoryPaginated } from "@/features/articles/article.api";
 import CategoryArticlesGrid from "@/components/articles/CategoryArticlesGrid";
+import { fillPlaceholders, getEntityPageMetadata, getEntitySchemas, getSeoMeta } from "@/features/seo/seo.api";
+import { SEO_PAGE_TYPE } from "@/features/seo/seo.types";
+import SeoJsonLd from "@/components/common/SeoJsonLd";
 
 const PAGE_SIZE = 8;
 
@@ -23,10 +26,16 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const category = categories.find((c) => c.slug === categorySlug);
   if (!category) return {};
 
-  return {
-    title: `${category.name} — News | TimesAuto`,
-    description: `Hands-on ${category.name.toLowerCase()} coverage from the TimesAuto editorial team — reviews, comparisons, and buying advice, updated regularly.`,
-  };
+  return getEntityPageMetadata(
+    SEO_PAGE_TYPE.NEWS_CATEGORY,
+    category.id,
+    { category_name: category.name, category_slug: category.slug },
+    {
+      title: `${category.name} — News | TimesAuto`,
+      description: `Hands-on ${category.name.toLowerCase()} coverage from the TimesAuto editorial team — reviews, comparisons, and buying advice, updated regularly.`,
+    },
+    `/news/${category.slug}`,
+  );
 }
 
 export default async function NewsCategoryPage({ params }: Props) {
@@ -39,10 +48,16 @@ export default async function NewsCategoryPage({ params }: Props) {
   // Only the first page loads server-side — CategoryArticlesGrid's "Load
   // more" button fetches the rest client-side, so a category with
   // hundreds of articles never has to load in one shot.
-  const { articles, pagination } = await getArticlesByCategoryPaginated(categorySlug, 1, PAGE_SIZE);
+  const categoryVars = { category_name: category.name, category_slug: category.slug };
+  const [{ articles, pagination }, schemas, seo] = await Promise.all([
+    getArticlesByCategoryPaginated(categorySlug, 1, PAGE_SIZE),
+    getEntitySchemas(SEO_PAGE_TYPE.NEWS_CATEGORY, category.id, categoryVars),
+    getSeoMeta({ pageType: SEO_PAGE_TYPE.NEWS_CATEGORY, entityId: category.id }),
+  ]);
 
   return (
     <div className="bg-page">
+      <SeoJsonLd schemas={schemas} />
       <div className="mx-auto max-w-7xl px-4 py-8 sm:py-12">
         <nav className="mb-6 flex flex-wrap items-center gap-1.5 text-[13px] font-semibold" aria-label="Breadcrumb">
           <Link href="/" className="text-ink">
@@ -52,7 +67,9 @@ export default async function NewsCategoryPage({ params }: Props) {
           <span className="text-brand">{category.name}</span>
         </nav>
 
-        <h1 className="mb-2 text-2xl font-bold capitalize tracking-tight text-ink sm:text-[32px]">{category.name}</h1>
+        <h1 className="mb-2 text-2xl font-bold capitalize tracking-tight text-ink sm:text-[32px]">
+          {fillPlaceholders(seo?.h1Tag, categoryVars) || category.name}
+        </h1>
         <p className="mb-8 max-w-2xl text-[14px] leading-relaxed text-ink/70 sm:text-[15px]">
           Hands-on <span className="capitalize">{category.name.toLowerCase()}</span> coverage from the TimesAuto
           editorial team — reviews, comparisons, and buying advice, updated regularly.

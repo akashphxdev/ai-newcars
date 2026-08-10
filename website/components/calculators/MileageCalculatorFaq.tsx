@@ -1,5 +1,6 @@
 import SectionHeader from "@/components/common/SectionHeader";
 import { ChevronDownIcon } from "@/components/common/icons";
+import { toSafeJsonLd } from "@/lib/schema";
 
 const FAQS = [
   {
@@ -64,7 +65,7 @@ export default function MileageCalculatorFaq() {
         ))}
       </div>
 
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: toSafeJsonLd(jsonLd) }} />
     </div>
   );
 }

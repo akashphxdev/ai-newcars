@@ -26,7 +26,6 @@ export interface SeoMetaRecord {
   // brand listing page won't have a reviewSchema). See SCHEMA_JSON_FIELDS
   // in seoMeta.validation.ts for the shared validation rule. ----
   vehicleSchema: string | null;
-  faqSchema: string | null;
   reviewSchema: string | null;
   articleSchema: string | null;
   authorSchema: string | null;

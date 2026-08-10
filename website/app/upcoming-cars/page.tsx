@@ -3,11 +3,20 @@ import { getCarsBrowse } from "@/features/cars/car.api";
 import NewCarsFilterSidebar from "@/components/cars/NewCarsFilterSidebar";
 import BrandCarsSort from "@/components/brands/BrandCarsSort";
 import InfiniteCarGrid from "@/components/cars/InfiniteCarGrid";
+import { getAllSchemas, getSeoMeta, getStaticPageMetadata } from "@/features/seo/seo.api";
+import { SEO_PAGE_TYPE } from "@/features/seo/seo.types";
+import SeoJsonLd from "@/components/common/SeoJsonLd";
 
-export const metadata: Metadata = {
-  title: "Upcoming Cars in India | TimesAuto",
-  description: "Browse all upcoming car launches in India — expected launch dates, estimated prices, and countdowns.",
-};
+export async function generateMetadata(): Promise<Metadata> {
+  return getStaticPageMetadata(
+    "upcoming-cars",
+    {
+      title: "Upcoming Cars in India | TimesAuto",
+      description: "Browse all upcoming car launches in India — expected launch dates, estimated prices, and countdowns.",
+    },
+    "/upcoming-cars",
+  );
+}
 
 // launchStatus is fixed to "upcoming" here — everything else (brand, body
 // type, fuel type, price, sort) stays filterable, same as /new-cars.
@@ -28,14 +37,18 @@ export default async function UpcomingCarsPage({ searchParams }: Props) {
   const sort: SortValue = VALID_SORTS.includes(sp.sort as SortValue) ? (sp.sort as SortValue) : "popularity";
 
   const filters = { limit: 12, brand, bodyType, fuelType, maxPrice, sort, launchStatus: "upcoming" as const };
-  const result = await getCarsBrowse({ page: 1, ...filters });
+  const [result, seo] = await Promise.all([
+    getCarsBrowse({ page: 1, ...filters }),
+    getSeoMeta({ pageType: SEO_PAGE_TYPE.STATIC, staticPageSlug: "upcoming-cars" }),
+  ]);
   const { cars, pagination, filters: filterOptions } = result;
 
   return (
     <div>
+      <SeoJsonLd schemas={getAllSchemas(seo)} />
       <div className="border-b border-border bg-white">
         <div className="mx-auto max-w-7xl px-4 py-10 sm:py-14">
-          <h1 className="font-head text-2xl font-extrabold text-ink sm:text-3xl">Upcoming Cars in India</h1>
+          <h1 className="font-head text-2xl font-extrabold text-ink sm:text-3xl">{seo?.h1Tag || "Upcoming Cars in India"}</h1>
           <p className="mt-2 max-w-2xl text-muted">
             Real-time countdowns for the most anticipated launches — expected launch dates and estimated prices,
             updated as manufacturers confirm details.

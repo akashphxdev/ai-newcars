@@ -1,6 +1,10 @@
 import Link from "next/link";
 
-export default function BrandsHero() {
+// h1Override, when set (admin's SeoMeta.h1Tag), replaces the default
+// "All Car Brands" wording wholesale — the brand-colored "Brands" split
+// only applies to the built-in default, since a custom heading is plain
+// admin-authored text with no styled sub-span to split it into.
+export default function BrandsHero({ h1Override }: { h1Override?: string | null }) {
   return (
     <div className="relative w-full overflow-hidden bg-surface" style={{ minHeight: 220 }}>
       <div className="relative z-10 mx-auto flex h-full max-w-7xl flex-col justify-center px-4 py-8 sm:py-10" style={{ minHeight: 220 }}>
@@ -13,7 +17,11 @@ export default function BrandsHero() {
         </nav>
 
         <h1 className="mt-4 font-head text-4xl font-bold leading-tight text-ink sm:text-5xl">
-          All Car <span className="text-brand">Brands</span>
+          {h1Override || (
+            <>
+              All Car <span className="text-brand">Brands</span>
+            </>
+          )}
         </h1>
         <p className="mt-2 text-lg font-medium text-ink">Find your perfect manufacturer, all in one place</p>
       </div>

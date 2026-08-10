@@ -15,11 +15,20 @@ import PopularCars from "@/components/home/Popularcars";
 import Articles from "@/components/home/Articles";
 import SectionSkeleton from "@/components/common/SectionSkeleton";
 import type { FuelFilter } from "@/features/compare/compare.types";
+import { getAllSchemas, getSeoMeta, getStaticPageMetadata } from "@/features/seo/seo.api";
+import { SEO_PAGE_TYPE } from "@/features/seo/seo.types";
+import SeoJsonLd from "@/components/common/SeoJsonLd";
 
-export const metadata: Metadata = {
-  title: "Compare Cars in India | TimesAuto",
-  description: "Compare any two cars side-by-side — price, specs, features and performance, to find your perfect match.",
-};
+export async function generateMetadata(): Promise<Metadata> {
+  return getStaticPageMetadata(
+    "compare-cars",
+    {
+      title: "Compare Cars in India | TimesAuto",
+      description: "Compare any two cars side-by-side — price, specs, features and performance, to find your perfect match.",
+    },
+    "/compare-cars",
+  );
+}
 
 type Props = {
   searchParams: Promise<{ page?: string; bodyTypeSlug?: string; fuelType?: string; maxPrice?: string }>;
@@ -55,10 +64,11 @@ export default async function ComparePage({ searchParams }: Props) {
   const fuelType = sp.fuelType && VALID_FUEL.includes(sp.fuelType) ? (sp.fuelType as FuelFilter) : undefined;
   const maxPrice = sp.maxPrice ? Number(sp.maxPrice) : undefined;
 
-  const [carOptions, bodyTypes, { pairs, pagination }] = await Promise.all([
+  const [carOptions, bodyTypes, { pairs, pagination }, seo] = await Promise.all([
     getCarOptions(),
     getBodyTypes(),
     getRandomPairs({ page, count: 6, bodyTypeSlug, fuelType, maxPrice }),
+    getSeoMeta({ pageType: SEO_PAGE_TYPE.STATIC, staticPageSlug: "compare-cars" }),
   ]);
 
   const queryParams: Record<string, string> = {};
@@ -68,7 +78,8 @@ export default async function ComparePage({ searchParams }: Props) {
 
   return (
     <div>
-      <CompareHero />
+      <SeoJsonLd schemas={getAllSchemas(seo)} />
+      <CompareHero h1Override={seo?.h1Tag} />
 
       <div className="mx-auto max-w-7xl px-4 py-8 sm:py-10">
         <ComparePicker options={carOptions} />

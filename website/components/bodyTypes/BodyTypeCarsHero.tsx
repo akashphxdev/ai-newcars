@@ -10,10 +10,12 @@ export default function BodyTypeCarsHero({
   bodyType,
   result,
   otherBodyTypes,
+  h1Override,
 }: {
   bodyType: BodyType;
   result: BodyTypeCarsResult;
   otherBodyTypes: BodyTypeWithCount[];
+  h1Override?: string | null;
 }) {
   const brandNames = result.filters.brands.map((b) => b.name);
   const others = otherBodyTypes.filter((bt) => bt.slug !== bodyType.slug && bt.count > 0);
@@ -31,7 +33,7 @@ export default function BodyTypeCarsHero({
 
         <div className="flex flex-col items-start gap-6 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <h1 className="text-2xl font-bold tracking-tight text-ink sm:text-[28px]">{bodyType.name} Cars</h1>
+            <h1 className="text-2xl font-bold tracking-tight text-ink sm:text-[28px]">{h1Override || `${bodyType.name} Cars`}</h1>
             <p className="mt-2 max-w-xl text-[13.5px] leading-relaxed font-normal text-muted">
               {bodyType.description ??
                 `Explore every ${bodyType.name} car available in India. Browse detailed specifications, on-road prices, and mileage across brands, and compare variants to find the ${bodyType.name} that fits your budget and needs.`}

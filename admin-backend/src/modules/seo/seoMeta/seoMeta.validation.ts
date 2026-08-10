@@ -27,9 +27,9 @@ const seoPageTypeCodeSchema = z
   .int()
   .refine((v) => (SEO_PAGE_TYPE_CODES as readonly number[]).includes(v), 'Invalid pageType code');
 
-// Shared rule for every JSON-LD schema field (vehicleSchema, faqSchema,
-// reviewSchema, articleSchema, authorSchema, breadcrumbSchema). Each one
-// is optional/nullable — a page rarely needs all six — but whatever IS
+// Shared rule for every JSON-LD schema field (vehicleSchema, reviewSchema,
+// articleSchema, authorSchema, breadcrumbSchema). Each one is
+// optional/nullable — a page rarely needs all five — but whatever IS
 // provided must be valid, parseable JSON, since it gets injected as-is
 // into a <script type="application/ld+json"> tag on the live site.
 const schemaJsonField = z
@@ -92,7 +92,6 @@ const seoMetaShape = {
 
   // ---- structured data / JSON-LD — each optional, validated as JSON if present ----
   vehicleSchema: schemaJsonField,
-  faqSchema: schemaJsonField,
   reviewSchema: schemaJsonField,
   articleSchema: schemaJsonField,
   authorSchema: schemaJsonField,

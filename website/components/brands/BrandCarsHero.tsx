@@ -8,7 +8,15 @@ import { formatSinglePrice } from "@/lib/format";
 // invented "Trusted Brand / Advanced Safety" marketing badges, since
 // none of that is backed by anything in the database. Uses the site's
 // normal light theme (bg-page) — no dark hero band.
-export default function BrandCarsHero({ brand, result }: { brand: Brand; result: BrandCarsResult }) {
+export default function BrandCarsHero({
+  brand,
+  result,
+  h1Override,
+}: {
+  brand: Brand;
+  result: BrandCarsResult;
+  h1Override?: string | null;
+}) {
   const bodyTypeNames = result.filters.bodyTypes.map((b) => b.name);
 
   return (
@@ -28,7 +36,7 @@ export default function BrandCarsHero({ brand, result }: { brand: Brand; result:
 
         <div className="flex flex-col items-start gap-6 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <h1 className="text-2xl font-bold tracking-tight text-ink sm:text-[28px]">{brand.name} Cars</h1>
+            <h1 className="text-2xl font-bold tracking-tight text-ink sm:text-[28px]">{h1Override || `${brand.name} Cars`}</h1>
             <p className="mt-2 max-w-xl text-[13.5px] leading-relaxed font-normal text-muted">
               Explore the full range of {brand.name} cars in India. Browse detailed specifications, on-road
               prices, and mileage for every {brand.name} model, from hatchbacks to SUVs. Compare variants and

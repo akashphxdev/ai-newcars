@@ -5,7 +5,7 @@
 // for the code -> label mapping (mirrors the backend's SEO_PAGE_TYPE_CODES
 // in seoMeta.validation.ts).
 //
-// Structured-data fields (vehicleSchema/faqSchema/reviewSchema/articleSchema/
+// Structured-data fields (vehicleSchema/reviewSchema/articleSchema/
 // authorSchema/breadcrumbSchema) hold raw JSON-LD strings, one per
 // schema.org type. This used to live in a separate SchemaTemplate table —
 // now folded directly into SeoMeta so one row = one page's complete SEO
@@ -28,7 +28,6 @@ export interface SeoMetaRecord {
   ogImage: string | null;
   robotsMeta: string | null;
   vehicleSchema: string | null;
-  faqSchema: string | null;
   reviewSchema: string | null;
   articleSchema: string | null;
   authorSchema: string | null;
@@ -74,7 +73,6 @@ export interface SeoMetaInput {
   ogImage?: string | null;
   robotsMeta?: string | null;
   vehicleSchema?: string | null;
-  faqSchema?: string | null;
   reviewSchema?: string | null;
   articleSchema?: string | null;
   authorSchema?: string | null;

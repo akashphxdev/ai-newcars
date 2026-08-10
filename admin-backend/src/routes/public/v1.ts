@@ -20,6 +20,7 @@ import StatesRoutes from './states';
 import LendersRoutes from './lenders';
 import WishlistRoutes from './wishlist';
 import AnalyticsRoutes from './analytics';
+import SeoRoutes from './seo';
 
 const router = Router();
 
@@ -39,5 +40,6 @@ router.use('/states', StatesRoutes);
 router.use('/lenders', LendersRoutes);
 router.use('/wishlist', WishlistRoutes);
 router.use('/analytics', AnalyticsRoutes);
+router.use('/seo', SeoRoutes);
 
 export default router;

@@ -15,6 +15,9 @@ import BodyTypeCarsFilterSidebar from "@/components/bodyTypes/BodyTypeCarsFilter
 import InfiniteCarGrid from "@/components/cars/InfiniteCarGrid";
 import Articles from "@/components/home/Articles";
 import SectionSkeleton from "@/components/common/SectionSkeleton";
+import { fillPlaceholders, getEntityPageMetadata, getEntitySchemas, getSeoMeta } from "@/features/seo/seo.api";
+import { SEO_PAGE_TYPE } from "@/features/seo/seo.types";
+import SeoJsonLd from "@/components/common/SeoJsonLd";
 
 // One rewrite ("/:slug-cars" -> "/listing-cars/:slug", see next.config.ts)
 // serves both brand pages ("/tata-motors-cars") and body-type pages
@@ -112,10 +115,16 @@ async function BrandCarsPageContent({ slug, sp }: { slug: string; sp: SearchPara
 
   const { brand, cars, pagination, filters } = result;
   const basePath = `/${brand.slug}-cars`;
+  const brandVars = { brand_name: brand.name, brand_slug: brand.slug };
+  const [schemas, seo] = await Promise.all([
+    getEntitySchemas(SEO_PAGE_TYPE.BRAND, brand.id, brandVars),
+    getSeoMeta({ pageType: SEO_PAGE_TYPE.BRAND, entityId: brand.id }),
+  ]);
 
   return (
     <div>
-      <BrandCarsHero brand={brand} result={result} />
+      <SeoJsonLd schemas={schemas} />
+      <BrandCarsHero brand={brand} result={result} h1Override={fillPlaceholders(seo?.h1Tag, brandVars)} />
 
       <div className="mx-auto max-w-7xl px-4 py-8 sm:py-10">
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-[260px_1fr]">
@@ -220,10 +229,16 @@ async function BodyTypeCarsPageContent({ slug, sp }: { slug: string; sp: SearchP
 
   const { bodyType, cars, pagination, filters } = result;
   const basePath = `/${bodyType.slug}-cars`;
+  const bodyTypeVars = { bodytype_name: bodyType.name, bodytype_slug: bodyType.slug };
+  const [schemas, seo] = await Promise.all([
+    getEntitySchemas(SEO_PAGE_TYPE.BODY_TYPE, bodyType.id, bodyTypeVars),
+    getSeoMeta({ pageType: SEO_PAGE_TYPE.BODY_TYPE, entityId: bodyType.id }),
+  ]);
 
   return (
     <div>
-      <BodyTypeCarsHero bodyType={bodyType} result={result} otherBodyTypes={otherBodyTypes} />
+      <SeoJsonLd schemas={schemas} />
+      <BodyTypeCarsHero bodyType={bodyType} result={result} otherBodyTypes={otherBodyTypes} h1Override={fillPlaceholders(seo?.h1Tag, bodyTypeVars)} />
 
       <div className="mx-auto max-w-7xl px-4 py-8 sm:py-10">
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-[260px_1fr]">
@@ -285,18 +300,30 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
   const brand = await getBrandBySlug(slug);
   if (brand) {
-    return {
-      title: `${brand.name} Cars in India | TimesAuto`,
-      description: `Explore the full range of ${brand.name} cars in India — prices, specs, and features.`,
-    };
+    return getEntityPageMetadata(
+      SEO_PAGE_TYPE.BRAND,
+      brand.id,
+      { brand_name: brand.name, brand_slug: brand.slug },
+      {
+        title: `${brand.name} Cars in India | TimesAuto`,
+        description: `Explore the full range of ${brand.name} cars in India — prices, specs, and features.`,
+      },
+      `/${brand.slug}-cars`,
+    );
   }
 
   const bodyType = await getBodyTypeBySlug(slug);
   if (bodyType) {
-    return {
-      title: `${bodyType.name} Cars in India | TimesAuto`,
-      description: `Explore every ${bodyType.name} car available in India — prices, specs, and features.`,
-    };
+    return getEntityPageMetadata(
+      SEO_PAGE_TYPE.BODY_TYPE,
+      bodyType.id,
+      { bodytype_name: bodyType.name, bodytype_slug: bodyType.slug },
+      {
+        title: `${bodyType.name} Cars in India | TimesAuto`,
+        description: `Explore every ${bodyType.name} car available in India — prices, specs, and features.`,
+      },
+      `/${bodyType.slug}-cars`,
+    );
   }
 
   return {};

@@ -9,6 +9,9 @@ import CarModelSidebar from "@/components/cars/CarModelSidebar";
 import ReviewsSection from "@/components/cars/reviews/ReviewsSection";
 import { PowerIcon, TorqueIcon, CheckIcon } from "@/components/common/icons";
 import type { CarDetailResult, CarDetailFeatureGroup } from "@/features/cars/car.types";
+import { fillPlaceholders, getEntityPageMetadata, getEntitySchemas, getSeoMeta } from "@/features/seo/seo.api";
+import { SEO_PAGE_TYPE } from "@/features/seo/seo.types";
+import SeoJsonLd from "@/components/common/SeoJsonLd";
 
 // "/tata-motors-cars/nexon/xz-plus-dark-edition" -> app/car-model/[brandSlug]/
 // [modelSlug]/[variantSlug] via the rewrite in next.config.ts. Variant-level
@@ -57,6 +60,17 @@ async function loadCar(props: Props): Promise<{ car: CarDetailResult; variantSlu
   return { car, variantSlug };
 }
 
+function variantSeoVars(car: CarDetailResult, variantSlug: string): Record<string, string> {
+  return {
+    brand_name: car.brand.name,
+    brand_slug: car.brand.slug,
+    model_name: car.name,
+    model_slug: car.slug,
+    variant_name: car.selectedVariant!.variantName,
+    variant_slug: variantSlug,
+  };
+}
+
 export async function generateMetadata(props: Props): Promise<Metadata> {
   const { brandSlug, modelSlug, variantSlug } = await props.params;
   const variantId = await resolveVariantId(brandSlug, modelSlug, variantSlug).catch(() => undefined);
@@ -66,13 +80,19 @@ export async function generateMetadata(props: Props): Promise<Metadata> {
   if (!car || !car.selectedVariant) return {};
 
   const priceText = formatSinglePrice(car.selectedVariant.price);
-  const title = `${car.brand.name} ${car.name} ${car.selectedVariant.variantName} - Price & Specs`;
-  const description = `${car.brand.name} ${car.name} ${car.selectedVariant.variantName} price: ${priceText}. Full specifications, features, and safety details.`;
-
+  const meta = await getEntityPageMetadata(
+    SEO_PAGE_TYPE.DETAIL,
+    variantId,
+    variantSeoVars(car, variantSlug),
+    {
+      title: `${car.brand.name} ${car.name} ${car.selectedVariant.variantName} - Price & Specs`,
+      description: `${car.brand.name} ${car.name} ${car.selectedVariant.variantName} price: ${priceText}. Full specifications, features, and safety details.`,
+    },
+    `/${car.brand.slug}-cars/${car.slug}/${variantSlug}`,
+  );
   return {
-    title,
-    description,
-    openGraph: { title, description, images: car.coverImageUrl ? [car.coverImageUrl] : undefined },
+    ...meta,
+    openGraph: { ...meta.openGraph, images: meta.openGraph?.images ?? (car.coverImageUrl ? [car.coverImageUrl] : undefined) },
   };
 }
 
@@ -115,9 +135,15 @@ export default async function CarVariantPage(props: Props) {
 
   const safetyItems = buildSafetyItems(v.features);
   const keyFeatureItems = buildKeyFeatureItems(v.features);
+  const variantVars = variantSeoVars(car, variantSlug);
+  const [schemas, seo] = await Promise.all([
+    getEntitySchemas(SEO_PAGE_TYPE.DETAIL, v.id, variantVars),
+    getSeoMeta({ pageType: SEO_PAGE_TYPE.DETAIL, entityId: v.id }),
+  ]);
 
   return (
     <div className="bg-page">
+      <SeoJsonLd schemas={schemas} />
       <div className="border-b border-border bg-white">
         <div className="mx-auto max-w-7xl px-4 py-3">
           <nav className="flex items-center gap-1.5 text-[12px] font-medium text-faint">
@@ -133,7 +159,7 @@ export default async function CarVariantPage(props: Props) {
       </div>
 
       <div className="mx-auto max-w-7xl px-4 py-6">
-        <CarModelHero car={car} variant={v} />
+        <CarModelHero car={car} variant={v} h1Override={fillPlaceholders(seo?.h1Tag, variantVars)} />
       </div>
 
       <div className="mx-auto max-w-7xl gap-8 px-4 py-8 sm:py-10 lg:grid lg:grid-cols-[1fr_360px]">

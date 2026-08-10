@@ -133,7 +133,9 @@ export const STATIC_PAGE_SLUG_OPTIONS: StringLookupOption[] = [
   { value: "compare-cars", label: "Compare Tool" },
   { value: "compare-detail", label: "Compare Detail (default template)" },
   { value: "stories", label: "Stories" },
-  { value: "maintenance", label: "Maintenance" },
+  // No "maintenance" entry — that page is always noindex/nofollow and
+  // shows fixed copy (see website/app/maintenance/page.tsx's static
+  // metadata export), so there's nothing for an admin to usefully manage.
   { value: "car-affordability-calculator", label: "Car Affordability Calculator" },
   { value: "car-loan-emi-calculator", label: "Car Loan EMI Calculator" },
   { value: "down-payment-calculator", label: "Down Payment Calculator" },
@@ -141,3 +143,69 @@ export const STATIC_PAGE_SLUG_OPTIONS: StringLookupOption[] = [
   { value: "fuel-comparison-calculator", label: "Fuel Comparison Calculator" },
   { value: "mileage-calculator", label: "Mileage Calculator" },
 ];
+
+// Placeholder tokens available per dynamic pageType (Brand/Model/Variant/
+// BodyType/News Category) — same substitution mechanism as
+// STATIC_PAGE_PLACEHOLDER_TOKENS below (see website/features/seo/seo.api.ts's
+// getEntityPageMetadata), but these matter most on the "default template"
+// row (no specific entity picked) since that one row's text applies to
+// every entity of that type — e.g. every car model, not just one.
+export const DYNAMIC_PAGE_TYPE_PLACEHOLDER_TOKENS: Record<number, string[]> = {
+  [SEO_PAGE_TYPE.BRAND]: ["{{brand_name}}", "{{brand_slug}}"],
+  [SEO_PAGE_TYPE.MODEL]: ["{{brand_name}}", "{{brand_slug}}", "{{model_name}}", "{{model_slug}}"],
+  [SEO_PAGE_TYPE.DETAIL]: [
+    "{{brand_name}}",
+    "{{brand_slug}}",
+    "{{model_name}}",
+    "{{model_slug}}",
+    "{{variant_name}}",
+    "{{variant_slug}}",
+  ],
+  [SEO_PAGE_TYPE.BODY_TYPE]: ["{{bodytype_name}}", "{{bodytype_slug}}"],
+  [SEO_PAGE_TYPE.NEWS_CATEGORY]: ["{{category_name}}", "{{category_slug}}"],
+};
+
+// Placeholder tokens available for specific static pages — the website
+// substitutes these with the real values at render time (see
+// website/features/seo/seo.api.ts's fillComparePlaceholders), since a page
+// like "compare-detail" is one shared template applied to every
+// /compare/[slug] pair, not one row per pair. Only add a slug here once
+// the website actually knows how to fill its tokens in.
+//
+// A comparison can have 2-4 cars (see MAX_CARS on the website's compare
+// page) — car3/car4 tokens are only filled in when that many cars are
+// actually being compared; the website strips them automatically
+// otherwise, so it's safe to use them even in text meant for a 2-car pair.
+export const STATIC_PAGE_PLACEHOLDER_TOKENS: Record<string, string[]> = {
+  "compare-detail": [
+    "{{car1_name}}",
+    "{{car2_name}}",
+    "{{car3_name}}",
+    "{{car4_name}}",
+    "{{car1_slug}}",
+    "{{car2_slug}}",
+    "{{car3_slug}}",
+    "{{car4_slug}}",
+  ],
+};
+
+// ===== SEO Manager — Structured Data tab (shared by SeoMetaModal.tsx and
+// DynamicSeoMetaModal.tsx) =====
+export const ROBOTS_PRESETS = ["index,follow", "noindex,follow", "index,nofollow", "noindex,nofollow"];
+
+// One entry per JSON-LD schema.org type either SEO form can author. Keys
+// must match the SeoMeta columns 1:1 (vehicleSchema, reviewSchema, ...).
+// No FAQ entry — FAQ content only exists for CarModel (Model Detail) and
+// a handful of static pages with a fixed, hand-written FAQ list in code
+// (EmiCalculatorFaq.tsx, CompareFaq.tsx, ...), both of which already
+// generate their own FAQPage JSON-LD straight from that real content; no
+// other page/entity has FAQ content to match a schema against.
+export const SCHEMA_FIELDS = [
+  { key: "vehicleSchema", label: "Vehicle / Product schema", hint: "Specs, price & rating — schema.org/Car or /Product." },
+  { key: "reviewSchema", label: "Review schema", hint: "schema.org/Review or AggregateRating." },
+  { key: "articleSchema", label: "Article schema", hint: "schema.org/Article — for blog/news pages." },
+  { key: "authorSchema", label: "Author schema", hint: "schema.org/Person — content author profile." },
+  { key: "breadcrumbSchema", label: "Breadcrumb schema", hint: "schema.org/BreadcrumbList — navigation path." },
+] as const;
+
+export type SchemaFieldKey = (typeof SCHEMA_FIELDS)[number]["key"];

@@ -13,7 +13,15 @@ const DATE_FMT = new Intl.DateTimeFormat("en-IN", { day: "2-digit", month: "long
 // One section, image left / info right (like a single hero row) — not two
 // stacked cards. Only the name and price actually change per car;
 // everything else here is the same static shell for every model.
-export default function CarModelHero({ car, variant }: { car: CarDetailResult; variant: CarDetailSelectedVariant | null }) {
+export default function CarModelHero({
+  car,
+  variant,
+  h1Override,
+}: {
+  car: CarDetailResult;
+  variant: CarDetailSelectedVariant | null;
+  h1Override?: string | null;
+}) {
   const isUpcoming = car.launchStatus !== "available";
 
   return (
@@ -39,7 +47,7 @@ export default function CarModelHero({ car, variant }: { car: CarDetailResult; v
       <div className="flex flex-col justify-start gap-4">
         <div className="flex items-start justify-between gap-4">
           <div>
-            <h1 className="font-head text-2xl font-bold leading-tight text-ink sm:text-3xl">{car.name}</h1>
+            <h1 className="font-head text-2xl font-bold leading-tight text-ink sm:text-3xl">{h1Override || car.name}</h1>
 
             <div className="mt-2 flex items-center gap-3">
               {car.ratingAvg && (

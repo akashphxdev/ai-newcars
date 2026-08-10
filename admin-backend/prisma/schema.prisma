@@ -1207,8 +1207,7 @@ model SeoMeta {
   robotsMeta      String?    @map("robots_meta") @db.VarChar(100)
 
   // ---- structured data / JSON-LD (car listing site ke liye important schemas) ----
-  vehicleSchema    String? @map("vehicle_schema") @db.Text   // specs + price + rating sab isi mein
-  faqSchema        String? @map("faq_schema") @db.Text
+  vehicleSchema    String? @map("vehicle_schema") @db.Text
   reviewSchema     String? @map("review_schema") @db.Text
   articleSchema    String? @map("article_schema") @db.Text
   authorSchema     String? @map("author_schema") @db.Text
