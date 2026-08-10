@@ -28,6 +28,10 @@ LEFT JOIN car_models m
       AND m.launch_status = 'available'
       AND m.variant_count > 0
 GROUP BY bt.id, bt.name, bt.slug, bt.icon_url
+-- A body type nobody can buy a car in is a filter that returns nothing.
+-- Five of these existed because "Diesel Engines", "Hybrids", "Luxury",
+-- "Luxury Vehicles" and "Wagons" were never body types to begin with.
+HAVING COUNT(m.id) > 0
 ORDER BY bt.name ASC;
 
 -- name: GetBrandBySlug :one

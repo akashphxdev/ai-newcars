@@ -175,6 +175,7 @@ LEFT JOIN car_models m
       AND m.launch_status = 'available'
       AND m.variant_count > 0
 GROUP BY bt.id, bt.name, bt.slug, bt.icon_url
+HAVING COUNT(m.id) > 0
 ORDER BY bt.name ASC
 `
 
@@ -186,6 +187,9 @@ type ListBodyTypesWithCountsRow struct {
 	Count   int64   `json:"count"`
 }
 
+// A body type nobody can buy a car in is a filter that returns nothing.
+// Five of these existed because "Diesel Engines", "Hybrids", "Luxury",
+// "Luxury Vehicles" and "Wagons" were never body types to begin with.
 func (q *Queries) ListBodyTypesWithCounts(ctx context.Context) ([]ListBodyTypesWithCountsRow, error) {
 	rows, err := q.db.Query(ctx, listBodyTypesWithCounts)
 	if err != nil {
