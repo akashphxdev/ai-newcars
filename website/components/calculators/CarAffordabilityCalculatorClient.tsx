@@ -184,17 +184,18 @@ export default function CarAffordabilityCalculatorClient({ bodyTypes }: { bodyTy
 
   return (
     <div className="tool-workspace">
-      <div className="grid grid-cols-1 gap-5 lg:grid-cols-[minmax(360px,0.78fr)_minmax(500px,1.22fr)]">
+      <div className="flex flex-col gap-5">
+        {/* Set the budget, then see what it reaches. */}
         {/* Left — Enter Details */}
         <div className="rounded-2xl border border-border bg-surface p-5 sm:p-6">
           <h2 className="mb-4 border-b border-border-soft pb-3 text-[15px] font-bold text-ink">Enter Your Budget</h2>
 
-          <div className="flex flex-col gap-4">
+          <div className="grid gap-4 lg:grid-cols-2">
             {/* The two figures the visitor actually controls, on one
                 panel, as sliders — the same paradigm as the EMI and down
                 payment tools, because it is the same kind of question:
                 move a budget and watch what it reaches. */}
-            <div className="rounded-2xl bg-ink p-5">
+            <div className="rounded-2xl bg-ink p-5 lg:col-span-2">
               <div className="flex flex-col gap-6">
                 <SliderRow
                   label="EMI you can pay"

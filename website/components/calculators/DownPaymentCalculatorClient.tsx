@@ -181,13 +181,14 @@ export default function DownPaymentCalculatorClient({
         </div>
       )}
 
-      <div className="grid grid-cols-1 gap-5 lg:grid-cols-[minmax(360px,0.78fr)_minmax(500px,1.22fr)]">
+      <div className="flex flex-col gap-5">
+        {/* Set the EMI, then read the deposit. */}
         {/* Left — Enter Details */}
         <div className="rounded-2xl border border-border bg-surface p-5 sm:p-6">
           <h2 className="mb-4 border-b border-border-soft pb-3 text-[15px] font-bold text-ink">Enter Details</h2>
 
-          <div className="flex flex-col gap-4">
-            <div>
+          <div className="grid gap-4 lg:grid-cols-2">
+            <div className="lg:col-span-2">
               <p className="mb-2 text-[11px] font-bold uppercase tracking-wide text-faint">Select Your Car</p>
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
                 <div>
@@ -242,7 +243,7 @@ export default function DownPaymentCalculatorClient({
             </div>
 
             <div>
-              <div className="rounded-2xl bg-ink p-5">
+              <div className="rounded-2xl bg-ink p-5 lg:col-span-2">
                 <SliderRow
                   label="EMI you can carry"
                   value={desiredEmiValue}
