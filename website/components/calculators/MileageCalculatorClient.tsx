@@ -27,6 +27,10 @@ import type { CarDetailResult, HomeCar } from "@/features/cars/car.types";
 import ReviewsSection from "@/components/cars/reviews/ReviewsSection";
 import SoftLeadCapture from "@/components/leads/SoftLeadCapture";
 import { ratedFigure, calculateRunningCost } from "@/lib/mileageMath";
+import { getFuelPricesForCity } from "@/features/fuel/fuel.api";
+import { CITY_EVENT, getCurrentCity } from "@/features/location/currentCity";
+import type { LocationCity } from "@/features/location/location.types";
+import type { FuelName } from "@/features/fuel/fuel.types";
 import MileageVerdict from "./MileageVerdict";
 import { routes } from "@/lib/routes";
 
@@ -77,7 +81,7 @@ export default function MileageCalculatorClient({
 
   const [fuelPrice, setFuelPrice] = useState("");
   const [averageMileage, setAverageMileage] = useState("");
-  const [monthlyDistance, setMonthlyDistance] = useState("");
+  const [monthlyDistance, setMonthlyDistance] = useState("1000");
 
   const [carDetail, setCarDetail] = useState<CarDetailResult | null>(null);
   const [comparisonCars, setComparisonCars] = useState<HomeCar[]>([]);
@@ -187,6 +191,33 @@ export default function MileageCalculatorClient({
     const rated = ratedFigure(carDetail.selectedVariant);
     setAverageMileage(rated ? String(rated) : "");
   }, [carDetail]);
+
+  // The page asked for a fuel price it already knows: the city selector
+  // in the header drives a live price table, and the fuel comparison tool
+  // has always read from it. Without this the results panel sat empty on
+  // arrival for anyone who had picked a city.
+  const [city, setCity] = useState<LocationCity | null>(null);
+  useEffect(() => {
+    setCity(getCurrentCity());
+    const sync = (e: Event) => setCity((e as CustomEvent<LocationCity>).detail);
+    window.addEventListener(CITY_EVENT, sync);
+    return () => window.removeEventListener(CITY_EVENT, sync);
+  }, []);
+
+  const fuelPriceTouched = useRef(false);
+  useEffect(() => {
+    if (!city?.stateSlug || fuelType === "ev") return;
+    let alive = true;
+    getFuelPricesForCity(city.stateSlug, city.slug).then((res) => {
+      if (!alive || !res) return;
+      const p = res.prices[fuelType as FuelName];
+      // Never overwrite a price the visitor has typed themselves.
+      if (p && !fuelPriceTouched.current) setFuelPrice(Number(p.price).toFixed(2));
+    });
+    return () => {
+      alive = false;
+    };
+  }, [city?.stateSlug, city?.slug, fuelType]);
 
   const mileageValue = Number(averageMileage) || 0;
   const fuelPriceValue = Number(fuelPrice) || 0;
@@ -347,7 +378,10 @@ export default function MileageCalculatorClient({
                 type="text"
                 inputMode="decimal"
                 value={fuelPrice}
-                onChange={(e) => setFuelPrice(e.target.value.replace(/[^0-9.]/g, ""))}
+                onChange={(e) => {
+                  fuelPriceTouched.current = true;
+                  setFuelPrice(e.target.value.replace(/[^0-9.]/g, ""));
+                }}
                 placeholder="Enter today's fuel price"
                 className={inputClass}
               />
@@ -556,7 +590,7 @@ export default function MileageCalculatorClient({
       {selectedModel && selectedVariant && (
         <div className="mt-10">
           <h2 className="mb-4 text-[19px] font-bold text-ink">
-            {selectedBrand?.name} {selectedModel.name} Reviews
+            {stripPrefix(selectedModel.name, selectedBrand?.name ?? "")} Reviews
           </h2>
           {selectedBrand && <ReviewsSection modelId={selectedModel.id} brandSlug={selectedBrand.slug} modelSlug={selectedModel.slug} />}
         </div>

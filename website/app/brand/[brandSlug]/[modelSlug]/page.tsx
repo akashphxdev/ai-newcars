@@ -161,9 +161,9 @@ export default async function CarModelPage(props: Props) {
           <div className="mx-auto max-w-7xl px-4">
             <div className="flex flex-col justify-between gap-6 sm:flex-row sm:items-end">
               <SectionIntro
-                eyebrow="Range & pricing"
-                title={`${car.name} variants`}
-                copy="Compare every available trim by its ex-showroom price, then open a variant for full technical details."
+                eyebrow="Variants & pricing"
+                title={`Choose the right ${car.name} variant`}
+                copy="Compare trims by what they cost on the road in your city, not just ex-showroom. Open any row to see where the difference goes."
               />
               <div className="grid grid-cols-2 border border-border bg-white text-center">
                 <div className="border-r border-border px-5 py-3">

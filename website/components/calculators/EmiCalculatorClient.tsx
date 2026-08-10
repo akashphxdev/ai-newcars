@@ -653,7 +653,7 @@ export default function EmiCalculatorClient({
       {selectedModel && selectedVariant && (
         <div className="mt-10">
           <h2 className="mb-4 text-[19px] font-bold text-ink">
-            {selectedBrand?.name} {selectedModel.name} Reviews
+            {stripPrefix(selectedModel.name, selectedBrand?.name ?? "")} Reviews
           </h2>
           {selectedBrand && <ReviewsSection modelId={selectedModel.id} brandSlug={selectedBrand.slug} modelSlug={selectedModel.slug} />}
         </div>
