@@ -6,7 +6,7 @@ import { getCarDetail, getCarFaqs, getCarArticles, getHomeCars } from "@/feature
 import { getModelCrossPairs } from "@/features/compare/compare.api";
 import { formatPriceRange, formatSinglePrice, slugify, featureLabel, carTitle } from "@/lib/format";
 import ModelDetailTabs from "@/components/common/ModelDetailTabs";
-import CarModelHero from "@/components/cars/CarModelHero";
+import ModelHero from "@/components/cars/ModelHero";
 import CarModelColours from "@/components/cars/CarModelColours";
 import VariantsList from "@/components/cars/VariantsList";
 import Articles from "@/components/home/Articles";
@@ -96,7 +96,7 @@ export default async function CarModelPage(props: Props) {
         </nav>
       </div>
 
-      <CarModelHero car={car} variant={variant} mode="model" />
+      <ModelHero car={car} variant={variant} />
       <ModelDetailTabs brandSlug={car.brand.slug} modelSlug={car.slug} variantSlug={defaultVariantSlug} onVariantPage={false} />
 
       {overviewGroups.length > 0 && (
