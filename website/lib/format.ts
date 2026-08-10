@@ -38,8 +38,32 @@ export function slugify(text: string): string {
 // Shared by the model page's Overview cards and the variant page's
 // Features/Safety lists — a feature with a value reads as "Name: Value"
 // (e.g. "Airbags: 6"), a plain toggle feature (e.g. "Sunroof") just as its name.
+// Values arrive HTML-escaped from the CMS ("Front &amp; Rear") and some
+// of them are the string "Not Available", which the overview rendered
+// with a tick beside it — a list that claimed the car had the safety kit
+// it explicitly lacks.
+const ABSENT = /^(not available|na|n\/a|no|none|-)$/i;
+
+export function isFeaturePresent(item: { value: string | null }): boolean {
+  const v = (item.value ?? "").trim();
+  return v === "" || !ABSENT.test(v);
+}
+
+function decodeEntities(text: string): string {
+  return text
+    .replace(/&amp;/g, "&")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&quot;/g, '"')
+    .replace(/&#0?39;|&apos;/g, "'")
+    .replace(/&nbsp;/g, " ");
+}
+
 export function featureLabel(item: { name: string; value: string | null }): string {
-  return item.value ? `${item.name}: ${item.value}` : item.name;
+  const name = decodeEntities(item.name);
+  const value = item.value ? decodeEntities(item.value).trim() : "";
+  // A bare feature name means "fitted"; a value adds what kind.
+  return value ? `${name}: ${value}` : name;
 }
 
 // Model names in the catalogue already carry the brand ("Maruti Suzuki

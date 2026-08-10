@@ -3,7 +3,7 @@ import Link from "next/link";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { getCarDetail, getCarVariants, getHomeCars } from "@/features/cars/car.api";
-import { formatSinglePrice, slugify, featureLabel, carTitle } from "@/lib/format";
+import { formatSinglePrice, slugify, featureLabel, isFeaturePresent, carTitle } from "@/lib/format";
 import ModelDetailTabs from "@/components/common/ModelDetailTabs";
 import CarModelHero from "@/components/cars/CarModelHero";
 import CarModelSidebar from "@/components/cars/CarModelSidebar";
@@ -92,7 +92,7 @@ function MetricGrid({ metrics, dark = false }: { metrics: Metric[]; dark?: boole
 
 function buildSafetyItems(groups: CarDetailFeatureGroup[]): string[] {
   const safety = groups.find((group) => group.categoryName.toLowerCase() === "safety");
-  return safety ? safety.items.map(featureLabel) : [];
+  return safety ? safety.items.filter(isFeaturePresent).map(featureLabel) : [];
 }
 
 export default async function CarVariantPage(props: Props) {

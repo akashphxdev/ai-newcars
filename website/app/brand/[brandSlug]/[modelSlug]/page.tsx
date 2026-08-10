@@ -4,9 +4,10 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { getCarDetail, getCarFaqs, getCarArticles, getHomeCars } from "@/features/cars/car.api";
 import { getModelCrossPairs } from "@/features/compare/compare.api";
-import { formatPriceRange, formatSinglePrice, slugify, featureLabel, carTitle } from "@/lib/format";
+import { formatPriceRange, formatSinglePrice, slugify, featureLabel, isFeaturePresent, carTitle } from "@/lib/format";
 import ModelDetailTabs from "@/components/common/ModelDetailTabs";
 import ModelHero from "@/components/cars/ModelHero";
+import ModelSidebar from "@/components/cars/ModelSidebar";
 import CarModelColours from "@/components/cars/CarModelColours";
 import VariantsTable from "@/components/cars/VariantsTable";
 import EvRangeCharging from "@/components/cars/EvRangeCharging";
@@ -20,10 +21,18 @@ import type { HomeArticle } from "@/features/articles/article.types";
 import type { RandomComparisonPair } from "@/features/compare/compare.types";
 import { routes } from "@/lib/routes";
 
+// The overview lists what the car has. Items recorded as "Not Available"
+// were being rendered with a tick beside them, which read as the opposite
+// of what the data said — so they are dropped, and a group left with
+// nothing goes with them.
 function buildOverviewGroups(groups: CarDetailFeatureGroup[]) {
   return groups
-    .filter((group) => group.categoryName.toLowerCase() !== "safety" && group.items.length > 0)
-    .map((group) => ({ title: group.categoryName, items: group.items.map(featureLabel) }));
+    .filter((group) => group.categoryName.toLowerCase() !== "safety")
+    .map((group) => ({
+      title: group.categoryName,
+      items: group.items.filter(isFeaturePresent).map(featureLabel),
+    }))
+    .filter((group) => group.items.length > 0);
 }
 
 type Props = {
@@ -101,9 +110,16 @@ export default async function CarModelPage(props: Props) {
       <ModelHero car={car} variant={variant} />
       <ModelDetailTabs brandSlug={car.brand.slug} modelSlug={car.slug} variantSlug={defaultVariantSlug} onVariantPage={false} />
 
+      {/* Everything below the hero shares one column so the rail can sit
+          beside all of it, rather than each section owning the full width
+          and leaving nowhere to put anything else. */}
+      <div className="mx-auto max-w-7xl px-4 py-8 sm:py-10">
+        <div className="flex flex-col gap-8 lg:flex-row lg:items-start">
+          <div className="min-w-0 flex-1 space-y-6">
+
       {overviewGroups.length > 0 && (
-        <section id="overview" className="scroll-mt-32 border-b border-border py-16 sm:py-24">
-          <div className="mx-auto max-w-7xl px-4">
+        <section id="overview" className="scroll-mt-32 overflow-hidden rounded-xl border border-border bg-surface">
+          <div className="p-5 sm:p-7">
             <SectionIntro
               eyebrow="TimesAuto expert view"
               title={`What makes the ${car.name} worth considering`}
@@ -157,8 +173,8 @@ export default async function CarModelPage(props: Props) {
       )}
 
       {car.variantOptions.length > 0 && (
-        <section id="variants" className="scroll-mt-32 border-b border-border bg-[#f5f5f3] py-16 sm:py-24">
-          <div className="mx-auto max-w-7xl px-4">
+        <section id="variants" className="scroll-mt-32 overflow-hidden rounded-xl border border-border bg-surface">
+          <div className="p-5 sm:p-7">
             <div className="flex flex-col justify-between gap-6 sm:flex-row sm:items-end">
               <SectionIntro
                 eyebrow="Variants & pricing"
@@ -190,8 +206,8 @@ export default async function CarModelPage(props: Props) {
       )}
 
       {variant?.isElectric && variant.electric && (
-        <section id="range-charging" className="scroll-mt-32 border-b border-border bg-page py-14 sm:py-20">
-          <div className="mx-auto max-w-7xl px-4">
+        <section id="range-charging" className="scroll-mt-32 overflow-hidden rounded-xl border border-border bg-surface">
+          <div className="p-5 sm:p-7">
             <div className="mb-8 max-w-2xl">
               <p className="text-[10.5px] font-black uppercase tracking-[0.16em] text-brand">
                 Range, charging & running cost
@@ -210,8 +226,8 @@ export default async function CarModelPage(props: Props) {
       )}
 
       {variant && (
-        <section id="specifications" className="scroll-mt-32 border-b border-border bg-page py-14 sm:py-20">
-          <div className="mx-auto max-w-7xl px-4">
+        <section id="specifications" className="scroll-mt-32 overflow-hidden rounded-xl border border-border bg-surface">
+          <div className="p-5 sm:p-7">
             <div className="mb-8 max-w-2xl">
               <p className="text-[10.5px] font-black uppercase tracking-[0.16em] text-brand">
                 Specifications & dimensions
@@ -230,8 +246,8 @@ export default async function CarModelPage(props: Props) {
       )}
 
       {car.colors.length > 0 && (
-        <section id="colours" className="scroll-mt-32 bg-[#151515] py-16 sm:py-24">
-          <div className="mx-auto max-w-7xl px-4">
+        <section id="colours" className="scroll-mt-32 overflow-hidden rounded-xl bg-[#151515]">
+          <div className="p-5 sm:p-7">
             <div className="mb-9 max-w-2xl text-white">
               <p className="text-[10.5px] font-black uppercase tracking-[0.16em] text-brand">Colour studio</p>
               <h2 className="mt-2 font-head text-3xl font-extrabold sm:text-4xl">See the {car.name} in every shade.</h2>
@@ -242,7 +258,7 @@ export default async function CarModelPage(props: Props) {
       )}
 
       {comparisonPairs.length > 0 && (
-        <div id="comparison" className="scroll-mt-32 border-b border-border bg-white">
+        <div id="comparison" className="scroll-mt-32 overflow-hidden rounded-xl border border-border bg-surface">
           <BrandComparisonsSection
             pairs={comparisonPairs}
             eyebrow="Head to head"
@@ -254,12 +270,12 @@ export default async function CarModelPage(props: Props) {
         </div>
       )}
 
-      <div id="reviews" className="scroll-mt-32 border-b border-border bg-[#f5f5f3]">
+      <div id="reviews" className="scroll-mt-32 overflow-hidden rounded-xl border border-border bg-surface">
         <ReviewsSection modelId={car.id} brandSlug={car.brand.slug} modelSlug={car.slug} />
       </div>
 
       {articles.length > 0 && (
-        <div id="news" className="scroll-mt-32 border-b border-border bg-white">
+        <div id="news" className="scroll-mt-32 overflow-hidden rounded-xl border border-border bg-surface">
           <Articles
             articles={articles}
             eyebrow="Road tests & updates"
@@ -270,7 +286,7 @@ export default async function CarModelPage(props: Props) {
       )}
 
       {faqs.length > 0 && (
-        <section id="faqs" className="scroll-mt-32 bg-[#f5f5f3] py-16 sm:py-24">
+        <section id="faqs" className="scroll-mt-32 overflow-hidden rounded-xl border border-border bg-surface">
           <div className="mx-auto grid max-w-7xl gap-10 px-4 lg:grid-cols-[minmax(0,1fr)_360px] lg:gap-16">
             <div>
               <SectionIntro eyebrow="Before you decide" title={`${car.name} FAQs`} copy="Clear answers to the questions buyers ask most often." />
@@ -305,6 +321,15 @@ export default async function CarModelPage(props: Props) {
           </div>
         </section>
       )}
+          </div>
+
+          <div className="w-full lg:w-[320px] lg:shrink-0">
+            <div className="lg:sticky lg:top-28">
+              <ModelSidebar car={car} variant={variant} />
+            </div>
+          </div>
+        </div>
+      </div>
     </main>
   );
 }
