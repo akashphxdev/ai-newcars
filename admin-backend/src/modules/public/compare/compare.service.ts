@@ -324,8 +324,19 @@ export async function listCarVariantOptions(slug: string): Promise<CompareVarian
   return car.variants.map((v) => ({ id: v.id, variantName: v.variantName, price: v.price.toString() }));
 }
 
+// Body types nobody cross-shops against a car. Pick-ups and cargo vans
+// sit in the same catalogue as passenger models with nothing marking them
+// commercial, so a price band alone offered "Fronx vs Bolero Pik-Up".
+const NON_CONSUMER_BODY_TYPES = ['pickup-truck'];
+
 function buildRandomPairsWhere(query: RandomPairsQueryParsed): Prisma.CarModelWhereInput {
-  const where: Prisma.CarModelWhereInput = { launchStatus: 'available', variants: { some: {} } };
+  const where: Prisma.CarModelWhereInput = {
+    launchStatus: 'available',
+    variants: { some: {} },
+    // A visitor browsing comparisons is shopping for a car; a specific
+    // body-type request below can still ask for these on purpose.
+    ...(query.bodyTypeSlug ? {} : { bodyType: { slug: { notIn: NON_CONSUMER_BODY_TYPES } } }),
+  };
 
   if (query.brandSlug) {
     where.brand = { slug: query.brandSlug };
@@ -381,7 +392,9 @@ function seededShuffle<T>(items: T[], seed: number): T[] {
 // offered "Jeep Grand Cherokee (63L) vs Mahindra Bolero (8.5L)" — two cars
 // nobody cross-shops. Bands keep a pair comparable while leaving room to
 // shuffle inside each one, so the selection still changes daily.
-const PRICE_BANDS = [1_000_000, 2_000_000, 4_000_000, 10_000_000, Infinity];
+// The top band used to be "a crore and above", which put a 1Cr Mercedes
+// against a 5Cr Ferrari. Exotica needs its own rungs.
+const PRICE_BANDS = [1_000_000, 2_000_000, 4_000_000, 10_000_000, 25_000_000, Infinity];
 
 function bandOf(price: Prisma.Decimal | null): number {
   const v = price ? Number(price) : 0;
@@ -398,19 +411,25 @@ function bandOf(price: Prisma.Decimal | null): number {
  * only, the pair stands rather than dropping the car entirely.
  */
 function pairWithinPriceBands(
-  candidates: { id: number; priceMin: Prisma.Decimal | null; brandId: number }[],
+  candidates: { id: number; priceMin: Prisma.Decimal | null; brandId: number; bodyTypeId: number | null }[],
   seed: number,
 ): number[] {
-  const bands = new Map<number, typeof candidates>();
+  const bands = new Map<string, typeof candidates>();
   for (const c of candidates) {
-    const b = bandOf(c.priceMin);
+    // Body type first, then price. Two cars costing the same are only
+    // comparable if they are the same kind of vehicle.
+    const b = `${c.bodyTypeId ?? "none"}:${bandOf(c.priceMin)}`;
     if (!bands.has(b)) bands.set(b, []);
     bands.get(b)!.push(c);
   }
 
+  // The band key is a string now, so the shuffle needs a number derived
+  // from it — stable across runs so the daily selection stays daily.
+  const bandSeed = (key: string) => [...key].reduce((h, ch) => (h * 31 + ch.charCodeAt(0)) % 100000, 7);
+
   const out: number[] = [];
-  for (const band of [...bands.keys()].sort((a, b) => a - b)) {
-    const shuffled = seededShuffle(bands.get(band)!.map((c) => c.id), seed + band);
+  for (const band of [...bands.keys()].sort()) {
+    const shuffled = seededShuffle(bands.get(band)!.map((c) => c.id), seed + bandSeed(band));
     const byId = new Map(bands.get(band)!.map((c) => [c.id, c]));
 
     for (let i = 0; i + 1 < shuffled.length; i += 2) {
@@ -418,7 +437,11 @@ function pairWithinPriceBands(
         const swap = shuffled.findIndex(
           (id, j) => j > i + 1 && byId.get(id)!.brandId !== byId.get(shuffled[i])!.brandId,
         );
-        if (swap !== -1) [shuffled[i + 1], shuffled[swap]] = [shuffled[swap], shuffled[i + 1]];
+        // No cross-brand partner in this band: skip the car rather than
+        // pair it with a sibling. "Eeco Cargo vs Eeco Tour V" is a worse
+        // answer than one fewer comparison.
+        if (swap === -1) continue;
+        [shuffled[i + 1], shuffled[swap]] = [shuffled[swap], shuffled[i + 1]];
       }
       out.push(shuffled[i], shuffled[i + 1]);
     }
@@ -434,7 +457,7 @@ export async function getRandomComparisonPairs(query: RandomPairsQueryParsed): P
 
   const candidates = await prisma.carModel.findMany({
     where,
-    select: { id: true, priceMin: true, brandId: true },
+    select: { id: true, priceMin: true, brandId: true, bodyTypeId: true },
     orderBy: { id: 'asc' },
   });
   const shuffledIds = pairWithinPriceBands(candidates, daySeed());
