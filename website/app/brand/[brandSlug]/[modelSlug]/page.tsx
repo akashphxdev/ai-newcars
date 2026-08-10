@@ -8,7 +8,7 @@ import { getMetroFuelPrices } from "@/features/fuel/fuel.api";
 import { formatPriceRange, formatSinglePrice, slugify, featureLabel, isFeaturePresent, byFeatureInterest, carTitle } from "@/lib/format";
 import ModelDetailTabs from "@/components/common/ModelDetailTabs";
 import ModelHero from "@/components/cars/ModelHero";
-import ModelSidebar from "@/components/cars/ModelSidebar";
+import PurchaseRail from "@/components/cars/PurchaseRail";
 import CarModelColours from "@/components/cars/CarModelColours";
 import VariantsTable from "@/components/cars/VariantsTable";
 import VariantPickCard from "@/components/cars/VariantPickCard";
@@ -100,11 +100,16 @@ export default async function CarModelPage(props: Props) {
   const variant = car.selectedVariant;
   const defaultVariantSlug = variant ? slugify(variant.variantName) : "";
   const overviewGroups = buildOverviewGroups(variant?.features ?? []);
+  const safetyItems =
+    (variant?.features ?? [])
+      .find((group) => group.categoryName.toLowerCase() === "safety")
+      ?.items.filter(isFeaturePresent)
+      .map(featureLabel) ?? [];
   const editorialImage = car.images[1]?.imageUrl ?? car.images[0]?.imageUrl ?? car.coverImageUrl;
   const totalHighlights = overviewGroups.reduce((count, group) => count + group.items.length, 0);
 
   return (
-    <main className="model-detail-page bg-white">
+    <main className="model-detail-page bg-page">
       <div className="border-b border-border bg-white">
         <nav className="mx-auto flex max-w-7xl items-center gap-1.5 overflow-x-auto px-4 py-3 text-[11.5px] font-medium text-faint scrollbar-none">
           <Link href="/" className="hover:text-brand">Home</Link>
@@ -115,15 +120,38 @@ export default async function CarModelPage(props: Props) {
         </nav>
       </div>
 
-      <ModelHero car={car} variant={variant} />
-      <ModelDetailTabs brandSlug={car.brand.slug} modelSlug={car.slug} variantSlug={defaultVariantSlug} onVariantPage={false} />
+      {/* The purchase rail spans both grid rows, so model navigation and
+          content begin directly below the hero instead of waiting for the
+          taller buying panel to finish. */}
+      <div className="mx-auto grid max-w-7xl gap-x-6 px-4 py-6 sm:px-6 lg:grid-cols-[minmax(0,1fr)_336px] lg:grid-rows-[auto_1fr] lg:px-8 xl:gap-x-8">
+        <div className="min-w-0 lg:col-start-1 lg:row-start-1">
+          <ModelHero car={car} variant={variant} />
+        </div>
 
-      {/* Everything below the hero shares one column so the rail can sit
-          beside all of it, rather than each section owning the full width
-          and leaving nowhere to put anything else. */}
-      <div className="mx-auto max-w-7xl px-4 py-8 sm:py-10">
-        <div className="flex flex-col gap-8 lg:flex-row lg:items-start">
-          <div className="min-w-0 flex-1 space-y-6">
+        <div className="mt-6 min-w-0 lg:col-start-2 lg:row-start-1 lg:row-span-2 lg:mt-0">
+          <PurchaseRail car={car} variant={variant} />
+        </div>
+
+        <div className="min-w-0 lg:col-start-1 lg:row-start-2">
+          <ModelDetailTabs
+            brandSlug={car.brand.slug}
+            modelSlug={car.slug}
+            variantSlug={defaultVariantSlug}
+            onVariantPage={false}
+            embedded
+            sections={[
+              overviewGroups.length > 0 && "overview",
+              car.variantOptions.length > 0 && "variants",
+              Boolean(variant?.isElectric && variant.electric) && "range-charging",
+              Boolean(variant) && "specifications",
+              car.colors.length > 0 && "colours",
+              comparisonPairs.length > 0 && "comparison",
+              "reviews",
+              articles.length > 0 && "news",
+              faqs.length > 0 && "faqs",
+            ].filter((section): section is string => typeof section === "string")}
+          />
+          <div className="mt-6 space-y-6">
 
       {overviewGroups.length > 0 && (
         <section id="overview" className="scroll-mt-32 overflow-hidden rounded-xl border border-border bg-surface">
@@ -152,6 +180,35 @@ export default async function CarModelPage(props: Props) {
                     </div>
                   </div>
                 ))}
+
+                {/* Airbags and ADAS are top-shortlist facts, and this page
+                    held them in the payload while showing none of it. */}
+                {safetyItems.length > 0 && (
+                  <div className="grid grid-cols-[34px_minmax(0,1fr)] gap-4 border-b border-border py-5">
+                    <span className="font-head text-lg font-bold text-ev">
+                      {String(Math.min(overviewGroups.length, 4) + 1).padStart(2, "0")}
+                    </span>
+                    <div>
+                      <h3 className="text-[14px] font-extrabold text-ink">Safety</h3>
+                      <ul className="mt-2 grid gap-1.5">
+                        {safetyItems.slice(0, 5).map((item) => (
+                          <li key={item} className="flex gap-2 text-[12.5px] leading-5 text-muted">
+                            <CheckIcon className="mt-1 size-3 shrink-0 text-ev" />
+                            {item}
+                          </li>
+                        ))}
+                      </ul>
+                      {defaultVariantSlug && (
+                        <Link
+                          href={`${routes.variant(car.brand.slug, car.slug, defaultVariantSlug)}#safety`}
+                          className="mt-2.5 inline-block text-[12px] font-bold text-ev no-underline hover:underline"
+                        >
+                          All safety kit, item by item →
+                        </Link>
+                      )}
+                    </div>
+                  </div>
+                )}
               </div>
 
               <div className="relative min-h-[360px] overflow-hidden bg-page sm:min-h-[520px]">
@@ -212,6 +269,8 @@ export default async function CarModelPage(props: Props) {
               brandSlug={car.brand.slug}
               modelSlug={car.slug}
               modelName={car.name}
+              brandName={car.brand.name}
+              imageUrl={car.coverImageUrl}
             />
           </div>
         </section>
@@ -259,17 +318,20 @@ export default async function CarModelPage(props: Props) {
         </section>
       )}
 
-      {car.colors.length > 0 && (
-        <section id="colours" className="scroll-mt-32 overflow-hidden rounded-xl bg-[#151515]">
-          <div className="p-5 sm:p-7">
-            <div className="mb-9 max-w-2xl text-white">
-              <p className="text-[10.5px] font-black uppercase tracking-[0.16em] text-brand">Colour studio</p>
-              <h2 className="mt-2 font-head text-3xl font-extrabold sm:text-4xl">See the {car.name} in every shade.</h2>
-            </div>
-            <CarModelColours colors={car.colors} modelName={carTitle(car)} />
-          </div>
-        </section>
-      )}
+            {car.colors.length > 0 && (
+              <section id="colours" className="scroll-mt-32 overflow-hidden rounded-xl border border-border bg-surface">
+                <div className="p-5 sm:p-7">
+                  <SectionIntro
+                    eyebrow="Colour studio"
+                    title={`Choose your ${car.name} finish`}
+                    copy={`Preview all ${car.colors.length} factory colours and check whether your preferred finish carries an additional cost.`}
+                  />
+                  <div className="mt-8">
+                    <CarModelColours colors={car.colors} modelName={carTitle(car)} />
+                  </div>
+                </div>
+              </section>
+            )}
 
       {comparisonPairs.length > 0 && (
         <div id="comparison" className="scroll-mt-32 overflow-hidden rounded-xl border border-border bg-surface">
@@ -301,8 +363,7 @@ export default async function CarModelPage(props: Props) {
 
       {faqs.length > 0 && (
         <section id="faqs" className="scroll-mt-32 overflow-hidden rounded-xl border border-border bg-surface">
-          <div className="mx-auto grid max-w-7xl gap-10 px-4 lg:grid-cols-[minmax(0,1fr)_360px] lg:gap-16">
-            <div>
+          <div className="p-5 sm:p-7">
               <SectionIntro eyebrow="Before you decide" title={`${car.name} FAQs`} copy="Clear answers to the questions buyers ask most often." />
               <div className="mt-8 border-t border-border">
                 {faqs.map((faq) => (
@@ -315,32 +376,9 @@ export default async function CarModelPage(props: Props) {
                   </details>
                 ))}
               </div>
-            </div>
-
-            <aside className="h-fit border-t-4 border-brand bg-ink p-7 text-white lg:sticky lg:top-32">
-              <p className="text-[10.5px] font-black uppercase tracking-[0.16em] text-brand">Buying assistance</p>
-              <h3 className="mt-3 font-head text-2xl font-extrabold">Ready to shortlist?</h3>
-              <p className="mt-3 text-[13px] leading-6 text-white/65">Review the complete specification, compare alternatives or explore finance before speaking with a dealer.</p>
-              <div className="mt-6 grid gap-2">
-                {defaultVariantSlug && (
-                  <Link href={routes.variant(car.brand.slug, car.slug, defaultVariantSlug)} className="bg-brand px-4 py-3 text-center text-[12px] font-black uppercase tracking-[0.08em] text-white hover:bg-brand-hover">
-                    View specifications
-                  </Link>
-                )}
-                <Link href="/compare-cars" className="border border-white/30 px-4 py-3 text-center text-[12px] font-bold text-white hover:border-brand hover:text-brand">
-                  Compare cars
-                </Link>
-              </div>
-            </aside>
           </div>
         </section>
       )}
-          </div>
-
-          <div className="w-full lg:w-[320px] lg:shrink-0">
-            <div className="lg:sticky lg:top-28">
-              <ModelSidebar car={car} variant={variant} />
-            </div>
           </div>
         </div>
       </div>

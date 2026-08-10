@@ -15,7 +15,8 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import VariantSwitcher from "./VariantSwitcher";
 import { WishlistButton } from "@/components/common/CardBits";
-import { PinIcon, ShareIcon, ChevronIcon } from "@/components/common/icons";
+import { PinIcon, ChevronIcon } from "@/components/common/icons";
+import ShareButton from "@/components/common/ShareButton";
 import { getOnRoadPrice, type OnRoadPrice } from "@/features/cars/onRoad.api";
 import { CITY_EVENT, getCurrentCity } from "@/features/location/currentCity";
 import type { LocationCity } from "@/features/location/location.types";
@@ -70,7 +71,7 @@ export default function PurchaseRail({
   }, [variant?.id, city?.stateSlug]);
 
   return (
-    <aside className="lg:sticky lg:top-24">
+    <aside className="lg:sticky lg:top-24 lg:max-h-[calc(100dvh-7rem)] lg:overflow-y-auto lg:pr-1">
       <div className="overflow-hidden rounded-2xl border border-border bg-surface">
         {variant && (
           <div className="border-b border-border-soft p-4">
@@ -161,22 +162,24 @@ export default function PurchaseRail({
               <WishlistButton modelId={car.id} size="sm" />
               Shortlist
             </div>
-            <button
-              type="button"
+            <ShareButton
+              title={car.name}
+              label="Share"
               className="flex cursor-pointer items-center justify-center gap-2 rounded-lg border border-border py-2 text-[12px] font-semibold text-ink transition-colors hover:border-brand hover:text-brand"
-            >
-              <ShareIcon className="size-3.5" />
-              Share
-            </button>
+            />
           </div>
         </div>
       </div>
 
       <div className="mt-4 rounded-2xl border border-border bg-surface p-4">
         <p className="mb-1 text-[10px] font-bold uppercase tracking-[0.12em] text-muted">
-          More tools
+          Explore & calculate
         </p>
         <div className="divide-y divide-border-soft">
+          <ToolLink href={`${routes.model(car.brand.slug, car.slug)}#variants`} label="View all variants" />
+          <ToolLink href={`${routes.model(car.brand.slug, car.slug)}#specifications`} label="Specifications" />
+          <ToolLink href={`${routes.model(car.brand.slug, car.slug)}#colours`} label="Colours" />
+          <ToolLink href={routes.modelPhotos(car.brand.slug, car.slug)} label="Photos" />
           <ToolLink href={routes.compare()} label={`Compare ${car.name}`} />
           <ToolLink href="/mileage-calculator" label="Calculate running cost" />
           <ToolLink href="/car-loan-emi-calculator" label="EMI calculator" />

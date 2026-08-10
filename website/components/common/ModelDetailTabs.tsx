@@ -18,11 +18,13 @@ import Link from "next/link";
 import { routes } from "@/lib/routes";
 
 const MODEL_TABS = [
-  { label: "Expert view", id: "overview" },
-  { label: "Variants & price", id: "variants" },
+  { label: "Overview", id: "overview" },
+  { label: "Variants", id: "variants" },
+  { label: "Range & charging", id: "range-charging" },
+  { label: "Specs", id: "specifications" },
   { label: "Colours", id: "colours" },
   { label: "Compare", id: "comparison" },
-  { label: "Owner reviews", id: "reviews" },
+  { label: "Reviews", id: "reviews" },
   { label: "News", id: "news" },
   { label: "FAQs", id: "faqs" },
 ] as const;
@@ -41,6 +43,8 @@ export default function ModelDetailTabs({
   modelSlug,
   variantSlug,
   onVariantPage,
+  embedded = false,
+  sections,
 }: {
   brandSlug: string;
   modelSlug: string;
@@ -49,13 +53,19 @@ export default function ModelDetailTabs({
   // model page, the current variant when rendered from the variant page.
   variantSlug: string;
   onVariantPage: boolean;
+  embedded?: boolean;
+  // Section ids actually rendered on the page. A tab whose section a car
+  // does not have scrolled nowhere; the EV section had no tab at all.
+  sections?: string[];
 }) {
   const modelHref = routes.model(brandSlug, modelSlug);
   const variantHref = routes.variant(brandSlug, modelSlug, variantSlug);
 
-  const anchorTabs = (onVariantPage ? VARIANT_TABS : MODEL_TABS).map((tab) => ({ ...tab, isLocal: true }));
+  const anchorTabs = (onVariantPage ? VARIANT_TABS : MODEL_TABS)
+    .filter((tab) => !sections || sections.includes(tab.id))
+    .map((tab) => ({ ...tab, isLocal: true }));
 
-  const [activeId, setActiveId] = useState<string>(anchorTabs[0].id);
+  const [activeId, setActiveId] = useState<string>(anchorTabs[0]?.id ?? "");
   const tabsRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -90,14 +100,23 @@ export default function ModelDetailTabs({
     ...(onVariantPage
       ? [{ label: "Model overview", href: modelHref, isLocal: false, id: "model" as const }]
       : variantSlug
-        ? [{ label: "Specifications", href: variantHref, isLocal: false, id: "specifications" as const }]
+        ? [{ label: "Variant details", href: variantHref, isLocal: false, id: "variant-details" as const }]
         : []),
     { label: "Photos", href: `${modelHref}/photos`, isLocal: false, id: "photos" as const },
   ];
 
   return (
-    <div ref={tabsRef} className="sticky top-16 z-40 w-full border-y border-border bg-white/95 backdrop-blur-md">
-      <div className="mx-auto flex max-w-7xl items-center overflow-x-auto px-4 text-[12px] font-bold text-ink scrollbar-none sm:text-[13px]">
+    <div
+      ref={tabsRef}
+      className={`sticky top-16 z-40 w-full border-border bg-white/95 backdrop-blur-md ${
+        embedded ? "mt-4 rounded-lg border" : "border-y"
+      }`}
+    >
+      <div
+        className={`flex items-center overflow-x-auto px-4 text-[12px] font-bold text-ink scrollbar-none sm:text-[13px] ${
+          embedded ? "" : "mx-auto max-w-7xl"
+        }`}
+      >
         {tabs.map((tab) => {
           const href = tab.isLocal ? `#${tab.id}` : (tab as { href: string }).href;
           const isActive = tab.isLocal && tab.id === activeId;
@@ -105,8 +124,8 @@ export default function ModelDetailTabs({
             <Link
               key={tab.label}
               href={href}
-              className={`relative whitespace-nowrap px-4 py-4 transition-colors hover:text-brand first:pl-0 ${
-                isActive ? "text-brand after:absolute after:inset-x-4 after:bottom-0 after:h-0.5 after:bg-brand after:content-[''] first:after:left-0" : ""
+              className={`relative whitespace-nowrap px-2.5 py-4 transition-colors hover:text-brand first:pl-0 ${
+                isActive ? "text-brand after:absolute after:inset-x-2.5 after:bottom-0 after:h-0.5 after:bg-brand after:content-[''] first:after:left-0" : ""
               }`}
             >
               {tab.label}

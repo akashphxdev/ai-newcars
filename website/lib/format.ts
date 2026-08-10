@@ -62,8 +62,11 @@ function decodeEntities(text: string): string {
 export function featureLabel(item: { name: string; value: string | null }): string {
   const name = decodeEntities(item.name);
   const value = item.value ? decodeEntities(item.value).trim() : "";
-  // A bare feature name means "fitted"; a value adds what kind.
-  return value ? `${name}: ${value}` : name;
+  // A bare feature name means "fitted"; a value adds what kind — unless
+  // the name already says it: "6 Airbags" + "6" was printing "6 Airbags: 6".
+  if (!value) return name;
+  const token = new RegExp(`(^|\\W)${value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}(\\W|$)`, "i");
+  return token.test(name) ? name : `${name}: ${value}`;
 }
 
 // Model names in the catalogue already carry the brand ("Maruti Suzuki

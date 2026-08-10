@@ -28,6 +28,7 @@ import {
 } from "@/components/common/icons";
 import { getOnRoadPrices, type OnRoadPrice } from "@/features/cars/onRoad.api";
 import { getModelVariants, type ModelVariant } from "@/features/cars/variants.api";
+import { addToTray, removeFromTray, getTrayItems, subscribeTray } from "@/features/compare/compareTray";
 import { CITY_EVENT, getCurrentCity } from "@/features/location/currentCity";
 import type { LocationCity } from "@/features/location/location.types";
 import { formatRupee, formatLakh } from "@/lib/calculatorFormat";
@@ -58,10 +59,14 @@ export default function VariantsTable({
   brandSlug,
   modelSlug,
   modelName,
+  brandName,
+  imageUrl,
 }: {
   brandSlug: string;
   modelSlug: string;
   modelName: string;
+  brandName: string;
+  imageUrl: string | null;
 }) {
   const [variants, setVariants] = useState<ModelVariant[]>([]);
   const [city, setCity] = useState<LocationCity | null>(null);
@@ -72,7 +77,18 @@ export default function VariantsTable({
   // ordered cheapest first, so the opening set is the affordable end and
   // the rest is one click away.
   const [showAll, setShowAll] = useState(false);
-  const [selected, setSelected] = useState<number[]>([]);
+  // Ticked rows live in the site-wide comparison tray, not local state —
+  // the tray bar carries the picks into the actual comparison, and it
+  // survives navigating away. A local list looked identical and led to a
+  // link that dropped every pick.
+  const [selected, setSelected] = useState<Set<number>>(new Set());
+
+  useEffect(() => {
+    const sync = () =>
+      setSelected(new Set(getTrayItems().filter((i) => i.modelSlug === modelSlug).map((i) => i.variantId)));
+    sync();
+    return subscribeTray(sync);
+  }, [modelSlug]);
 
   useEffect(() => {
     setCity(getCurrentCity());
@@ -129,10 +145,13 @@ export default function VariantsTable({
     return [...keys];
   }, [variants]);
 
-  const chosen = variants.filter((v) => selected.includes(v.id));
-
-  const toggle = (id: number) =>
-    setSelected((s) => (s.includes(id) ? s.filter((x) => x !== id) : s.length >= 3 ? s : [...s, id]));
+  const toggle = (v: ModelVariant) => {
+    if (selected.has(v.id)) {
+      removeFromTray(v.id);
+    } else {
+      addToTray({ modelSlug, variantId: v.id, variantName: v.variantName, carName: modelName, brandName, imageUrl });
+    }
+  };
 
   if (!variants.length) return null;
 
@@ -201,7 +220,7 @@ export default function VariantsTable({
                   <Fragment key={v.id}>
                     <tr
                       className={`border-b border-border-soft last:border-0 ${
-                        selected.includes(v.id) ? "bg-brand-soft/40" : ""
+                        selected.has(v.id) ? "bg-brand-soft/40" : ""
                       }`}
                     >
                       <td className="px-4 py-3.5">
@@ -272,8 +291,8 @@ export default function VariantsTable({
                       <td className="px-4 py-3.5 text-center">
                         <input
                           type="checkbox"
-                          checked={selected.includes(v.id)}
-                          onChange={() => toggle(v.id)}
+                          checked={selected.has(v.id)}
+                          onChange={() => toggle(v)}
                           aria-label={`Compare ${v.variantName}`}
                           className="size-4 cursor-pointer accent-brand"
                         />
@@ -345,46 +364,6 @@ export default function VariantsTable({
         </p>
       </div>
 
-      {chosen.length > 0 && (
-        <div className="sticky bottom-4 mt-4 flex flex-wrap items-center gap-4 rounded-2xl border border-border bg-surface p-4 shadow-[0_18px_50px_-30px_rgba(15,23,42,0.5)]">
-          <div>
-            <p className="text-[12.5px] font-bold text-ink">
-              {chosen.length} {chosen.length === 1 ? "variant" : "variants"} selected
-            </p>
-            <button
-              type="button"
-              onClick={() => setSelected([])}
-              className="cursor-pointer text-[11.5px] font-semibold text-brand"
-            >
-              Clear all
-            </button>
-          </div>
-          <div className="flex flex-wrap gap-3">
-            {chosen.map((v) => (
-              <span
-                key={v.id}
-                className="flex items-center gap-2 rounded-lg border border-border px-3 py-1.5 text-[12px] text-ink"
-              >
-                {stripPrefix(v.variantName, modelName)}
-                <button
-                  type="button"
-                  onClick={() => toggle(v.id)}
-                  aria-label={`Remove ${v.variantName}`}
-                  className="cursor-pointer text-muted transition-colors hover:text-brand"
-                >
-                  ✕
-                </button>
-              </span>
-            ))}
-          </div>
-          <Link
-            href={routes.compare()}
-            className="ml-auto rounded-lg border border-brand px-4 py-2.5 text-[12.5px] font-bold text-brand no-underline transition-colors hover:bg-brand-soft"
-          >
-            Compare selected →
-          </Link>
-        </div>
-      )}
     </div>
   );
 }

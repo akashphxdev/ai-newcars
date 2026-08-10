@@ -4,7 +4,8 @@ import CarLeadActions from "./CarLeadActions";
 import CarLeadSecondaryActions from "./CarLeadSecondaryActions";
 import VariantSwitcher from "./VariantSwitcher";
 import { WishlistButton } from "@/components/common/CardBits";
-import { StarIcon, ShareIcon } from "@/components/common/icons";
+import { StarIcon } from "@/components/common/icons";
+import ShareButton from "@/components/common/ShareButton";
 import { formatSinglePrice, carTitle } from "@/lib/format";
 import type { CarDetailResult, CarDetailSelectedVariant } from "@/features/cars/car.types";
 import { routes } from "@/lib/routes";
@@ -52,9 +53,11 @@ export default function CarModelHero({
             </p>
             <div className="flex shrink-0 items-center gap-2">
               <WishlistButton modelId={car.id} size="md" />
-              <button type="button" aria-label="Share" className="flex size-9 cursor-pointer items-center justify-center border border-border text-muted transition-colors hover:border-brand hover:text-brand">
-                <ShareIcon className="size-4" />
-              </button>
+              <ShareButton
+                title={carTitle(car)}
+                iconClassName="size-4"
+                className="flex size-9 cursor-pointer items-center justify-center border border-border text-muted transition-colors hover:border-brand hover:text-brand"
+              />
             </div>
           </div>
 
