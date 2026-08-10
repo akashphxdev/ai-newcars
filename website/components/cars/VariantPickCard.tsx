@@ -31,7 +31,9 @@ export default function VariantPickCard({
 }) {
   if (!pick.available || !pick.variantName || !pick.price) return null;
 
-  const trim = stripPrefix(stripPrefix(pick.variantName, car.brand.name), car.name);
+  // The model name already carries the brand, so one strip is the whole
+  // job — same call the table below this card makes, so the two agree.
+  const trim = stripPrefix(pick.variantName, car.name);
   const against = pick.comparedWith;
 
   return (
@@ -53,7 +55,7 @@ export default function VariantPickCard({
           <>
             <p className="mt-3 text-[13px] leading-relaxed text-body">
               It carries {against.extraFeatures} more of the features buyers shortlist on than the{" "}
-              {stripPrefix(stripPrefix(against.variantName, car.brand.name), car.name)}, for{" "}
+              {stripPrefix(against.variantName, car.name)}, for{" "}
               {formatSinglePrice(against.extraCost)} more.
             </p>
             <div className="mt-3 grid grid-cols-3 gap-2">
