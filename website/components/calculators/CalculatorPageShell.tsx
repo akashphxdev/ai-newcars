@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import Link from "next/link";
+import { breadcrumbJsonLd } from "@/lib/seo";
 
 type Accent = "brand" | "ev";
 
@@ -8,6 +9,9 @@ interface CalculatorPageShellProps {
   title: string;
   description: string;
   breadcrumb: string;
+  // The page's own URL, so the breadcrumb trail can be emitted as
+  // structured data rather than only drawn on screen.
+  path: string;
   children: ReactNode;
   accent?: Accent;
 }
@@ -17,13 +21,28 @@ export default function CalculatorPageShell({
   title,
   description,
   breadcrumb,
+  path,
   children,
   accent = "brand",
 }: CalculatorPageShellProps) {
   const eyebrowColor = accent === "ev" ? "text-ev" : "text-brand";
 
+  // The trail was drawn but never described. Search engines had no way to
+  // read the Home > Tools > X hierarchy the page already shows.
+  // "Tools" carries no href because there is no /tools landing page; a
+  // ListItem without an item is valid and honest, a link to a 404 is not.
+  const crumbs = breadcrumbJsonLd([
+    { name: "Home", href: "/" },
+    { name: "Tools" },
+    { name: breadcrumb, href: path },
+  ]);
+
   return (
     <main className="min-h-screen overflow-x-hidden bg-[#fbfcfe] dark:bg-page">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(crumbs) }}
+      />
       <section className="border-b border-border bg-surface">
         <div className="mx-auto max-w-[1480px] px-4 pb-7 pt-5 sm:px-6 sm:pb-9 lg:px-8 lg:pb-10">
           <nav className="mb-7 flex min-w-0 items-center gap-2 overflow-hidden text-[12px] font-medium text-muted" aria-label="Breadcrumb">

@@ -14,6 +14,7 @@ import LoanLeadModal from "@/components/leads/LoanLeadModal";
 import { ChevronIcon } from "@/components/common/icons";
 import { submitLoanLead } from "@/features/leads/lead.api";
 import { calculateEmi, buildAmortizationSchedule } from "@/lib/emiMath";
+import EmiVerdict from "./EmiVerdict";
 import { stripPrefix } from "@/lib/format";
 
 const TENURE_OPTIONS = [1, 2, 3, 4, 5, 7];
@@ -176,6 +177,29 @@ export default function EmiCalculatorClient({
     () => (showSchedule ? buildAmortizationSchedule(loanAmount, interestRate, tenureYears) : []),
     [showSchedule, loanAmount, interestRate, tenureYears],
   );
+
+
+  function downloadSchedule() {
+    const rows = buildAmortizationSchedule(loanAmount, interestRate, tenureYears);
+    if (!rows.length) return;
+    const header = ["Year", "Principal paid", "Interest paid", "Balance"];
+    const body = rows.map((r) => [r.year, Math.round(r.principalPaid), Math.round(r.interestPaid), Math.round(r.balance)]);
+    const meta = [
+      ["Car", carDetail ? carDetail.name : ""],
+      ["Loan amount", Math.round(loanAmount)],
+      ["Interest rate (p.a.)", interestRate],
+      ["Tenure (years)", tenureYears],
+      ["Monthly EMI", Math.round(emi)],
+      [],
+    ];
+    const csv = [...meta, header, ...body].map((r) => r.join(",")).join("\n");
+    const url = URL.createObjectURL(new Blob([csv], { type: "text/csv;charset=utf-8" }));
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `emi-schedule-${tenureYears}yr.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
 
   const handleReset = () => {
     setDownPayment(Math.round((exShowroomPrice * 0.2) / 10000) * 10000);
@@ -466,6 +490,14 @@ export default function EmiCalculatorClient({
             ))}
           </div>
 
+          <EmiVerdict
+            loanAmount={loanAmount}
+            interestRate={interestRate}
+            tenureYears={tenureYears}
+            totalInterest={totalInterest}
+            tenureOptions={TENURE_OPTIONS}
+          />
+
           <div className="rounded-2xl border border-border bg-surface p-5">
             <h3 className="mb-3 text-[13.5px] font-bold text-ink">What this is based on</h3>
             <dl className="flex flex-col gap-2 text-[12.5px]">
@@ -513,11 +545,18 @@ export default function EmiCalculatorClient({
           </div>
 
           <div className="rounded-2xl border border-border bg-surface p-5">
-            <div className="flex items-center justify-between gap-3">
-              <div>
+            <div className="flex flex-wrap items-center gap-3">
+              <div className="mr-auto">
                 <h3 className="text-[13.5px] font-bold text-ink">Amortization Schedule</h3>
                 <p className="text-[11.5px] text-muted">See year-wise principal & interest breakup</p>
               </div>
+              <button
+                type="button"
+                onClick={downloadSchedule}
+                className="cursor-pointer rounded-xl border border-border px-4 py-2 text-[12px] font-bold text-ink transition-colors hover:border-brand hover:text-brand"
+              >
+                Download CSV
+              </button>
               <button
                 type="button"
                 onClick={() => setShowSchedule((s) => !s)}

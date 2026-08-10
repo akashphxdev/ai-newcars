@@ -19,6 +19,7 @@ export default async function CarAffordabilityCalculatorPage() {
       title="Turn your monthly budget into the right car"
       description="See the car price your EMI and down payment can support, then browse real models that fit."
       breadcrumb="Car Affordability Calculator"
+      path="/car-affordability-calculator"
     >
       <CarAffordabilityCalculatorClient bodyTypes={bodyTypes} />
       <CarAffordabilityFormulaExplainer />

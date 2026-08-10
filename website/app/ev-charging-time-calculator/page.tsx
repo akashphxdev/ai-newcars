@@ -20,6 +20,7 @@ export default async function EvChargingCalculatorPage() {
       title="Plan every charge before you plug in"
       description="Choose your battery range and charger to compare AC and DC charging time for your EV."
       breadcrumb="EV Charging Time Calculator"
+      path="/ev-charging-time-calculator"
       accent="ev"
     >
       <EvChargingCalculatorClient brands={brands} seed={seed} />

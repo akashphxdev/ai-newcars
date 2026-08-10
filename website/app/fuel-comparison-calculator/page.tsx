@@ -19,6 +19,7 @@ export default async function FuelComparisonCalculatorPage() {
       title="Which fuel fits the way you drive?"
       description="Compare real monthly running costs for every fuel type available on the same car."
       breadcrumb="Fuel Type Comparison"
+      path="/fuel-comparison-calculator"
     >
       <FuelComparisonCalculatorClient brands={brands} seed={seed} />
       <FuelComparisonCalculatorFaq />

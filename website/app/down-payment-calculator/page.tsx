@@ -20,6 +20,7 @@ export default async function DownPaymentCalculatorPage() {
       title="How much should you put down?"
       description="Set a comfortable monthly EMI and see the cash you need before you choose a loan."
       breadcrumb="Car Down Payment Calculator"
+      path="/down-payment-calculator"
     >
       <DownPaymentCalculatorClient brands={brands} seed={seed} />
       <DownPaymentCalculatorFaq />
