@@ -1,5 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
+import { BoltIcon, ShieldIcon, CarIcon } from "@/components/common/icons";
 
 type Feature = { label: string; desc: string; icon: React.ReactNode };
 
@@ -12,30 +13,10 @@ const LeafIcon = () => (
   </svg>
 );
 
-const BoltIcon = () => (
-  <svg className="size-5" viewBox="0 0 24 24" fill="none">
-    <path d="M13 2 4 14h6l-1 8 9-12h-6l1-8Z" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" />
-  </svg>
-);
-
 const ChipIcon = () => (
   <svg className="size-5" viewBox="0 0 24 24" fill="none">
     <rect x="7" y="7" width="10" height="10" rx="1.5" stroke="currentColor" strokeWidth="1.6" />
     <path d="M9 3v2M12 3v2M15 3v2M9 19v2M12 19v2M15 19v2M3 9h2M3 12h2M3 15h2M19 9h2M19 12h2M19 15h2" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
-  </svg>
-);
-
-const RangeIcon = () => (
-  <svg className="size-5" viewBox="0 0 24 24" fill="none">
-    <circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="1.6" />
-    <path d="M12 7v5l3 2" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
-  </svg>
-);
-
-const ShieldIcon = () => (
-  <svg className="size-5" viewBox="0 0 24 24" fill="none">
-    <path d="M12 3 5 6v6c0 4.5 3 7.5 7 9 4-1.5 7-4.5 7-9V6l-7-3Z" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" />
-    <path d="M9 12l2 2 4-4" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
   </svg>
 );
 
@@ -54,13 +35,13 @@ const ScaleIcon = () => (
 
 const TOP_FEATURES: Feature[] = [
   { icon: <LeafIcon />, label: "Zero Emissions", desc: "Cleaner tomorrow" },
-  { icon: <BoltIcon />, label: "Lower Running Cost", desc: "Save more every day" },
+  { icon: <BoltIcon className="size-5" />, label: "Lower Running Cost", desc: "Save more every day" },
   { icon: <ChipIcon />, label: "Advanced Technology", desc: "Smarter & safer driving" },
 ];
 
 const BOTTOM_FEATURES: Feature[] = [
-  { icon: <RangeIcon />, label: "Wide Range", desc: "Hatchbacks, SUVs & Sedans" },
-  { icon: <ShieldIcon />, label: "Trusted Brands", desc: "Best electric car makers" },
+  { icon: <CarIcon className="size-5" />, label: "Wide Range", desc: "Hatchbacks, SUVs & Sedans" },
+  { icon: <ShieldIcon className="size-5" />, label: "Trusted Brands", desc: "Best electric car makers" },
   { icon: <ChatIcon />, label: "Expert Reviews", desc: "Detailed & unbiased reviews" },
   { icon: <ScaleIcon />, label: "Easy Comparison", desc: "Compare & find your perfect EV" },
 ];

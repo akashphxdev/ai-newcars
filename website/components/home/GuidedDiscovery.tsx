@@ -17,7 +17,7 @@ import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import {
-  CheckIcon, WalletIcon, SparkleIcon, FuelIcon, ShieldIcon, CloseIcon, ChevronIcon,
+  CheckIcon, WalletIcon, SparkleIcon, FuelIcon, ShieldIcon, CloseIcon, ChevronIcon, CarIcon,
 } from "@/components/common/icons";
 import { getCarsBrowse } from "@/features/cars/car.api";
 import type { CarBrowseFilterOptions } from "@/features/cars/car.types";
@@ -269,7 +269,7 @@ export default function GuidedDiscovery({
             </Card>
 
             <Card
-              icon={<CarGlyph className="size-6" />}
+              icon={<CarIcon className="size-6" />}
               title="Body style"
               hint="Pick what fits you"
               active={bodyType != null}
@@ -517,20 +517,5 @@ function RangeSlider({
         className={`${thumb} top-1/2 -translate-y-1/2`}
       />
     </div>
-  );
-}
-
-function CarGlyph({ className = "size-5" }: { className?: string }) {
-  return (
-    <svg className={className} viewBox="0 0 24 24" fill="none">
-      <path
-        d="M4 15v2m16-2v2M3 14l1.6-4.6A2 2 0 0 1 6.5 8h11a2 2 0 0 1 1.9 1.4L21 14v3a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1v-3Z"
-        stroke="currentColor"
-        strokeWidth="1.6"
-        strokeLinejoin="round"
-      />
-      <circle cx="7.5" cy="14.5" r="1.2" fill="currentColor" />
-      <circle cx="16.5" cy="14.5" r="1.2" fill="currentColor" />
-    </svg>
   );
 }

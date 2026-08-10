@@ -13,7 +13,7 @@ import type { BodyType } from "@/features/bodyTypes/bodyType.types";
 import type { ArticleCategory } from "@/features/articles/article.types";
 import {
   CompareIcon, BoltIcon, ClockIcon, TagIcon, CalculatorIcon, PercentIcon,
-  GaugeIcon, FuelIcon, BatteryIcon, RoadIcon, StarIcon, ShieldIcon,
+  GaugeIcon, FuelIcon, BatteryIcon, RoadIcon, WalletIcon, ChevronDownIcon,
   PinIcon, SearchIcon,
 } from "@/components/common/icons";
 import CitySelector from "@/components/common/CitySelector";
@@ -64,7 +64,7 @@ const BUDGET_BANDS: NavLink[] = [
 const TOOL_LINKS: NavLink[] = [
   { label: "EMI Calculator", href: "/car-loan-emi-calculator", desc: "Monthly payment by tenure and rate", icon: <CalculatorIcon className="size-4" /> },
   { label: "Down Payment", href: "/down-payment-calculator", desc: "How much to put down upfront", icon: <PercentIcon className="size-4" /> },
-  { label: "Affordability", href: "/car-affordability-calculator", desc: "What your budget really buys", icon: <ShieldIcon className="size-4" /> },
+  { label: "Affordability", href: "/car-affordability-calculator", desc: "What your budget really buys", icon: <WalletIcon className="size-4" /> },
   { label: "Mileage", href: "/mileage-calculator", desc: "Running cost per kilometre", icon: <GaugeIcon className="size-4" /> },
   { label: "EV Charging Time", href: "/ev-charging-time-calculator", desc: "Charge duration by charger type", icon: <BatteryIcon className="size-4" /> },
   { label: "Fuel Comparison", href: "/fuel-comparison-calculator", desc: "Petrol vs diesel vs CNG vs EV", icon: <FuelIcon className="size-4" /> },
@@ -88,7 +88,7 @@ function buildNavItems(bodyTypes: BodyType[], articleCategories: ArticleCategory
             { label: "Upcoming Cars", href: "/upcoming-cars", desc: "Launch dates and expected prices", icon: <ClockIcon className="size-4" /> },
             { label: "Electric Cars", href: "/electric-cars", desc: "Ranked by real-world range", icon: <BoltIcon className="size-4" /> },
             { label: "Compare Cars", href: "/compare-cars", desc: "Two cars, one spec table", icon: <CompareIcon className="size-4" /> },
-            { label: "All Brands", href: "/brands", desc: "Browse by manufacturer", icon: <StarIcon className="size-4" /> },
+            { label: "All Brands", href: "/brands", desc: "Browse by manufacturer", icon: <TagIcon className="size-4" /> },
           ],
         },
         {
@@ -299,14 +299,7 @@ export default function Header({ bodyTypes, articleCategories }: { bodyTypes: Bo
                       onClick={() => (isOpen ? setOpenMenu(null) : openNow(item.label))}
                     >
                       {item.label}
-                      <svg
-                        className="size-2.5 transition-transform"
-                        style={{ color: FAINT, transform: isOpen ? "rotate(180deg)" : "none" }}
-                        viewBox="0 0 12 8"
-                        fill="none"
-                      >
-                        <path d="M1 1.5L6 6.5L11 1.5" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />
-                      </svg>
+                      <ChevronDownIcon className={`size-2.5 text-subtle transition-transform ${isOpen ? "rotate-180" : ""}`} />
                     </button>
                   )}
                 </div>
@@ -554,13 +547,7 @@ export default function Header({ bodyTypes, articleCategories }: { bodyTypes: Bo
                     aria-expanded={mobileExpanded === item.label}
                   >
                     {item.label}
-                    <svg
-                      className="size-2.5 transition-transform"
-                      style={{ color: FAINT, transform: mobileExpanded === item.label ? "rotate(180deg)" : "none" }}
-                      viewBox="0 0 12 8" fill="none"
-                    >
-                      <path d="M1 1.5L6 6.5L11 1.5" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />
-                    </svg>
+                    <ChevronDownIcon className={`size-2.5 text-subtle transition-transform ${mobileExpanded === item.label ? "rotate-180" : ""}`} />
                   </button>
                   {mobileExpanded === item.label && (
                     <div className="pb-3">

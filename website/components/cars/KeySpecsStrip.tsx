@@ -8,7 +8,7 @@
 // A spec with no value is dropped rather than rendered as a dash, so the
 // strip never pads itself out with blanks to look complete.
 
-import { BoltIcon, GaugeIcon, FuelIcon, ClockIcon, StarIcon, PinIcon } from "@/components/common/icons";
+import { BatteryIcon, RoadIcon, PowerIcon, TorqueIcon, EngineIcon, GaugeIcon, FuelIcon, GearIcon, SeatIcon } from "@/components/common/icons";
 import type { CarDetailSelectedVariant } from "@/features/cars/car.types";
 
 type Spec = { label: string; value: string; icon: React.ReactNode };
@@ -19,41 +19,41 @@ function buildSpecs(v: CarDetailSelectedVariant): Spec[] {
   if (v.isElectric && v.electric) {
     const e = v.electric;
     if (e.batteryCapacity) {
-      specs.push({ label: "Battery", value: `${e.batteryCapacity} kWh`, icon: <BoltIcon className="size-4" /> });
+      specs.push({ label: "Battery", value: `${e.batteryCapacity} kWh`, icon: <BatteryIcon className="size-4" /> });
     }
     // The claimed figure is the one the manufacturer publishes; the
     // real-world number is only ever an estimate, so it is labelled.
     if (e.realWorldRange) {
-      specs.push({ label: "Range (est.)", value: `${e.realWorldRange} km`, icon: <GaugeIcon className="size-4" /> });
+      specs.push({ label: "Range (est.)", value: `${e.realWorldRange} km`, icon: <RoadIcon className="size-4" /> });
     } else if (e.claimedRange) {
-      specs.push({ label: "Claimed range", value: `${e.claimedRange} km`, icon: <GaugeIcon className="size-4" /> });
+      specs.push({ label: "Claimed range", value: `${e.claimedRange} km`, icon: <RoadIcon className="size-4" /> });
     }
-    if (e.powerPs) specs.push({ label: "Power", value: `${e.powerPs} PS`, icon: <BoltIcon className="size-4" /> });
-    if (e.torqueNm) specs.push({ label: "Torque", value: `${e.torqueNm} Nm`, icon: <BoltIcon className="size-4" /> });
+    if (e.powerPs) specs.push({ label: "Power", value: `${e.powerPs} PS`, icon: <PowerIcon className="size-4" /> });
+    if (e.torqueNm) specs.push({ label: "Torque", value: `${e.torqueNm} Nm`, icon: <TorqueIcon className="size-4" /> });
   } else if (v.ice) {
     const i = v.ice;
     // cubicCapacity is cc; engineDisplacement is litres. Buyers read cc,
     // so that leads, with litres as the fallback labelled correctly.
     if (i.cubicCapacity) {
-      specs.push({ label: "Engine", value: `${i.cubicCapacity} cc`, icon: <GaugeIcon className="size-4" /> });
+      specs.push({ label: "Engine", value: `${i.cubicCapacity} cc`, icon: <EngineIcon className="size-4" /> });
     } else if (i.engineDisplacement) {
-      specs.push({ label: "Engine", value: `${i.engineDisplacement} L`, icon: <GaugeIcon className="size-4" /> });
+      specs.push({ label: "Engine", value: `${i.engineDisplacement} L`, icon: <EngineIcon className="size-4" /> });
     }
-    if (i.powerPs) specs.push({ label: "Power", value: `${i.powerPs} PS`, icon: <BoltIcon className="size-4" /> });
-    if (i.torqueNm) specs.push({ label: "Torque", value: `${i.torqueNm} Nm`, icon: <BoltIcon className="size-4" /> });
+    if (i.powerPs) specs.push({ label: "Power", value: `${i.powerPs} PS`, icon: <PowerIcon className="size-4" /> });
+    if (i.torqueNm) specs.push({ label: "Torque", value: `${i.torqueNm} Nm`, icon: <TorqueIcon className="size-4" /> });
     // claimedFe is the rated figure; real_world_mileage is empty across
     // the whole catalogue, so this is what there is to show.
     if (i.claimedFe) {
-      specs.push({ label: "Mileage", value: `${i.claimedFe} kmpl`, icon: <FuelIcon className="size-4" /> });
+      specs.push({ label: "Mileage", value: `${i.claimedFe} kmpl`, icon: <GaugeIcon className="size-4" /> });
     }
     if (i.fuelType) specs.push({ label: "Fuel", value: i.fuelType, icon: <FuelIcon className="size-4" /> });
   }
 
   if (v.transmission) {
-    specs.push({ label: "Transmission", value: v.transmission, icon: <ClockIcon className="size-4" /> });
+    specs.push({ label: "Transmission", value: v.transmission, icon: <GearIcon className="size-4" /> });
   }
   if (v.seatingCapacity) {
-    specs.push({ label: "Seating", value: `${v.seatingCapacity} seats`, icon: <StarIcon className="size-4" /> });
+    specs.push({ label: "Seating", value: `${v.seatingCapacity} seats`, icon: <SeatIcon className="size-4" /> });
   }
 
   return specs;

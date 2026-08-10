@@ -2,7 +2,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { stripPrefix } from "@/lib/format";
 import Image from "next/image";
-import { FuelIcon, FlameIcon, BoltIcon, TagIcon, ShieldIcon, CheckIcon } from "@/components/common/icons";
+import { FuelIcon, FlameIcon, BoltIcon, DropletIcon, TagIcon, ShieldIcon, CheckIcon } from "@/components/common/icons";
 import { getModelsByBrand } from "@/features/calculators/emiCalculator.api";
 import { getVariantsByModel } from "@/features/calculators/mileageCalculator.api";
 import type { EmiCalculatorModel } from "@/features/calculators/emiCalculator.types";
@@ -23,7 +23,7 @@ import type { FuelName } from "@/features/fuel/fuel.types";
 
 const FUEL_TYPE_ICONS: Record<FuelType, React.ComponentType<{ className?: string }>> = {
   petrol: FuelIcon,
-  diesel: FuelIcon,
+  diesel: DropletIcon,
   cng: FlameIcon,
   ev: BoltIcon,
 };

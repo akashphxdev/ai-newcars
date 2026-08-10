@@ -6,7 +6,7 @@ import SectionHeader from "@/components/common/SectionHeader";
 import ScrollArrows from "@/components/common/ScrollArrows";
 import { useScrollRail } from "@/components/common/useScrollRail";
 import { WishlistButton } from "@/components/common/CardBits";
-import { ChevronIcon, GaugeIcon, StarIcon } from "@/components/common/icons";
+import { ChevronIcon, EngineIcon, GaugeIcon, SeatIcon, StarIcon } from "@/components/common/icons";
 import { formatPriceRange, carTitle } from "@/lib/format";
 import { getHomeCars } from "@/features/cars/car.api";
 import type { HomeCar } from "@/features/cars/car.types";
@@ -21,22 +21,6 @@ const BORDER = "var(--color-border)";
 const PAGE_BG = "var(--color-page)";
 const FALLBACK_IMG =
   "data:image/svg+xml;charset=UTF-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='225' viewBox='0 0 300 225'%3E%3Crect width='300' height='225' fill='%23e5e7eb'/%3E%3Ctext x='50%25' y='50%25' text-anchor='middle' dy='.3em' font-family='sans-serif' font-size='13' fill='%239ca3af'%3EImage unavailable%3C/text%3E%3C/svg%3E";
-
-// Distinctive icons kept local since they're visually different from the
-// generic common/icons.tsx equivalents (or have no equivalent there).
-const EngineIcon = () => (
-  <svg className="size-4" viewBox="0 0 24 24" fill="none">
-    <path d="M3 13v3a1 1 0 0 0 1 1h1M3 13V9a1 1 0 0 1 1-1h6l3 3h4a2 2 0 0 1 2 2v2a1 1 0 0 1-1 1h-1M3 13h9" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" />
-    <path d="M7 17v2M11 17v2" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
-  </svg>
-);
-
-const SeaterIcon = () => (
-  <svg className="size-4" viewBox="0 0 24 24" fill="none">
-    <circle cx="12" cy="7" r="3" stroke="currentColor" strokeWidth="1.6" />
-    <path d="M5 20c0-3.9 3.1-7 7-7s7 3.1 7 7" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
-  </svg>
-);
 
 const Spec = ({ icon, value, label }: { icon: React.ReactNode; value: string; label: string }) => (
   <div className="flex items-center gap-1.5">
@@ -105,7 +89,7 @@ const Card = ({ car }: { car: HomeCar }) => {
         <div className="flex items-center justify-between border-t pt-3" style={{ borderColor: "var(--color-border-soft)" }}>
           <Spec icon={<EngineIcon />} value={car.specs?.engineCc ? `${car.specs.engineCc} cc` : "-"} label="Engine" />
           <Spec icon={<GaugeIcon className="size-4" />} value={car.specs?.mileage ? `${car.specs.mileage} kmpl` : "-"} label="Mileage" />
-          <Spec icon={<SeaterIcon />} value={car.specs?.seatingCapacity ? `${car.specs.seatingCapacity}` : "-"} label="Seater" />
+          <Spec icon={<SeatIcon className="size-4" />} value={car.specs?.seatingCapacity ? `${car.specs.seatingCapacity}` : "-"} label="Seater" />
         </div>
       </div>
 

@@ -9,8 +9,9 @@ import {
   BoltIcon,
   ChevronDownIcon,
   ChevronIcon,
-  FuelIcon,
   GaugeIcon,
+  PlugIcon,
+  RoadIcon,
 } from "@/components/common/icons";
 import type { HomeCar } from "@/features/cars/car.types";
 import { routes } from "@/lib/routes";
@@ -151,7 +152,7 @@ export default function ElectricCars({ cars }: { cars: HomeCar[] }) {
             <div className="flex min-w-0 flex-col px-5 py-7 sm:px-8 sm:py-9 lg:px-9">
               <div className="flex flex-col gap-4 border-b border-border pb-7 sm:flex-row sm:items-center sm:justify-between">
                 <label className="relative flex min-h-16 min-w-[250px] items-center rounded-[7px] border border-border bg-white">
-                  <GaugeIcon className="pointer-events-none absolute left-4 size-6 text-ink" />
+                  <RoadIcon className="pointer-events-none absolute left-4 size-6 text-ink" />
                   <span className="pointer-events-none absolute left-14 top-2.5 text-[10px] text-muted">Monthly drive</span>
                   <select
                     aria-label="Monthly driving distance"
@@ -215,7 +216,7 @@ export default function ElectricCars({ cars }: { cars: HomeCar[] }) {
           <div className="grid border-t border-border bg-ev-soft/30 sm:grid-cols-3 sm:divide-x sm:divide-border-soft">
             <IntelligenceItem icon={<BatteryIcon className="size-5" />} title="Understand usable range" text="Compare listed range consistently" />
             <IntelligenceItem icon={<BoltIcon className="size-5" />} title="Know your running cost" text="Battery, range, and charging rate" />
-            <IntelligenceItem icon={<FuelIcon className="size-5" />} title="Plan charging clearly" text="Check stated charging times" />
+            <IntelligenceItem icon={<PlugIcon className="size-5" />} title="Plan charging clearly" text="Check stated charging times" />
           </div>
         </div>
       </div>

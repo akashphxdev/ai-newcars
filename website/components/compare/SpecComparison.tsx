@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { formatSinglePrice } from "@/lib/format";
-import { GaugeIcon, PowerIcon, FuelIcon, BatteryIcon, CheckIcon, GearIcon } from "@/components/common/icons";
+import { GaugeIcon, PowerIcon, FuelIcon, BatteryIcon, CheckIcon, RulerIcon, ShieldIcon } from "@/components/common/icons";
 import type { CompareCarResult, CompareCarSpecs } from "@/features/compare/compare.types";
 
 // Merged view of one feature across every compared car — matched by
@@ -314,7 +314,7 @@ export default function SpecComparison({ cars }: { cars: CompareCarResult[] }) {
         </Section>
       )}
 
-      <Section id="dimensions" title="Dimensions & Chassis" icon={<GearIcon className="size-4" />}>
+      <Section id="dimensions" title="Dimensions & Chassis" icon={<RulerIcon className="size-4" />}>
         {row(
           "Length",
           specsList.map((s) => (s?.dimensions.length ? `${s.dimensions.length} mm` : NA)),
@@ -357,7 +357,7 @@ export default function SpecComparison({ cars }: { cars: CompareCarResult[] }) {
           key={cat.categoryId ?? cat.categoryName}
           id={categorySectionId(cat.categoryId, cat.categoryName)}
           title={cat.categoryName}
-          icon={<CheckIcon className="size-4" />}
+          icon={cat.categoryName.toLowerCase() === "safety" ? <ShieldIcon className="size-4" /> : <CheckIcon className="size-4" />}
         >
           {cat.features.map((f) =>
             f.hasValue

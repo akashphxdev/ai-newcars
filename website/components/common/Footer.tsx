@@ -6,6 +6,7 @@ import type { PublicSiteSetting } from "@/features/siteSettings/siteSetting.type
 import type { BodyType } from "@/features/bodyTypes/bodyType.types";
 import type { ArticleCategory } from "@/features/articles/article.types";
 import FooterCta from "@/components/common/FooterCta";
+import { ShieldIcon, SparkleIcon, CompareIcon, RupeeIcon, PinIcon, PhoneIcon } from "@/components/common/icons";
 
 const ORANGE = "var(--color-brand)";
 const DARK = "var(--color-ink)";
@@ -18,55 +19,10 @@ const PEACH = "var(--color-brand-soft)";
 
 /* ---------------- Icons ---------------- */
 
-const ShieldIcon = () => (
-  <svg className="size-5" viewBox="0 0 24 24" fill="none">
-    <path d="M12 3 4.5 6v6c0 5 3.2 8.4 7.5 9 4.3-.6 7.5-4 7.5-9V6L12 3Z" stroke={ORANGE} strokeWidth="1.6" strokeLinejoin="round" />
-    <path d="m8.5 12.2 2.2 2.3 4.8-5" stroke={ORANGE} strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
-  </svg>
-);
-
-const SparkleIcon = () => (
-  <svg className="size-5" viewBox="0 0 24 24" fill="none">
-    <path d="M12 3v4M12 17v4M3 12h4M17 12h4M6 6l2.5 2.5M15.5 15.5 18 18M18 6l-2.5 2.5M8.5 15.5 6 18" stroke={ORANGE} strokeWidth="1.6" strokeLinecap="round" />
-  </svg>
-);
-
-const CompareIcon = () => (
-  <svg className="size-5" viewBox="0 0 24 24" fill="none">
-    <rect x="3" y="6" width="8" height="12" rx="1.5" stroke={ORANGE} strokeWidth="1.6" />
-    <rect x="13" y="6" width="8" height="12" rx="1.5" stroke={ORANGE} strokeWidth="1.6" />
-    <path d="m16 20 3-3-3-3" stroke={ORANGE} strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
-  </svg>
-);
-
-const RupeeIcon = () => (
-  <svg className="size-5" viewBox="0 0 24 24" fill="none">
-    <path d="M7 5h10M7 9h10M7 5c4 0 6 1.5 6 4s-2 4-6 4h-1l7 6" stroke={ORANGE} strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
-  </svg>
-);
-
-const PinIcon = () => (
-  <svg width="15" height="15" viewBox="0 0 24 24" fill="none">
-    <path d="M12 21s7-6.3 7-11.5A7 7 0 0 0 5 9.5C5 14.7 12 21 12 21Z" stroke={MUTED} strokeWidth="1.7" strokeLinejoin="round" />
-    <circle cx="12" cy="9.5" r="2.2" stroke={MUTED} strokeWidth="1.7" />
-  </svg>
-);
-
 const MailIcon = () => (
   <svg width="15" height="15" viewBox="0 0 24 24" fill="none">
     <rect x="3" y="5" width="18" height="14" rx="2.5" stroke={MUTED} strokeWidth="1.7" />
     <path d="m4 7 8 6 8-6" stroke={MUTED} strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />
-  </svg>
-);
-
-const PhoneIcon = () => (
-  <svg width="15" height="15" viewBox="0 0 24 24" fill="none">
-    <path
-      d="M6.6 3.5h3.1l1.4 3.9-2 1.7a13.2 13.2 0 0 0 5.8 5.8l1.7-2 3.9 1.4v3.1c0 1-.9 1.8-1.9 1.7C10.9 18.7 5.3 13.1 4.9 5.4c-.1-1 .7-1.9 1.7-1.9Z"
-      stroke={MUTED}
-      strokeWidth="1.7"
-      strokeLinejoin="round"
-    />
   </svg>
 );
 
@@ -152,10 +108,10 @@ function buildSocials(s: PublicSiteSetting): SocialDef[] {
 /* ---------------- Data ---------------- */
 
 const FEATURES = [
-  { icon: <ShieldIcon />, title: "100% Verified", sub: "Trusted listings only" },
-  { icon: <SparkleIcon />, title: "AI Assist", sub: "Find your car faster" },
-  { icon: <RupeeIcon />, title: "Best Price", sub: "No hidden charges" },
-  { icon: <CompareIcon />, title: "Compare Easily", sub: "Decode the right car" },
+  { icon: <ShieldIcon className="size-5" />, title: "100% Verified", sub: "Trusted listings only" },
+  { icon: <SparkleIcon className="size-5" />, title: "AI Assist", sub: "Find your car faster" },
+  { icon: <RupeeIcon className="size-5" />, title: "Best Price", sub: "No hidden charges" },
+  { icon: <CompareIcon className="size-5" />, title: "Compare Easily", sub: "Decode the right car" },
 ];
 
 type FooterCol = {
@@ -228,7 +184,7 @@ export default function Footer({
         <div className="mx-auto grid max-w-7xl grid-cols-2 gap-6 px-6 py-6 sm:grid-cols-4">
           {FEATURES.map((f) => (
             <div key={f.title} className="flex items-center gap-3">
-              <span className="flex size-10 shrink-0 items-center justify-center rounded-xl" style={{ background: PEACH }}>
+              <span className="flex size-10 shrink-0 items-center justify-center rounded-xl text-brand" style={{ background: PEACH }}>
                 {f.icon}
               </span>
               <div className="min-w-0">
@@ -262,7 +218,7 @@ export default function Footer({
             <div className="mt-5 flex flex-col gap-2.5">
               {siteSettings.address && (
                 <div className="flex items-center gap-2 text-[13px]" style={{ color: MUTED }}>
-                  <PinIcon />
+                  <PinIcon className="size-[15px]" />
                   {siteSettings.address}
                 </div>
               )}
@@ -280,7 +236,7 @@ export default function Footer({
               )}
               {siteSettings.contactNumber && (
                 <a href={`tel:${siteSettings.contactNumber}`} className="flex items-center gap-2 text-[13px] no-underline" style={{ color: MUTED }}>
-                  <PhoneIcon />
+                  <PhoneIcon className="size-[15px]" />
                   {siteSettings.contactNumber}
                 </a>
               )}

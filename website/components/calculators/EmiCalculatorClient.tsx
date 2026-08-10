@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useMemo, useRef, useState } from "react";
 import Image from "next/image";
-import { EditIcon, TagIcon, ShieldIcon, ClockIcon, GaugeIcon, StarIcon, LockIcon, CheckIcon } from "@/components/common/icons";
+import { EditIcon, TagIcon, ShieldIcon, ClockIcon, PercentIcon, StarIcon, LockIcon, CheckIcon } from "@/components/common/icons";
 import { getModelsByBrand, getVariantsByModel } from "@/features/calculators/emiCalculator.api";
 import type { EmiCalculatorModel, EmiCalculatorVariant } from "@/features/calculators/emiCalculator.types";
 import type { CalculatorSeed } from "@/features/calculators/calculatorSeed";
@@ -597,7 +597,7 @@ export default function EmiCalculatorClient({
           { Icon: TagIcon, title: "Lowest Interest Rates", sub: "Compare offers from top lenders and save more" },
           { Icon: ShieldIcon, title: "100% Secure", sub: "Your data is safe with us. No spam calls." },
           { Icon: ClockIcon, title: "Instant Calculation", sub: "Real-time EMI calculation in just a click" },
-          { Icon: GaugeIcon, title: "Flexible Tenure", sub: "Choose tenure up to 7 years as per your convenience" },
+          { Icon: PercentIcon, title: "Flexible Tenure", sub: "Choose tenure up to 7 years as per your convenience" },
         ].map(({ Icon, title, sub }) => (
           <div key={title} className="flex flex-col items-center gap-2 text-center">
             <span className="flex size-10 items-center justify-center rounded-full bg-page text-brand">

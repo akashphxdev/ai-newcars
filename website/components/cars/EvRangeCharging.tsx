@@ -13,7 +13,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { BoltIcon, FuelIcon, ClockIcon } from "@/components/common/icons";
+import { BoltIcon, PlugIcon, WalletIcon } from "@/components/common/icons";
 import { getFuelPricesForCity } from "@/features/fuel/fuel.api";
 import { CITY_EVENT, getCurrentCity } from "@/features/location/currentCity";
 import type { LocationCity } from "@/features/location/location.types";
@@ -142,7 +142,7 @@ export default function EvRangeCharging({
         <div className="grid gap-4 sm:grid-cols-3">
           <div className="rounded-2xl border border-border bg-surface p-5">
             <span className="flex size-9 items-center justify-center rounded-lg bg-page text-brand">
-              <ClockIcon className="size-4" />
+              <PlugIcon className="size-4" />
             </span>
             <p className="mt-3 text-[13px] font-bold text-ink">Home charging</p>
             <p className="text-[11px] text-muted">
@@ -173,7 +173,7 @@ export default function EvRangeCharging({
 
           <div className="rounded-2xl border border-border bg-surface p-5">
             <span className="flex size-9 items-center justify-center rounded-lg bg-page text-brand">
-              <FuelIcon className="size-4" />
+              <WalletIcon className="size-4" />
             </span>
             <p className="mt-3 text-[13px] font-bold text-ink">Running cost</p>
             <p className="text-[11px] text-muted">At {monthlyKm.toLocaleString("en-IN")} km/month</p>

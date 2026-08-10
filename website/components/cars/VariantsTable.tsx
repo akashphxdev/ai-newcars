@@ -16,11 +16,14 @@
 import { Fragment, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import {
-  BoltIcon,
+  BatteryIcon,
+  CarIcon,
   ChevronDownIcon,
-  FuelIcon,
+  EngineIcon,
   GaugeIcon,
   PinIcon,
+  RoadIcon,
+  SparkleIcon,
   StarIcon,
 } from "@/components/common/icons";
 import { getOnRoadPrices, type OnRoadPrice } from "@/features/cars/onRoad.api";
@@ -169,14 +172,14 @@ export default function VariantsTable({
           <table className="w-full min-w-[860px] border-collapse text-left">
             <thead>
               <tr className="border-b border-border bg-page text-[10.5px] uppercase tracking-[0.08em] text-muted">
-                <Th icon={<StarIcon className="size-3.5" />}>Variant</Th>
-                <Th icon={isElectric ? <BoltIcon className="size-3.5" /> : <GaugeIcon className="size-3.5" />}>
+                <Th icon={<CarIcon className="size-3.5" />}>Variant</Th>
+                <Th icon={isElectric ? <BatteryIcon className="size-3.5" /> : <EngineIcon className="size-3.5" />}>
                   {isElectric ? "Battery" : "Engine"}
                 </Th>
-                <Th icon={isElectric ? <GaugeIcon className="size-3.5" /> : <FuelIcon className="size-3.5" />}>
+                <Th icon={isElectric ? <RoadIcon className="size-3.5" /> : <GaugeIcon className="size-3.5" />}>
                   {isElectric ? "Claimed range" : "Mileage"}
                 </Th>
-                <Th icon={<StarIcon className="size-3.5" />}>Key addition</Th>
+                <Th icon={<SparkleIcon className="size-3.5" />}>Key addition</Th>
                 <th className="px-4 py-3 text-right font-bold">Ex-showroom</th>
                 <th className="px-4 py-3 text-right font-bold">
                   {city ? `On-road in ${city.name}` : "On-road"}

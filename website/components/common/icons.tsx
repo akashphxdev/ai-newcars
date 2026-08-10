@@ -1,227 +1,113 @@
 // components/common/icons.tsx
 //
-// Every small inline SVG icon used across the home page sections, in one
-// place — these were previously copy-pasted (identically) into 4-5
-// different section files. Add new icons here rather than inlining one
-// in a component again.
+// Every small icon used across the site, in one place. Backed by
+// lucide-react (tree-shaken — only icons imported here ship), wrapped so
+// call sites keep the same names and default sizes they always had.
+// Custom art survives only where lucide has no honest equivalent: the
+// engine block, the road, the two-panel compare glyph.
+//
+// Semantics are fixed, not per-caller: GaugeIcon means mileage/efficiency,
+// RoadIcon means range/distance, BatteryIcon means battery, PowerIcon
+// means power, FuelIcon means fuel type, EngineIcon means engine. Pick by
+// meaning, not by shape.
+
+import {
+  ArrowRight,
+  Armchair,
+  BatteryCharging,
+  Bell,
+  Calculator,
+  Car,
+  Check,
+  ChevronDown,
+  Clock,
+  Cog,
+  Droplet,
+  Flame,
+  Fuel,
+  Gauge,
+  Heart,
+  IndianRupee,
+  Lock,
+  Luggage,
+  MapPin,
+  Minus,
+  Pencil,
+  Percent,
+  Phone,
+  Plug,
+  RotateCw,
+  Ruler,
+  Search,
+  Share2,
+  ShieldCheck,
+  Sparkles,
+  Star,
+  Tag,
+  Thermometer,
+  Wallet,
+  X,
+  Zap,
+} from "lucide-react";
 
 type IconProps = { className?: string };
 
+const W = 1.7;
+
 export const ChevronIcon = ({ className = "size-3.5", dir = "right" }: IconProps & { dir?: "left" | "right" }) => (
-  <svg className={className} viewBox="0 0 12 12" fill="none" style={{ transform: dir === "left" ? "rotate(180deg)" : "none" }}>
-    <path d="M2 6h8M8 2l4 4-4 4" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
-  </svg>
+  <ArrowRight className={className} strokeWidth={W} style={dir === "left" ? { transform: "rotate(180deg)" } : undefined} />
 );
 
-export const CompareIcon = ({ className = "size-4" }: IconProps) => (
-  <svg className={className} viewBox="0 0 24 24" fill="none">
-    <rect x="3" y="6" width="8" height="12" rx="1.5" stroke="currentColor" strokeWidth="1.6" />
-    <rect x="13" y="6" width="8" height="12" rx="1.5" stroke="currentColor" strokeWidth="1.6" />
-    <path d="m16 20 3-3-3-3" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
-  </svg>
-);
-
-export const PhoneIcon = ({ className = "size-4" }: IconProps) => (
-  <svg className={className} viewBox="0 0 24 24" fill="none">
-    <path
-      d="M6.6 3.5h3.1l1.4 3.9-2 1.7a13.2 13.2 0 0 0 5.8 5.8l1.7-2 3.9 1.4v3.1c0 1-.9 1.8-1.9 1.7C10.9 18.7 5.3 13.1 4.9 5.4c-.1-1 .7-1.9 1.7-1.9Z"
-      stroke="currentColor"
-      strokeWidth="1.7"
-      strokeLinejoin="round"
-    />
-  </svg>
-);
-
-export const ChevronDownIcon = ({ className = "size-4" }: IconProps) => (
-  <svg className={className} viewBox="0 0 24 24" fill="none">
-    <path d="m6 9 6 6 6-6" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
-  </svg>
-);
+export const PhoneIcon = ({ className = "size-4" }: IconProps) => <Phone className={className} strokeWidth={W} />;
+export const ChevronDownIcon = ({ className = "size-4" }: IconProps) => <ChevronDown className={className} strokeWidth={2.5} />;
 
 export const HeartIcon = ({ className = "size-3.5", filled = false }: IconProps & { filled?: boolean }) => (
-  <svg className={className} viewBox="0 0 24 24" fill={filled ? "currentColor" : "none"}>
-    <path
-      d="M12 20.5s-7.5-4.6-10-9.4C.5 7.6 2.4 4 6 4c2.1 0 3.7 1.2 6 3.6C14.3 5.2 15.9 4 18 4c3.6 0 5.5 3.6 4 7.1-2.5 4.8-10 9.4-10 9.4Z"
-      stroke="currentColor"
-      strokeWidth="1.7"
-      strokeLinejoin="round"
-    />
-  </svg>
+  <Heart className={className} strokeWidth={W} fill={filled ? "currentColor" : "none"} />
 );
-
 export const StarIcon = ({ className = "size-3", filled = false }: IconProps & { filled?: boolean }) => (
-  <svg className={className} viewBox="0 0 20 20" fill={filled ? "currentColor" : "none"} stroke="currentColor" strokeWidth="1.3">
-    <path d="M10 2.5 12.5 7.5 18 8.3 14 12.2 15 17.7 10 15 5 17.7 6 12.2 2 8.3 7.5 7.5 10 2.5Z" strokeLinejoin="round" />
-  </svg>
+  <Star className={className} strokeWidth={1.3} fill={filled ? "currentColor" : "none"} />
 );
 
-export const PowerIcon = ({ className = "size-3" }: IconProps) => (
-  <svg className={className} viewBox="0 0 24 24" fill="none">
-    <path d="M13 2 4 14h6l-1 8 9-12h-6l1-8Z" stroke="currentColor" strokeWidth="1.7" strokeLinejoin="round" />
-  </svg>
-);
+export const PowerIcon = ({ className = "size-3" }: IconProps) => <Zap className={className} strokeWidth={W} />;
+export const BoltIcon = PowerIcon;
+export const TorqueIcon = ({ className = "size-3" }: IconProps) => <RotateCw className={className} strokeWidth={W} />;
+export const GaugeIcon = ({ className = "size-3" }: IconProps) => <Gauge className={className} strokeWidth={W} />;
+export const SeatIcon = ({ className = "size-4" }: IconProps) => <Armchair className={className} strokeWidth={W} />;
+export const FuelIcon = ({ className = "size-3" }: IconProps) => <Fuel className={className} strokeWidth={W} />;
+export const GearIcon = ({ className = "size-3" }: IconProps) => <Cog className={className} strokeWidth={W} />;
+export const ClockIcon = ({ className = "size-3" }: IconProps) => <Clock className={className} strokeWidth={W} />;
+export const BatteryIcon = ({ className = "size-3" }: IconProps) => <BatteryCharging className={className} strokeWidth={1.6} />;
 
-export const TorqueIcon = ({ className = "size-3" }: IconProps) => (
-  <svg className={className} viewBox="0 0 24 24" fill="none">
-    <circle cx="12" cy="12" r="7.5" stroke="currentColor" strokeWidth="1.7" />
-    <path d="M12 7.5v4.7l3.2 1.9" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />
-  </svg>
-);
+export const CloseIcon = ({ className = "size-5" }: IconProps) => <X className={className} strokeWidth={2.2} />;
+export const CheckIcon = ({ className = "size-4" }: IconProps) => <Check className={className} strokeWidth={2.4} />;
+export const MinusIcon = ({ className = "size-4" }: IconProps) => <Minus className={className} strokeWidth={2.4} />;
+export const EditIcon = ({ className = "size-3.5" }: IconProps) => <Pencil className={className} strokeWidth={1.8} />;
+export const ShareIcon = ({ className = "size-4" }: IconProps) => <Share2 className={className} strokeWidth={1.8} />;
+export const BellIcon = ({ className = "size-4" }: IconProps) => <Bell className={className} strokeWidth={W} />;
+export const TagIcon = ({ className = "size-4" }: IconProps) => <Tag className={className} strokeWidth={W} />;
+export const PercentIcon = ({ className = "size-4" }: IconProps) => <Percent className={className} strokeWidth={W} />;
+export const ShieldIcon = ({ className = "size-4" }: IconProps) => <ShieldCheck className={className} strokeWidth={W} />;
+export const LockIcon = ({ className = "size-3.5" }: IconProps) => <Lock className={className} strokeWidth={W} />;
+export const FlameIcon = ({ className = "size-4" }: IconProps) => <Flame className={className} strokeWidth={W} />;
+export const ThermometerIcon = ({ className = "size-4" }: IconProps) => <Thermometer className={className} strokeWidth={W} />;
+export const CalculatorIcon = ({ className = "size-4" }: IconProps) => <Calculator className={className} strokeWidth={W} />;
+export const SearchIcon = ({ className = "size-[15px]" }: IconProps) => <Search className={className} strokeWidth={1.8} />;
+export const PinIcon = ({ className = "size-3.5" }: IconProps) => <MapPin className={className} strokeWidth={1.8} />;
+export const WalletIcon = ({ className = "size-5" }: IconProps) => <Wallet className={className} strokeWidth={1.6} />;
+export const SparkleIcon = ({ className = "size-4" }: IconProps) => <Sparkles className={className} strokeWidth={W} />;
 
-export const GaugeIcon = ({ className = "size-3" }: IconProps) => (
-  <svg className={className} viewBox="0 0 24 24" fill="none">
-    <path d="M4 14.5a8 8 0 1 1 16 0" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" />
-    <path d="M12 14.5 16.2 9.3" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" />
-    <circle cx="12" cy="14.5" r="1.1" fill="currentColor" />
-  </svg>
-);
+export const CarIcon = ({ className = "size-4" }: IconProps) => <Car className={className} strokeWidth={W} />;
+export const RulerIcon = ({ className = "size-4" }: IconProps) => <Ruler className={className} strokeWidth={W} />;
+export const PlugIcon = ({ className = "size-4" }: IconProps) => <Plug className={className} strokeWidth={W} />;
+export const RupeeIcon = ({ className = "size-4" }: IconProps) => <IndianRupee className={className} strokeWidth={W} />;
+export const DropletIcon = ({ className = "size-4" }: IconProps) => <Droplet className={className} strokeWidth={W} />;
+export const BootIcon = ({ className = "size-4" }: IconProps) => <Luggage className={className} strokeWidth={W} />;
 
-export const SeatIcon = ({ className = "size-4" }: IconProps) => (
+// No lucide equivalent — house art.
+export const EngineIcon = ({ className = "size-4" }: IconProps) => (
   <svg className={className} viewBox="0 0 24 24" fill="none">
-    <path d="M8 4.5v7.8c0 1.5 1.2 2.7 2.7 2.7H17" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />
-    <path d="M7.8 9.5H13c1.7 0 3 1.3 3 3V15M7.8 15l-1.4 5M16 15l1.4 5M5 20h14" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />
-    <circle cx="8" cy="4.5" r="2" stroke="currentColor" strokeWidth="1.7" />
-  </svg>
-);
-
-export const FuelIcon = ({ className = "size-3" }: IconProps) => (
-  <svg className={className} viewBox="0 0 24 24" fill="none">
-    <path d="M5 21V8l5-5h4v3h2a2 2 0 0 1 2 2v9.5a1.5 1.5 0 0 1-3 0V13a1 1 0 0 0-1-1h-1" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />
-    <path d="M5 21h9M5 12h9" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" />
-  </svg>
-);
-
-export const GearIcon = ({ className = "size-3" }: IconProps) => (
-  <svg className={className} viewBox="0 0 24 24" fill="none">
-    <circle cx="12" cy="12" r="2.5" stroke="currentColor" strokeWidth="1.7" />
-    <path d="M12 4v2.5M12 17.5V20M4 12h2.5M17.5 12H20M6.3 6.3l1.8 1.8M15.9 15.9l1.8 1.8M6.3 17.7l1.8-1.8M15.9 8.1l1.8-1.8" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" />
-  </svg>
-);
-
-export const BoltIcon = ({ className = "size-3" }: IconProps) => (
-  <svg className={className} viewBox="0 0 24 24" fill="none">
-    <path d="M13 2 4 14h6l-1 8 9-12h-6l1-8Z" stroke="currentColor" strokeWidth="1.7" strokeLinejoin="round" />
-  </svg>
-);
-
-export const ClockIcon = ({ className = "size-3" }: IconProps) => (
-  <svg className={className} viewBox="0 0 24 24" fill="none">
-    <circle cx="12" cy="12" r="8" stroke="currentColor" strokeWidth="1.7" />
-    <path d="M12 8v4l3 2" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />
-  </svg>
-);
-
-export const BatteryIcon = ({ className = "size-3" }: IconProps) => (
-  <svg className={className} viewBox="0 0 24 24" fill="none">
-    <rect x="2.5" y="7" width="16" height="10" rx="2" stroke="currentColor" strokeWidth="1.6" />
-    <path d="M20.5 10v4" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
-    <path d="M6 10.5h4l-1.5 3H10l-2.5 3 .8-2.5H6.8L6 10.5Z" fill="currentColor" />
-  </svg>
-);
-
-export const CloseIcon = ({ className = "size-5" }: IconProps) => (
-  <svg className={className} viewBox="0 0 24 24" fill="none">
-    <path d="M6 6l12 12M18 6 6 18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-  </svg>
-);
-
-export const CheckIcon = ({ className = "size-4" }: IconProps) => (
-  <svg className={className} viewBox="0 0 24 24" fill="none">
-    <path d="M5 13l4 4L19 7" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" />
-  </svg>
-);
-
-export const MinusIcon = ({ className = "size-4" }: IconProps) => (
-  <svg className={className} viewBox="0 0 24 24" fill="none">
-    <path d="M5 12h14" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" />
-  </svg>
-);
-
-export const EditIcon = ({ className = "size-3.5" }: IconProps) => (
-  <svg className={className} viewBox="0 0 24 24" fill="none">
-    <path
-      d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"
-      stroke="currentColor"
-      strokeWidth="1.8"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    />
-  </svg>
-);
-
-export const ShareIcon = ({ className = "size-4" }: IconProps) => (
-  <svg className={className} viewBox="0 0 24 24" fill="none">
-    <circle cx="18" cy="5" r="2.5" stroke="currentColor" strokeWidth="1.8" />
-    <circle cx="6" cy="12" r="2.5" stroke="currentColor" strokeWidth="1.8" />
-    <circle cx="18" cy="19" r="2.5" stroke="currentColor" strokeWidth="1.8" />
-    <path d="M8.2 10.7 15.8 6.3M8.2 13.3l7.6 4.4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
-  </svg>
-);
-
-export const BellIcon = ({ className = "size-4" }: IconProps) => (
-  <svg className={className} viewBox="0 0 24 24" fill="none">
-    <path
-      d="M6 10a6 6 0 1 1 12 0c0 4 1.5 5.5 1.5 5.5H4.5S6 14 6 10Z"
-      stroke="currentColor"
-      strokeWidth="1.7"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    />
-    <path d="M10 19a2 2 0 0 0 4 0" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" />
-  </svg>
-);
-
-export const TagIcon = ({ className = "size-4" }: IconProps) => (
-  <svg className={className} viewBox="0 0 24 24" fill="none">
-    <path
-      d="M20.5 12.5 12.8 20.2a1.5 1.5 0 0 1-2.1 0l-6.9-6.9a1.5 1.5 0 0 1 0-2.1L11.5 3.5H19a1.5 1.5 0 0 1 1.5 1.5v7.5Z"
-      stroke="currentColor"
-      strokeWidth="1.7"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    />
-    <circle cx="15.5" cy="8.5" r="1.3" fill="currentColor" />
-  </svg>
-);
-
-export const PercentIcon = ({ className = "size-4" }: IconProps) => (
-  <svg className={className} viewBox="0 0 24 24" fill="none">
-    <path d="M18 6 6 18" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" />
-    <circle cx="7.5" cy="6.5" r="2" stroke="currentColor" strokeWidth="1.7" />
-    <circle cx="16.5" cy="17.5" r="2" stroke="currentColor" strokeWidth="1.7" />
-  </svg>
-);
-
-export const ShieldIcon = ({ className = "size-4" }: IconProps) => (
-  <svg className={className} viewBox="0 0 24 24" fill="none">
-    <path
-      d="M12 3.5 19 6v5.5c0 4.5-3 7.5-7 9-4-1.5-7-4.5-7-9V6l7-2.5Z"
-      stroke="currentColor"
-      strokeWidth="1.7"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    />
-    <path d="M9 12l2 2 4-4" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />
-  </svg>
-);
-
-export const LockIcon = ({ className = "size-3.5" }: IconProps) => (
-  <svg className={className} viewBox="0 0 24 24" fill="none">
-    <rect x="5" y="11" width="14" height="9" rx="2" stroke="currentColor" strokeWidth="1.7" />
-    <path d="M8 11V7.5a4 4 0 0 1 8 0V11" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" />
-    <circle cx="12" cy="15.5" r="1.2" fill="currentColor" />
-  </svg>
-);
-
-export const FlameIcon = ({ className = "size-4" }: IconProps) => (
-  <svg className={className} viewBox="0 0 24 24" fill="none">
-    <path
-      d="M12 2.5c1 3-3 4.5-3 8a3 3 0 0 0 6 0c1 1 1.5 2.3 1.5 3.5a4.5 4.5 0 0 1-9 0c0-4.5 4.5-6 4.5-11.5Z"
-      stroke="currentColor"
-      strokeWidth="1.7"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    />
+    <path d="M3 13v3a1 1 0 0 0 1 1h1M3 13V9a1 1 0 0 1 1-1h6l3 3h4a2 2 0 0 1 2 2v2a1 1 0 0 1-1 1h-1M3 13h9" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" />
+    <path d="M7 17v2M11 17v2" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
   </svg>
 );
 
@@ -232,62 +118,10 @@ export const RoadIcon = ({ className = "size-4" }: IconProps) => (
   </svg>
 );
 
-export const ThermometerIcon = ({ className = "size-4" }: IconProps) => (
+export const CompareIcon = ({ className = "size-4" }: IconProps) => (
   <svg className={className} viewBox="0 0 24 24" fill="none">
-    <path
-      d="M12 14.5V5a2 2 0 1 0-4 0v9.5a4 4 0 1 0 4 0Z"
-      stroke="currentColor"
-      strokeWidth="1.7"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    />
-    <circle cx="10" cy="16.5" r="1.3" fill="currentColor" />
-  </svg>
-);
-
-export const CalculatorIcon = ({ className = "size-4" }: IconProps) => (
-  <svg className={className} viewBox="0 0 24 24" fill="none">
-    <rect x="5" y="3" width="14" height="18" rx="2" stroke="currentColor" strokeWidth="1.7" />
-    <path d="M8 7.5h8" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" />
-    <path
-      d="M8 12h.01M12 12h.01M16 12h.01M8 15.5h.01M12 15.5h.01M16 15.5h.01M8 19h.01M12 19h.01"
-      stroke="currentColor"
-      strokeWidth="2.2"
-      strokeLinecap="round"
-    />
-  </svg>
-);
-
-export const SearchIcon = ({ className = "size-[15px]" }: IconProps) => (
-  <svg className={className} viewBox="0 0 24 24" fill="none">
-    <circle cx="11" cy="11" r="7" stroke="currentColor" strokeWidth="1.8" />
-    <path d="m20 20-3.5-3.5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
-  </svg>
-);
-
-export const PinIcon = ({ className = "size-3.5" }: IconProps) => (
-  <svg className={className} viewBox="0 0 24 24" fill="none">
-    <path
-      d="M12 21s7-6.3 7-11.5A7 7 0 0 0 5 9.5C5 14.7 12 21 12 21Z"
-      stroke="currentColor"
-      strokeWidth="1.8"
-      strokeLinejoin="round"
-    />
-    <circle cx="12" cy="9.5" r="2.2" stroke="currentColor" strokeWidth="1.8" />
-  </svg>
-);
-
-export const WalletIcon = ({ className = "size-5" }: IconProps) => (
-  <svg className={className} viewBox="0 0 24 24" fill="none">
-    <path d="M3 8a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v1" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
-    <rect x="3" y="8" width="18" height="11" rx="2" stroke="currentColor" strokeWidth="1.6" />
-    <circle cx="16.5" cy="13.5" r="1.4" fill="currentColor" />
-  </svg>
-);
-
-export const SparkleIcon = ({ className = "size-4" }: IconProps) => (
-  <svg className={className} viewBox="0 0 24 24" fill="none">
-    <path d="M12 3.5 13.6 9 19 10.5 13.6 12 12 17.5 10.4 12 5 10.5 10.4 9 12 3.5Z" fill="currentColor" />
-    <path d="M18.5 15.5 19.2 18l2.3.7-2.3.7-.7 2.3-.7-2.3-2.3-.7 2.3-.7.7-2.5Z" fill="currentColor" opacity=".7" />
+    <rect x="3" y="6" width="8" height="12" rx="1.5" stroke="currentColor" strokeWidth="1.6" />
+    <rect x="13" y="6" width="8" height="12" rx="1.5" stroke="currentColor" strokeWidth="1.6" />
+    <path d="m16 20 3-3-3-3" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
   </svg>
 );

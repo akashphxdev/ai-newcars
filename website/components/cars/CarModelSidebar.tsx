@@ -1,4 +1,4 @@
-import { CheckIcon, PowerIcon, GaugeIcon, GearIcon, FuelIcon } from "@/components/common/icons";
+import { CheckIcon, PowerIcon, GaugeIcon, GearIcon, BatteryIcon, RoadIcon, BootIcon, EngineIcon, SeatIcon } from "@/components/common/icons";
 import type { CarDetailSelectedVariant } from "@/features/cars/car.types";
 
 // Sidebar for the model detail page — key highlights + safety features
@@ -11,10 +11,10 @@ export default function CarModelSidebar({ variant }: { variant: CarDetailSelecte
 
   if (variant.isElectric && variant.electric) {
     const e = variant.electric;
-    highlights.push({ icon: <FuelIcon className="size-4" />, label: "Battery", value: e.batteryCapacity ? `${e.batteryCapacity} kWh` : "-" });
+    highlights.push({ icon: <BatteryIcon className="size-4" />, label: "Battery", value: e.batteryCapacity ? `${e.batteryCapacity} kWh` : "-" });
     highlights.push({ icon: <PowerIcon className="size-4" />, label: "Power", value: e.powerPs ? `${e.powerPs} PS` : "-" });
-    highlights.push({ icon: <GaugeIcon className="size-4" />, label: "Range", value: e.claimedRange ? `${e.claimedRange} km` : "-" });
-    if (variant.dimensions.bootSpace) highlights.push({ icon: <GaugeIcon className="size-4" />, label: "Boot Space", value: `${variant.dimensions.bootSpace} L` });
+    highlights.push({ icon: <RoadIcon className="size-4" />, label: "Range", value: e.claimedRange ? `${e.claimedRange} km` : "-" });
+    if (variant.dimensions.bootSpace) highlights.push({ icon: <BootIcon className="size-4" />, label: "Boot Space", value: `${variant.dimensions.bootSpace} L` });
   } else if (variant.ice) {
     const ice = variant.ice;
     const rawDisplacement = ice.engineDisplacement ? Number(ice.engineDisplacement) : null;
@@ -23,7 +23,7 @@ export default function CarModelSidebar({ variant }: { variant: CarDetailSelecte
         ? Math.round(rawDisplacement < 20 ? rawDisplacement * 1000 : rawDisplacement)
         : null);
     highlights.push({
-      icon: <FuelIcon className="size-4" />,
+      icon: <EngineIcon className="size-4" />,
       label: "Engine",
       value: capacityCc ? `${capacityCc} cc ${ice.fuelType ?? ""}`.trim() : ice.fuelType ?? "-",
     });
@@ -31,7 +31,7 @@ export default function CarModelSidebar({ variant }: { variant: CarDetailSelecte
     highlights.push({ icon: <GaugeIcon className="size-4" />, label: "Mileage", value: ice.claimedFe ? `${ice.claimedFe} km/l` : "-" });
   }
 
-  highlights.push({ icon: <GearIcon className="size-4" />, label: "Seating Capacity", value: `${variant.seatingCapacity} Seater` });
+  highlights.push({ icon: <SeatIcon className="size-4" />, label: "Seating Capacity", value: `${variant.seatingCapacity} Seater` });
   if (variant.transmission) highlights.push({ icon: <GearIcon className="size-4" />, label: "Transmission", value: variant.transmission });
 
   // Safety is singled out by category name — same convention the

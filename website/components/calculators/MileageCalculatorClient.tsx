@@ -7,6 +7,7 @@ import {
   FuelIcon,
   FlameIcon,
   BoltIcon,
+  DropletIcon,
   GaugeIcon,
   RoadIcon,
   ThermometerIcon,
@@ -52,7 +53,7 @@ const Label = ({ children }: { children: React.ReactNode }) => (
 
 const FUEL_TYPE_ICONS: Record<FuelType, React.ComponentType<{ className?: string }>> = {
   petrol: FuelIcon,
-  diesel: FuelIcon,
+  diesel: DropletIcon,
   cng: FlameIcon,
   ev: BoltIcon,
 };

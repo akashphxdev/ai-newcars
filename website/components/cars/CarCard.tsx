@@ -26,9 +26,12 @@ import {
   PowerIcon,
   TorqueIcon,
   GaugeIcon,
+  EngineIcon,
+  CarIcon,
   BatteryIcon,
   ClockIcon,
   StarIcon,
+  RoadIcon,
 } from "@/components/common/icons";
 import { formatPriceRange, formatSinglePrice, carTitle } from "@/lib/format";
 import { routes } from "@/lib/routes";
@@ -178,12 +181,12 @@ export default function CarCard({
           {isCurated ? (
             <div className="mt-auto flex flex-wrap items-center gap-2 pt-1">
               <span className="inline-flex min-h-7 items-center gap-1.5 rounded-[5px] border border-border px-2.5 py-1 text-[10.5px] font-semibold text-muted">
-                {car.isElectric ? <BatteryIcon className="size-3.5" /> : <GaugeIcon className="size-3.5" />}
+                {car.isElectric ? <BatteryIcon className="size-3.5" /> : <EngineIcon className="size-3.5" />}
                 {car.isElectric ? "Electric" : "Combustion"}
               </span>
               {car.bodyType && (
                 <span className="inline-flex min-h-7 items-center gap-1.5 rounded-[5px] border border-border px-2.5 py-1 text-[10.5px] font-semibold text-muted">
-                  <GaugeIcon className="size-3.5" />
+                  <CarIcon className="size-3.5" />
                   {car.bodyType.name}
                 </span>
               )}
@@ -198,7 +201,7 @@ export default function CarCard({
                   label="Battery"
                 />
                 <Spec
-                  icon={<GaugeIcon className="size-4" />}
+                  icon={<RoadIcon className="size-4" />}
                   value={car.specs?.range ? `${car.specs.range} km` : "-"}
                   label={car.specs?.rangeEstimated ? "Est. range" : "Range"}
                 />

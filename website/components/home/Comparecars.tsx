@@ -7,13 +7,13 @@ import { useRouter } from "next/navigation";
 import {
   ChevronDownIcon,
   ChevronIcon,
-  ClockIcon,
   CompareIcon,
   EditIcon,
   FuelIcon,
   GaugeIcon,
   PercentIcon,
   SeatIcon,
+  ShareIcon,
   ShieldIcon,
   StarIcon,
   TagIcon,
@@ -370,7 +370,7 @@ export default function CompareCars({
             <TrustItem icon={<CompareIcon className="size-5" />} title="Unbiased" text="Independent view" />
             <TrustItem icon={<ShieldIcon className="size-5" />} title="Expert verified" text="Data you can trust" />
             <TrustItem icon={<PercentIcon className="size-5" />} title="Total cost view" text="Beyond sticker price" />
-            <TrustItem icon={<ClockIcon className="size-5" />} title="Save and share" text="Keep your compare" />
+            <TrustItem icon={<ShareIcon className="size-5" />} title="Save and share" text="Keep your compare" />
           </div>
         </article>
       </div>

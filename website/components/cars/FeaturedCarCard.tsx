@@ -9,7 +9,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { BoltIcon, GaugeIcon, StarIcon } from "@/components/common/icons";
+import { BoltIcon, CarIcon, PowerIcon, StarIcon } from "@/components/common/icons";
 import { formatPriceRange, formatSinglePrice, carTitle } from "@/lib/format";
 import { routes } from "@/lib/routes";
 import type { HomeCar } from "@/features/cars/car.types";
@@ -105,13 +105,13 @@ export default function FeaturedCarCard({ car }: { car: HomeCar }) {
             />
           ) : (
             <Spec
-              icon={<GaugeIcon className="size-5" />}
+              icon={<PowerIcon className="size-5" />}
               value={car.specs?.powerPs ? `${car.specs.powerPs} PS` : "Petrol"}
               label="Power"
             />
           )}
           {car.bodyType && (
-            <Spec icon={<GaugeIcon className="size-5" />} value={car.bodyType.name} label="Body type" />
+            <Spec icon={<CarIcon className="size-5" />} value={car.bodyType.name} label="Body type" />
           )}
           {car.ratingAvg && (
             <Spec
