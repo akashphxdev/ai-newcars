@@ -220,7 +220,7 @@ export default function EvRangeCharging({
           {petrolPrice ? (
             <>
               <p className="text-[11.5px] text-muted">
-                Petrol in {city?.name} is {formatRupee(petrolPrice)}/litre today
+                Petrol in {city?.name} is ₹{petrolPrice.toFixed(2)}/litre today
               </p>
               <p className="mt-2 text-[12.5px] text-muted">
                 A petrol car at {petrolKmpl} kmpl costs{" "}
@@ -229,8 +229,8 @@ export default function EvRangeCharging({
               </p>
               {figures.yearlySaving > 0 && (
                 <p className="mt-2 font-head text-[17px] font-extrabold leading-tight text-ink">
-                  {formatRupee(figures.yearlySaving)}
-                  <span className="ml-1 text-[12px] font-semibold text-muted">saved a year</span>
+                  {formatRupee(figures.yearlySaving)}{" "}
+                  <span className="text-[12px] font-semibold text-muted">saved a year</span>
                 </p>
               )}
             </>
