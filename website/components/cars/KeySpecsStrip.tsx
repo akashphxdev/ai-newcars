@@ -64,28 +64,40 @@ function buildSpecs(v: CarDetailSelectedVariant): Spec[] {
   return specs;
 }
 
-export default function KeySpecsStrip({ variant }: { variant: CarDetailSelectedVariant | null }) {
+export default function KeySpecsStrip({
+  variant,
+  bare = false,
+}: {
+  variant: CarDetailSelectedVariant | null;
+  // Inside the hero card the strip supplies only its own row; standalone
+  // it brings the section band around it.
+  bare?: boolean;
+}) {
   if (!variant) return null;
   const specs = buildSpecs(variant);
   if (specs.length === 0) return null;
 
+  const list = (
+    <ul className="grid grid-cols-2 gap-x-4 gap-y-3 sm:grid-cols-3 lg:grid-cols-5">
+      {specs.slice(0, 5).map((s) => (
+        <li key={s.label} className="flex min-w-0 items-center gap-2.5">
+          <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-page text-brand">
+            {s.icon}
+          </span>
+          <span className="min-w-0">
+            <span className="block truncate text-[13px] font-bold text-ink">{s.value}</span>
+            <span className="block truncate text-[10.5px] text-muted">{s.label}</span>
+          </span>
+        </li>
+      ))}
+    </ul>
+  );
+
+  if (bare) return <div className="border-t border-border-soft p-5">{list}</div>;
+
   return (
     <section className="border-b border-border bg-page">
-      <div className="mx-auto max-w-7xl px-5 py-4 sm:px-8">
-        <ul className="grid grid-cols-2 gap-x-4 gap-y-3 sm:grid-cols-3 lg:grid-cols-6">
-          {specs.slice(0, 6).map((s) => (
-            <li key={s.label} className="flex min-w-0 items-center gap-2.5">
-              <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-surface text-brand">
-                {s.icon}
-              </span>
-              <span className="min-w-0">
-                <span className="block truncate text-[13px] font-bold text-ink">{s.value}</span>
-                <span className="block truncate text-[10.5px] text-muted">{s.label}</span>
-              </span>
-            </li>
-          ))}
-        </ul>
-      </div>
+      <div className="mx-auto max-w-7xl px-5 py-4 sm:px-8">{list}</div>
     </section>
   );
 }

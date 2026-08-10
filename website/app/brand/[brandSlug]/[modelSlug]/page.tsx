@@ -7,7 +7,6 @@ import { getModelCrossPairs } from "@/features/compare/compare.api";
 import { formatPriceRange, formatSinglePrice, slugify, featureLabel, carTitle } from "@/lib/format";
 import ModelDetailTabs from "@/components/common/ModelDetailTabs";
 import ModelHero from "@/components/cars/ModelHero";
-import KeySpecsStrip from "@/components/cars/KeySpecsStrip";
 import OnRoadPriceCard from "@/components/cars/OnRoadPriceCard";
 import CarModelColours from "@/components/cars/CarModelColours";
 import VariantsList from "@/components/cars/VariantsList";
@@ -99,7 +98,6 @@ export default async function CarModelPage(props: Props) {
       </div>
 
       <ModelHero car={car} variant={variant} />
-      <KeySpecsStrip variant={variant} />
       <ModelDetailTabs brandSlug={car.brand.slug} modelSlug={car.slug} variantSlug={defaultVariantSlug} onVariantPage={false} />
 
       {overviewGroups.length > 0 && (

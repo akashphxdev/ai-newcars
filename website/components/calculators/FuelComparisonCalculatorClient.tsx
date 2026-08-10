@@ -12,6 +12,7 @@ import type { Brand } from "@/features/brands/brand.types";
 import type { ModelSeed } from "@/features/calculators/calculatorSeed";
 import { getCarDetail } from "@/features/cars/car.api";
 import { calculateRunningCost, ratedFigure } from "@/lib/mileageMath";
+import FuelBreakEvenVerdict from "./FuelBreakEvenVerdict";
 import { formatRupee } from "@/lib/calculatorFormat";
 import { Label, selectClass, inputClass } from "@/components/calculators/CalculatorFormControls";
 import SoftLeadCapture from "@/components/leads/SoftLeadCapture";
@@ -190,6 +191,13 @@ export default function FuelComparisonCalculatorClient({
   );
 
   const validResults = results.filter((r) => r.hasCost);
+
+  const breakEvenOptions = validResults.map((r) => ({
+    label: FUEL_TYPE_LABELS[r.fuelType],
+    price: Number(r.variant.price) || 0,
+    costPerKm: r.cost.costPerKm,
+  }));
+
   const cheapestFuelType =
     validResults.length > 1 ? validResults.reduce((min, r) => (r.cost.monthlyCost < min.cost.monthlyCost ? r : min)).fuelType : null;
   const mostExpensive =
@@ -375,6 +383,14 @@ export default function FuelComparisonCalculatorClient({
                   : `${FUEL_TYPE_LABELS[validResults[0].fuelType]} ${formatRupee(validResults[0].cost.monthlyCost)}/mo`
               }
             />
+          )}
+          {breakEvenOptions.length > 1 && (
+            <div className="mt-6">
+              <FuelBreakEvenVerdict
+                options={breakEvenOptions}
+                monthlyDistanceKm={monthlyDistanceValue}
+              />
+            </div>
           )}
         </>
       )}
