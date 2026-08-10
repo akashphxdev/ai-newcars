@@ -6,6 +6,7 @@ import { getCarsBrowse } from "@/features/cars/car.api";
 import type { HomeCar } from "@/features/cars/car.types";
 import type { BodyType } from "@/features/bodyTypes/bodyType.types";
 import { calculatePrincipalFromEmi } from "@/lib/emiMath";
+import AffordabilityVerdict from "./AffordabilityVerdict";
 import { formatRupee, formatLakh } from "@/lib/calculatorFormat";
 import { Label, inputClass, selectClass } from "@/components/calculators/CalculatorFormControls";
 import CarCard from "@/components/cars/CarCard";
@@ -314,9 +315,16 @@ export default function CarAffordabilityCalculatorClient({ bodyTypes }: { bodyTy
                       <dt className="text-muted">{label}</dt>
                       <dd className="font-semibold text-ink">{value}</dd>
                     </div>
-                  ))}
+             ))}
                 </dl>
               </div>
+
+              <AffordabilityVerdict
+                maxCarPrice={result.maxCarPrice}
+                maxLoan={result.maxLoan}
+                monthlyEmi={monthlyEmiValue}
+                tenureYears={tenureYears}
+              />
 
               <SoftLeadCapture
                 calculatorType="affordability"

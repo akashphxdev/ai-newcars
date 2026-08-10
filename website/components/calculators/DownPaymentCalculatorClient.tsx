@@ -10,6 +10,7 @@ import type { CalculatorSeed } from "@/features/calculators/calculatorSeed";
 import { getCarDetail } from "@/features/cars/car.api";
 import type { CarDetailResult } from "@/features/cars/car.types";
 import { calculateEmi, calculatePrincipalFromEmi } from "@/lib/emiMath";
+import DownPaymentVerdict from "./DownPaymentVerdict";
 import { formatRupee, formatLakh } from "@/lib/calculatorFormat";
 import { Label, selectClass, inputClass } from "@/components/calculators/CalculatorFormControls";
 import SoftLeadCapture from "@/components/leads/SoftLeadCapture";
@@ -369,6 +370,15 @@ export default function DownPaymentCalculatorClient({
                   </div>
                 </dl>
               </div>
+
+              <DownPaymentVerdict
+                exShowroomPrice={exShowroomPrice}
+                downPayment={result.downPayment}
+                loanAmount={result.loanAmount}
+                interestRate={interestRate}
+                tenureYears={tenureYears}
+                totalInterest={result.totalInterest}
+              />
 
               <SoftLeadCapture
                 calculatorType="down_payment"

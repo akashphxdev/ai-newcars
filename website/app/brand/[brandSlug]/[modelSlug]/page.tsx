@@ -9,6 +9,7 @@ import ModelDetailTabs from "@/components/common/ModelDetailTabs";
 import ModelHero from "@/components/cars/ModelHero";
 import CarModelColours from "@/components/cars/CarModelColours";
 import VariantsTable from "@/components/cars/VariantsTable";
+import EvRangeCharging from "@/components/cars/EvRangeCharging";
 import Articles from "@/components/home/Articles";
 import BrandComparisonsSection from "@/components/brands/BrandComparisonsSection";
 import ReviewsSection from "@/components/cars/reviews/ReviewsSection";
@@ -183,6 +184,26 @@ export default async function CarModelPage(props: Props) {
               modelSlug={car.slug}
               modelName={car.name}
             />
+          </div>
+        </section>
+      )}
+
+      {variant?.isElectric && variant.electric && (
+        <section id="range-charging" className="scroll-mt-32 border-b border-border bg-page py-14 sm:py-20">
+          <div className="mx-auto max-w-7xl px-4">
+            <div className="mb-8 max-w-2xl">
+              <p className="text-[10.5px] font-black uppercase tracking-[0.16em] text-brand">
+                Range, charging & running cost
+              </p>
+              <h2 className="mt-2 font-head text-3xl font-extrabold text-ink sm:text-4xl">
+                What the {car.name} costs to run
+              </h2>
+              <p className="mt-3 text-[14px] leading-6 text-muted">
+                Claimed range is a test figure. These are the numbers you would actually plan
+                around, against today&apos;s electricity and pump prices.
+              </p>
+            </div>
+            <EvRangeCharging variant={variant} modelName={car.name} />
           </div>
         </section>
       )}
