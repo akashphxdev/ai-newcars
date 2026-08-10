@@ -10,6 +10,7 @@ import ModelHero from "@/components/cars/ModelHero";
 import CarModelColours from "@/components/cars/CarModelColours";
 import VariantsTable from "@/components/cars/VariantsTable";
 import EvRangeCharging from "@/components/cars/EvRangeCharging";
+import SpecificationsSection from "@/components/cars/SpecificationsSection";
 import Articles from "@/components/home/Articles";
 import BrandComparisonsSection from "@/components/brands/BrandComparisonsSection";
 import ReviewsSection from "@/components/cars/reviews/ReviewsSection";
@@ -204,6 +205,26 @@ export default async function CarModelPage(props: Props) {
               </p>
             </div>
             <EvRangeCharging variant={variant} modelName={car.name} />
+          </div>
+        </section>
+      )}
+
+      {variant && (
+        <section id="specifications" className="scroll-mt-32 border-b border-border bg-page py-14 sm:py-20">
+          <div className="mx-auto max-w-7xl px-4">
+            <div className="mb-8 max-w-2xl">
+              <p className="text-[10.5px] font-black uppercase tracking-[0.16em] text-brand">
+                Specifications & dimensions
+              </p>
+              <h2 className="mt-2 font-head text-3xl font-extrabold text-ink sm:text-4xl">
+                {car.name} specifications
+              </h2>
+              <p className="mt-3 text-[14px] leading-6 text-muted">
+                Figures for the {variant.variantName.replace(`${car.name} `, "")} variant. Other
+                trims differ — switch variant above to see theirs.
+              </p>
+            </div>
+            <SpecificationsSection variant={variant} carName={car.name} />
           </div>
         </section>
       )}
