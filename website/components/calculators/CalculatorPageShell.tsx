@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import Link from "next/link";
 import { breadcrumbJsonLd } from "@/lib/seo";
+import ToolsSidebar from "./ToolsSidebar";
 
 type Accent = "brand" | "ev";
 
@@ -13,6 +14,10 @@ interface CalculatorPageShellProps {
   // structured data rather than only drawn on screen.
   path: string;
   children: ReactNode;
+  // Explainer, FAQ and anything else that reads rather than calculates.
+  // Kept separate because the calculator wants the full width and this
+  // does not — it sits beside the tools rail instead.
+  belowFold?: ReactNode;
   accent?: Accent;
 }
 
@@ -23,6 +28,7 @@ export default function CalculatorPageShell({
   breadcrumb,
   path,
   children,
+  belowFold,
   accent = "brand",
 }: CalculatorPageShellProps) {
   const eyebrowColor = accent === "ev" ? "text-ev" : "text-brand";
@@ -44,7 +50,7 @@ export default function CalculatorPageShell({
         dangerouslySetInnerHTML={{ __html: JSON.stringify(crumbs) }}
       />
       <section className="border-b border-border bg-surface">
-        <div className="mx-auto max-w-[1480px] px-4 pb-7 pt-5 sm:px-6 sm:pb-9 lg:px-8 lg:pb-10">
+        <div className="mx-auto max-w-[1240px] px-4 pb-7 pt-5 sm:px-6 sm:pb-9 lg:px-8 lg:pb-10">
           <nav className="mb-7 flex min-w-0 items-center gap-2 overflow-hidden text-[12px] font-medium text-muted" aria-label="Breadcrumb">
             <Link href="/" className="shrink-0 transition-colors hover:text-brand">
               Home
@@ -63,7 +69,18 @@ export default function CalculatorPageShell({
         </div>
       </section>
 
-      <div className="mx-auto max-w-[1480px] px-4 py-6 sm:px-6 sm:py-8 lg:px-8 lg:py-10">{children}</div>
+      <div className="mx-auto max-w-[1240px] px-4 py-6 sm:px-6 sm:py-8 lg:px-8 lg:py-10">
+        {children}
+
+        {belowFold && (
+          <div className="mt-10 flex flex-col gap-8 lg:flex-row lg:items-start">
+            <div className="min-w-0 flex-1 space-y-10">{belowFold}</div>
+            <div className="w-full lg:w-[300px] lg:shrink-0">
+              <ToolsSidebar currentHref={path} />
+            </div>
+          </div>
+        )}
+      </div>
     </main>
   );
 }

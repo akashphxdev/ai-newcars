@@ -22,9 +22,13 @@ export default async function EvChargingCalculatorPage() {
       breadcrumb="EV Charging Time Calculator"
       path="/ev-charging-time-calculator"
       accent="ev"
+      belowFold={
+        <>
+          <EvChargingCalculatorFaq />
+        </>
+      }
     >
       <EvChargingCalculatorClient brands={brands} seed={seed} />
-      <EvChargingCalculatorFaq />
     </CalculatorPageShell>
   );
 }

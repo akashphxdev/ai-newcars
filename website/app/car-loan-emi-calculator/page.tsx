@@ -23,10 +23,14 @@ export default async function EmiCalculatorPage() {
       description="Estimate your monthly EMI, compare the true cost of borrowing, and shape a repayment plan around your budget."
       breadcrumb="Car Loan EMI Calculator"
       path="/car-loan-emi-calculator"
+      belowFold={
+        <>
+          <EmiFormulaExplainer />
+          <EmiCalculatorFaq />
+        </>
+      }
     >
       <EmiCalculatorClient brands={brands} seed={seed} />
-      <EmiFormulaExplainer />
-      <EmiCalculatorFaq />
     </CalculatorPageShell>
   );
 }

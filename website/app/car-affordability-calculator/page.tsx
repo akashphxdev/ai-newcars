@@ -20,10 +20,14 @@ export default async function CarAffordabilityCalculatorPage() {
       description="See the car price your EMI and down payment can support, then browse real models that fit."
       breadcrumb="Car Affordability Calculator"
       path="/car-affordability-calculator"
+      belowFold={
+        <>
+          <CarAffordabilityFormulaExplainer />
+          <CarAffordabilityFaq />
+        </>
+      }
     >
       <CarAffordabilityCalculatorClient bodyTypes={bodyTypes} />
-      <CarAffordabilityFormulaExplainer />
-      <CarAffordabilityFaq />
     </CalculatorPageShell>
   );
 }

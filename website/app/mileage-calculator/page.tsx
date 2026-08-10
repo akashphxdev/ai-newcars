@@ -22,10 +22,14 @@ export default async function MileageCalculatorPage() {
       description="Use your car's mileage and local fuel price to understand daily, monthly, and yearly running costs."
       breadcrumb="Car Mileage Calculator"
       path="/mileage-calculator"
+      belowFold={
+        <>
+          <MileageFormulaExplainer />
+          <MileageCalculatorFaq />
+        </>
+      }
     >
       <MileageCalculatorClient brands={brands} seed={seed} />
-      <MileageFormulaExplainer />
-      <MileageCalculatorFaq />
     </CalculatorPageShell>
   );
 }

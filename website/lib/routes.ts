@@ -57,6 +57,15 @@ export const routes = {
   comparison: (comparisonSlug: string) => `/compare/${comparisonSlug}`,
 
   // ---- Tools --------------------------------------------------------
+  // The calculators had no entries here, so nothing could link to them
+  // without hand-writing the path.
+  emiCalculator: () => "/car-loan-emi-calculator",
+  downPaymentCalculator: () => "/down-payment-calculator",
+  affordabilityCalculator: () => "/car-affordability-calculator",
+  mileageCalculator: () => "/mileage-calculator",
+  evChargingCalculator: () => "/ev-charging-time-calculator",
+  fuelComparisonCalculator: () => "/fuel-comparison-calculator",
+
   stories: () => "/stories",
   profile: () => "/profile",
 } as const;

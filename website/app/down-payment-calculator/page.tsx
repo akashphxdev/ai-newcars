@@ -21,9 +21,13 @@ export default async function DownPaymentCalculatorPage() {
       description="Set a comfortable monthly EMI and see the cash you need before you choose a loan."
       breadcrumb="Car Down Payment Calculator"
       path="/down-payment-calculator"
+      belowFold={
+        <>
+          <DownPaymentCalculatorFaq />
+        </>
+      }
     >
       <DownPaymentCalculatorClient brands={brands} seed={seed} />
-      <DownPaymentCalculatorFaq />
     </CalculatorPageShell>
   );
 }
