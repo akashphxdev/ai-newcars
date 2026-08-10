@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getArticleCategories, getArticlesByCategoryPaginated } from "@/features/articles/article.api";
+import PageSidebar from "@/components/common/PageSidebar";
+import { routes } from "@/lib/routes";
 import CategoryArticlesGrid from "@/components/articles/CategoryArticlesGrid";
 
 const PAGE_SIZE = 8;
@@ -58,7 +60,37 @@ export default async function NewsCategoryPage({ params }: Props) {
           editorial team — reviews, comparisons, and buying advice, updated regularly.
         </p>
 
-        <CategoryArticlesGrid categorySlug={categorySlug} initialArticles={articles} initialPagination={pagination} />
+        <div className="flex flex-col gap-8 lg:flex-row lg:items-start">
+          <div className="min-w-0 flex-1">
+            <CategoryArticlesGrid
+              categorySlug={categorySlug}
+              initialArticles={articles}
+              initialPagination={pagination}
+            />
+          </div>
+          <div className="w-full lg:w-[300px] lg:shrink-0">
+            <PageSidebar
+              adSlotId="news-category"
+              blocks={[
+                {
+                  title: "More from news",
+                  links: categories
+                    .filter((c) => c.slug !== categorySlug)
+                    .slice(0, 6)
+                    .map((c) => ({ href: routes.newsCategory(c.slug), label: c.name })),
+                },
+                {
+                  title: "Work out the cost",
+                  links: [
+                    { href: routes.emiCalculator(), label: "Car loan EMI", note: "What it costs a month" },
+                    { href: routes.mileageCalculator(), label: "Running cost", note: "What every km costs" },
+                    { href: routes.compare(), label: "Compare cars", note: "Two models side by side" },
+                  ],
+                },
+              ]}
+            />
+          </div>
+        </div>
       </div>
     </div>
   );

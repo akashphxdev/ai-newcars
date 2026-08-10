@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import PageSidebar from "@/components/common/PageSidebar";
 import Image from "next/image";
 import Link from "next/link";
 import JsonLd from "@/components/common/JsonLd";
@@ -171,7 +172,38 @@ export default async function FuelPricePage() {
 
       <FuelStateDirectory states={statePrices} />
 
-      <FuelFaq scope={{ place: "India" }} />
+      {/* The rail sits beside the FAQ rather than the price tables — those
+          are wide by nature, and this is where the page stops reporting
+          and starts explaining. */}
+      <div className="mx-auto max-w-7xl px-4 py-10">
+        <div className="flex flex-col gap-8 lg:flex-row lg:items-start">
+          <div className="min-w-0 flex-1">
+            <FuelFaq scope={{ place: "India" }} />
+          </div>
+          <div className="w-full lg:w-[300px] lg:shrink-0">
+            <PageSidebar
+              adSlotId="fuel-price"
+              blocks={[
+                {
+                  title: "What it costs to run",
+                  links: [
+                    { href: routes.mileageCalculator(), label: "Running cost", note: "What every km costs you" },
+                    { href: routes.fuelComparisonCalculator(), label: "Petrol vs diesel vs CNG", note: "Which fuel pays off" },
+                    { href: routes.evChargingCalculator(), label: "EV charging time", note: "How long a charge takes" },
+                  ],
+                },
+                {
+                  title: "Browse cars",
+                  links: [
+                    { href: routes.electricCars(), label: "Electric cars", note: "Skip the pump entirely" },
+                    { href: routes.newCars(), label: "All new cars", note: "Every model on sale" },
+                  ],
+                },
+              ]}
+            />
+          </div>
+        </div>
+      </div>
     </main>
   );
 }

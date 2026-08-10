@@ -12,6 +12,7 @@
 import Link from "next/link";
 import { ChevronIcon } from "@/components/common/icons";
 import { routes } from "@/lib/routes";
+import { SidebarAdSlot } from "@/components/common/PageSidebar";
 
 const TOOLS = [
   { href: routes.emiCalculator(), label: "Car loan EMI", note: "What it costs a month" },
@@ -49,16 +50,8 @@ export default function ToolsSidebar({ currentHref }: { currentHref: string }) {
         </ul>
       </div>
 
-      {/* Reserved rather than filled. No ad provider is configured, and a
-          slot that collapses to nothing would shift the page when one is —
-          so it holds its height and says what it is instead of rendering
-          a fake advertisement. */}
-      <div
-        data-ad-slot="tools-sidebar"
-        className="flex min-h-[250px] items-center justify-center rounded-xl border border-dashed border-border bg-page"
-      >
-        <span className="text-[11px] uppercase tracking-[0.12em] text-subtle">Advertisement</span>
-      </div>
+      <SidebarAdSlot id="tools-sidebar" />
+
     </aside>
   );
 }
