@@ -143,6 +143,13 @@ function MetricGrid({ metrics, dark = false }: { metrics: Metric[]; dark?: boole
           </div>
         );
       })}
+      {/* Unfilled tracks would show the line colour through the gap-px
+          backdrop, so each breakpoint's short row is closed with fillers. */}
+      {([[2, "sm:hidden"], [3, "hidden sm:block lg:hidden"], [4, "hidden lg:block"]] as const).flatMap(([cols, hide]) =>
+        Array.from({ length: (cols - (metrics.length % cols)) % cols }, (_, i) => (
+          <div key={`fill-${cols}-${i}`} className={`${hide} ${dark ? "bg-[#101112]" : "bg-white"}`} />
+        )),
+      )}
     </div>
   );
 }
@@ -159,7 +166,9 @@ export default async function CarVariantPage(props: Props) {
   const variantLabel = variant.variantName.toLowerCase().startsWith(car.name.toLowerCase())
     ? variant.variantName
     : `${car.name} ${variant.variantName}`;
-  const featureGroups = variant.features.filter((group) => group.categoryName.toLowerCase() !== "safety" && group.items.length > 0);
+  const featureGroups = variant.features
+    .map((group) => ({ ...group, items: group.items.filter(isFeaturePresent) }))
+    .filter((group) => group.categoryName.toLowerCase() !== "safety" && group.items.length > 0);
   const gallery = car.images.map((image) => image.imageUrl);
   const primaryImage = gallery[0] ?? car.coverImageUrl;
   const performanceImage = gallery[1] ?? primaryImage;
