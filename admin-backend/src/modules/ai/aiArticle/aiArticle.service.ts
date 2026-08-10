@@ -483,20 +483,35 @@ async function pickCategoryForGeneration(): Promise<{ id: number; name: string }
 
 // Cover images always come from the shared AI image pool, oldest
 // unused first — same "first in, first out" spirit as the frontend's
-// pool listing (sorted createdAt asc). Returns fewer than `count`
-// entries if the pool doesn't have enough yet; the caller must handle
-// a partial (or empty) result rather than assuming it always gets
-// exactly `count`.
+// pool listing (sorted createdAt asc). Brand-tagged images for this
+// brand are claimed first so an article never gets another brand's car
+// on its cover; only once those run out does it fall back to
+// untagged/general-pool images, so generation still proceeds even for a
+// brand with no dedicated images uploaded yet. Returns fewer than
+// `count` entries if the pool doesn't have enough of either — the
+// caller must handle a partial (or empty) result rather than assuming
+// it always gets exactly `count`.
 async function claimPoolImages(
   count: number,
+  brandId: number,
 ): Promise<{ id: number; imageUrl: string }[]> {
-  const images = await prisma.aiImagePool.findMany({
-    where: { featureKey: ARTICLE_FEATURE_KEY, isUsed: false },
+  const brandImages = await prisma.aiImagePool.findMany({
+    where: { featureKey: ARTICLE_FEATURE_KEY, isUsed: false, brandId },
     select: { id: true, imageUrl: true },
     orderBy: { createdAt: 'asc' },
     take: count,
   });
-  return images;
+
+  if (brandImages.length >= count) return brandImages;
+
+  const fallbackImages = await prisma.aiImagePool.findMany({
+    where: { featureKey: ARTICLE_FEATURE_KEY, isUsed: false, brandId: null },
+    select: { id: true, imageUrl: true },
+    orderBy: { createdAt: 'asc' },
+    take: count - brandImages.length,
+  });
+
+  return [...brandImages, ...fallbackImages];
 }
 
 // Trims a brand's LIVE (published) articles down to `keepLatest`, run
@@ -593,7 +608,7 @@ export async function generateArticlesForBrand(
 
   // Not enough pool images to cover this run — cover image is a
   // required field, so there's nothing safe to generate without one.
-  const poolImages = await claimPoolImages(rule.countPerRun);
+  const poolImages = await claimPoolImages(rule.countPerRun, brandId);
   if (poolImages.length === 0) {
     await createAiLog({
       featureKey: ARTICLE_FEATURE_KEY,

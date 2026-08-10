@@ -16,17 +16,20 @@ const IMAGE_POOL_SELECT = {
   isUsed: true,
   usedForId: true,
   usedAt: true,
+  brandId: true,
+  brand: { select: { id: true, name: true } },
   uploadedBy: true,
   uploadedByAdmin: { select: { id: true, name: true } },
   createdAt: true,
 } as const;
 
 export async function listImagePool(query: ImagePoolListQueryParsed) {
-  const { page, limit, featureKey, isUsed } = query;
+  const { page, limit, featureKey, isUsed, brandId } = query;
 
   const where: Prisma.AiImagePoolWhereInput = {
     ...(featureKey ? { featureKey } : {}),
     ...(isUsed !== undefined ? { isUsed } : {}),
+    ...(brandId ? { brandId } : {}),
   };
 
   const [items, total] = await Promise.all([
@@ -56,6 +59,7 @@ export async function createImagePoolEntries(
   files: Express.Multer.File[],
   actorId: number,
   ipAddress?: string | null,
+  brandId?: number,
 ): Promise<AiImagePoolRecord[]> {
   if (files.length === 0) {
     throw ApiError.badRequest('No image file(s) received (expected field name "images")');
@@ -69,6 +73,7 @@ export async function createImagePoolEntries(
           imageUrl: buildPublicPath('ai-pool', file.filename),
           originalFilename: file.originalname,
           uploadedBy: actorId,
+          ...(brandId ? { brandId } : {}),
         },
         select: IMAGE_POOL_SELECT,
       }),

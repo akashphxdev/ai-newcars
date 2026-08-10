@@ -329,7 +329,7 @@ model Brand {
   launchNotifyLeads   LaunchNotifyLead[]
   articleBrands       ArticleBrand[]
   aiArticles          AiArticle[]
-
+  aiImagePoolImages   AiImagePool[]
   @@map("brands")
 }
 
@@ -1517,6 +1517,9 @@ model AiImagePool {
   isUsed           Boolean    @default(false) @map("is_used")
   usedForId        Int?       @map("used_for_id")
   usedAt           DateTime?  @map("used_at")
+  brandId Int?   @map("brand_id")
+  brand   Brand? @relation(fields: [brandId], references: [id])
+
 
   uploadedBy      Int?       @map("uploaded_by")
   uploadedByAdmin AdminUser? @relation("AiImagePoolUploadedBy", fields: [uploadedBy], references: [id])
@@ -1526,7 +1529,7 @@ model AiImagePool {
   aiStoryItemsSourced AiStoryItem[]
   aiArticlesSourced   AiArticle[]
 
-  @@index([featureKey, isUsed])
+  @@index([featureKey, isUsed, brandId])
   @@map("ai_image_pool")
 }
 

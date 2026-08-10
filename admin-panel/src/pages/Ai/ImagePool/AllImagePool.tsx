@@ -6,6 +6,7 @@ import {
   useDeleteImagePoolMutation,
   type AiImagePoolRecord,
 } from "./imagePool.api";
+import { useGetBrandOptionsQuery } from "../../newCars/Brands/brand.api";
 import { extractApiError, getUploadUrl } from "../../../lib/apiClient";
 import { AI_FEATURE_OPTIONS } from "../../../lib/aiLookups";
 import Pagination from "../../../components/common/Pagination";
@@ -40,14 +41,22 @@ function fmtDate(iso: string): string {
   });
 }
 
+// Only the Article Generator pool (featureKey 1) is brand-tagged —
+// Story Generator (featureKey 2) images have no brand concept, same as
+// aiStoryItem.service.ts never touching brandId.
+const BRAND_TAGGED_FEATURE_KEY = 1;
+
 export default function AllImagePool() {
   const [page, setPage] = useState(1);
   const [featureFilter, setFeatureFilter] = useState<number>(1);
   const [tab, setTab] = useState<UsedTab>("all");
+  const [uploadBrandId, setUploadBrandId] = useState<number | "">("");
   const [pendingDelete, setPendingDelete] = useState<AiImagePoolRecord | null>(null);
   const [uploadError, setUploadError] = useState("");
   const [copiedId, setCopiedId] = useState<number | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const { data: brandOptions = [] } = useGetBrandOptionsQuery({ isActive: true });
 
   const handleCopyUrl = (img: AiImagePoolRecord) => {
     const url = getUploadUrl(img.imageUrl);
@@ -77,11 +86,21 @@ export default function AllImagePool() {
   const [uploadImages, { isLoading: uploading }] = useUploadImagePoolMutation();
   const [deleteImage, { isLoading: deleting }] = useDeleteImagePoolMutation();
 
+  const requiresBrand = featureFilter === BRAND_TAGGED_FEATURE_KEY;
+
   const handleFilesSelected = async (fileList: FileList | null) => {
     if (!fileList || fileList.length === 0) return;
+    if (requiresBrand && !uploadBrandId) {
+      setUploadError("Pick a brand before uploading — Article Generator images are matched by brand.");
+      return;
+    }
     setUploadError("");
     try {
-      await uploadImages({ featureKey: featureFilter, files: Array.from(fileList) }).unwrap();
+      await uploadImages({
+        featureKey: featureFilter,
+        brandId: requiresBrand && uploadBrandId ? uploadBrandId : undefined,
+        files: Array.from(fileList),
+      }).unwrap();
       setPage(1);
     } catch (err) {
       setUploadError(extractApiError(err));
@@ -109,7 +128,19 @@ export default function AllImagePool() {
             Images generators auto-pick from, oldest first. Upload one or many at once — delete any, used or not.
           </p>
         </div>
-        <div>
+        <div className="flex items-center gap-2">
+          {requiresBrand && (
+            <select
+              value={uploadBrandId}
+              onChange={(e) => setUploadBrandId(e.target.value ? Number(e.target.value) : "")}
+              className="cursor-pointer text-[12px] text-[#4a4640] bg-[#f7f5f1] border border-[#e8e4dc] rounded-lg px-3 py-2 outline-none"
+            >
+              <option value="">Upload for brand...</option>
+              {brandOptions.map((b) => (
+                <option key={b.id} value={b.id}>{b.name}</option>
+              ))}
+            </select>
+          )}
           <input
             ref={fileInputRef}
             type="file"
@@ -120,7 +151,7 @@ export default function AllImagePool() {
           />
           <button
             onClick={() => fileInputRef.current?.click()}
-            disabled={uploading}
+            disabled={uploading || (requiresBrand && !uploadBrandId)}
             className="cursor-pointer text-[12.5px] font-bold text-white px-4 py-2.5 rounded-xl transition-opacity hover:opacity-90 disabled:opacity-60 flex items-center gap-2"
             style={{ background: ACCENT }}
           >
@@ -229,6 +260,9 @@ export default function AllImagePool() {
                   </svg>
                 </button>
                 <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/60 to-transparent px-1.5 py-1">
+                  {img.brand && (
+                    <p className="text-[9px] font-bold text-white truncate">{img.brand.name}</p>
+                  )}
                   <p className="text-[9px] text-white/90 truncate">{fmtDate(img.createdAt)}</p>
                 </div>
               </div>

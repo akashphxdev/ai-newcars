@@ -14,7 +14,7 @@ export async function getImagePool(req: Request, res: Response) {
 }
 
 export async function uploadImagePool(req: Request, res: Response) {
-  const { featureKey } = uploadImagePoolSchema.parse(req.body);
+  const { featureKey, brandId } = uploadImagePoolSchema.parse(req.body);
   const files = (req.files as Express.Multer.File[] | undefined) ?? [];
 
   if (!req.auth) {
@@ -26,6 +26,7 @@ export async function uploadImagePool(req: Request, res: Response) {
     files,
     req.auth.id,
     getClientIp(req),
+    brandId,
   );
   return sendSuccess(res, created, `${created.length} image(s) uploaded successfully`, 201);
 }

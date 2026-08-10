@@ -7,6 +7,11 @@ export interface AiImagePoolUploaderSummary {
   name: string;
 }
 
+export interface AiImagePoolBrandSummary {
+  id: number;
+  name: string;
+}
+
 export interface AiImagePoolRecord {
   id: number;
   featureKey: AiFeatureCode;
@@ -15,6 +20,8 @@ export interface AiImagePoolRecord {
   isUsed: boolean;
   usedForId: number | null;
   usedAt: Date | null;
+  brandId: number | null;
+  brand: AiImagePoolBrandSummary | null;
   uploadedBy: number | null;
   uploadedByAdmin: AiImagePoolUploaderSummary | null;
   createdAt: Date;

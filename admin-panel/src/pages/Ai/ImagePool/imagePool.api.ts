@@ -6,6 +6,11 @@ export interface AiImagePoolUploaderSummary {
   name: string;
 }
 
+export interface AiImagePoolBrandSummary {
+  id: number;
+  name: string;
+}
+
 export interface AiImagePoolRecord {
   id: number;
   featureKey: number;
@@ -14,6 +19,8 @@ export interface AiImagePoolRecord {
   isUsed: boolean;
   usedForId: number | null;
   usedAt: string | null;
+  brandId: number | null;
+  brand: AiImagePoolBrandSummary | null;
   uploadedBy: number | null;
   uploadedByAdmin: AiImagePoolUploaderSummary | null;
   createdAt: string;
@@ -31,6 +38,7 @@ export interface ListImagePoolParams {
   limit?: number;
   featureKey?: number;
   isUsed?: boolean;
+  brandId?: number;
 }
 
 interface ImagePoolListRawResponse {
@@ -69,10 +77,11 @@ export const imagePoolApi = api.injectEndpoints({
           : [IMAGE_POOL_LIST_TAG],
     }),
 
-    uploadImagePool: builder.mutation<AiImagePoolRecord[], { featureKey: number; files: File[] }>({
-      query: ({ featureKey, files }) => {
+    uploadImagePool: builder.mutation<AiImagePoolRecord[], { featureKey: number; brandId?: number; files: File[] }>({
+      query: ({ featureKey, brandId, files }) => {
         const formData = new FormData();
         formData.append("featureKey", String(featureKey));
+        if (brandId) formData.append("brandId", String(brandId));
         files.forEach((file) => formData.append("images", file));
         return { url: "/ai/image-pool/upload", method: "POST", data: formData };
       },

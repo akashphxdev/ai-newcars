@@ -20,6 +20,15 @@ export interface ConnectionCheckResult {
   message: string;
 }
 
+// Local Ollama needs no auth, but a remote/hosted instance (Ollama
+// Cloud, or a self-hosted server put behind a reverse proxy) commonly
+// gates its API behind a bearer token — same header convention as
+// OpenAI/Anthropic. Sent only when an apiKey is actually configured, so
+// a plain local setup is unaffected.
+function ollamaAuthHeaders(apiKey: string | null): Record<string, string> {
+  return apiKey ? { Authorization: `Bearer ${apiKey}` } : {};
+}
+
 async function callOllama(settings: ProviderCallSettings, prompt: string): Promise<string> {
   if (!settings.baseUrl) {
     throw new Error('Ollama base URL is not configured');
@@ -31,7 +40,7 @@ async function callOllama(settings: ProviderCallSettings, prompt: string): Promi
   try {
     const res = await fetch(`${settings.baseUrl.replace(/\/$/, '')}/api/generate`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', ...ollamaAuthHeaders(settings.apiKey) },
       body: JSON.stringify({
       model: settings.model,
       prompt,
@@ -92,6 +101,7 @@ async function pingOllama(settings: ProviderCallSettings): Promise<ConnectionChe
   try {
     const res = await fetch(`${settings.baseUrl.replace(/\/$/, '')}/api/tags`, {
       method: 'GET',
+      headers: ollamaAuthHeaders(settings.apiKey),
       signal: controller.signal,
     });
 

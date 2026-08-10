@@ -16,10 +16,16 @@ export const imagePoolListQuerySchema = z.object({
     .enum(['true', 'false'])
     .optional()
     .transform((v) => (v === undefined ? undefined : v === 'true')),
+  brandId: z.coerce.number().int().positive().optional(),
 });
 
+// brandId is optional at the schema level — only the Article Generator
+// (featureKey 1) pool is brand-tagged today; Story Generator (featureKey
+// 2) images have no brand concept, same as aiStoryItem.service.ts never
+// touching brandId.
 export const uploadImagePoolSchema = z.object({
   featureKey: featureKeyField,
+  brandId: z.coerce.number().int().positive().optional(),
 });
 
 export const imagePoolIdParamSchema = z.object({

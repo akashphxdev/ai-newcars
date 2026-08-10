@@ -23,12 +23,22 @@ const ACCENT = "#D4300F";
 // AI_PROVIDER_CODES), this just adds UI-only detail per code.
 const PROVIDER_META: Record<
   number,
-  { name: string; desc: string; fields: "local" | "apiKey"; defaultModel: string; icon: React.ReactNode }
+  {
+    name: string;
+    desc: string;
+    // "localWithKey" = Ollama: Base URL is always needed, API Key is
+    // only needed for a remote/hosted instance sitting behind auth
+    // (Ollama Cloud, or a self-hosted server behind a reverse proxy) —
+    // plain local Ollama has no auth, so it's optional.
+    fields: "local" | "apiKey" | "localWithKey";
+    defaultModel: string;
+    icon: React.ReactNode;
+  }
 > = {
   1: {
     name: "Ollama (Local)",
-    desc: "Free, runs on your machine. Good for testing.",
-    fields: "local",
+    desc: "Free, runs on your machine (or a remote/hosted instance).",
+    fields: "localWithKey",
     defaultModel: "llama3",
     icon: (
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7">
@@ -383,6 +393,8 @@ function AISettingsForm({
   const [upsertRule] = useUpsertAutomationRuleMutation();
 
   const providerMeta = PROVIDER_META[provider];
+  const showBaseUrl = providerMeta.fields !== "apiKey";
+  const showApiKey = providerMeta.fields !== "local";
 
   const handleProviderChange = (id: number) => {
     setProvider(id);
@@ -397,8 +409,8 @@ function AISettingsForm({
     try {
       const result = await testConnection({
         provider,
-        baseUrl: providerMeta.fields === "local" ? baseUrl.trim() || undefined : undefined,
-        apiKey: providerMeta.fields === "apiKey" ? apiKey.trim() || undefined : undefined,
+        baseUrl: showBaseUrl ? baseUrl.trim() || undefined : undefined,
+        apiKey: showApiKey ? apiKey.trim() || undefined : undefined,
         model: model.trim(),
       }).unwrap();
       setTestStatus(result.status);
@@ -414,8 +426,8 @@ function AISettingsForm({
     try {
       const result = await upsertSettings({
         provider,
-        baseUrl: providerMeta.fields === "local" ? baseUrl.trim() || undefined : undefined,
-        apiKey: apiKey.trim() || undefined,
+        baseUrl: showBaseUrl ? baseUrl.trim() || undefined : undefined,
+        apiKey: showApiKey ? apiKey.trim() || undefined : undefined,
         model: model.trim(),
       }).unwrap();
 
@@ -512,7 +524,7 @@ function AISettingsForm({
       <div className="bg-white border border-[#e8e4dc] rounded-xl p-5">
         <h2 className="text-[13px] font-bold text-[#1c1a17] mb-3">Connection</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {providerMeta.fields === "local" ? (
+          {showBaseUrl && (
             <div>
               <label className="text-[11px] font-semibold text-[#7a7670] block mb-1.5">Base URL</label>
               <input
@@ -522,9 +534,12 @@ function AISettingsForm({
                 placeholder="http://localhost:11434"
               />
             </div>
-          ) : (
+          )}
+          {showApiKey && (
             <div>
-              <label className="text-[11px] font-semibold text-[#7a7670] block mb-1.5">API Key</label>
+              <label className="text-[11px] font-semibold text-[#7a7670] block mb-1.5">
+                API Key{providerMeta.fields === "localWithKey" ? " (optional — only for a remote/hosted instance)" : ""}
+              </label>
               <input
                 type="password"
                 value={apiKey}
