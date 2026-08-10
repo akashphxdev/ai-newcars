@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { ChevronIcon, CloseIcon } from "@/components/common/icons";
@@ -11,11 +11,17 @@ const FALLBACK_IMG =
   "data:image/svg+xml;charset=UTF-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='800' height='500' viewBox='0 0 800 500'%3E%3Crect width='800' height='500' fill='%23e5e7eb'/%3E%3Ctext x='50%25' y='50%25' text-anchor='middle' dy='.3em' font-family='sans-serif' font-size='20' fill='%239ca3af'%3EImage unavailable%3C/text%3E%3C/svg%3E";
 
 // Gallery for the model detail hero — thumbnail rail + large image with
-// prev/next. Clicking a colour dot filters the main image AND thumbnails
-// down to that colour's tagged photos (CarImage.colorId); the blank dot
-// clears back to the full gallery. The 4th thumbnail slot and the last
-// slide of the main image both become a "View All" link to the full
-// /photos page once there are more photos than fit here.
+// prev/next. The blank dot clears back to the full gallery, and the 4th
+// thumbnail slot and last slide both become a "View All" link once there
+// are more photos than fit here.
+//
+// Colour selection deliberately does not filter by CarImage.colorId.
+// That column is null on all 15,151 rows in the catalogue, so every dot
+// tested as "no photos for this colour", rendered at half opacity, and
+// ignored clicks — the picker had never worked. Each colour carries its
+// own studio render instead (2,400 of 2,405 have one), which is what a
+// visitor asking to see a colour actually wants. The colorId path is kept
+// because it is strictly better when those tags eventually exist.
 export default function CarModelGallery({
   images,
   colors,
@@ -32,14 +38,28 @@ export default function CarModelGallery({
   const [activeColorId, setActiveColorId] = useState<number | null>(null);
   const [index, setIndex] = useState(0);
 
-  const gallery = activeColorId ? images.filter((img) => img.colorId === activeColorId) : images;
-  const current = gallery[index]?.imageUrl ?? fallbackImage ?? FALLBACK_IMG;
+  const activeColor = colors.find((c) => c.id === activeColorId) ?? null;
+
+  const colorHasContent = (color: CarDetailColor) =>
+    Boolean(color.imageUrl) || images.some((img) => img.colorId === color.id);
+
+  const gallery = useMemo(() => {
+    if (activeColor) {
+      const tagged = images.filter((img) => img.colorId === activeColor.id);
+      if (tagged.length) return tagged.map((img) => ({ key: `img-${img.id}`, url: img.imageUrl }));
+      return activeColor.imageUrl
+        ? [{ key: `color-${activeColor.id}`, url: activeColor.imageUrl }]
+        : [];
+    }
+    return images.map((img) => ({ key: `img-${img.id}`, url: img.imageUrl }));
+  }, [activeColor, images]);
+
+  const current = gallery[index]?.url ?? fallbackImage ?? FALLBACK_IMG;
   const isLastSlide = gallery.length > 1 && index === gallery.length - 1;
   const go = (delta: number) => setIndex((i) => (i + delta + gallery.length) % gallery.length);
 
   function selectColor(color: CarDetailColor) {
-    const hasContent = images.some((img) => img.colorId === color.id);
-    if (!hasContent) return;
+    if (!colorHasContent(color)) return;
     setActiveColorId((prev) => (prev === color.id ? null : color.id));
     setIndex(0);
   }
@@ -51,16 +71,16 @@ export default function CarModelGallery({
     <div className="flex h-full min-h-[360px] flex-col-reverse bg-[#eef0f2] sm:min-h-[460px] sm:flex-row sm:items-stretch lg:min-h-[540px]">
       {gallery.length > 1 && (
         <div className="flex gap-2 overflow-x-auto border-t border-white/70 bg-white/85 p-2 sm:w-24 sm:shrink-0 sm:flex-col sm:overflow-y-auto sm:border-r sm:border-t-0 sm:p-3">
-          {thumbs.map((img, i) => (
+          {thumbs.map((slide, i) => (
             <button
-              key={img.id}
+              key={slide.key}
               type="button"
               onClick={() => setIndex(i)}
               className={`relative aspect-4/3 w-16 shrink-0 cursor-pointer overflow-hidden border-2 transition-colors sm:w-full ${
                 i === index ? "border-brand" : "border-transparent hover:border-border"
               }`}
             >
-              <Image src={img.imageUrl} alt={`${alt} thumbnail ${i + 1}`} fill sizes="80px" className="object-cover" />
+              <Image src={slide.url} alt={`${alt} thumbnail ${i + 1}`} fill sizes="80px" className="object-cover" />
             </button>
           ))}
           {showViewAllThumb && (
@@ -111,35 +131,41 @@ export default function CarModelGallery({
         )}
 
         {colors.length > 0 && (
-          <div className="absolute bottom-3 left-3 flex items-center gap-1.5 rounded-md bg-black/60 px-2.5 py-1.5">
-            <span className="mr-0.5 text-[11px] font-semibold text-white">Colours:</span>
+          <div className="absolute inset-x-3 bottom-3 flex max-w-full flex-wrap items-center gap-1.5 rounded-lg bg-black/65 px-3 py-2 backdrop-blur-sm sm:inset-x-auto sm:left-3 sm:max-w-[calc(100%-1.5rem)] sm:flex-nowrap">
+            <span className="mr-0.5 shrink-0 text-[11px] font-semibold text-white">
+              {activeColor ? activeColor.colorName : `${colors.length} colours`}
+            </span>
             <button
               type="button"
               onClick={() => setActiveColorId(null)}
               aria-label="Show all photos"
               title="All"
-              className={`flex size-4 shrink-0 cursor-pointer items-center justify-center rounded-full border bg-white text-ink transition-colors ${
+              className={`flex size-5 shrink-0 cursor-pointer items-center justify-center rounded-full border-2 bg-white text-ink transition-[border-color,transform] hover:scale-110 ${
                 activeColorId === null ? "border-brand" : "border-white/70"
               }`}
             >
               <CloseIcon className="size-2.5" />
             </button>
-            {colors.slice(0, 6).map((c) => {
-              const hasContent = images.some((img) => img.colorId === c.id);
-              return (
-                <button
-                  key={c.id}
-                  type="button"
-                  onClick={() => selectColor(c)}
-                  title={c.colorName}
-                  aria-label={`View ${alt} in ${c.colorName}`}
-                  className={`size-4 rounded-full border transition-colors ${
-                    hasContent ? "cursor-pointer" : "cursor-default opacity-50"
-                  } ${activeColorId === c.id ? "border-brand" : "border-white/70"}`}
-                  style={{ background: buildSwatchBackground(c.shades) }}
-                />
-              );
-            })}
+            <div className="flex min-w-0 items-center gap-1.5 overflow-x-auto scrollbar-none">
+              {colors.map((c) => {
+                const hasContent = colorHasContent(c);
+                const selected = activeColorId === c.id;
+                return (
+                  <button
+                    key={c.id}
+                    type="button"
+                    onClick={() => selectColor(c)}
+                    title={c.colorName}
+                    aria-label={`View ${alt} in ${c.colorName}`}
+                    aria-pressed={selected}
+                    className={`size-5 shrink-0 rounded-full border-2 transition-[border-color,transform] ${
+                      hasContent ? "cursor-pointer hover:scale-110" : "cursor-default opacity-40"
+                    } ${selected ? "scale-110 border-brand" : "border-white/70"}`}
+                    style={{ background: buildSwatchBackground(c.shades) }}
+                  />
+                );
+              })}
+            </div>
           </div>
         )}
       </div>
