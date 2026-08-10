@@ -46,15 +46,21 @@ export default function CarModelGallery({
   const gallery = useMemo(() => {
     if (activeColor) {
       const tagged = images.filter((img) => img.colorId === activeColor.id);
-      if (tagged.length) return tagged.map((img) => ({ key: `img-${img.id}`, url: img.imageUrl }));
+      if (tagged.length)
+        return tagged.map((img) => ({ key: `img-${img.id}`, url: img.imageUrl, isRender: false }));
       return activeColor.imageUrl
-        ? [{ key: `color-${activeColor.id}`, url: activeColor.imageUrl }]
+        ? [{ key: `color-${activeColor.id}`, url: activeColor.imageUrl, isRender: true }]
         : [];
     }
-    return images.map((img) => ({ key: `img-${img.id}`, url: img.imageUrl }));
+    return images.map((img) => ({ key: `img-${img.id}`, url: img.imageUrl, isRender: false }));
   }, [activeColor, images]);
 
   const current = gallery[index]?.url ?? fallbackImage ?? FALLBACK_IMG;
+  // Colour renders are only 360x240, against 930x620 for the photographs.
+  // Stretched to fill the same frame they blur visibly, so they are shown
+  // contained on the studio white they were shot on — displayed nearer
+  // their real size, which reads as deliberate rather than soft.
+  const currentIsRender = gallery[index]?.isRender ?? false;
   const isLastSlide = gallery.length > 1 && index === gallery.length - 1;
   const go = (delta: number) => setIndex((i) => (i + delta + gallery.length) % gallery.length);
 
@@ -95,7 +101,14 @@ export default function CarModelGallery({
       )}
 
       <div className="relative min-h-[300px] w-full flex-1 overflow-hidden bg-[#eef0f2] sm:min-h-0">
-        <Image src={current} alt={alt} fill priority sizes="(min-width: 1024px) 760px, 100vw" className="object-cover" />
+        <Image
+          src={current}
+          alt={alt}
+          fill
+          priority
+          sizes="(min-width: 1024px) 760px, 100vw"
+          className={currentIsRender ? "bg-white object-contain p-6 sm:p-10" : "object-cover"}
+        />
 
         {gallery.length > 1 && (
           <>
