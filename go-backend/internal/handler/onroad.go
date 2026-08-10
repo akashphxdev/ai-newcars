@@ -76,12 +76,7 @@ func (h *Handler) OnRoadPrice(w http.ResponseWriter, r *http.Request) {
 		engineCc = decimal.NewFromInt32(*v.CubicCapacity)
 	}
 
-	rate, err := h.Q.RoadTaxRateFor(r.Context(), store.RoadTaxRateForParams{
-		Slug:     stateSlug,
-		FuelType: &fuel,
-		Price:    v.Price,
-		EngineCc: engineCc,
-	})
+	rate, taxedAs, err := h.rateForFuel(r, stateSlug, fuel, v.Price, engineCc)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			httpx.Fail(w, r, httpx.NotFound("No road tax rate on file for this state"))
@@ -113,9 +108,12 @@ func (h *Handler) OnRoadPrice(w http.ResponseWriter, r *http.Request) {
 		"fuelType":   fuel,
 		"exShowroom": v.Price.Round(0).String(),
 		"roadTax": map[string]any{
-			"amount":        roadTax.String(),
-			"ratePct":       rate.RatePct.String(),
-			"basis":         rate.Basis,
+			"amount":  roadTax.String(),
+			"ratePct": rate.RatePct.String(),
+			"basis":   rate.Basis,
+			// Which fuel's slab this came from. Differs from fuelType only
+			// where a state writes no CNG slab and the petrol one applies.
+			"taxedAs":       taxedAs,
 			"effectiveFrom": day(rate.EffectiveFrom),
 			"sourceUrl":     rate.SourceUrl,
 			// The rates come from published secondary compilations, not
@@ -171,12 +169,7 @@ func (h *Handler) priceVariant(
 		engineCc = decimal.NewFromInt32(*v.CubicCapacity)
 	}
 
-	rate, err := h.Q.RoadTaxRateFor(r.Context(), store.RoadTaxRateForParams{
-		Slug:     stateSlug,
-		FuelType: &fuel,
-		Price:    v.Price,
-		EngineCc: engineCc,
-	})
+	rate, taxedAs, err := h.rateForFuel(r, stateSlug, fuel, v.Price, engineCc)
 	if err != nil {
 		return nil, false
 	}
@@ -200,6 +193,7 @@ func (h *Handler) priceVariant(
 			"amount":        roadTax.String(),
 			"ratePct":       rate.RatePct.String(),
 			"basis":         rate.Basis,
+			"taxedAs":       taxedAs,
 			"effectiveFrom": day(rate.EffectiveFrom),
 			"sourceUrl":     rate.SourceUrl,
 			"verified":      rate.Verified,
@@ -271,4 +265,35 @@ func (h *Handler) OnRoadPrices(w http.ResponseWriter, r *http.Request) {
 	}
 
 	httpx.Success(w, map[string]any{"prices": out}, "On-road prices calculated")
+}
+
+// rateForFuel finds the slab for a fuel, falling back to petrol for CNG.
+//
+// Five states — Delhi, Maharashtra, Rajasthan and the two UTs — write
+// their slabs per fuel and none of them names CNG, so a factory CNG car
+// matched nothing and the variant table simply said "not available"
+// against a real price. CNG cars are petrol cars with a second tank, and
+// those states tax them on the petrol slab. The response says which fuel
+// the rate came from rather than quietly presenting it as CNG's own.
+func (h *Handler) rateForFuel(
+	r *http.Request, stateSlug, fuel string, price, engineCc decimal.Decimal,
+) (store.RoadTaxRateForRow, string, error) {
+	rate, err := h.Q.RoadTaxRateFor(r.Context(), store.RoadTaxRateForParams{
+		Slug: stateSlug, FuelType: &fuel, Price: price, EngineCc: engineCc,
+	})
+	if err == nil {
+		return rate, fuel, nil
+	}
+	if !errors.Is(err, pgx.ErrNoRows) || fuel != "cng" {
+		return rate, fuel, err
+	}
+
+	petrol := "petrol"
+	rate, err = h.Q.RoadTaxRateFor(r.Context(), store.RoadTaxRateForParams{
+		Slug: stateSlug, FuelType: &petrol, Price: price, EngineCc: engineCc,
+	})
+	if err != nil {
+		return rate, fuel, err
+	}
+	return rate, petrol, nil
 }
