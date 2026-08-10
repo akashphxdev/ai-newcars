@@ -15,6 +15,18 @@ import (
 // The metros every fuel page leads with, in the order they are shown.
 var metroSlugs = []string{"new-delhi", "mumbai", "chennai", "kolkata"}
 
+// The cities the landing page tabulates, keyed "state/city" because a
+// city slug alone is ambiguous. Editorial, and deliberately server-side
+// so the list cannot drift from the slugs the database actually holds.
+var popularCityKeys = []string{
+	"delhi/new-delhi", "maharashtra/mumbai", "karnataka/bengaluru",
+	"tamil-nadu/chennai", "west-bengal/kolkata", "telangana/hyderabad",
+	"maharashtra/pune", "gujarat/ahmedabad", "rajasthan/jaipur",
+	"uttar-pradesh/lucknow", "chandigarh/chandigarh", "madhya-pradesh/bhopal",
+	"bihar/patna", "kerala/ernakulam", "assam/guwahati", "odisha/bhubaneswar",
+	"haryana/gurugram", "punjab/ludhiana",
+}
+
 var fuelNames = map[int16]string{1: "petrol", 2: "diesel", 3: "cng"}
 
 type fuelPoint struct {
@@ -52,7 +64,8 @@ func (h *Handler) FuelStateDetail(w http.ResponseWriter, r *http.Request) {
 	for _, c := range rows {
 		cities = append(cities, map[string]any{
 			"cityId": c.CityID, "cityName": c.CityName, "citySlug": c.CitySlug,
-			"price": decStrReq(c.Price), "change": decStrReq(c.PriceChange),
+			"isTopCity": c.IsTopCity,
+			"price":     decStrReq(c.Price), "change": decStrReq(c.PriceChange),
 			"updatedOn": day(c.ApplicableOn),
 		})
 	}
@@ -195,7 +208,8 @@ func (h *Handler) FuelPricesByState(w http.ResponseWriter, r *http.Request) {
 	for _, c := range rows {
 		out = append(out, map[string]any{
 			"cityId": c.CityID, "cityName": c.CityName, "citySlug": c.CitySlug,
-			"price": decStrReq(c.Price), "change": decStrReq(c.PriceChange),
+			"isTopCity": c.IsTopCity,
+			"price":     decStrReq(c.Price), "change": decStrReq(c.PriceChange),
 			"updatedOn": day(c.ApplicableOn),
 		})
 	}
@@ -321,4 +335,75 @@ func (h *Handler) FuelCityContext(w http.ResponseWriter, r *http.Request) {
 	}
 
 	httpx.Success(w, out, "City context fetched successfully")
+}
+
+// FuelStatePrices is every state's average rate for all three fuels — the
+// at-a-glance table the landing page leads its directory with.
+func (h *Handler) FuelStatePrices(w http.ResponseWriter, r *http.Request) {
+	rows, err := h.Q.FuelStatePriceMatrix(r.Context())
+	if err != nil {
+		httpx.Fail(w, r, err)
+		return
+	}
+
+	byState := map[int32]map[string]any{}
+	order := make([]int32, 0, 40)
+	for _, row := range rows {
+		st, ok := byState[row.ID]
+		if !ok {
+			st = map[string]any{
+				"id": row.ID, "name": row.Name, "slug": row.Slug,
+				"cityCount": row.CityCount, "prices": map[string]string{},
+			}
+			byState[row.ID] = st
+			order = append(order, row.ID)
+		}
+		if name, ok := fuelNames[row.FuelType]; ok {
+			st["prices"].(map[string]string)[name] = decStrReq(row.AvgPrice)
+		}
+	}
+
+	out := make([]map[string]any, 0, len(order))
+	for _, id := range order {
+		out = append(out, byState[id])
+	}
+	httpx.Success(w, out, "State fuel prices fetched successfully")
+}
+
+// FuelPopularCities is the curated city table on the landing page.
+func (h *Handler) FuelPopularCities(w http.ResponseWriter, r *http.Request) {
+	rows, err := h.Q.FuelPricesForCities(r.Context(), popularCityKeys)
+	if err != nil {
+		httpx.Fail(w, r, err)
+		return
+	}
+
+	byKey := map[string]map[string]any{}
+	for _, p := range rows {
+		key := p.StateSlug + "/" + p.CitySlug
+		c, ok := byKey[key]
+		if !ok {
+			c = map[string]any{
+				"cityId": p.CityID, "cityName": p.CityName, "citySlug": p.CitySlug,
+				"stateName": p.StateName, "stateSlug": p.StateSlug,
+				"prices": map[string]fuelPoint{},
+			}
+			byKey[key] = c
+		}
+		if name, ok := fuelNames[p.FuelType]; ok {
+			c["prices"].(map[string]fuelPoint)[name] = fuelPoint{
+				Price: decStrReq(p.Price), Change: decStrReq(p.PriceChange), UpdatedOn: day(p.ApplicableOn),
+			}
+		}
+	}
+
+	// Curated order, not the database's, and silently skipping any city
+	// the feed has not covered yet.
+	out := make([]map[string]any, 0, len(popularCityKeys))
+	for _, key := range popularCityKeys {
+		if c, ok := byKey[key]; ok {
+			out = append(out, c)
+		}
+	}
+	httpx.Success(w, out, "Popular city fuel prices fetched successfully")
 }

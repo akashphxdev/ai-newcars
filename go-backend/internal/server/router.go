@@ -79,6 +79,11 @@ func New(h *handler.Handler, c *cache.Cache, cfg *config.Config) http.Handler {
 			r.Get("/browse", h.BrowseCars)
 			r.Get("/lookup/models", h.LookupModels)
 			r.Get("/lookup/variants", h.LookupVariants)
+			// Lives under /cars because it answers "what does this variant
+			// cost in this state" -- and because nginx path-splits the
+			// public API, so a new top-level prefix would need a config
+			// change to reach Go at all.
+			r.Get("/on-road-price", h.OnRoadPrice)
 			// Registered after the literal paths above so "lookup" and
 			// "browse" are never captured as a brand slug.
 			r.Get("/{brandSlug}/{modelSlug}", h.CarDetail)
@@ -116,6 +121,8 @@ func New(h *handler.Handler, c *cache.Cache, cfg *config.Config) http.Handler {
 			r.Get("/metros", h.FuelMetros)
 			r.Get("/states", h.FuelStates)
 			r.Get("/cities", h.FuelCityIndex)
+			r.Get("/state-prices", h.FuelStatePrices)
+			r.Get("/popular", h.FuelPopularCities)
 			r.Get("/states/{stateID}/cities", h.FuelPricesByState)
 			// City slugs repeat across states (two Aurangabads, two
 			// Hamirpurs), so every city path carries its state.

@@ -261,6 +261,63 @@ func (q *Queries) FuelPriceHistory(ctx context.Context, arg FuelPriceHistoryPara
 	return items, nil
 }
 
+const fuelPricesForCities = `-- name: FuelPricesForCities :many
+SELECT DISTINCT ON (c.id, f.fuel_type)
+       c.id AS city_id, c.name AS city_name, c.slug AS city_slug,
+       s.name AS state_name, s.slug AS state_slug,
+       f.fuel_type, f.price, f.price_change, f.applicable_on
+FROM unnest($1::text[]) AS want(key)
+JOIN states s ON s.slug = split_part(want.key, '/', 1)
+JOIN cities c ON c.state_id = s.id AND c.slug = split_part(want.key, '/', 2)
+JOIN fuel_prices f ON f.city_id = c.id
+ORDER BY c.id, f.fuel_type, f.applicable_on DESC
+`
+
+type FuelPricesForCitiesRow struct {
+	CityID       int32           `json:"city_id"`
+	CityName     string          `json:"city_name"`
+	CitySlug     string          `json:"city_slug"`
+	StateName    string          `json:"state_name"`
+	StateSlug    string          `json:"state_slug"`
+	FuelType     int16           `json:"fuel_type"`
+	Price        decimal.Decimal `json:"price"`
+	PriceChange  decimal.Decimal `json:"price_change"`
+	ApplicableOn time.Time       `json:"applicable_on"`
+}
+
+// Latest prices for an explicit list of cities, each keyed "state/city".
+// Paired rather than a flat slug list because city slugs repeat across
+// states, and one key per row because sqlc cannot type two-array unnest.
+func (q *Queries) FuelPricesForCities(ctx context.Context, keys []string) ([]FuelPricesForCitiesRow, error) {
+	rows, err := q.db.Query(ctx, fuelPricesForCities, keys)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []FuelPricesForCitiesRow{}
+	for rows.Next() {
+		var i FuelPricesForCitiesRow
+		if err := rows.Scan(
+			&i.CityID,
+			&i.CityName,
+			&i.CitySlug,
+			&i.StateName,
+			&i.StateSlug,
+			&i.FuelType,
+			&i.Price,
+			&i.PriceChange,
+			&i.ApplicableOn,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const fuelStateBySlug = `-- name: FuelStateBySlug :one
 SELECT s.id, s.name, s.slug, count(DISTINCT f.city_id) AS city_count
 FROM states s
@@ -287,6 +344,66 @@ func (q *Queries) FuelStateBySlug(ctx context.Context, slug string) (FuelStateBy
 		&i.CityCount,
 	)
 	return i, err
+}
+
+const fuelStatePriceMatrix = `-- name: FuelStatePriceMatrix :many
+WITH latest AS (
+    SELECT DISTINCT ON (f.city_id, f.fuel_type)
+           f.city_id, f.fuel_type, f.price, c.state_id
+    FROM fuel_prices f
+    JOIN cities c ON c.id = f.city_id
+    WHERE f.applicable_on >= CURRENT_DATE - 7
+    ORDER BY f.city_id, f.fuel_type, f.applicable_on DESC
+)
+SELECT s.id, s.name, s.slug, l.fuel_type,
+       round(avg(l.price), 2)::numeric AS avg_price,
+       -- Distinct cities in the state, not cities holding this one fuel:
+       -- CNG coverage is partial, so a per-fuel count understates it.
+       (SELECT count(DISTINCT l2.city_id)
+        FROM latest l2 WHERE l2.state_id = l.state_id)::int AS city_count
+FROM latest l
+JOIN states s ON s.id = l.state_id
+GROUP BY s.id, s.name, s.slug, l.fuel_type, l.state_id
+ORDER BY s.name
+`
+
+type FuelStatePriceMatrixRow struct {
+	ID        int32           `json:"id"`
+	Name      string          `json:"name"`
+	Slug      string          `json:"slug"`
+	FuelType  int16           `json:"fuel_type"`
+	AvgPrice  decimal.Decimal `json:"avg_price"`
+	CityCount int32           `json:"city_count"`
+}
+
+// One row per state per fuel: the average of every city's latest price.
+// An average, not a capital-city figure, because the capital is not the
+// state and we would be presenting one city's rate as all of it.
+func (q *Queries) FuelStatePriceMatrix(ctx context.Context) ([]FuelStatePriceMatrixRow, error) {
+	rows, err := q.db.Query(ctx, fuelStatePriceMatrix)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []FuelStatePriceMatrixRow{}
+	for rows.Next() {
+		var i FuelStatePriceMatrixRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.Name,
+			&i.Slug,
+			&i.FuelType,
+			&i.AvgPrice,
+			&i.CityCount,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
 }
 
 const fuelStates = `-- name: FuelStates :many
@@ -334,6 +451,7 @@ func (q *Queries) FuelStates(ctx context.Context) ([]FuelStatesRow, error) {
 const latestFuelPricesByState = `-- name: LatestFuelPricesByState :many
 SELECT DISTINCT ON (c.id)
        c.id AS city_id, c.name AS city_name, c.slug AS city_slug,
+       c.is_top_city,
        f.price, f.price_change, f.applicable_on
 FROM fuel_prices f
 JOIN cities c ON c.id = f.city_id
@@ -350,6 +468,7 @@ type LatestFuelPricesByStateRow struct {
 	CityID       int32           `json:"city_id"`
 	CityName     string          `json:"city_name"`
 	CitySlug     string          `json:"city_slug"`
+	IsTopCity    bool            `json:"is_top_city"`
 	Price        decimal.Decimal `json:"price"`
 	PriceChange  decimal.Decimal `json:"price_change"`
 	ApplicableOn time.Time       `json:"applicable_on"`
@@ -369,6 +488,7 @@ func (q *Queries) LatestFuelPricesByState(ctx context.Context, arg LatestFuelPri
 			&i.CityID,
 			&i.CityName,
 			&i.CitySlug,
+			&i.IsTopCity,
 			&i.Price,
 			&i.PriceChange,
 			&i.ApplicableOn,

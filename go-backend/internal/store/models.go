@@ -801,6 +801,32 @@ type ReviewReply struct {
 	CreatedAt time.Time `json:"created_at"`
 }
 
+type RoadTaxFixedCharge struct {
+	ID            int32           `json:"id"`
+	StateID       *int32          `json:"state_id"`
+	Registration  decimal.Decimal `json:"registration"`
+	Hsrp          decimal.Decimal `json:"hsrp"`
+	Fastag        decimal.Decimal `json:"fastag"`
+	Hypothecation decimal.Decimal `json:"hypothecation"`
+	EffectiveFrom time.Time       `json:"effective_from"`
+	SourceUrl     *string         `json:"source_url"`
+}
+
+type RoadTaxRate struct {
+	ID            int32               `json:"id"`
+	StateID       int32               `json:"state_id"`
+	FuelType      *string             `json:"fuel_type"`
+	Basis         string              `json:"basis"`
+	SlabMin       decimal.Decimal     `json:"slab_min"`
+	SlabMax       decimal.NullDecimal `json:"slab_max"`
+	RatePct       decimal.Decimal     `json:"rate_pct"`
+	MinAmount     decimal.NullDecimal `json:"min_amount"`
+	EffectiveFrom time.Time           `json:"effective_from"`
+	SourceUrl     *string             `json:"source_url"`
+	Verified      bool                `json:"verified"`
+	CreatedAt     pgtype.Timestamptz  `json:"created_at"`
+}
+
 type Role struct {
 	ID           int32     `json:"id"`
 	RoleName     string    `json:"role_name"`

@@ -5929,3 +5929,33 @@ CREATE INDEX fuel_prices_latest_idx ON public.fuel_prices USING btree (city_id, 
 ALTER TABLE ONLY public.fuel_prices
     ADD CONSTRAINT fuel_prices_city_id_fkey FOREIGN KEY (city_id) REFERENCES public.cities(id);
 \unrestrict lXmU4GEt7mx7LvAbBjpC06bEConofDmMhzUEb90Fk7S0vbi8xthvXgstiqx5dbn
+
+CREATE TABLE public.road_tax_rates (
+    id integer NOT NULL,
+    state_id integer NOT NULL,
+    fuel_type text,
+    basis text NOT NULL,
+    slab_min numeric(12,2) DEFAULT 0 NOT NULL,
+    slab_max numeric(12,2),
+    rate_pct numeric(5,2) NOT NULL,
+    min_amount numeric(12,2),
+    effective_from date NOT NULL,
+    source_url text,
+    verified boolean DEFAULT false NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL
+);
+ALTER TABLE public.road_tax_rates OWNER TO postgres;
+ALTER TABLE ONLY public.road_tax_rates ADD CONSTRAINT road_tax_rates_pkey PRIMARY KEY (id);
+
+CREATE TABLE public.road_tax_fixed_charges (
+    id integer NOT NULL,
+    state_id integer,
+    registration numeric(10,2) DEFAULT 600 NOT NULL,
+    hsrp numeric(10,2) DEFAULT 400 NOT NULL,
+    fastag numeric(10,2) DEFAULT 500 NOT NULL,
+    hypothecation numeric(10,2) DEFAULT 1500 NOT NULL,
+    effective_from date NOT NULL,
+    source_url text
+);
+ALTER TABLE public.road_tax_fixed_charges OWNER TO postgres;
+ALTER TABLE ONLY public.road_tax_fixed_charges ADD CONSTRAINT road_tax_fixed_charges_pkey PRIMARY KEY (id);

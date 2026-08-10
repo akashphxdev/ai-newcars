@@ -18,6 +18,7 @@ LIMIT $3;
 -- One row per city in a state for a single fuel, newest first.
 SELECT DISTINCT ON (c.id)
        c.id AS city_id, c.name AS city_name, c.slug AS city_slug,
+       c.is_top_city,
        f.price, f.price_change, f.applicable_on
 FROM fuel_prices f
 JOIN cities c ON c.id = f.city_id
@@ -110,3 +111,40 @@ SELECT fuel_type, min(price)::numeric AS low, max(price)::numeric AS high
 FROM fuel_prices
 WHERE city_id = $1 AND applicable_on >= CURRENT_DATE - 30
 GROUP BY fuel_type;
+
+-- name: FuelStatePriceMatrix :many
+-- One row per state per fuel: the average of every city's latest price.
+-- An average, not a capital-city figure, because the capital is not the
+-- state and we would be presenting one city's rate as all of it.
+WITH latest AS (
+    SELECT DISTINCT ON (f.city_id, f.fuel_type)
+           f.city_id, f.fuel_type, f.price, c.state_id
+    FROM fuel_prices f
+    JOIN cities c ON c.id = f.city_id
+    WHERE f.applicable_on >= CURRENT_DATE - 7
+    ORDER BY f.city_id, f.fuel_type, f.applicable_on DESC
+)
+SELECT s.id, s.name, s.slug, l.fuel_type,
+       round(avg(l.price), 2)::numeric AS avg_price,
+       -- Distinct cities in the state, not cities holding this one fuel:
+       -- CNG coverage is partial, so a per-fuel count understates it.
+       (SELECT count(DISTINCT l2.city_id)
+        FROM latest l2 WHERE l2.state_id = l.state_id)::int AS city_count
+FROM latest l
+JOIN states s ON s.id = l.state_id
+GROUP BY s.id, s.name, s.slug, l.fuel_type, l.state_id
+ORDER BY s.name;
+
+-- name: FuelPricesForCities :many
+-- Latest prices for an explicit list of cities, each keyed "state/city".
+-- Paired rather than a flat slug list because city slugs repeat across
+-- states, and one key per row because sqlc cannot type two-array unnest.
+SELECT DISTINCT ON (c.id, f.fuel_type)
+       c.id AS city_id, c.name AS city_name, c.slug AS city_slug,
+       s.name AS state_name, s.slug AS state_slug,
+       f.fuel_type, f.price, f.price_change, f.applicable_on
+FROM unnest(@keys::text[]) AS want(key)
+JOIN states s ON s.slug = split_part(want.key, '/', 1)
+JOIN cities c ON c.state_id = s.id AND c.slug = split_part(want.key, '/', 2)
+JOIN fuel_prices f ON f.city_id = c.id
+ORDER BY c.id, f.fuel_type, f.applicable_on DESC;
