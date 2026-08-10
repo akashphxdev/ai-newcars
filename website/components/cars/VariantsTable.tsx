@@ -156,7 +156,7 @@ export default function VariantsTable({
 
       <div className="overflow-hidden rounded-2xl border border-border bg-surface">
         <div className="overflow-x-auto">
-          <table className="w-full min-w-[720px] border-collapse text-left">
+          <table className="w-full min-w-[860px] border-collapse text-left">
             <thead>
               <tr className="border-b border-border bg-page text-[10.5px] uppercase tracking-[0.08em] text-muted">
                 <Th icon={<StarIcon className="size-3.5" />}>Variant</Th>
@@ -166,6 +166,7 @@ export default function VariantsTable({
                 <Th icon={isElectric ? <GaugeIcon className="size-3.5" /> : <FuelIcon className="size-3.5" />}>
                   {isElectric ? "Claimed range" : "Mileage"}
                 </Th>
+                <Th icon={<StarIcon className="size-3.5" />}>Key addition</Th>
                 <th className="px-4 py-3 text-right font-bold">Ex-showroom</th>
                 <th className="px-4 py-3 text-right font-bold">
                   {city ? `On-road in ${city.name}` : "On-road"}
@@ -222,6 +223,17 @@ export default function VariantsTable({
                             ? `${v.claimedFe} kmpl`
                             : "—"}
                       </td>
+                      <td className="max-w-[220px] px-4 py-3.5 text-[12px] leading-relaxed text-muted">
+                        {v.keyAdditions?.length ? (
+                          <ul className="space-y-0.5">
+                            {v.keyAdditions.map((a) => (
+                              <li key={a}>{a}</li>
+                            ))}
+                          </ul>
+                        ) : (
+                          <span className="text-subtle">—</span>
+                        )}
+                      </td>
                       <td className="px-4 py-3.5 text-right text-[13px] font-semibold text-ink tabular-nums">
                         {formatLakh(Number(v.price))}
                       </td>
@@ -257,7 +269,7 @@ export default function VariantsTable({
 
                     {isOpen && price && (
                       <tr className="border-b border-border-soft bg-page">
-                        <td colSpan={6} className="px-4 py-4">
+                        <td colSpan={7} className="px-4 py-4">
                           <div className="flex flex-wrap items-start gap-x-10 gap-y-3">
                             {[
                               ["Ex-showroom", price.exShowroom],
