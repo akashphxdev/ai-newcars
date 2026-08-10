@@ -167,15 +167,33 @@ export default function CarPhotosViewer({
 
       <div className="relative min-h-0 flex-1 px-4">
         {displayImage ? (
-          <Image
-            key={fallbackImage ? `color-${activeColor?.id}` : current?.id}
-            src={displayImage}
-            alt={`${carLabel}${displayCaption ? ` ${displayCaption}` : ""}`}
-            fill
-            priority
-            sizes="100vw"
-            className="object-contain"
-          />
+          // The colour swatch renders are 360x240, against 930x620 for the
+          // photographs. Stretched across a fullscreen viewer they read as
+          // broken, so they are held near their real size and captioned as
+          // what they are.
+          <div
+            className={
+              fallbackImage
+                ? "relative mx-auto h-full w-full max-w-[46rem]"
+                : "relative h-full w-full"
+            }
+          >
+            <Image
+              key={fallbackImage ? `color-${activeColor?.id}` : current?.id}
+              src={displayImage}
+              alt={`${carLabel}${displayCaption ? ` ${displayCaption}` : ""}`}
+              fill
+              priority
+              sizes={fallbackImage ? "736px" : "100vw"}
+              className="object-contain"
+            />
+            {fallbackImage && (
+              <p className="absolute inset-x-0 bottom-2 text-center text-[11px] text-white/50">
+                Only the colour swatch is on file for this shade — the gallery photos are not
+                tagged by colour.
+              </p>
+            )}
+          </div>
         ) : (
           <div className="flex h-full items-center justify-center text-white/60">
             No {activeAngle !== "all" ? ANGLE_LABELS[activeAngle] : ""} photos in {activeColor?.colorName} yet.
