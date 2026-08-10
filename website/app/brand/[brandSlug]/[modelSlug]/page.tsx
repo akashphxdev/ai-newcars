@@ -7,7 +7,6 @@ import { getModelCrossPairs } from "@/features/compare/compare.api";
 import { formatPriceRange, formatSinglePrice, slugify, featureLabel, carTitle } from "@/lib/format";
 import ModelDetailTabs from "@/components/common/ModelDetailTabs";
 import ModelHero from "@/components/cars/ModelHero";
-import OnRoadPriceCard from "@/components/cars/OnRoadPriceCard";
 import CarModelColours from "@/components/cars/CarModelColours";
 import VariantsList from "@/components/cars/VariantsList";
 import Articles from "@/components/home/Articles";
@@ -176,24 +175,19 @@ export default async function CarModelPage(props: Props) {
               </div>
             </div>
 
-            {/* Ex-showroom is not what anyone pays, so the itemised
-                on-road figure sits beside the trims rather than being
-                left for the visitor to work out. */}
-            <div className="mt-8 grid gap-6 lg:grid-cols-[minmax(0,1fr)_320px] lg:items-start">
-              <VariantsList
-                brandSlug={car.brand.slug}
-                modelSlug={car.slug}
-                carName={car.name}
-                brandName={car.brand.name}
-                imageUrl={car.coverImageUrl}
-                variantOptions={car.variantOptions}
-                variantCount={car.variantCount}
-                selectedVariantId={undefined}
-              />
-              <div className="lg:sticky lg:top-28">
-                <OnRoadPriceCard variantId={variant?.id ?? null} />
-              </div>
-            </div>
+            {/* The on-road figure lives in the hero's purchase rail, which
+                owns the variant selector that drives it. Repeating it here
+                showed the same number twice for the same variant. */}
+            <VariantsList
+              brandSlug={car.brand.slug}
+              modelSlug={car.slug}
+              carName={car.name}
+              brandName={car.brand.name}
+              imageUrl={car.coverImageUrl}
+              variantOptions={car.variantOptions}
+              variantCount={car.variantCount}
+              selectedVariantId={undefined}
+            />
           </div>
         </section>
       )}

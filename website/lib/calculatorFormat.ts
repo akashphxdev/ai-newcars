@@ -12,7 +12,9 @@
 const PAISE_MATTER_BELOW = 100;
 
 export function formatRupee(n: number): string {
-  const decimals = Math.abs(n) < PAISE_MATTER_BELOW ? 2 : 0;
+  // An exact zero is a whole number in any context — "₹0.00" for an EV's
+  // waived road tax reads as a rounding artefact rather than an exemption.
+  const decimals = n !== 0 && Math.abs(n) < PAISE_MATTER_BELOW ? 2 : 0;
   return `₹${n.toLocaleString("en-IN", {
     minimumFractionDigits: decimals,
     maximumFractionDigits: decimals,
