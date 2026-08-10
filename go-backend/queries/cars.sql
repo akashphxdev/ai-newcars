@@ -18,10 +18,23 @@ ORDER BY is_top_seller DESC, price ASC
 LIMIT sqlc.arg('lim');
 
 -- name: ListVariantOptionsBySlug :many
-SELECT v.id, v.variant_name, v.price, v.is_top_seller
+-- Carries the one spec that distinguishes trims of the same car, so a
+-- variant table can show what separates them rather than a column of
+-- near-identical names: battery and range for an EV, engine and rated
+-- mileage for anything else.
+SELECT v.id, v.variant_name, v.price, v.is_top_seller,
+       v.seating_capacity,
+       (el.variant_id IS NOT NULL)::boolean AS is_electric,
+       el.battery_capacity,
+       el.claimed_range,
+       ice.cubic_capacity,
+       ice.claimed_fe,
+       ice.fuel_type AS ice_fuel_type
 FROM car_variants v
 JOIN car_models m ON m.id = v.model_id
 JOIN brands b ON b.id = m.brand_id AND b.is_active = true
+LEFT JOIN car_powertrains_electric el ON el.variant_id = v.id AND NOT el.is_deleted
+LEFT JOIN car_powertrains_ice ice ON ice.variant_id = v.id AND NOT ice.is_deleted
 WHERE m.slug = @model_slug AND b.slug = @brand_slug
 ORDER BY v.is_top_seller DESC, v.price ASC;
 

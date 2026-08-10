@@ -4,6 +4,7 @@ import (
 	"errors"
 	"net/http"
 	"strconv"
+	"strings"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/shopspring/decimal"
@@ -138,4 +139,136 @@ func (h *Handler) OnRoadPrice(w http.ResponseWriter, r *http.Request) {
 		"total":     total.Round(0).String(),
 		"estimated": true,
 	}, "On-road price calculated")
+}
+
+// priceVariant is the shared core: everything from a variant id to a
+// priced breakdown, given a state and its fixed charges already looked up.
+// Returns false when the variant is unknown or the state has no slab for
+// it, which the batch route treats as "omit this row" rather than an error.
+func (h *Handler) priceVariant(
+	r *http.Request,
+	variantID int32,
+	stateSlug string,
+	st store.RoadTaxStateBySlugRow,
+	charges store.RoadTaxFixedChargesForRow,
+) (map[string]any, bool) {
+	v, err := h.Q.VariantForOnRoad(r.Context(), variantID)
+	if err != nil {
+		return nil, false
+	}
+
+	fuel := "petrol"
+	if v.IsElectric {
+		fuel = "electric"
+	} else if v.IceFuelType != nil {
+		if name, ok := onRoadFuelNames[*v.IceFuelType]; ok {
+			fuel = name
+		}
+	}
+
+	engineCc := decimal.Zero
+	if v.CubicCapacity != nil {
+		engineCc = decimal.NewFromInt32(*v.CubicCapacity)
+	}
+
+	rate, err := h.Q.RoadTaxRateFor(r.Context(), store.RoadTaxRateForParams{
+		Slug:     stateSlug,
+		FuelType: &fuel,
+		Price:    v.Price,
+		EngineCc: engineCc,
+	})
+	if err != nil {
+		return nil, false
+	}
+
+	roadTax := v.Price.Mul(rate.RatePct).Div(decimal.NewFromInt(100)).Round(0)
+	// Several states set a floor in rupees under the percentage.
+	if rate.MinAmount.Valid && roadTax.LessThan(rate.MinAmount.Decimal) {
+		roadTax = rate.MinAmount.Decimal.Round(0)
+	}
+
+	fixed := charges.Registration.Add(charges.Hsrp).Add(charges.Fastag)
+	insurance := v.Price.Mul(insuranceRate).Round(0)
+	total := v.Price.Add(roadTax).Add(fixed).Add(insurance)
+
+	return map[string]any{
+		"state":      map[string]any{"id": st.ID, "name": st.Name, "slug": st.Slug},
+		"variantId":  v.ID,
+		"fuelType":   fuel,
+		"exShowroom": v.Price.Round(0).String(),
+		"roadTax": map[string]any{
+			"amount":        roadTax.String(),
+			"ratePct":       rate.RatePct.String(),
+			"basis":         rate.Basis,
+			"effectiveFrom": day(rate.EffectiveFrom),
+			"sourceUrl":     rate.SourceUrl,
+			"verified":      rate.Verified,
+		},
+		"registration": map[string]any{
+			"amount": fixed.Round(0).String(),
+			"detail": map[string]any{
+				"registration": charges.Registration.Round(0).String(),
+				"hsrp":         charges.Hsrp.Round(0).String(),
+				"fastag":       charges.Fastag.Round(0).String(),
+			},
+		},
+		"insurance": map[string]any{
+			"amount":    insurance.String(),
+			"ratePct":   insuranceRate.Mul(decimal.NewFromInt(100)).String(),
+			"estimated": true,
+		},
+		"total":     total.Round(0).String(),
+		"estimated": true,
+	}, true
+}
+
+// OnRoadPrices prices a whole variant table in one request.
+//
+// A variant list needs a figure per row, and one request per row would be
+// a storm for a page that already knows every id it wants. Rows the state
+// has no slab for are absent from the response rather than failing it, so
+// one unpriceable trim cannot blank the table.
+func (h *Handler) OnRoadPrices(w http.ResponseWriter, r *http.Request) {
+	stateSlug := r.URL.Query().Get("state")
+	if stateSlug == "" {
+		httpx.Fail(w, r, httpx.BadRequest("state is required"))
+		return
+	}
+	ids := strings.Split(r.URL.Query().Get("variants"), ",")
+	if len(ids) == 0 || ids[0] == "" {
+		httpx.Fail(w, r, httpx.BadRequest("variants is required"))
+		return
+	}
+	// Bounded so a crafted query cannot ask for the whole catalogue.
+	if len(ids) > 60 {
+		ids = ids[:60]
+	}
+
+	st, err := h.Q.RoadTaxStateBySlug(r.Context(), stateSlug)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			httpx.Fail(w, r, httpx.NotFound("State not found"))
+			return
+		}
+		httpx.Fail(w, r, err)
+		return
+	}
+	charges, err := h.Q.RoadTaxFixedChargesFor(r.Context(), stateSlug)
+	if err != nil && !errors.Is(err, pgx.ErrNoRows) {
+		httpx.Fail(w, r, err)
+		return
+	}
+
+	out := make([]map[string]any, 0, len(ids))
+	for _, idStr := range ids {
+		id, convErr := strconv.Atoi(strings.TrimSpace(idStr))
+		if convErr != nil || id <= 0 {
+			continue
+		}
+		if priced, ok := h.priceVariant(r, int32(id), stateSlug, st, charges); ok {
+			out = append(out, priced)
+		}
+	}
+
+	httpx.Success(w, map[string]any{"prices": out}, "On-road prices calculated")
 }

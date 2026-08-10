@@ -468,10 +468,19 @@ func (q *Queries) ListVariantOptions(ctx context.Context, arg ListVariantOptions
 }
 
 const listVariantOptionsBySlug = `-- name: ListVariantOptionsBySlug :many
-SELECT v.id, v.variant_name, v.price, v.is_top_seller
+SELECT v.id, v.variant_name, v.price, v.is_top_seller,
+       v.seating_capacity,
+       (el.variant_id IS NOT NULL)::boolean AS is_electric,
+       el.battery_capacity,
+       el.claimed_range,
+       ice.cubic_capacity,
+       ice.claimed_fe,
+       ice.fuel_type AS ice_fuel_type
 FROM car_variants v
 JOIN car_models m ON m.id = v.model_id
 JOIN brands b ON b.id = m.brand_id AND b.is_active = true
+LEFT JOIN car_powertrains_electric el ON el.variant_id = v.id AND NOT el.is_deleted
+LEFT JOIN car_powertrains_ice ice ON ice.variant_id = v.id AND NOT ice.is_deleted
 WHERE m.slug = $1 AND b.slug = $2
 ORDER BY v.is_top_seller DESC, v.price ASC
 `
@@ -482,12 +491,23 @@ type ListVariantOptionsBySlugParams struct {
 }
 
 type ListVariantOptionsBySlugRow struct {
-	ID          int32           `json:"id"`
-	VariantName string          `json:"variant_name"`
-	Price       decimal.Decimal `json:"price"`
-	IsTopSeller bool            `json:"is_top_seller"`
+	ID              int32               `json:"id"`
+	VariantName     string              `json:"variant_name"`
+	Price           decimal.Decimal     `json:"price"`
+	IsTopSeller     bool                `json:"is_top_seller"`
+	SeatingCapacity int32               `json:"seating_capacity"`
+	IsElectric      bool                `json:"is_electric"`
+	BatteryCapacity decimal.NullDecimal `json:"battery_capacity"`
+	ClaimedRange    *int32              `json:"claimed_range"`
+	CubicCapacity   *int32              `json:"cubic_capacity"`
+	ClaimedFe       decimal.NullDecimal `json:"claimed_fe"`
+	IceFuelType     *int32              `json:"ice_fuel_type"`
 }
 
+// Carries the one spec that distinguishes trims of the same car, so a
+// variant table can show what separates them rather than a column of
+// near-identical names: battery and range for an EV, engine and rated
+// mileage for anything else.
 func (q *Queries) ListVariantOptionsBySlug(ctx context.Context, arg ListVariantOptionsBySlugParams) ([]ListVariantOptionsBySlugRow, error) {
 	rows, err := q.db.Query(ctx, listVariantOptionsBySlug, arg.ModelSlug, arg.BrandSlug)
 	if err != nil {
@@ -502,6 +522,13 @@ func (q *Queries) ListVariantOptionsBySlug(ctx context.Context, arg ListVariantO
 			&i.VariantName,
 			&i.Price,
 			&i.IsTopSeller,
+			&i.SeatingCapacity,
+			&i.IsElectric,
+			&i.BatteryCapacity,
+			&i.ClaimedRange,
+			&i.CubicCapacity,
+			&i.ClaimedFe,
+			&i.IceFuelType,
 		); err != nil {
 			return nil, err
 		}

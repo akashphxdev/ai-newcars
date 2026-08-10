@@ -84,6 +84,7 @@ func New(h *handler.Handler, c *cache.Cache, cfg *config.Config) http.Handler {
 			// public API, so a new top-level prefix would need a config
 			// change to reach Go at all.
 			r.Get("/on-road-price", h.OnRoadPrice)
+			r.Get("/on-road-prices", h.OnRoadPrices)
 			// Registered after the literal paths above so "lookup" and
 			// "browse" are never captured as a brand slug.
 			r.Get("/{brandSlug}/{modelSlug}", h.CarDetail)

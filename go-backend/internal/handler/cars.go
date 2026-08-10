@@ -525,12 +525,27 @@ func (h *Handler) CarVariants(w http.ResponseWriter, r *http.Request) {
 		httpx.Fail(w, r, err)
 		return
 	}
-	out := make([]variantOption, 0, len(rows))
+	out := make([]map[string]any, 0, len(rows))
 	for _, v := range rows {
-		out = append(out, variantOption{
-			ID: v.ID, VariantName: v.VariantName,
-			Price: decStrReq(v.Price), IsTopSeller: v.IsTopSeller,
-		})
+		item := map[string]any{
+			"id": v.ID, "variantName": v.VariantName,
+			"price": decStrReq(v.Price), "isTopSeller": v.IsTopSeller,
+			"seatingCapacity": v.SeatingCapacity,
+			"isElectric":      v.IsElectric,
+		}
+		// Only the powertrain the variant actually has: an EV row carrying
+		// null engine fields invites a table column of dashes.
+		if v.IsElectric {
+			item["batteryCapacity"] = decPtr(v.BatteryCapacity)
+			item["claimedRange"] = v.ClaimedRange
+		} else {
+			item["cubicCapacity"] = v.CubicCapacity
+			item["claimedFe"] = decPtr(v.ClaimedFe)
+			if v.IceFuelType != nil {
+				item["fuelType"] = onRoadFuelNames[*v.IceFuelType]
+			}
+		}
+		out = append(out, item)
 	}
 	httpx.Success(w, out, "Car variants fetched successfully")
 }
