@@ -15,6 +15,7 @@ import { ChevronIcon } from "@/components/common/icons";
 import { submitLoanLead } from "@/features/leads/lead.api";
 import { calculateEmi, buildAmortizationSchedule } from "@/lib/emiMath";
 import EmiVerdict from "./EmiVerdict";
+import SliderRow from "./SliderRow";
 import { stripPrefix } from "@/lib/format";
 
 const TENURE_OPTIONS = [1, 2, 3, 4, 5, 7];
@@ -333,86 +334,48 @@ export default function EmiCalculatorClient({
               </div>
             </div>
 
-            <div>
-              <div className="mb-1.5 flex items-center justify-between">
-                <Label>Down Payment</Label>
-                <span className="rounded-md bg-page px-2 py-0.5 text-[11px] font-bold text-muted">
-                  {downPaymentPct.toFixed(1)}%
-                </span>
-              </div>
-              <input
-                type="text"
-                inputMode="numeric"
-                value={downPayment.toLocaleString("en-IN")}
-                onChange={(e) => {
-                  const digits = Number(e.target.value.replace(/\D/g, "")) || 0;
-                  setDownPayment(Math.min(digits, exShowroomPrice));
-                }}
-                className={inputClass}
-              />
-              <input
-                type="range"
-                min={0}
-                max={exShowroomPrice || 0}
-                step={5000}
-                value={downPayment}
-                onChange={(e) => setDownPayment(Number(e.target.value))}
-                className="mt-2.5 w-full accent-brand"
-              />
-              <div className="mt-1 flex justify-between text-[11px] text-faint">
-                <span>₹0</span>
-                <span>{formatLakh(exShowroomPrice)}</span>
-              </div>
-            </div>
-
-            <div>
-              <Label>Loan Amount</Label>
-              <input type="text" readOnly value={formatRupee(loanAmount)} className={`${inputClass} bg-page`} />
-            </div>
-
-            <div>
-              <div className="mb-1.5 flex items-center justify-between">
-                <Label>Interest Rate (p.a.)</Label>
-                <span className="text-[11px] font-medium text-faint">Typical Range: 8% - 12%</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  onClick={() => setInterestRate((r) => Math.max(1, +(r - 0.1).toFixed(2)))}
-                  className="flex size-9 shrink-0 cursor-pointer items-center justify-center rounded-xl border border-border text-ink transition-colors hover:border-brand hover:text-brand"
-                  aria-label="Decrease interest rate"
-                >
-                  −
-                </button>
-                <div className="flex-1 rounded-xl border border-border bg-surface py-2.5 text-center text-[13px] font-bold text-ink">
-                  {interestRate.toFixed(2)}%
-                </div>
-                <button
-                  type="button"
-                  onClick={() => setInterestRate((r) => Math.min(20, +(r + 0.1).toFixed(2)))}
-                  className="flex size-9 shrink-0 cursor-pointer items-center justify-center rounded-xl border border-border text-ink transition-colors hover:border-brand hover:text-brand"
-                  aria-label="Increase interest rate"
-                >
-                  +
-                </button>
-              </div>
-            </div>
-
-            <div>
-              <Label>Loan Tenure</Label>
-              <div className="grid grid-cols-3 gap-2 sm:grid-cols-6">
-                {TENURE_OPTIONS.map((y) => (
-                  <button
-                    key={y}
-                    type="button"
-                    onClick={() => setTenureYears(y)}
-                    className={`cursor-pointer rounded-xl border px-2 py-2 text-[12.5px] font-bold transition-colors ${
-                      tenureYears === y ? "border-brand text-brand" : "border-border text-ink hover:border-brand"
-                    }`}
-                  >
-                    {y} {y === 1 ? "Year" : "Years"}
-                  </button>
-                ))}
+            {/* The three terms of the loan, on one dark panel, as sliders.
+                A stack of text boxes hides that these trade against each
+                other — you cannot feel what a year of tenure costs by
+                typing 6. */}
+            <div className="rounded-2xl bg-ink p-5 sm:p-6">
+              <div className="flex flex-col gap-6">
+                <SliderRow
+                  label="Down payment"
+                  value={downPayment}
+                  onChange={(v) => setDownPayment(Math.min(v, exShowroomPrice))}
+                  min={0}
+                  max={exShowroomPrice || 0}
+                  step={5000}
+                  minLabel="₹0"
+                  maxLabel={formatLakh(exShowroomPrice)}
+                  prefix="₹"
+                  format={(v) => v.toLocaleString("en-IN")}
+                  hint={`${downPaymentPct.toFixed(1)}% of ex-showroom · ${formatRupee(loanAmount)} on finance`}
+                />
+                <SliderRow
+                  label="Interest rate"
+                  value={interestRate}
+                  onChange={(v) => setInterestRate(+v.toFixed(2))}
+                  min={5}
+                  max={20}
+                  step={0.05}
+                  minLabel="5%"
+                  maxLabel="20%"
+                  suffix="%"
+                  format={(v) => v.toFixed(2)}
+                  hint="Banks and NBFCs typically quote 8-12% on a car loan."
+                />
+                <SliderRow
+                  label="Loan tenure"
+                  value={tenureYears}
+                  onChange={setTenureYears}
+                  min={1}
+                  max={7}
+                  minLabel="1 year"
+                  maxLabel="7 years"
+                  suffix={tenureYears === 1 ? "yr" : "yrs"}
+                />
               </div>
             </div>
 
