@@ -152,6 +152,13 @@ const tools = {
       step(`service: ${push.out.trim()}`);
       step(await tools.flush_cache());
     } else {
+      // A build left running by a previous failed deploy keeps writing to
+      // .next while the next one deletes it, which surfaces as rsync
+      // reading files that vanish mid-transfer. Refuse rather than race.
+      const running = await sh(`pgrep -f 'node_modules/.bin/next build' | wc -l | tr -d ' '`);
+      if (running.out !== "0")
+        throw new Error("REFUSING: a next build is already running — wait for it, or kill it before deploying again");
+
       const build = await sh(`cd ${REPO}/website && rm -rf .next && npm run build 2>&1 | tail -5`);
       const hasOut = await sh(`test -d ${REPO}/website/.next/standalone && echo yes || echo no`);
       if (hasOut.out !== "yes") throw new Error(`build produced no standalone output:\n${build.out}`);
