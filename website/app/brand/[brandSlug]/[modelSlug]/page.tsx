@@ -4,7 +4,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { getCarDetail, getCarFaqs, getCarArticles, getHomeCars } from "@/features/cars/car.api";
 import { getModelCrossPairs } from "@/features/compare/compare.api";
-import { formatPriceRange, formatSinglePrice, slugify, featureLabel, isFeaturePresent, carTitle } from "@/lib/format";
+import { formatPriceRange, formatSinglePrice, slugify, featureLabel, isFeaturePresent, byFeatureInterest, carTitle } from "@/lib/format";
 import ModelDetailTabs from "@/components/common/ModelDetailTabs";
 import ModelHero from "@/components/cars/ModelHero";
 import ModelSidebar from "@/components/cars/ModelSidebar";
@@ -30,7 +30,7 @@ function buildOverviewGroups(groups: CarDetailFeatureGroup[]) {
     .filter((group) => group.categoryName.toLowerCase() !== "safety")
     .map((group) => ({
       title: group.categoryName,
-      items: group.items.filter(isFeaturePresent).map(featureLabel),
+      items: group.items.filter(isFeaturePresent).map(featureLabel).sort(byFeatureInterest),
     }))
     .filter((group) => group.items.length > 0);
 }
@@ -121,9 +121,9 @@ export default async function CarModelPage(props: Props) {
         <section id="overview" className="scroll-mt-32 overflow-hidden rounded-xl border border-border bg-surface">
           <div className="p-5 sm:p-7">
             <SectionIntro
-              eyebrow="TimesAuto expert view"
-              title={`What makes the ${car.name} worth considering`}
-              copy={`A focused look at the equipment, everyday usability and key decisions that define the ${carTitle(car)} range.`}
+              eyebrow="Equipment"
+              title={`What the ${car.name} comes with`}
+              copy={`The kit fitted to the ${variant?.variantName ?? carTitle(car)}, with what buyers ask about first at the top of each list.`}
             />
 
             <div className="mt-10 grid items-stretch gap-8 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)] lg:gap-14">

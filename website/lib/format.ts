@@ -87,3 +87,44 @@ export function stripPrefix(text: string, prefix: string): string {
   if (!lead || !value.toLowerCase().startsWith(lead.toLowerCase())) return value;
   return value.slice(lead.length).trim() || value;
 }
+
+// Features buyers actually shortlist on, in the order they tend to matter.
+// The overview shows only the first few of each group, and the catalogue's
+// own order is not meaningful — so without this the Nexon led with
+// "Accessory Power Outlet" while its sunroof sat fifteenth.
+//
+// Substring matched, because the catalogue writes the same feature several
+// ways ("Sunroof", "Voice assisted sunroof", "Sunroof: Panoramic").
+const FEATURE_PRIORITY = [
+  "adas",
+  "blind spot",
+  "emergency braking",
+  "360",
+  "camera",
+  "airbag",
+  "sunroof",
+  "ventilated",
+  "climate control",
+  "cruise control",
+  "digital cluster",
+  "touchscreen",
+  "android auto",
+  "carplay",
+  "wireless charg",
+  "connected",
+  "drive mode",
+  "keyless",
+  "parking sensor",
+];
+
+function featureRank(label: string): number {
+  const l = label.toLowerCase();
+  const i = FEATURE_PRIORITY.findIndex((k) => l.includes(k));
+  return i === -1 ? FEATURE_PRIORITY.length : i;
+}
+
+// Stable: equally-ranked features keep the catalogue's order rather than
+// being shuffled into a different arbitrary one.
+export function byFeatureInterest(a: string, b: string): number {
+  return featureRank(a) - featureRank(b);
+}
