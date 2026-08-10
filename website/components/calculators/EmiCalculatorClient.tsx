@@ -258,15 +258,15 @@ export default function EmiCalculatorClient({
         </div>
       )}
 
-      <div className="grid grid-cols-1 gap-5 lg:grid-cols-[minmax(360px,0.78fr)_minmax(500px,1.22fr)]">
-        {/* Left — Configure Your Loan */}
+      <div className="flex flex-col gap-5">
+        {/* Set the loan, then read it. */}
         <div className="rounded-2xl border border-border bg-surface p-5 sm:p-6">
           <h2 className="mb-4 border-b border-border-soft pb-3 text-[15px] font-bold text-ink">Configure Your Loan</h2>
 
           <div className="flex flex-col gap-4">
             <div>
               <p className="mb-2 text-[11px] font-bold uppercase tracking-wide text-faint">Car Details</p>
-              <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-3 lg:grid-cols-4">
                 <div>
                   <Label>Select Brand</Label>
                   <select
@@ -339,7 +339,7 @@ export default function EmiCalculatorClient({
                 other — you cannot feel what a year of tenure costs by
                 typing 6. */}
             <div className="rounded-2xl bg-ink p-5 sm:p-6">
-              <div className="flex flex-col gap-6">
+              <div className="grid gap-6 lg:grid-cols-3">
                 <SliderRow
                   label="Down payment"
                   value={downPayment}
@@ -406,7 +406,7 @@ export default function EmiCalculatorClient({
           </div>
         </div>
 
-        {/* Right — car preview + EMI results */}
+        {/* What that loan costs. */}
         <div id="emi-summary" className="flex flex-col gap-4">
 
           {!selectedVariant ? (
