@@ -36,6 +36,8 @@ import { slugify, stripPrefix } from "@/lib/format";
 // is never mistaken for a quote.
 const EMI_RATE = 9;
 const EMI_YEARS = 5;
+const INITIAL_ROWS = 8;
+
 const EMI_DOWN_PAYMENT = 0.2;
 
 function Th({ icon, children }: { icon: React.ReactNode; children: React.ReactNode }) {
@@ -63,6 +65,10 @@ export default function VariantsTable({
   const [onRoad, setOnRoad] = useState<Record<number, OnRoadPrice>>({});
   const [group, setGroup] = useState<string>("all");
   const [expanded, setExpanded] = useState<number | null>(null);
+  // Sixty-six rows is a spreadsheet, not a table you read. The trims are
+  // ordered cheapest first, so the opening set is the affordable end and
+  // the rest is one click away.
+  const [showAll, setShowAll] = useState(false);
   const [selected, setSelected] = useState<number[]>([]);
 
   useEffect(() => {
@@ -80,19 +86,27 @@ export default function VariantsTable({
     };
   }, [brandSlug, modelSlug]);
 
+  const groupOf = (v: ModelVariant) =>
+    v.isElectric ? (v.batteryCapacity ? `${v.batteryCapacity} kWh` : "") : (v.fuelType ?? "");
+
+  const matching = group === "all" ? variants : variants.filter((v) => groupOf(v) === group);
+  const shown = showAll ? matching : matching.slice(0, INITIAL_ROWS);
+  const hiddenCount = matching.length - shown.length;
+  const pricedIds = useMemo(() => shown.map((v) => v.id), [shown]);
+
   useEffect(() => {
     if (!variants.length || !city?.stateSlug) {
       setOnRoad({});
       return;
     }
     let alive = true;
-    getOnRoadPrices(variants.map((v) => v.id), city.stateSlug).then((list) => {
-      if (alive) setOnRoad(Object.fromEntries(list.map((p) => [p.variantId, p])));
+    getOnRoadPrices(pricedIds, city.stateSlug).then((list) => {
+      if (alive) setOnRoad((prev) => ({ ...prev, ...Object.fromEntries(list.map((p) => [p.variantId, p])) }));
     });
     return () => {
       alive = false;
     };
-  }, [variants, city?.stateSlug]);
+  }, [pricedIds, city?.stateSlug]);
 
   const isElectric = useMemo(() => variants.some((v) => v.isElectric), [variants]);
 
@@ -112,10 +126,6 @@ export default function VariantsTable({
     return [...keys];
   }, [variants]);
 
-  const groupOf = (v: ModelVariant) =>
-    v.isElectric ? (v.batteryCapacity ? `${v.batteryCapacity} kWh` : "") : (v.fuelType ?? "");
-
-  const shown = group === "all" ? variants : variants.filter((v) => groupOf(v) === group);
   const chosen = variants.filter((v) => selected.includes(v.id));
 
   const toggle = (id: number) =>
@@ -307,6 +317,20 @@ export default function VariantsTable({
             </tbody>
           </table>
         </div>
+
+        {(hiddenCount > 0 || showAll) && (
+          <div className="border-t border-border-soft px-4 py-3 text-center">
+            <button
+              type="button"
+              onClick={() => setShowAll((v) => !v)}
+              className="cursor-pointer text-[12.5px] font-bold text-brand transition-colors hover:text-brand-hover"
+            >
+              {showAll
+                ? "Show fewer variants"
+                : `Show all ${matching.length} variants (${hiddenCount} more)`}
+            </button>
+          </div>
+        )}
 
         <p className="flex items-start gap-2 border-t border-border-soft bg-page px-4 py-3 text-[11px] leading-relaxed text-muted">
           <span className="mt-0.5 shrink-0 text-brand">
