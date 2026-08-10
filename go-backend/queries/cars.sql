@@ -105,3 +105,35 @@ SELECT m.id, m.name, b.name AS brand_name, b.slug AS brand_slug
 FROM car_models m
 JOIN brands b ON b.id = m.brand_id AND b.is_active = true
 WHERE m.slug = @model_slug AND b.slug = @brand_slug;
+
+-- name: ModelVariantFeatures :many
+-- Every feature of every trim of one model, in price order. The caller
+-- diffs adjacent trims to work out what each one adds over the last —
+-- doing it here would need a self-join per variant.
+SELECT v.id AS variant_id, v.price, f.name AS feature_name, vf.value
+FROM car_variants v
+JOIN car_models m ON m.id = v.model_id
+JOIN brands b ON b.id = m.brand_id AND b.is_active = true
+JOIN variant_features vf ON vf.variant_id = v.id
+JOIN features f ON f.id = vf.feature_id
+WHERE m.slug = @model_slug AND b.slug = @brand_slug
+ORDER BY v.price ASC, f.name ASC;
+
+-- name: SegmentMileageBenchmark :one
+-- Average rated mileage for available cars of the same body type and fuel.
+-- Derived from our own catalogue rather than a published benchmark, so it
+-- says what cars like this one claim, not what they achieve. Returns the
+-- sample size with it so a thin segment can be suppressed rather than
+-- presented as an average.
+-- COALESCE keeps the scan off a NULL for a segment with no cars; the
+-- sample size is what decides whether the average is shown at all.
+SELECT COALESCE(round(avg(e.claimed_fe), 1), 0)::numeric AS avg_kmpl,
+       count(*)::bigint AS sample_size
+FROM car_powertrains_ice e
+JOIN car_variants v ON v.id = e.variant_id
+JOIN car_models m ON m.id = v.model_id
+WHERE NOT e.is_deleted
+  AND e.claimed_fe IS NOT NULL
+  AND m.launch_status = 'available'
+  AND m.body_type_id = @body_type_id
+  AND e.fuel_type = @fuel_type;

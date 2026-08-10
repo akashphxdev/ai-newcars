@@ -167,3 +167,12 @@ func pageCount(total int64, limit int) int {
 	}
 	return n
 }
+
+func orEmptyStrings(v []string) []string {
+	if v == nil {
+		return []string{}
+	}
+	return v
+}
+
+func ptrInt32(v int32) *int32 { return &v }

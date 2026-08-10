@@ -525,11 +525,22 @@ func (h *Handler) CarVariants(w http.ResponseWriter, r *http.Request) {
 		httpx.Fail(w, r, err)
 		return
 	}
+	// What each trim adds over the one below it. Failing to work this out
+	// costs the column, not the table.
+	additions := map[int32][]string{}
+	if feats, ferr := h.Q.ModelVariantFeatures(r.Context(), store.ModelVariantFeaturesParams{
+		ModelSlug: chi.URLParam(r, "modelSlug"),
+		BrandSlug: chi.URLParam(r, "brandSlug"),
+	}); ferr == nil {
+		additions = keyAdditionsByVariant(feats)
+	}
+
 	out := make([]map[string]any, 0, len(rows))
 	for _, v := range rows {
 		item := map[string]any{
 			"id": v.ID, "variantName": v.VariantName,
-			"price": decStrReq(v.Price), "isTopSeller": v.IsTopSeller,
+			"keyAdditions": orEmptyStrings(additions[v.ID]),
+			"price":        decStrReq(v.Price), "isTopSeller": v.IsTopSeller,
 			"seatingCapacity": v.SeatingCapacity,
 			"isElectric":      v.IsElectric,
 		}
@@ -597,4 +608,43 @@ func (h *Handler) LookupVariants(w http.ResponseWriter, r *http.Request) {
 		})
 	}
 	httpx.Success(w, out, "Variants fetched successfully")
+}
+
+// SegmentMileage is the average rated mileage of comparable cars, so a
+// visitor can tell whether the figure in front of them is good or merely
+// a number.
+//
+// Computed from our own catalogue rather than a published benchmark, so
+// it compares claimed figures with claimed figures — the only honest
+// comparison available while real_world_mileage is empty everywhere. A
+// segment with too few cars returns nothing rather than an average of
+// three.
+func (h *Handler) SegmentMileage(w http.ResponseWriter, r *http.Request) {
+	bodyTypeID := qInt(r, "bodyType", 0, 1, 1<<30)
+	fuelType := qInt(r, "fuelType", 0, 1, 3)
+	if bodyTypeID == 0 || fuelType == 0 {
+		httpx.Fail(w, r, httpx.BadRequest("bodyType and fuelType are required"))
+		return
+	}
+
+	row, err := h.Q.SegmentMileageBenchmark(r.Context(), store.SegmentMileageBenchmarkParams{
+		BodyTypeID: ptrInt32(int32(bodyTypeID)),
+		FuelType:   int32(fuelType),
+	})
+	if err != nil {
+		httpx.Fail(w, r, err)
+		return
+	}
+	// Below this the "average" is an anecdote.
+	const minSample = 15
+	if row.SampleSize < minSample {
+		httpx.Success(w, map[string]any{"available": false}, "Segment too small to average")
+		return
+	}
+
+	httpx.Success(w, map[string]any{
+		"available":  true,
+		"avgKmpl":    row.AvgKmpl.String(),
+		"sampleSize": row.SampleSize,
+	}, "Segment mileage fetched successfully")
 }

@@ -539,3 +539,91 @@ func (q *Queries) ListVariantOptionsBySlug(ctx context.Context, arg ListVariantO
 	}
 	return items, nil
 }
+
+const modelVariantFeatures = `-- name: ModelVariantFeatures :many
+SELECT v.id AS variant_id, v.price, f.name AS feature_name, vf.value
+FROM car_variants v
+JOIN car_models m ON m.id = v.model_id
+JOIN brands b ON b.id = m.brand_id AND b.is_active = true
+JOIN variant_features vf ON vf.variant_id = v.id
+JOIN features f ON f.id = vf.feature_id
+WHERE m.slug = $1 AND b.slug = $2
+ORDER BY v.price ASC, f.name ASC
+`
+
+type ModelVariantFeaturesParams struct {
+	ModelSlug string `json:"model_slug"`
+	BrandSlug string `json:"brand_slug"`
+}
+
+type ModelVariantFeaturesRow struct {
+	VariantID   int32           `json:"variant_id"`
+	Price       decimal.Decimal `json:"price"`
+	FeatureName string          `json:"feature_name"`
+	Value       *string         `json:"value"`
+}
+
+// Every feature of every trim of one model, in price order. The caller
+// diffs adjacent trims to work out what each one adds over the last —
+// doing it here would need a self-join per variant.
+func (q *Queries) ModelVariantFeatures(ctx context.Context, arg ModelVariantFeaturesParams) ([]ModelVariantFeaturesRow, error) {
+	rows, err := q.db.Query(ctx, modelVariantFeatures, arg.ModelSlug, arg.BrandSlug)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []ModelVariantFeaturesRow{}
+	for rows.Next() {
+		var i ModelVariantFeaturesRow
+		if err := rows.Scan(
+			&i.VariantID,
+			&i.Price,
+			&i.FeatureName,
+			&i.Value,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const segmentMileageBenchmark = `-- name: SegmentMileageBenchmark :one
+SELECT COALESCE(round(avg(e.claimed_fe), 1), 0)::numeric AS avg_kmpl,
+       count(*)::bigint AS sample_size
+FROM car_powertrains_ice e
+JOIN car_variants v ON v.id = e.variant_id
+JOIN car_models m ON m.id = v.model_id
+WHERE NOT e.is_deleted
+  AND e.claimed_fe IS NOT NULL
+  AND m.launch_status = 'available'
+  AND m.body_type_id = $1
+  AND e.fuel_type = $2
+`
+
+type SegmentMileageBenchmarkParams struct {
+	BodyTypeID *int32 `json:"body_type_id"`
+	FuelType   int32  `json:"fuel_type"`
+}
+
+type SegmentMileageBenchmarkRow struct {
+	AvgKmpl    decimal.Decimal `json:"avg_kmpl"`
+	SampleSize int64           `json:"sample_size"`
+}
+
+// Average rated mileage for available cars of the same body type and fuel.
+// Derived from our own catalogue rather than a published benchmark, so it
+// says what cars like this one claim, not what they achieve. Returns the
+// sample size with it so a thin segment can be suppressed rather than
+// presented as an average.
+// COALESCE keeps the scan off a NULL for a segment with no cars; the
+// sample size is what decides whether the average is shown at all.
+func (q *Queries) SegmentMileageBenchmark(ctx context.Context, arg SegmentMileageBenchmarkParams) (SegmentMileageBenchmarkRow, error) {
+	row := q.db.QueryRow(ctx, segmentMileageBenchmark, arg.BodyTypeID, arg.FuelType)
+	var i SegmentMileageBenchmarkRow
+	err := row.Scan(&i.AvgKmpl, &i.SampleSize)
+	return i, err
+}
