@@ -114,6 +114,17 @@ func New(h *handler.Handler, c *cache.Cache, cfg *config.Config) http.Handler {
 
 		r.With(middleware.PublicCache(c, ttlListing)).Get("/used-cars", h.UsedCarsByCity)
 
+		// Editorial changes on publish, not on traffic, so it caches for
+		// as long as the catalogue does.
+		r.Route("/articles", func(r chi.Router) {
+			r.Use(middleware.PublicCache(c, ttlCatalogue))
+			// Static before the slug route, so /articles/categories is not
+			// read as a category named "categories".
+			r.Get("/categories", h.ArticleCategories)
+			r.Get("/{categorySlug}", h.ArticlesInCategory)
+			r.Get("/{categorySlug}/{articleSlug}", h.PublicArticle)
+		})
+
 		// Prices change at most once a day, so the catalogue TTL is right;
 		// the daily cron is what makes them move, not request traffic.
 		r.Route("/fuel", func(r chi.Router) {
