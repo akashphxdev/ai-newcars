@@ -22,7 +22,7 @@ import { CITY_EVENT, getCurrentCity } from "@/features/location/currentCity";
 import type { LocationCity } from "@/features/location/location.types";
 import { formatRupee } from "@/lib/calculatorFormat";
 import { routes } from "@/lib/routes";
-import { stripPrefix } from "@/lib/format";
+import { slugify, stripPrefix } from "@/lib/format";
 
 export default function VariantsTable({
   brandSlug,
@@ -95,7 +95,7 @@ export default function VariantsTable({
                 <tr key={v.id} className="border-b border-border-soft last:border-0">
                   <td className="px-4 py-3.5">
                     <Link
-                      href={routes.variant(brandSlug, modelSlug, String(v.id))}
+                      href={routes.variant(brandSlug, modelSlug, slugify(v.variantName))}
                       className="text-[13px] font-bold text-ink no-underline transition-colors hover:text-brand"
                     >
                       {stripPrefix(v.variantName, modelName)}

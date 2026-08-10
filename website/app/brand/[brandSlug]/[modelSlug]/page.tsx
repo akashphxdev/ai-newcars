@@ -8,7 +8,7 @@ import { formatPriceRange, formatSinglePrice, slugify, featureLabel, carTitle } 
 import ModelDetailTabs from "@/components/common/ModelDetailTabs";
 import ModelHero from "@/components/cars/ModelHero";
 import CarModelColours from "@/components/cars/CarModelColours";
-import VariantsList from "@/components/cars/VariantsList";
+import VariantsTable from "@/components/cars/VariantsTable";
 import Articles from "@/components/home/Articles";
 import BrandComparisonsSection from "@/components/brands/BrandComparisonsSection";
 import ReviewsSection from "@/components/cars/reviews/ReviewsSection";
@@ -175,18 +175,13 @@ export default async function CarModelPage(props: Props) {
               </div>
             </div>
 
-            {/* The on-road figure lives in the hero's purchase rail, which
-                owns the variant selector that drives it. Repeating it here
-                showed the same number twice for the same variant. */}
-            <VariantsList
+            {/* The rail prices the one variant the reader has selected;
+                this prices all of them side by side, which is the
+                comparison the section exists for. */}
+            <VariantsTable
               brandSlug={car.brand.slug}
               modelSlug={car.slug}
-              carName={car.name}
-              brandName={car.brand.name}
-              imageUrl={car.coverImageUrl}
-              variantOptions={car.variantOptions}
-              variantCount={car.variantCount}
-              selectedVariantId={undefined}
+              modelName={car.name}
             />
           </div>
         </section>
