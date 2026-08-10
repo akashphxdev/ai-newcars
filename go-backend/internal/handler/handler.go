@@ -140,3 +140,30 @@ func decStr(d decimal.NullDecimal) *string {
 }
 
 func decStrReq(d decimal.Decimal) string { return d.String() }
+
+func decPtr(d decimal.NullDecimal) *string {
+	if !d.Valid {
+		return nil
+	}
+	s := d.Decimal.String()
+	return &s
+}
+
+// JSON marshals a nil slice as null; the clients expect [].
+func orEmpty(v []map[string]any) []map[string]any {
+	if v == nil {
+		return []map[string]any{}
+	}
+	return v
+}
+
+func pageCount(total int64, limit int) int {
+	if limit <= 0 || total <= 0 {
+		return 1
+	}
+	n := int((total + int64(limit) - 1) / int64(limit))
+	if n < 1 {
+		return 1
+	}
+	return n
+}

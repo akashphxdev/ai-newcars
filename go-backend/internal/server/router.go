@@ -114,6 +114,8 @@ func New(h *handler.Handler, c *cache.Cache, cfg *config.Config) http.Handler {
 
 		r.With(middleware.PublicCache(c, ttlListing)).Get("/used-cars", h.UsedCarsByCity)
 
+		r.With(middleware.PublicCache(c, ttlListing)).Get("/reviews", h.ModelReviews)
+
 		// Editorial changes on publish, not on traffic, so it caches for
 		// as long as the catalogue does.
 		r.Route("/articles", func(r chi.Router) {
