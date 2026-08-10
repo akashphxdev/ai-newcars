@@ -2,7 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { getCarDetail, getCarFaqs, getCarArticles, getHomeCars } from "@/features/cars/car.api";
+import { getCarDetail, getCarFaqs, getCarArticles, getHomeCars, getVariantPick } from "@/features/cars/car.api";
 import { getModelCrossPairs } from "@/features/compare/compare.api";
 import { formatPriceRange, formatSinglePrice, slugify, featureLabel, isFeaturePresent, byFeatureInterest, carTitle } from "@/lib/format";
 import ModelDetailTabs from "@/components/common/ModelDetailTabs";
@@ -10,13 +10,14 @@ import ModelHero from "@/components/cars/ModelHero";
 import ModelSidebar from "@/components/cars/ModelSidebar";
 import CarModelColours from "@/components/cars/CarModelColours";
 import VariantsTable from "@/components/cars/VariantsTable";
+import VariantPickCard from "@/components/cars/VariantPickCard";
 import EvRangeCharging from "@/components/cars/EvRangeCharging";
 import SpecificationsSection from "@/components/cars/SpecificationsSection";
 import Articles from "@/components/home/Articles";
 import BrandComparisonsSection from "@/components/brands/BrandComparisonsSection";
 import ReviewsSection from "@/components/cars/reviews/ReviewsSection";
 import { CheckIcon, ChevronDownIcon } from "@/components/common/icons";
-import type { CarDetailResult, CarDetailFeatureGroup, CarFaq } from "@/features/cars/car.types";
+import type { CarDetailResult, CarDetailFeatureGroup, CarFaq, VariantPick } from "@/features/cars/car.types";
 import type { HomeArticle } from "@/features/articles/article.types";
 import type { RandomComparisonPair } from "@/features/compare/compare.types";
 import { routes } from "@/lib/routes";
@@ -49,16 +50,18 @@ async function loadCar(props: Props): Promise<{
   faqs: CarFaq[];
   articles: HomeArticle[];
   comparisonPairs: RandomComparisonPair[];
+  variantPick: VariantPick;
 }> {
   const { brandSlug, modelSlug } = await props.params;
-  const [car, faqs, articles, comparisonPairs] = await Promise.all([
+  const [car, faqs, articles, comparisonPairs, variantPick] = await Promise.all([
     getCarDetail(brandSlug, modelSlug),
     getCarFaqs(brandSlug, modelSlug),
     getCarArticles(brandSlug, modelSlug),
     getModelCrossPairs(brandSlug, modelSlug, 5),
+    getVariantPick(brandSlug, modelSlug),
   ]);
   if (!car) notFound();
-  return { car, faqs, articles, comparisonPairs };
+  return { car, faqs, articles, comparisonPairs, variantPick };
 }
 
 export async function generateMetadata(props: Props): Promise<Metadata> {
@@ -88,7 +91,7 @@ function SectionIntro({ eyebrow, title, copy }: { eyebrow: string; title: string
 }
 
 export default async function CarModelPage(props: Props) {
-  const { car, faqs, articles, comparisonPairs } = await loadCar(props);
+  const { car, faqs, articles, comparisonPairs, variantPick } = await loadCar(props);
   const variant = car.selectedVariant;
   const defaultVariantSlug = variant ? slugify(variant.variantName) : "";
   const overviewGroups = buildOverviewGroups(variant?.features ?? []);
@@ -191,6 +194,10 @@ export default async function CarModelPage(props: Props) {
                   <p className="mt-1 text-[13px] font-extrabold text-ink">{car.variantCount}</p>
                 </div>
               </div>
+            </div>
+
+            <div className="mt-5">
+              <VariantPickCard pick={variantPick} car={car} />
             </div>
 
             {/* The rail prices the one variant the reader has selected;

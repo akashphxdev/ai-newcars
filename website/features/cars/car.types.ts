@@ -235,3 +235,21 @@ export interface CarFaq {
   question: string;
   answer: string;
 }
+
+// The best-equipped trim for its price, as picked by the API. Fields past
+// `available` are absent when it is false, hence the optionals.
+export interface VariantPick {
+  available: boolean;
+  variantId?: number;
+  variantName?: string;
+  price?: string;
+  featureCount?: number;
+  isEntryTrim?: boolean;
+  comparedWith?: {
+    variantName: string;
+    price: string;
+    featureCount: number;
+    extraFeatures: number;
+    extraCost: string;
+  };
+}

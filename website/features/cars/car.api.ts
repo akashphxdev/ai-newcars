@@ -1,7 +1,7 @@
 // features/cars/car.api.ts
 
 import { apiFetch, apiFetchPaginated, getUploadUrl, ApiError, type Pagination } from "@/lib/apiClient";
-import type { HomeCar, HomeCarType, BrowseCarsResult, CarDetailResult, CarDetailVariantOption, CarImagesResult, CarFaq } from "./car.types";
+import type { HomeCar, HomeCarType, BrowseCarsResult, CarDetailResult, CarDetailVariantOption, CarImagesResult, CarFaq, VariantPick } from "./car.types";
 import type { HomeArticle } from "@/features/articles/article.types";
 
 // brandSlug re-fetches this rail scoped to one brand (e.g. LatestCars'
@@ -121,6 +121,18 @@ export async function getCarFaqs(brandSlug: string, modelSlug: string): Promise<
   } catch (err) {
     if (err instanceof ApiError && err.status === 404) return [];
     throw err;
+  }
+}
+
+// Which trim to look at first. Never fatal — the section is an aid, so a
+// failure here hides it rather than taking the model page down with it.
+export async function getVariantPick(brandSlug: string, modelSlug: string): Promise<VariantPick> {
+  try {
+    return await apiFetch<VariantPick>(`/cars/${brandSlug}/${modelSlug}/variant-pick`, {
+      next: { revalidate: 180 },
+    });
+  } catch {
+    return { available: false };
   }
 }
 
