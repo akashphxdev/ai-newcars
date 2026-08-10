@@ -133,7 +133,10 @@ const variantForOnRoad = `-- name: VariantForOnRoad :one
 SELECT v.id,
        v.price,
        e.fuel_type AS ice_fuel_type,
-       e.engine_displacement,
+       -- cubic_capacity is cc (216-6750); engine_displacement is litres
+       -- (0.22-6.75). The cc-banded states slab on cc, so using the litre
+       -- column would put every car in the lowest band.
+       e.cubic_capacity,
        (el.variant_id IS NOT NULL)::boolean AS is_electric
 FROM car_variants v
 LEFT JOIN car_powertrains_ice e ON e.variant_id = v.id AND NOT e.is_deleted
@@ -142,11 +145,11 @@ WHERE v.id = $1
 `
 
 type VariantForOnRoadRow struct {
-	ID                 int32               `json:"id"`
-	Price              decimal.Decimal     `json:"price"`
-	IceFuelType        *int32              `json:"ice_fuel_type"`
-	EngineDisplacement decimal.NullDecimal `json:"engine_displacement"`
-	IsElectric         bool                `json:"is_electric"`
+	ID            int32           `json:"id"`
+	Price         decimal.Decimal `json:"price"`
+	IceFuelType   *int32          `json:"ice_fuel_type"`
+	CubicCapacity *int32          `json:"cubic_capacity"`
+	IsElectric    bool            `json:"is_electric"`
 }
 
 // Everything the on-road calculation needs about one variant: the price it
@@ -161,7 +164,7 @@ func (q *Queries) VariantForOnRoad(ctx context.Context, id int32) (VariantForOnR
 		&i.ID,
 		&i.Price,
 		&i.IceFuelType,
-		&i.EngineDisplacement,
+		&i.CubicCapacity,
 		&i.IsElectric,
 	)
 	return i, err

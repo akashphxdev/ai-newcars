@@ -71,8 +71,8 @@ func (h *Handler) OnRoadPrice(w http.ResponseWriter, r *http.Request) {
 	}
 
 	engineCc := decimal.Zero
-	if v.EngineDisplacement.Valid {
-		engineCc = v.EngineDisplacement.Decimal
+	if v.CubicCapacity != nil {
+		engineCc = decimal.NewFromInt32(*v.CubicCapacity)
 	}
 
 	rate, err := h.Q.RoadTaxRateFor(r.Context(), store.RoadTaxRateForParams{
