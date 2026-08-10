@@ -289,34 +289,40 @@ export default function MileageCalculatorClient({
         </div>
       )}
 
+      {/* The fuel switch drives the units, the price source and which
+          cars are listed, so it reads as a mode selector across the top
+          rather than the first question in a form. */}
+      <div className="mb-5 overflow-hidden rounded-2xl border border-border bg-surface">
+        <div className="flex items-center gap-3 border-b border-border-soft px-4 py-2.5">
+          <span className="text-[11px] font-bold uppercase tracking-[0.1em] text-muted">Fuel</span>
+        </div>
+        <div className="grid grid-cols-2 sm:grid-cols-4">
+          {FUEL_TYPES.map((ft) => {
+            const Icon = FUEL_TYPE_ICONS[ft];
+            const active = fuelType === ft;
+            return (
+              <button
+                key={ft}
+                type="button"
+                onClick={() => setFuelType(ft)}
+                className={`flex cursor-pointer items-center justify-center gap-2 border-r border-border-soft px-3 py-3.5 text-[13px] font-bold transition-colors last:border-r-0 ${
+                  active ? "bg-brand text-white" : "text-ink hover:bg-page"
+                }`}
+              >
+                <Icon className="size-4" />
+                {FUEL_TYPE_LABELS[ft]}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
       <div className="grid grid-cols-1 gap-5 lg:grid-cols-[minmax(360px,0.78fr)_minmax(500px,1.22fr)]">
         {/* Left — Enter Details */}
         <div className="rounded-2xl border border-border bg-surface p-5 sm:p-6">
           <h2 className="mb-4 border-b border-border-soft pb-3 text-[15px] font-bold text-ink">Enter Details</h2>
 
           <div className="flex flex-col gap-4">
-            <div>
-              <Label>Select Fuel Type</Label>
-              <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-                {FUEL_TYPES.map((ft) => {
-                  const Icon = FUEL_TYPE_ICONS[ft];
-                  return (
-                    <button
-                      key={ft}
-                      type="button"
-                      onClick={() => setFuelType(ft)}
-                      className={`flex cursor-pointer items-center justify-center gap-1.5 rounded-xl border px-2 py-2.5 text-[12.5px] font-bold transition-colors ${
-                        fuelType === ft ? "border-brand text-brand" : "border-border text-ink hover:border-brand"
-                      }`}
-                    >
-                      <Icon className="size-4" />
-                      {FUEL_TYPE_LABELS[ft]}
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-
             <div>
               <p className="mb-2 text-[11px] font-bold uppercase tracking-wide text-faint">Select Your Car</p>
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
@@ -462,26 +468,55 @@ export default function MileageCalculatorClient({
                 <p className="mt-1 text-[12px] font-medium text-muted">This is the mileage used for your cost calculation below.</p>
               </div>
 
-              <div className="rounded-2xl border border-border bg-surface p-5">
-                <h3 className="mb-3 text-[13.5px] font-bold text-ink">Running Cost Summary</h3>
+              {/* Cost per kilometre is the answer this page exists to
+                  give, so it is the thing on screen — not the first cell
+                  of a four-up grid of equals. The other framings of the
+                  same number sit under it. */}
+              <div className="overflow-hidden rounded-2xl border border-border bg-surface">
                 {!hasRunningCost ? (
-                  <p className="text-[12.5px] text-muted">
-                    Enter the fuel price and your monthly driving distance above to see your running cost.
+                  <p className="p-5 text-[12.5px] text-muted">
+                    Enter the fuel price and your monthly driving distance above to see your running
+                    cost.
                   </p>
                 ) : (
-                  <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-                    {[
-                      ["Cost per km", formatRupee(runningCost.costPerKm)],
-                      ["Daily Cost", formatRupee(runningCost.dailyCost)],
-                      ["Monthly Cost", formatRupee(runningCost.monthlyCost)],
-                      ["Yearly Cost", formatRupee(runningCost.yearlyCost)],
-                    ].map(([label, value]) => (
-                      <div key={label} className="rounded-xl bg-page p-3">
-                        <p className="text-[10.5px] font-bold uppercase tracking-wide text-faint">{label}</p>
-                        <p className="mt-1 text-[15px] font-extrabold text-ink">{value}</p>
+                  <>
+                    <div className="flex flex-wrap items-end justify-between gap-4 bg-ink p-5 text-white sm:p-6">
+                      <div>
+                        <p className="text-[11px] font-bold uppercase tracking-[0.12em] text-white/60">
+                          Cost per kilometre
+                        </p>
+                        <p className="mt-1.5 font-head text-[40px] font-extrabold leading-none tabular-nums sm:text-[52px]">
+                          {formatRupee(runningCost.costPerKm)}
+                        </p>
                       </div>
-                    ))}
-                  </div>
+                      <div className="text-right">
+                        <p className="text-[11px] font-bold uppercase tracking-[0.12em] text-white/60">
+                          Fuel used
+                        </p>
+                        <p className="mt-1.5 font-head text-[22px] font-extrabold leading-none tabular-nums">
+                          {(monthlyDistanceValue / (mileageValue || 1)).toFixed(1)}
+                          <span className="ml-1 text-[13px] font-semibold text-white/70">
+                            {fuelType === "ev" ? "kWh" : fuelType === "cng" ? "kg" : "L"} / month
+                          </span>
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-3 divide-x divide-border-soft">
+                      {[
+                        ["Daily", formatRupee(runningCost.dailyCost)],
+                        ["Monthly", formatRupee(runningCost.monthlyCost)],
+                        ["Yearly", formatRupee(runningCost.yearlyCost)],
+                      ].map(([label, value]) => (
+                        <div key={label} className="p-4 text-center">
+                          <p className="text-[10.5px] font-bold uppercase tracking-wide text-muted">
+                            {label}
+                          </p>
+                          <p className="mt-1 text-[15px] font-extrabold text-ink tabular-nums">{value}</p>
+                        </div>
+                      ))}
+                    </div>
+                  </>
                 )}
               </div>
 
