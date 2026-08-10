@@ -6,6 +6,7 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/jackc/pgx/v5"
+	"github.com/shopspring/decimal"
 	"github.com/timesauto/go-backend/internal/httpx"
 	"github.com/timesauto/go-backend/internal/store"
 )
@@ -647,4 +648,77 @@ func (h *Handler) SegmentMileage(w http.ResponseWriter, r *http.Request) {
 		"avgKmpl":    row.AvgKmpl.String(),
 		"sampleSize": row.SampleSize,
 	}, "Segment mileage fetched successfully")
+}
+
+// VariantPick names the trim that carries the most equipment per rupee,
+// so a variant list can say which one to look at first.
+//
+// Deliberately not "the best variant". Feature count treats a sunroof and
+// a cupholder alike, and it cannot know whether the reader wants a diesel
+// or a sunroof at all. What it can say honestly is which trim is best
+// equipped for its price, and by how much — so the response carries the
+// figures behind the pick rather than only the verdict.
+func (h *Handler) VariantPick(w http.ResponseWriter, r *http.Request) {
+	rows, err := h.Q.VariantValuePicks(r.Context(), chi.URLParam(r, "modelSlug"))
+	if err != nil {
+		httpx.Fail(w, r, err)
+		return
+	}
+	// Two trims is a choice, not a range worth ranking.
+	if len(rows) < 3 {
+		httpx.Success(w, map[string]any{"available": false}, "Too few variants to pick from")
+		return
+	}
+
+	hundredK := decimal.NewFromInt(100000)
+	var best *store.VariantValuePicksRow
+	bestPerLakh := decimal.Zero
+	totalFeatures := 0
+
+	for i := range rows {
+		row := rows[i]
+		totalFeatures += int(row.FeatureCount)
+		if row.FeatureCount == 0 {
+			continue
+		}
+		perLakh := decimal.NewFromInt(int64(row.FeatureCount)).Div(row.Price.Div(hundredK))
+		if perLakh.GreaterThan(bestPerLakh) {
+			bestPerLakh = perLakh
+			best = &rows[i]
+		}
+	}
+
+	// Every trim missing its feature data would otherwise crown the
+	// cheapest by default.
+	if best == nil || totalFeatures == 0 {
+		httpx.Success(w, map[string]any{"available": false}, "No feature data for these variants")
+		return
+	}
+
+	out := map[string]any{
+		"available":    true,
+		"variantId":    best.ID,
+		"variantName":  best.VariantName,
+		"price":        best.Price.Round(0).String(),
+		"featureCount": best.FeatureCount,
+		"basis":        "equipment-per-rupee",
+	}
+
+	// When the entry trim is itself the best equipped for its price there
+	// is nothing to compare against — saying "+0 features for +₹0" reads
+	// as a bug rather than a finding.
+	cheapest := rows[0]
+	if best.ID != cheapest.ID {
+		out["comparedWith"] = map[string]any{
+			"variantName":   cheapest.VariantName,
+			"price":         cheapest.Price.Round(0).String(),
+			"featureCount":  cheapest.FeatureCount,
+			"extraFeatures": int(best.FeatureCount) - int(cheapest.FeatureCount),
+			"extraCost":     best.Price.Sub(cheapest.Price).Round(0).String(),
+		}
+	} else {
+		out["isEntryTrim"] = true
+	}
+
+	httpx.Success(w, out, "Variant pick calculated")
 }

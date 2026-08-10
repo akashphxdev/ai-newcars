@@ -137,3 +137,27 @@ WHERE NOT e.is_deleted
   AND m.launch_status = 'available'
   AND m.body_type_id = @body_type_id
   AND e.fuel_type = @fuel_type;
+
+-- name: VariantValuePicks :many
+-- Equipment per rupee across a model's trims.
+--
+-- A feature counts only where its value is filled in and not "Not
+-- Available": variant_features carries a row for every feature on every
+-- trim, so counting rows would say all trims are equal. Feature count is
+-- deliberately crude — a sunroof and a cupholder weigh the same — so the
+-- caller must present this as equipment per rupee, never as "the best
+-- variant", which depends on what the reader wants.
+SELECT v.id,
+       v.variant_name,
+       v.price,
+       count(*) FILTER (
+         WHERE vf.value IS NOT NULL
+           AND btrim(vf.value) <> ''
+           AND vf.value <> 'Not Available'
+       )::int AS feature_count
+FROM car_variants v
+JOIN car_models m ON m.id = v.model_id
+LEFT JOIN variant_features vf ON vf.variant_id = v.id
+WHERE m.slug = @model_slug AND v.price > 0
+GROUP BY v.id, v.variant_name, v.price
+ORDER BY v.price;

@@ -93,6 +93,7 @@ func New(h *handler.Handler, c *cache.Cache, cfg *config.Config) http.Handler {
 			r.Get("/{brandSlug}/{modelSlug}/faqs", h.CarFaqs)
 			r.Get("/{brandSlug}/{modelSlug}/articles", h.CarArticles)
 			r.Get("/{brandSlug}/{modelSlug}/variants", h.CarVariants)
+			r.Get("/{brandSlug}/{modelSlug}/variant-pick", h.VariantPick)
 		})
 
 		r.Route("/brands", func(r chi.Router) {

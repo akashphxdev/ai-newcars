@@ -627,3 +627,60 @@ func (q *Queries) SegmentMileageBenchmark(ctx context.Context, arg SegmentMileag
 	err := row.Scan(&i.AvgKmpl, &i.SampleSize)
 	return i, err
 }
+
+const variantValuePicks = `-- name: VariantValuePicks :many
+SELECT v.id,
+       v.variant_name,
+       v.price,
+       count(*) FILTER (
+         WHERE vf.value IS NOT NULL
+           AND btrim(vf.value) <> ''
+           AND vf.value <> 'Not Available'
+       )::int AS feature_count
+FROM car_variants v
+JOIN car_models m ON m.id = v.model_id
+LEFT JOIN variant_features vf ON vf.variant_id = v.id
+WHERE m.slug = $1 AND v.price > 0
+GROUP BY v.id, v.variant_name, v.price
+ORDER BY v.price
+`
+
+type VariantValuePicksRow struct {
+	ID           int32           `json:"id"`
+	VariantName  string          `json:"variant_name"`
+	Price        decimal.Decimal `json:"price"`
+	FeatureCount int32           `json:"feature_count"`
+}
+
+// Equipment per rupee across a model's trims.
+//
+// A feature counts only where its value is filled in and not "Not
+// Available": variant_features carries a row for every feature on every
+// trim, so counting rows would say all trims are equal. Feature count is
+// deliberately crude — a sunroof and a cupholder weigh the same — so the
+// caller must present this as equipment per rupee, never as "the best
+// variant", which depends on what the reader wants.
+func (q *Queries) VariantValuePicks(ctx context.Context, modelSlug string) ([]VariantValuePicksRow, error) {
+	rows, err := q.db.Query(ctx, variantValuePicks, modelSlug)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []VariantValuePicksRow{}
+	for rows.Next() {
+		var i VariantValuePicksRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.VariantName,
+			&i.Price,
+			&i.FeatureCount,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
