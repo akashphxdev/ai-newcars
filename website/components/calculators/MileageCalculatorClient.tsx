@@ -27,6 +27,7 @@ import type { CarDetailResult, HomeCar } from "@/features/cars/car.types";
 import ReviewsSection from "@/components/cars/reviews/ReviewsSection";
 import SoftLeadCapture from "@/components/leads/SoftLeadCapture";
 import { ratedFigure, calculateRunningCost } from "@/lib/mileageMath";
+import MileageVerdict from "./MileageVerdict";
 import { routes } from "@/lib/routes";
 
 function formatRupee(n: number): string {
@@ -449,6 +450,21 @@ export default function MileageCalculatorClient({
                   </div>
                 )}
               </div>
+
+              {hasRunningCost && (
+                <div className="mt-4">
+                  <MileageVerdict
+                    yearlyCost={runningCost.yearlyCost}
+                    mileage={mileageValue}
+                    fuelPrice={fuelPriceValue}
+                    monthlyDistanceKm={monthlyDistanceValue}
+                    carPrice={
+                      carDetail?.selectedVariant ? Number(carDetail.selectedVariant.price) : null
+                    }
+                    unitLabel={MILEAGE_UNIT_LABELS[fuelType]}
+                  />
+                </div>
+              )}
 
               {hasRunningCost && (
                 <SoftLeadCapture

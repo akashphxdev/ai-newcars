@@ -43,3 +43,20 @@ export async function getOnRoadPrice(
     return null;
   }
 }
+
+// One request for a whole variant table. Variants the state has no slab
+// for are simply absent from the response rather than failing it.
+export async function getOnRoadPrices(
+  variantIds: number[],
+  stateSlug: string,
+): Promise<OnRoadPrice[]> {
+  if (!variantIds.length) return [];
+  try {
+    const res = await apiFetch<{ prices: OnRoadPrice[] }>(
+      `/cars/on-road-prices?variants=${variantIds.join(",")}&state=${encodeURIComponent(stateSlug)}`,
+    );
+    return res.prices ?? [];
+  } catch {
+    return [];
+  }
+}

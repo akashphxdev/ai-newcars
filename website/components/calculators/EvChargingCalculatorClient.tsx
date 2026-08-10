@@ -14,6 +14,7 @@ import type { CarDetailResult } from "@/features/cars/car.types";
 import { formatLakh } from "@/lib/calculatorFormat";
 import { Label, selectClass, inputClass } from "@/components/calculators/CalculatorFormControls";
 import SoftLeadCapture from "@/components/leads/SoftLeadCapture";
+import EvChargingVerdict from "./EvChargingVerdict";
 
 function formatDuration(hours: number): string {
   if (!isFinite(hours) || hours <= 0) return "—";
@@ -355,6 +356,13 @@ export default function EvChargingCalculatorClient({
                   </p>
                 </div>
               </div>
+
+              <EvChargingVerdict
+                batteryKwh={batteryCapacity}
+                acOutputKw={effectiveAcOutput}
+                realWorldRangeKm={electricSpecs?.realWorldRange ?? null}
+                claimedRangeKm={electricSpecs?.claimedRange ?? null}
+              />
 
               <SoftLeadCapture
                 calculatorType="ev_charging"
