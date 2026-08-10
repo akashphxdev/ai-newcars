@@ -15,6 +15,7 @@ import { formatLakh } from "@/lib/calculatorFormat";
 import { Label, selectClass, inputClass } from "@/components/calculators/CalculatorFormControls";
 import SoftLeadCapture from "@/components/leads/SoftLeadCapture";
 import EvChargingVerdict from "./EvChargingVerdict";
+import ChargeRange from "./ChargeRange";
 
 function formatDuration(hours: number): string {
   if (!isFinite(hours) || hours <= 0) return "—";
@@ -244,33 +245,15 @@ export default function EvChargingCalculatorClient({
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <Label>Charge From (%)</Label>
-                <input
-                  type="text"
-                  inputMode="numeric"
-                  value={fromPct}
-                  onChange={(e) => setFromPct(e.target.value.replace(/\D/g, "").slice(0, 3))}
-                  placeholder="20"
-                  className={inputClass}
-                />
-              </div>
-              <div>
-                <Label>Charge To (%)</Label>
-                <input
-                  type="text"
-                  inputMode="numeric"
-                  value={toPct}
-                  onChange={(e) => setToPct(e.target.value.replace(/\D/g, "").slice(0, 3))}
-                  placeholder="100"
-                  className={inputClass}
-                />
-              </div>
-            </div>
-            {toValue <= fromValue && fromPct && toPct && (
-              <p className="-mt-2 text-[11px] font-medium text-red-600">&quot;Charge To&quot; should be greater than &quot;Charge From&quot;.</p>
-            )}
+            <ChargeRange
+              from={fromValue}
+              to={toValue}
+              onChange={({ from, to }) => {
+                setFromPct(String(from));
+                setToPct(String(to));
+              }}
+            />
+
 
             {carDetail && (
               <div className="rounded-xl bg-page p-3.5 text-[12px] text-muted">

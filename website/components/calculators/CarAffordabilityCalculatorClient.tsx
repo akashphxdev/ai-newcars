@@ -7,6 +7,7 @@ import type { HomeCar } from "@/features/cars/car.types";
 import type { BodyType } from "@/features/bodyTypes/bodyType.types";
 import { calculatePrincipalFromEmi } from "@/lib/emiMath";
 import AffordabilityVerdict from "./AffordabilityVerdict";
+import SliderRow from "./SliderRow";
 import { formatRupee, formatLakh } from "@/lib/calculatorFormat";
 import { Label, inputClass, selectClass } from "@/components/calculators/CalculatorFormControls";
 import CarCard from "@/components/cars/CarCard";
@@ -189,28 +190,38 @@ export default function CarAffordabilityCalculatorClient({ bodyTypes }: { bodyTy
           <h2 className="mb-4 border-b border-border-soft pb-3 text-[15px] font-bold text-ink">Enter Your Budget</h2>
 
           <div className="flex flex-col gap-4">
-            <div>
-              <Label>Monthly EMI You Can Pay</Label>
-              <input
-                type="text"
-                inputMode="numeric"
-                value={monthlyEmi}
-                onChange={(e) => setMonthlyEmi(e.target.value.replace(/\D/g, ""))}
-                placeholder="e.g. 15000"
-                className={inputClass}
-              />
-            </div>
-
-            <div>
-              <Label>Down Payment You Can Pay</Label>
-              <input
-                type="text"
-                inputMode="numeric"
-                value={downPayment}
-                onChange={(e) => setDownPayment(e.target.value.replace(/\D/g, ""))}
-                placeholder="e.g. 200000"
-                className={inputClass}
-              />
+            {/* The two figures the visitor actually controls, on one
+                panel, as sliders — the same paradigm as the EMI and down
+                payment tools, because it is the same kind of question:
+                move a budget and watch what it reaches. */}
+            <div className="rounded-2xl bg-ink p-5">
+              <div className="flex flex-col gap-6">
+                <SliderRow
+                  label="EMI you can pay"
+                  value={monthlyEmiValue}
+                  onChange={(v) => setMonthlyEmi(String(Math.round(v)))}
+                  min={5000}
+                  max={150000}
+                  step={500}
+                  minLabel="₹5,000"
+                  maxLabel="₹1.5L"
+                  prefix="₹"
+                  format={(v) => v.toLocaleString("en-IN")}
+                />
+                <SliderRow
+                  label="Down payment you can raise"
+                  value={downPaymentValue}
+                  onChange={(v) => setDownPayment(String(Math.round(v)))}
+                  min={0}
+                  max={2000000}
+                  step={10000}
+                  minLabel="₹0"
+                  maxLabel="₹20L"
+                  prefix="₹"
+                  format={(v) => v.toLocaleString("en-IN")}
+                  hint="Cash upfront lifts the budget rupee for rupee — it is not borrowed, so it costs no interest."
+                />
+              </div>
             </div>
 
             <div>
