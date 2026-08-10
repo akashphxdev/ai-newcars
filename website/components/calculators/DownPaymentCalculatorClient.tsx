@@ -11,6 +11,7 @@ import { getCarDetail } from "@/features/cars/car.api";
 import type { CarDetailResult } from "@/features/cars/car.types";
 import { calculateEmi, calculatePrincipalFromEmi } from "@/lib/emiMath";
 import DownPaymentVerdict from "./DownPaymentVerdict";
+import SliderRow from "./SliderRow";
 import { formatRupee, formatLakh } from "@/lib/calculatorFormat";
 import { Label, selectClass, inputClass } from "@/components/calculators/CalculatorFormControls";
 import SoftLeadCapture from "@/components/leads/SoftLeadCapture";
@@ -241,15 +242,21 @@ export default function DownPaymentCalculatorClient({
             </div>
 
             <div>
-              <Label>Your Target Monthly EMI</Label>
-              <input
-                type="text"
-                inputMode="numeric"
-                value={desiredEmi}
-                onChange={(e) => setDesiredEmi(e.target.value.replace(/\D/g, ""))}
-                placeholder="e.g. 15000"
-                className={inputClass}
-              />
+              <div className="rounded-2xl bg-ink p-5">
+                <SliderRow
+                  label="EMI you can carry"
+                  value={desiredEmiValue}
+                  onChange={(v) => setDesiredEmi(String(Math.round(v)))}
+                  min={5000}
+                  max={150000}
+                  step={500}
+                  minLabel="₹5,000"
+                  maxLabel="₹1.5L"
+                  prefix="₹"
+                  format={(v) => v.toLocaleString("en-IN")}
+                  hint="Drag until the deposit below is one you can actually raise."
+                />
+              </div>
             </div>
 
             <div>
@@ -298,13 +305,16 @@ export default function DownPaymentCalculatorClient({
               </div>
             </div>
 
-            <div className="flex items-center gap-3 pt-1">
+            <div className="flex items-center gap-3 pt-1 lg:justify-end">
+              {/* Same as the EMI page: the result is already live, so this
+                  only ever scrolled. It says so now, and only appears
+                  where the result is off-screen. */}
               <button
                 type="button"
                 onClick={() => document.getElementById("down-payment-result")?.scrollIntoView({ behavior: "smooth", block: "start" })}
-                className="flex-1 cursor-pointer rounded-xl bg-brand py-3 text-sm font-bold text-white transition-opacity hover:opacity-90 active:scale-[0.98]"
+                className="flex-1 cursor-pointer rounded-xl bg-brand py-3 text-sm font-bold text-white transition-opacity hover:opacity-90 active:scale-[0.98] lg:hidden"
               >
-                Calculate Down Payment
+                See your deposit ↓
               </button>
               <button
                 type="button"
@@ -333,14 +343,40 @@ export default function DownPaymentCalculatorClient({
             </div>
           ) : (
             <>
-              <div className="rounded-2xl bg-brand-soft p-5">
-                <p className="text-[12px] font-bold text-ink">Down Payment Needed</p>
-                <p className="mt-1 text-[32px] font-extrabold leading-none text-brand">{formatRupee(result.downPayment)}</p>
-                <p className="mt-1 text-[12px] font-medium text-muted">
-                  {result.fullyCovered
-                    ? "Your target EMI alone covers the full price — no down payment needed."
-                    : `That's ${result.downPaymentPct.toFixed(1)}% of the car's ex-showroom price.`}
-                </p>
+              <div className="overflow-hidden rounded-2xl border border-border bg-surface">
+                <div className="p-5 sm:p-6">
+                  <p className="text-[11px] font-bold uppercase tracking-[0.12em] text-muted">
+                    Down payment needed
+                  </p>
+                  <p className="mt-1.5 font-head text-[40px] font-extrabold leading-none text-ink tabular-nums sm:text-[48px]">
+                    {formatRupee(result.downPayment)}
+                  </p>
+                  <p className="mt-1.5 text-[12.5px] text-muted">
+                    {result.fullyCovered
+                      ? "Your target EMI alone covers the full price — no down payment needed."
+                      : `${result.downPaymentPct.toFixed(0)}% of the ex-showroom price, with the rest on finance.`}
+                  </p>
+
+                  {!result.fullyCovered && (
+                    <div className="mt-5">
+                      <div className="flex h-9 w-full overflow-hidden rounded-lg">
+                        <div
+                          className="flex items-center justify-center bg-brand text-[11px] font-bold text-white"
+                          style={{ width: `${Math.max(result.downPaymentPct, 8)}%` }}
+                        >
+                          {result.downPaymentPct.toFixed(0)}%
+                        </div>
+                        <div className="flex flex-1 items-center justify-center bg-ink text-[11px] font-bold text-white">
+                          Financed
+                        </div>
+                      </div>
+                      <div className="mt-2 flex justify-between text-[11px] text-muted">
+                        <span>You pay {formatRupee(result.downPayment)}</span>
+                        <span>Lender covers {formatRupee(result.loanAmount)}</span>
+                      </div>
+                    </div>
+                  )}
+                </div>
               </div>
 
               <div className="rounded-2xl border border-border bg-surface p-5">
