@@ -317,10 +317,21 @@ export default function MileageCalculatorClient({
         </div>
       </div>
 
-      <div className="grid grid-cols-1 gap-5 lg:grid-cols-[minmax(360px,0.78fr)_minmax(500px,1.22fr)]">
-        {/* Left — Enter Details */}
-        <div className="rounded-2xl border border-border bg-surface p-5 sm:p-6">
-          <h2 className="mb-4 border-b border-border-soft pb-3 text-[15px] font-bold text-ink">Enter Details</h2>
+      <div className="flex flex-col gap-5">
+        {/* Answer first, then the figures behind it. */}
+        {/* The answer, full width. */}
+        <div id="mileage-result" className="flex flex-col gap-4">
+          {mileageValue <= 0 ? (
+            <div className="flex flex-col items-center gap-2 rounded-2xl border border-dashed border-border bg-surface p-10 text-center">
+              <span className="flex size-12 items-center justify-center rounded-full bg-page text-brand">
+                <GaugeIcon className="size-5" />
+              </span>
+              <p className="text-[14px] font-bold text-ink">Enter your mileage to get started</p>
+              <p className="text-[12.5px] text-muted">
+                Select a car on the left to auto-fill it, or type your own mileage directly.
+              </p>
+              <div className="rounded-2xl border border-border bg-surface p-5 sm:p-6">
+          <h2 className="mb-4 border-b border-border-soft pb-3 text-[15px] font-bold text-ink">The figures behind it</h2>
 
           <div className="flex flex-col gap-4">
             <div>
@@ -446,18 +457,7 @@ export default function MileageCalculatorClient({
           </div>
         </div>
 
-        {/* Right — Your Result */}
-        <div id="mileage-result" className="flex flex-col gap-4">
-          {mileageValue <= 0 ? (
-            <div className="flex flex-col items-center gap-2 rounded-2xl border border-dashed border-border bg-surface p-10 text-center">
-              <span className="flex size-12 items-center justify-center rounded-full bg-page text-brand">
-                <GaugeIcon className="size-5" />
-              </span>
-              <p className="text-[14px] font-bold text-ink">Enter your mileage to get started</p>
-              <p className="text-[12.5px] text-muted">
-                Select a car on the left to auto-fill it, or type your own mileage directly.
-              </p>
-            </div>
+      </div>
           ) : (
             <>
               <div className="rounded-2xl bg-green-50 p-5">
