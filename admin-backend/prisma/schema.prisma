@@ -37,6 +37,7 @@ model State {
   id        Int      @id @default(autoincrement())
   countryId Int      @map("country_id")
   name      String   @db.VarChar(100)
+  slug      String   @unique @db.VarChar(100)
   code      String?  @db.VarChar(10)
   country   Country  @relation(fields: [countryId], references: [id])
   cities    City[]
@@ -50,7 +51,7 @@ model City {
   id                Int      @id @default(autoincrement())
   stateId           Int      @map("state_id")
   name              String   @db.VarChar(100)
-  slug              String   @unique @db.VarChar(100)
+  slug              String   @db.VarChar(100)
   isMetro           Boolean  @default(false) @map("is_metro")
   isTopCity         Boolean  @default(false) @map("is_top_city")
   isSellCarEnabled  Boolean  @default(false) @map("is_sell_car_enabled")
@@ -65,6 +66,7 @@ model City {
   buyNewCarLeads  BuyNewCarLead[]
   insuranceLeads  InsuranceLead[]
   userAddresses   UserAddress[]
+  @@unique([stateId, slug])
   @@index([stateId])
   @@map("cities")
 }

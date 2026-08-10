@@ -376,14 +376,68 @@ function seededShuffle<T>(items: T[], seed: number): T[] {
   return arr;
 }
 
+
+// Price bands, in rupees. Pairing ignored price entirely, so the homepage
+// offered "Jeep Grand Cherokee (63L) vs Mahindra Bolero (8.5L)" — two cars
+// nobody cross-shops. Bands keep a pair comparable while leaving room to
+// shuffle inside each one, so the selection still changes daily.
+const PRICE_BANDS = [1_000_000, 2_000_000, 4_000_000, 10_000_000, Infinity];
+
+function bandOf(price: Prisma.Decimal | null): number {
+  const v = price ? Number(price) : 0;
+  return PRICE_BANDS.findIndex((ceiling) => v < ceiling);
+}
+
+/**
+ * Orders candidate ids so consecutive entries form a sensible pair:
+ * similar price, and different brands wherever the band allows it.
+ *
+ * Same-brand pairs were the other half of the problem — "Mercedes AMG S 63
+ * vs Mercedes CLA Electric" compares a manufacturer against itself. A swap
+ * with the next candidate fixes most of them; where a band holds one brand
+ * only, the pair stands rather than dropping the car entirely.
+ */
+function pairWithinPriceBands(
+  candidates: { id: number; priceMin: Prisma.Decimal | null; brandId: number }[],
+  seed: number,
+): number[] {
+  const bands = new Map<number, typeof candidates>();
+  for (const c of candidates) {
+    const b = bandOf(c.priceMin);
+    if (!bands.has(b)) bands.set(b, []);
+    bands.get(b)!.push(c);
+  }
+
+  const out: number[] = [];
+  for (const band of [...bands.keys()].sort((a, b) => a - b)) {
+    const shuffled = seededShuffle(bands.get(band)!.map((c) => c.id), seed + band);
+    const byId = new Map(bands.get(band)!.map((c) => [c.id, c]));
+
+    for (let i = 0; i + 1 < shuffled.length; i += 2) {
+      if (byId.get(shuffled[i])!.brandId === byId.get(shuffled[i + 1])!.brandId) {
+        const swap = shuffled.findIndex(
+          (id, j) => j > i + 1 && byId.get(id)!.brandId !== byId.get(shuffled[i])!.brandId,
+        );
+        if (swap !== -1) [shuffled[i + 1], shuffled[swap]] = [shuffled[swap], shuffled[i + 1]];
+      }
+      out.push(shuffled[i], shuffled[i + 1]);
+    }
+  }
+  return out;
+}
+
 export async function getRandomComparisonPairs(query: RandomPairsQueryParsed): Promise<{
   items: RandomComparisonPair[];
   pagination: { page: number; limit: number; total: number; totalPages: number };
 }> {
   const where = buildRandomPairsWhere(query);
 
-  const candidates = await prisma.carModel.findMany({ where, select: { id: true }, orderBy: { id: 'asc' } });
-  const shuffledIds = seededShuffle(candidates.map((c) => c.id), daySeed());
+  const candidates = await prisma.carModel.findMany({
+    where,
+    select: { id: true, priceMin: true, brandId: true },
+    orderBy: { id: 'asc' },
+  });
+  const shuffledIds = pairWithinPriceBands(candidates, daySeed());
   const totalPairs = Math.floor(shuffledIds.length / 2);
 
   const { page, count } = query;
