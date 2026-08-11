@@ -28,6 +28,7 @@ import { fillPlaceholders, getEntityPageMetadata, getEntitySchemas, getSeoMeta }
 import { SEO_PAGE_TYPE } from "@/features/seo/seo.types";
 import SeoJsonLd from "@/components/common/SeoJsonLd";
 import { buildFaqPageSchema } from "@/lib/schema";
+import { generateCarFaqs } from "@/lib/carFaqs";
 
 // The overview lists what the car has. Items recorded as "Not Available"
 // were being rendered with a tick beside them, which read as the opposite
@@ -120,7 +121,6 @@ export default async function CarModelPage(props: Props) {
     getEntitySchemas(SEO_PAGE_TYPE.MODEL, car.id, seoVars),
     getSeoMeta({ pageType: SEO_PAGE_TYPE.MODEL, entityId: car.id }),
   ]);
-  const faqSchema = buildFaqPageSchema(faqs.map((f) => ({ question: f.question, answer: f.answer })));
   const variant = car.selectedVariant;
   const defaultVariantSlug = variant ? slugify(variant.variantName) : "";
   const overviewGroups = buildOverviewGroups(variant?.features ?? []);
@@ -129,6 +129,13 @@ export default async function CarModelPage(props: Props) {
       .find((group) => group.categoryName.toLowerCase() === "safety")
       ?.items.filter(isFeaturePresent)
       .map(featureLabel) ?? [];
+  // An editor's own FAQs are the whole answer when they exist; otherwise
+  // these are generated from this car's data so the section and its
+  // rich-result schema are never empty.
+  const faqList = faqs.length
+    ? faqs.map((f) => ({ question: f.question, answer: f.answer }))
+    : generateCarFaqs({ car, variant, variantPick, metros, safetyItems });
+  const faqSchema = buildFaqPageSchema(faqList);
   const editorialImage = car.images[1]?.imageUrl ?? car.images[0]?.imageUrl ?? car.coverImageUrl;
   const totalHighlights = overviewGroups.reduce((count, group) => count + group.items.length, 0);
 
@@ -173,7 +180,7 @@ export default async function CarModelPage(props: Props) {
               comparisonPairs.length > 0 && "comparison",
               "reviews",
               articles.length > 0 && "news",
-              faqs.length > 0 && "faqs",
+              faqList.length > 0 && "faqs",
             ].filter((section): section is string => typeof section === "string")}
           />
           <div className="mt-6 space-y-6">
@@ -386,13 +393,13 @@ export default async function CarModelPage(props: Props) {
         </div>
       )}
 
-      {faqs.length > 0 && (
+      {faqList.length > 0 && (
         <section id="faqs" className="scroll-mt-32 overflow-hidden rounded-xl border border-border bg-surface">
           <div className="p-5 sm:p-7">
               <SectionIntro eyebrow="Before you decide" title={`${car.name} FAQs`} copy="Clear answers to the questions buyers ask most often." />
               <div className="mt-8 border-t border-border">
-                {faqs.map((faq) => (
-                  <details key={faq.id} className="group border-b border-border py-5">
+                {faqList.map((faq) => (
+                  <details key={faq.question} className="group border-b border-border py-5">
                     <summary className="flex cursor-pointer list-none items-center justify-between gap-5 text-[14px] font-extrabold text-ink">
                       {faq.question}
                       <ChevronDownIcon className="size-4 shrink-0 text-muted transition-transform group-open:rotate-180" />
