@@ -1,5 +1,7 @@
 import { Suspense } from "react";
 import type { Metadata } from "next";
+import { getEntityPageMetadata } from "@/features/seo/seo.api";
+import { SEO_PAGE_TYPE } from "@/features/seo/seo.types";
 import { notFound } from "next/navigation";
 import { getBodyTypeBySlug, getBodyTypeCars, getAllBodyTypesWithCounts } from "@/features/bodyTypes/bodyType.api";
 import { getRandomPairs } from "@/features/compare/compare.api";
@@ -139,10 +141,16 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { bodyType } = await params;
   const record = await getBodyTypeBySlug(bodyType);
   if (!record) return {};
-  return {
-    title: `${record.name} Cars in India | TimesAuto`,
-    description: `Explore every ${record.name} car available in India — prices, specs, and features.`,
-  };
+  return getEntityPageMetadata(
+    SEO_PAGE_TYPE.BODY_TYPE,
+    record.id,
+    { bodytype_name: record.name, bodytype_slug: record.slug },
+    {
+      title: `${record.name} Cars in India | TimesAuto`,
+      description: `Explore every ${record.name} car available in India — prices, specs, and features.`,
+    },
+    routes.bodyType(record.slug),
+  );
 }
 
 export default async function BodyTypeCarsPage({ params, searchParams }: Props) {

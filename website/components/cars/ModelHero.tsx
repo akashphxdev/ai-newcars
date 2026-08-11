@@ -30,9 +30,12 @@ function pickHeroImage(car: CarDetailResult): string | null {
 export default function ModelHero({
   car,
   variant,
+  h1Override,
 }: {
   car: CarDetailResult;
   variant: CarDetailSelectedVariant | null;
+  // An editor's H1 for this page, when they have written one.
+  h1Override?: string | null;
 }) {
   const isUpcoming = car.launchStatus !== "available";
   const hero = pickHeroImage(car);
@@ -65,7 +68,7 @@ export default function ModelHero({
 
           <div className="absolute inset-y-0 left-0 flex max-w-[58%] flex-col justify-center p-5 sm:p-7 lg:p-9">
             <h1 className="font-head text-[26px] font-extrabold leading-[1.04] tracking-normal text-ink sm:text-[36px] lg:text-[44px]">
-              {carTitle(car)}
+              {h1Override || carTitle(car)}
             </h1>
             <p className="mt-1.5 text-[12.5px] font-semibold text-muted sm:text-[13.5px]">
               {car.brand.name}

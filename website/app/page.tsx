@@ -1,4 +1,8 @@
 import { Suspense } from "react";
+import type { Metadata } from "next";
+import { getAllSchemas, getSeoMeta, getStaticPageMetadata } from "@/features/seo/seo.api";
+import { SEO_PAGE_TYPE } from "@/features/seo/seo.types";
+import SeoJsonLd from "@/components/common/SeoJsonLd";
 import HeroSection from "@/components/home/HeroSection";
 import CuratedCars from "@/components/home/CuratedCars";
 import ElectricCars from "@/components/home/Electriccars";
@@ -25,6 +29,20 @@ import { getCarOptions, getCompareData, getRandomPairs } from "@/features/compar
 // showing up first — sections stream in as their data resolves instead of
 // the whole page waiting on the slowest fetch.
 
+export async function generateMetadata(): Promise<Metadata> {
+  return getStaticPageMetadata(
+    "home",
+    {
+      title: "TimesAuto — New Car Prices, Specs, Mileage & Comparisons in India",
+      description:
+        "On-road prices, specifications, mileage and side-by-side comparisons for every new car on sale in India.",
+    },
+    "/",
+  );
+}
+
+// No h1Override here: the home <h1> is the rotating banner's own heading,
+// so a single admin string would freeze the carousel's headline.
 async function HeroSectionData() {
   // revalidate window, so Next.js dedupes it into one request, not two.
   const [banners, bodyTypes] = await Promise.all([getBanners(), getBodyTypes()]);
@@ -89,9 +107,17 @@ async function StoriesData() {
   return <Stories groups={groups} />;
 }
 
+async function HomeJsonLd() {
+  const seo = await getSeoMeta({ pageType: SEO_PAGE_TYPE.STATIC, staticPageSlug: "home" });
+  return <SeoJsonLd schemas={getAllSchemas(seo)} />;
+}
+
 export default function HomePage() {
   return (
     <div className="min-h-screen bg-page">
+      <Suspense fallback={null}>
+        <HomeJsonLd />
+      </Suspense>
       <Suspense fallback={<SectionSkeleton minHeight={560} />}>
         <HeroSectionData />
       </Suspense>

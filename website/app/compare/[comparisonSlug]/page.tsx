@@ -1,5 +1,15 @@
 import { Suspense } from "react";
 import type { Metadata } from "next";
+import {
+  fillComparePlaceholders,
+  fillCompareSchemaPlaceholders,
+  getAllSchemas,
+  getSeoMeta,
+  parseRobotsMeta,
+} from "@/features/seo/seo.api";
+import { SEO_PAGE_TYPE } from "@/features/seo/seo.types";
+import { getUploadUrl } from "@/lib/apiClient";
+import SeoJsonLd from "@/components/common/SeoJsonLd";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getCompareData, getCarOptions, getRandomPairs, getModelCrossPairs } from "@/features/compare/compare.api";
@@ -51,9 +61,30 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   if (!data) return {};
 
   const names = data.cars.map((c) => c.name).join(" vs ");
+  // "compare-detail" is one shared template for every pair — an editor
+  // cannot write a row per comparison, so its copy carries {{car1_name}}
+  // style tokens that get filled with the cars actually being viewed.
+  const seo = await getSeoMeta({ pageType: SEO_PAGE_TYPE.STATIC, staticPageSlug: "compare-detail" });
+
+  const title = fillComparePlaceholders(seo?.metaTitle, data.cars) ?? `${names} — Compare | TimesAuto`;
+  const description =
+    fillComparePlaceholders(seo?.metaDescription, data.cars) ??
+    `Compare ${names} side-by-side — price, specs, features and performance.`;
+  const ogImage = getUploadUrl(seo?.ogImage);
+
   return {
-    title: `${names} — Compare | TimesAuto`,
-    description: `Compare ${names} side-by-side — price, specs, features and performance.`,
+    title,
+    description,
+    keywords: fillComparePlaceholders(seo?.metaKeywords, data.cars) ?? undefined,
+    // This pair's own path, never the template's canonical — one shared
+    // canonical would collapse every comparison onto a single URL.
+    alternates: { canonical: `/compare/${(await params).comparisonSlug}` },
+    robots: parseRobotsMeta(seo?.robotsMeta ?? null),
+    openGraph: {
+      title: fillComparePlaceholders(seo?.ogTitle, data.cars) ?? title,
+      description: fillComparePlaceholders(seo?.ogDescription, data.cars) ?? description,
+      images: ogImage ? [ogImage] : undefined,
+    },
   };
 }
 
@@ -145,7 +176,11 @@ export default async function ComparisonResultPage({ params }: Props) {
   const slugs = splitComparisonSlug(comparisonSlug);
   if (!slugs) notFound();
 
-  const [data, carOptions] = await Promise.all([getCompareData(slugs), getCarOptions()]);
+  const [data, carOptions, seo] = await Promise.all([
+    getCompareData(slugs),
+    getCarOptions(),
+    getSeoMeta({ pageType: SEO_PAGE_TYPE.STATIC, staticPageSlug: "compare-detail" }),
+  ]);
   if (!data) notFound();
 
   const { cars } = data;
@@ -153,6 +188,7 @@ export default async function ComparisonResultPage({ params }: Props) {
 
   return (
     <div className="bg-page">
+      <SeoJsonLd schemas={getAllSchemas(seo).map((schema) => fillCompareSchemaPlaceholders(schema, cars))} />
       <RecordRecentComparison comparisonSlug={comparisonSlug} cars={cars} />
 
       <div className="mx-auto max-w-7xl px-4 py-8 sm:py-12">

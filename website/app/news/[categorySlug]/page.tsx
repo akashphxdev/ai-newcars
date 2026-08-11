@@ -1,4 +1,6 @@
 import type { Metadata } from "next";
+import { getEntityPageMetadata } from "@/features/seo/seo.api";
+import { SEO_PAGE_TYPE } from "@/features/seo/seo.types";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getArticleCategories, getArticlesByCategoryPaginated } from "@/features/articles/article.api";
@@ -25,10 +27,16 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const category = categories.find((c) => c.slug === categorySlug);
   if (!category) return {};
 
-  return {
-    title: `${category.name} — News | TimesAuto`,
-    description: `Hands-on ${category.name.toLowerCase()} coverage from the TimesAuto editorial team — reviews, comparisons, and buying advice, updated regularly.`,
-  };
+  return getEntityPageMetadata(
+    SEO_PAGE_TYPE.NEWS_CATEGORY,
+    category.id,
+    { category_name: category.name, category_slug: category.slug },
+    {
+      title: `${category.name} — News | TimesAuto`,
+      description: `Hands-on ${category.name.toLowerCase()} coverage from the TimesAuto editorial team — reviews, comparisons, and buying advice, updated regularly.`,
+    },
+    `/news/${category.slug}`,
+  );
 }
 
 export default async function NewsCategoryPage({ params }: Props) {

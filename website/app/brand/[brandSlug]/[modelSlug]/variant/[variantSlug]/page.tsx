@@ -32,12 +32,26 @@ import {
 import type { CarDetailResult, CarDetailFeatureGroup, CarDetailVariantOption } from "@/features/cars/car.types";
 import type { MetroFuelPrices } from "@/features/fuel/fuel.types";
 import { routes } from "@/lib/routes";
+import { fillPlaceholders, getEntityPageMetadata, getEntitySchemas, getSeoMeta } from "@/features/seo/seo.api";
+import { SEO_PAGE_TYPE } from "@/features/seo/seo.types";
+import SeoJsonLd from "@/components/common/SeoJsonLd";
 
 type Props = {
   params: Promise<{ brandSlug: string; modelSlug: string; variantSlug: string }>;
 };
 
 type Metric = { label: string; value: string };
+
+function variantSeoVars(car: CarDetailResult, variantSlug: string): Record<string, string> {
+  return {
+    brand_name: car.brand.name,
+    brand_slug: car.brand.slug,
+    model_name: car.name,
+    model_slug: car.slug,
+    variant_name: car.selectedVariant?.variantName ?? "",
+    variant_slug: variantSlug,
+  };
+}
 
 export async function generateStaticParams() {
   const cars = await getHomeCars("popular", 24);
@@ -88,13 +102,23 @@ export async function generateMetadata(props: Props): Promise<Metadata> {
   const variantLabel = car.selectedVariant.variantName.toLowerCase().startsWith(car.name.toLowerCase())
     ? car.selectedVariant.variantName
     : `${car.name} ${car.selectedVariant.variantName}`;
-  const title = `${variantLabel} - Price & Specs`;
-  const description = `${variantLabel} price: ${priceText}. Full specifications, features, and safety details.`;
+  const meta = await getEntityPageMetadata(
+    SEO_PAGE_TYPE.DETAIL,
+    variantId,
+    variantSeoVars(car, variantSlug),
+    {
+      title: `${variantLabel} - Price & Specs`,
+      description: `${variantLabel} price: ${priceText}. Full specifications, features, and safety details.`,
+    },
+    routes.variant(brandSlug, modelSlug, variantSlug),
+  );
 
   return {
-    title,
-    description,
-    openGraph: { title, description, images: car.coverImageUrl ? [car.coverImageUrl] : undefined },
+    ...meta,
+    openGraph: {
+      ...meta.openGraph,
+      images: meta.openGraph?.images ?? (car.coverImageUrl ? [car.coverImageUrl] : undefined),
+    },
   };
 }
 
@@ -162,6 +186,11 @@ function buildSafetyItems(groups: CarDetailFeatureGroup[]): string[] {
 export default async function CarVariantPage(props: Props) {
   const { car, variantSlug, siblings, metros } = await loadCar(props);
   const variant = car.selectedVariant!;
+  const seoVars = variantSeoVars(car, variantSlug);
+  const [schemas, seo] = await Promise.all([
+    getEntitySchemas(SEO_PAGE_TYPE.DETAIL, variant.id, seoVars),
+    getSeoMeta({ pageType: SEO_PAGE_TYPE.DETAIL, entityId: variant.id }),
+  ]);
   const safetyItems = buildSafetyItems(variant.features);
   const variantLabel = variant.variantName.toLowerCase().startsWith(car.name.toLowerCase())
     ? variant.variantName
@@ -226,6 +255,7 @@ export default async function CarVariantPage(props: Props) {
 
   return (
     <main className="variant-detail-page bg-white">
+      <SeoJsonLd schemas={schemas} />
       <div className="border-b border-border bg-white">
         <nav className="mx-auto flex max-w-7xl items-center gap-1.5 overflow-x-auto px-4 py-3 text-[11.5px] font-medium text-faint scrollbar-none">
           <Link href="/" className="hover:text-brand">Home</Link>
@@ -238,7 +268,7 @@ export default async function CarVariantPage(props: Props) {
         </nav>
       </div>
 
-      <CarModelHero car={car} variant={variant} mode="variant" />
+      <CarModelHero car={car} variant={variant} mode="variant" h1Override={fillPlaceholders(seo?.h1Tag, seoVars)} />
       <KeySpecsStrip variant={variant} />
       <ModelDetailTabs brandSlug={car.brand.slug} modelSlug={car.slug} variantSlug={variantSlug} onVariantPage />
 

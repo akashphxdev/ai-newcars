@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { getStaticPageMetadata } from "@/features/seo/seo.api";
 import { getAllBrands } from "@/features/brands/brand.api";
 import { getVariantsByModel } from "@/features/calculators/mileageCalculator.api";
 import { leadCarSeed } from "@/features/calculators/calculatorSeed";
@@ -6,10 +7,13 @@ import EvChargingCalculatorClient from "@/components/calculators/EvChargingCalcu
 import EvChargingCalculatorFaq from "@/components/calculators/EvChargingCalculatorFaq";
 import CalculatorPageShell from "@/components/calculators/CalculatorPageShell";
 
-export const metadata: Metadata = {
-  title: "EV Charging Time Calculator | TimesAuto",
-  description: "Calculate how long your electric car takes to charge — pick any EV, choose AC or DC fast charging and a charge range, using the car's own real battery and charging specs.",
-};
+export async function generateMetadata(): Promise<Metadata> {
+  return getStaticPageMetadata(
+    "ev-charging-time-calculator",
+    { title: "EV Charging Time Calculator | TimesAuto", description: "Calculate how long your electric car takes to charge — pick any EV, choose AC or DC fast charging and a charge range, using the car's own real battery and charging specs." },
+    "/ev-charging-time-calculator",
+  );
+}
 
 export default async function EvChargingCalculatorPage() {
   const [brands, seed] = await Promise.all([getAllBrands(), leadCarSeed(getVariantsByModel, "electric")]);

@@ -19,10 +19,15 @@ export default function CarModelHero({
   car,
   variant,
   mode = "model",
+  h1Override,
 }: {
   car: CarDetailResult;
   variant: CarDetailSelectedVariant | null;
   mode?: "model" | "variant";
+  // An editor's H1 for this page, when they have written one. The <h1>
+  // is the page's own heading, not its <title>, so it is worth overriding
+  // separately from metadata.
+  h1Override?: string | null;
 }) {
   const isUpcoming = car.launchStatus !== "available";
   const title =
@@ -64,7 +69,7 @@ export default function CarModelHero({
           <div className="flex items-start justify-between gap-4">
           <div>
               <p className="text-[12px] font-semibold text-muted">{car.brand.name}</p>
-              <h1 className="mt-1 font-head text-3xl font-extrabold leading-[1.05] text-ink sm:text-4xl lg:text-[44px]">{title}</h1>
+              <h1 className="mt-1 font-head text-3xl font-extrabold leading-[1.05] text-ink sm:text-4xl lg:text-[44px]">{h1Override || title}</h1>
 
               <div className="mt-4 flex flex-wrap items-center gap-3">
               {car.ratingAvg && (

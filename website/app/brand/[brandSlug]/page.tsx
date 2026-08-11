@@ -1,5 +1,7 @@
 import { Suspense } from "react";
 import type { Metadata } from "next";
+import { getEntityPageMetadata } from "@/features/seo/seo.api";
+import { SEO_PAGE_TYPE } from "@/features/seo/seo.types";
 import { notFound } from "next/navigation";
 import { getBrandBySlug, getBrandCars, getBrandArticles, getAllBrandsWithCounts } from "@/features/brands/brand.api";
 import { getRandomPairs, getBrandCrossPairs } from "@/features/compare/compare.api";
@@ -177,10 +179,16 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { brandSlug } = await params;
   const brand = await getBrandBySlug(brandSlug);
   if (!brand) return {};
-  return {
-    title: `${brand.name} Cars in India | TimesAuto`,
-    description: `Explore the full range of ${brand.name} cars in India — prices, specs, and features.`,
-  };
+  return getEntityPageMetadata(
+    SEO_PAGE_TYPE.BRAND,
+    brand.id,
+    { brand_name: brand.name, brand_slug: brand.slug },
+    {
+      title: `${brand.name} Cars in India | TimesAuto`,
+      description: `Explore the full range of ${brand.name} cars in India — prices, specs, and features.`,
+    },
+    routes.brand(brand.slug),
+  );
 }
 
 export default async function BrandCarsPage({ params, searchParams }: Props) {

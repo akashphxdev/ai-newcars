@@ -1,14 +1,18 @@
 import type { Metadata } from "next";
+import { getStaticPageMetadata } from "@/features/seo/seo.api";
 import { getAllBrands } from "@/features/brands/brand.api";
 import { leadModelSeed } from "@/features/calculators/calculatorSeed";
 import FuelComparisonCalculatorClient from "@/components/calculators/FuelComparisonCalculatorClient";
 import FuelComparisonCalculatorFaq from "@/components/calculators/FuelComparisonCalculatorFaq";
 import CalculatorPageShell from "@/components/calculators/CalculatorPageShell";
 
-export const metadata: Metadata = {
-  title: "Petrol vs Diesel vs CNG vs EV Running Cost Comparison | TimesAuto",
-  description: "Compare the running cost of a car's Petrol, Diesel, CNG and Electric versions side-by-side, using each variant's own real mileage and your fuel prices.",
-};
+export async function generateMetadata(): Promise<Metadata> {
+  return getStaticPageMetadata(
+    "fuel-comparison-calculator",
+    { title: "Petrol vs Diesel vs CNG vs EV Running Cost Comparison | TimesAuto", description: "Compare the running cost of a car's Petrol, Diesel, CNG and Electric versions side-by-side, using each variant's own real mileage and your fuel prices." },
+    "/fuel-comparison-calculator",
+  );
+}
 
 export default async function FuelComparisonCalculatorPage() {
   const [brands, seed] = await Promise.all([getAllBrands(), leadModelSeed()]);

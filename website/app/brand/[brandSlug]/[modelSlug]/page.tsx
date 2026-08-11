@@ -24,6 +24,10 @@ import type { HomeArticle } from "@/features/articles/article.types";
 import type { RandomComparisonPair } from "@/features/compare/compare.types";
 import type { MetroFuelPrices } from "@/features/fuel/fuel.types";
 import { routes } from "@/lib/routes";
+import { fillPlaceholders, getEntityPageMetadata, getEntitySchemas, getSeoMeta } from "@/features/seo/seo.api";
+import { SEO_PAGE_TYPE } from "@/features/seo/seo.types";
+import SeoJsonLd from "@/components/common/SeoJsonLd";
+import { buildFaqPageSchema } from "@/lib/schema";
 
 // The overview lists what the car has. Items recorded as "Not Available"
 // were being rendered with a tick beside them, which read as the opposite
@@ -42,6 +46,10 @@ function buildOverviewGroups(groups: CarDetailFeatureGroup[]) {
 type Props = {
   params: Promise<{ brandSlug: string; modelSlug: string }>;
 };
+
+function modelSeoVars(car: CarDetailResult): Record<string, string> {
+  return { brand_name: car.brand.name, brand_slug: car.brand.slug, model_name: car.name, model_slug: car.slug };
+}
 
 export async function generateStaticParams() {
   const cars = await getHomeCars("popular", 24);
@@ -75,13 +83,23 @@ export async function generateMetadata(props: Props): Promise<Metadata> {
   if (!car) return {};
 
   const priceText = formatPriceRange(car.priceMin, car.priceMax);
-  const title = `${carTitle(car)} - Price, Specs, Images & Variants`;
-  const description = `${carTitle(car)} price in India: ${priceText}. Check variants, specifications, colours, and images.`;
+  const meta = await getEntityPageMetadata(
+    SEO_PAGE_TYPE.MODEL,
+    car.id,
+    modelSeoVars(car),
+    {
+      title: `${carTitle(car)} - Price, Specs, Images & Variants`,
+      description: `${carTitle(car)} price in India: ${priceText}. Check variants, specifications, colours, and images.`,
+    },
+    routes.model(car.brand.slug, car.slug),
+  );
 
   return {
-    title,
-    description,
-    openGraph: { title, description, images: car.coverImageUrl ? [car.coverImageUrl] : undefined },
+    ...meta,
+    openGraph: {
+      ...meta.openGraph,
+      images: meta.openGraph?.images ?? (car.coverImageUrl ? [car.coverImageUrl] : undefined),
+    },
   };
 }
 
@@ -97,6 +115,12 @@ function SectionIntro({ eyebrow, title, copy }: { eyebrow: string; title: string
 
 export default async function CarModelPage(props: Props) {
   const { car, faqs, articles, comparisonPairs, variantPick, metros } = await loadCar(props);
+  const seoVars = modelSeoVars(car);
+  const [adminSchemas, seo] = await Promise.all([
+    getEntitySchemas(SEO_PAGE_TYPE.MODEL, car.id, seoVars),
+    getSeoMeta({ pageType: SEO_PAGE_TYPE.MODEL, entityId: car.id }),
+  ]);
+  const faqSchema = buildFaqPageSchema(faqs.map((f) => ({ question: f.question, answer: f.answer })));
   const variant = car.selectedVariant;
   const defaultVariantSlug = variant ? slugify(variant.variantName) : "";
   const overviewGroups = buildOverviewGroups(variant?.features ?? []);
@@ -110,6 +134,7 @@ export default async function CarModelPage(props: Props) {
 
   return (
     <main className="model-detail-page bg-page">
+      <SeoJsonLd schemas={[...adminSchemas, faqSchema]} />
       <div className="border-b border-border bg-white">
         <nav className="mx-auto flex max-w-7xl items-center gap-1.5 overflow-x-auto px-4 py-3 text-[11.5px] font-medium text-faint scrollbar-none">
           <Link href="/" className="hover:text-brand">Home</Link>
@@ -125,7 +150,7 @@ export default async function CarModelPage(props: Props) {
           taller buying panel to finish. */}
       <div className="mx-auto grid max-w-7xl gap-x-6 px-4 py-6 sm:px-6 lg:grid-cols-[minmax(0,1fr)_336px] lg:grid-rows-[auto_1fr] lg:px-8 xl:gap-x-8">
         <div className="min-w-0 lg:col-start-1 lg:row-start-1">
-          <ModelHero car={car} variant={variant} />
+          <ModelHero car={car} variant={variant} h1Override={fillPlaceholders(seo?.h1Tag, seoVars)} />
         </div>
 
         <div className="mt-6 min-w-0 lg:col-start-2 lg:row-start-1 lg:row-span-2 lg:mt-0">

@@ -1,14 +1,18 @@
 import type { Metadata } from "next";
+import { getStaticPageMetadata } from "@/features/seo/seo.api";
 import { getCarsBrowse } from "@/features/cars/car.api";
 import ElectricCarsHero from "@/components/cars/ElectricCarsHero";
 import NewCarsFilterSidebar from "@/components/cars/NewCarsFilterSidebar";
 import BrandCarsSort from "@/components/brands/BrandCarsSort";
 import InfiniteCarGrid from "@/components/cars/InfiniteCarGrid";
 
-export const metadata: Metadata = {
-  title: "Electric Cars in India | TimesAuto",
-  description: "Browse all electric cars available in India — compare range, battery, charging time, and on-road prices.",
-};
+export async function generateMetadata(): Promise<Metadata> {
+  return getStaticPageMetadata(
+    "electric-cars",
+    { title: "Electric Cars in India | TimesAuto", description: "Browse all electric cars available in India — compare range, battery, charging time, and on-road prices." },
+    "/electric-cars",
+  );
+}
 
 // fuelType is fixed to "electric" here — the sidebar hides that filter
 // (showFuelType=false) since toggling it would be a no-op; brand, body

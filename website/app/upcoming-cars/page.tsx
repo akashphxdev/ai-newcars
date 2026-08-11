@@ -1,13 +1,17 @@
 import type { Metadata } from "next";
+import { getStaticPageMetadata } from "@/features/seo/seo.api";
 import { getCarsBrowse } from "@/features/cars/car.api";
 import NewCarsFilterSidebar from "@/components/cars/NewCarsFilterSidebar";
 import BrandCarsSort from "@/components/brands/BrandCarsSort";
 import InfiniteCarGrid from "@/components/cars/InfiniteCarGrid";
 
-export const metadata: Metadata = {
-  title: "Upcoming Cars in India | TimesAuto",
-  description: "Browse all upcoming car launches in India — expected launch dates, estimated prices, and countdowns.",
-};
+export async function generateMetadata(): Promise<Metadata> {
+  return getStaticPageMetadata(
+    "upcoming-cars",
+    { title: "Upcoming Cars in India | TimesAuto", description: "Browse all upcoming car launches in India — expected launch dates, estimated prices, and countdowns." },
+    "/upcoming-cars",
+  );
+}
 
 // launchStatus is fixed to "upcoming" here — everything else (brand, body
 // type, fuel type, price, sort) stays filterable, same as /new-cars.

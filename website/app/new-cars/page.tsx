@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { getStaticPageMetadata } from "@/features/seo/seo.api";
 import Link from "next/link";
 import { getCarsBrowse } from "@/features/cars/car.api";
 import NewCarsFilterSidebar from "@/components/cars/NewCarsFilterSidebar";
@@ -6,10 +7,13 @@ import BrandCarsSort from "@/components/brands/BrandCarsSort";
 import InfiniteCarGrid from "@/components/cars/InfiniteCarGrid";
 import { formatSinglePrice } from "@/lib/format";
 
-export const metadata: Metadata = {
-  title: "New Cars in India | TimesAuto",
-  description: "Browse every new car available in India — filter by brand, body type, fuel type, and price.",
-};
+export async function generateMetadata(): Promise<Metadata> {
+  return getStaticPageMetadata(
+    "new-cars",
+    { title: "New Cars in India | TimesAuto", description: "Browse every new car available in India — filter by brand, body type, fuel type, and price." },
+    "/new-cars",
+  );
+}
 
 type Props = {
   searchParams: Promise<{

@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { getStaticPageMetadata } from "@/features/seo/seo.api";
 import { getAllBrands } from "@/features/brands/brand.api";
 import { getVariantsByModel } from "@/features/calculators/mileageCalculator.api";
 import { leadCarSeed } from "@/features/calculators/calculatorSeed";
@@ -7,10 +8,13 @@ import MileageFormulaExplainer from "@/components/calculators/MileageFormulaExpl
 import MileageCalculatorFaq from "@/components/calculators/MileageCalculatorFaq";
 import CalculatorPageShell from "@/components/calculators/CalculatorPageShell";
 
-export const metadata: Metadata = {
-  title: "Car Mileage Calculator | TimesAuto",
-  description: "Calculate your car's mileage and running cost per km — pick any brand, model and variant, enter today's fuel price to see your daily, monthly and yearly running cost.",
-};
+export async function generateMetadata(): Promise<Metadata> {
+  return getStaticPageMetadata(
+    "mileage-calculator",
+    { title: "Car Mileage Calculator | TimesAuto", description: "Calculate your car's mileage and running cost per km — pick any brand, model and variant, enter today's fuel price to see your daily, monthly and yearly running cost." },
+    "/mileage-calculator",
+  );
+}
 
 export default async function MileageCalculatorPage() {
   const [brands, seed] = await Promise.all([getAllBrands(), leadCarSeed(getVariantsByModel)]);

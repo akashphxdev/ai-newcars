@@ -1,14 +1,18 @@
 import type { Metadata } from "next";
+import { getStaticPageMetadata } from "@/features/seo/seo.api";
 import PageSidebar from "@/components/common/PageSidebar";
 import { routes } from "@/lib/routes";
 import { getAllBrands } from "@/features/brands/brand.api";
 import BrandsHero from "@/components/brands/BrandsHero";
 import BrandsGrid from "@/components/brands/BrandsGrid";
 
-export const metadata: Metadata = {
-  title: "All Car Brands in India | TimesAuto",
-  description: "Browse every car brand available in India — explore models, prices, and specs by manufacturer.",
-};
+export async function generateMetadata(): Promise<Metadata> {
+  return getStaticPageMetadata(
+    "brands",
+    { title: "All Car Brands in India | TimesAuto", description: "Browse every car brand available in India — explore models, prices, and specs by manufacturer." },
+    "/brands",
+  );
+}
 
 export default async function BrandsPage() {
   const brands = await getAllBrands();

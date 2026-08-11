@@ -1,12 +1,16 @@
 import type { Metadata } from "next";
+import { getStaticPageMetadata } from "@/features/seo/seo.api";
 import Link from "next/link";
 import { getHomeStories } from "@/features/stories/story.api";
 import StoriesGrid from "@/components/stories/StoriesGrid";
 
-export const metadata: Metadata = {
-  title: "Stories | TimesAuto",
-  description: "Tap through the latest news, road tests, and analysis from the TimesAuto newsroom.",
-};
+export async function generateMetadata(): Promise<Metadata> {
+  return getStaticPageMetadata(
+    "stories",
+    { title: "Stories | TimesAuto", description: "Tap through the latest news, road tests, and analysis from the TimesAuto newsroom." },
+    "/stories",
+  );
+}
 
 export default async function StoriesPage() {
   const groups = await getHomeStories(30);

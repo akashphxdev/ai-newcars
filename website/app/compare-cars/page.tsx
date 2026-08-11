@@ -1,5 +1,6 @@
 import { Suspense } from "react";
 import type { Metadata } from "next";
+import { getStaticPageMetadata } from "@/features/seo/seo.api";
 import { getCarOptions, getRandomPairs } from "@/features/compare/compare.api";
 import { getBodyTypes } from "@/features/bodyTypes/bodyType.api";
 import { getHomeCars } from "@/features/cars/car.api";
@@ -16,10 +17,13 @@ import Articles from "@/components/home/Articles";
 import SectionSkeleton from "@/components/common/SectionSkeleton";
 import type { FuelFilter } from "@/features/compare/compare.types";
 
-export const metadata: Metadata = {
-  title: "Compare Cars in India | TimesAuto",
-  description: "Compare any two cars side-by-side — price, specs, features and performance, to find your perfect match.",
-};
+export async function generateMetadata(): Promise<Metadata> {
+  return getStaticPageMetadata(
+    "compare-cars",
+    { title: "Compare Cars in India | TimesAuto", description: "Compare any two cars side-by-side — price, specs, features and performance, to find your perfect match." },
+    "/compare-cars",
+  );
+}
 
 type Props = {
   searchParams: Promise<{ page?: string; bodyTypeSlug?: string; fuelType?: string; maxPrice?: string }>;
