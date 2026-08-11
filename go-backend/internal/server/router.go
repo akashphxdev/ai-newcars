@@ -21,6 +21,7 @@ const (
 	ttlCatalogue = 10 * time.Minute
 	ttlListing   = 5 * time.Minute
 	ttlSettings  = 30 * time.Minute
+	ttlRedirects = time.Minute
 )
 
 func New(h *handler.Handler, c *cache.Cache, cfg *config.Config) http.Handler {
@@ -94,6 +95,15 @@ func New(h *handler.Handler, c *cache.Cache, cfg *config.Config) http.Handler {
 			r.Get("/{brandSlug}/{modelSlug}/articles", h.CarArticles)
 			r.Get("/{brandSlug}/{modelSlug}/variants", h.CarVariants)
 			r.Get("/{brandSlug}/{modelSlug}/variant-pick", h.VariantPick)
+		})
+
+		// Admin-managed page metadata. Meta is cached like a listing —
+		// an editor changing a title should not wait ten minutes to see
+		// it; redirects use the settings TTL's short cousin because a new
+		// rule needs to go live quickly.
+		r.Route("/seo", func(r chi.Router) {
+			r.With(middleware.PublicCache(c, ttlListing)).Get("/meta", h.SeoMeta)
+			r.With(middleware.PublicCache(c, ttlRedirects)).Get("/redirects", h.SeoRedirects)
 		})
 
 		r.Route("/brands", func(r chi.Router) {
