@@ -89,6 +89,15 @@ const NAV_ICONS: Record<NavIconName, React.ReactNode> = {
   news: <NewsIcon className="size-[18px]" />,
 };
 
+// Some article categories were saved with the slug in the name column
+// ("used-cars"), which reads as "Used-Cars" once capitalised. Presented
+// properly here so the menu is legible; the real fix is renaming those
+// rows in the admin panel.
+function categoryLabel(name: string): string {
+  if (!/^[a-z0-9-]+$/.test(name)) return name;
+  return name.split("-").map((w) => w.charAt(0).toUpperCase() + w.slice(1)).join(" ");
+}
+
 function buildNavItems(bodyTypes: BodyType[], articleCategories: ArticleCategory[]): NavItem[] {
   return [
     {
@@ -107,7 +116,7 @@ function buildNavItems(bodyTypes: BodyType[], articleCategories: ArticleCategory
         },
         {
           heading: "By Body Type",
-          links: bodyTypes.slice(0, 8).map((bt) => ({ label: bt.name, href: routes.bodyType(bt.slug), icon: <CarIcon className="size-4" /> })),
+          links: bodyTypes.slice(0, 8).map((bt) => ({ label: bt.name, href: routes.bodyType(bt.slug) })),
         },
         { heading: "By Budget", links: BUDGET_BANDS },
       ],
@@ -132,7 +141,7 @@ function buildNavItems(bodyTypes: BodyType[], articleCategories: ArticleCategory
     {
       label: "News",
       navIcon: "news",
-      dropdown: articleCategories.map((c) => ({ label: c.name, href: routes.newsCategory(c.slug), icon: <NewsIcon className="size-4" /> })),
+      dropdown: articleCategories.map((c) => ({ label: categoryLabel(c.name), href: routes.newsCategory(c.slug) })),
     },
   ];
 }
@@ -348,7 +357,7 @@ export default function Header({ bodyTypes, articleCategories }: { bodyTypes: Bo
                       <ul
                         className={
                           cols.length === 1
-                            ? "grid flex-1 grid-cols-3 gap-x-8 gap-y-0.5"
+                            ? "grid max-w-2xl grid-cols-2 gap-x-8 gap-y-0.5"
                             : col.links.length > 8 && !col.links[0]?.icon
                               ? "columns-2 gap-8 space-y-0.5 pr-2"
                               : "space-y-0.5 pr-2"
