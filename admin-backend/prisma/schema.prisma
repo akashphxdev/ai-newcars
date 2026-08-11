@@ -715,6 +715,7 @@ model BuyNewCarLead {
   @@index([status, createdAt])
   @@index([mobile])
   @@index([brandId, modelId])
+  @@index([userId, createdAt])
 
   @@map("buy_new_car_leads")
 }
@@ -782,6 +783,7 @@ model InsuranceLead {
 
   @@index([status, createdAt])
   @@index([mobile])
+  @@index([userId, createdAt])
   @@index([brandId, modelId])
 
   @@map("insurance_leads")
@@ -843,6 +845,7 @@ model LoanLead {
 
   @@map("loan_leads")
   @@index([status, createdAt])
+  @@index([userId, createdAt])
   @@index([mobile])
   @@index([brandId, modelId])
 
@@ -869,6 +872,8 @@ model SoftLead {
   ipAddress      String?   @map("ip_address") @db.VarChar(45)
   createdAt      DateTime  @default(now()) @map("created_at")
   updatedAt      DateTime  @updatedAt @map("updated_at")
+
+  @@index([userId, createdAt])
   @@index([status, createdAt])
   @@index([mobile])
   @@index([brandId, modelId])
@@ -898,7 +903,7 @@ model PriceDropAlertLead {
   ipAddress   String?   @map("ip_address") @db.VarChar(45)
   createdAt   DateTime  @default(now()) @map("created_at")
   updatedAt   DateTime  @updatedAt @map("updated_at")
-
+  @@index([userId, isActive, createdAt])
   @@index([isActive, createdAt])
   @@index([mobile])
   @@index([brandId, modelId])
@@ -913,7 +918,7 @@ model Wishlist {
   modelId   Int      @map("model_id")
   model     CarModel @relation(fields: [modelId], references: [id])
   createdAt DateTime @default(now()) @map("created_at")
-
+  @@index([userId, createdAt])
   @@unique([userId, modelId])
   @@index([modelId])
   @@map("wishlists")
@@ -941,7 +946,7 @@ model LaunchNotifyLead {
   ipAddress                         String?   @map("ip_address") @db.VarChar(45)
   createdAt                         DateTime  @default(now()) @map("created_at")
   updatedAt                         DateTime  @updatedAt @map("updated_at")
-
+  @@index([userId, isActive, createdAt])
   @@index([isActive, createdAt])
   @@index([mobile])
   @@index([brandId, modelId])
@@ -989,7 +994,7 @@ model Review {
   images         ReviewImage[]
   helpfulVotes   ReviewHelpfulVote[]
   replies        ReviewReply[]
-
+  @@index([userId, createdAt])
   @@index([modelId, status])
   @@map("reviews")
 }

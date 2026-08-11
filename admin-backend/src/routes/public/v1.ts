@@ -21,6 +21,7 @@ import LendersRoutes from './lenders';
 import WishlistRoutes from './wishlist';
 import AnalyticsRoutes from './analytics';
 import SeoRoutes from './seo';
+import ProfileRoutes from './profile';
 
 const router = Router();
 
@@ -41,5 +42,6 @@ router.use('/lenders', LendersRoutes);
 router.use('/wishlist', WishlistRoutes);
 router.use('/analytics', AnalyticsRoutes);
 router.use('/seo', SeoRoutes);
+router.use('/profile', ProfileRoutes);
 
 export default router;
