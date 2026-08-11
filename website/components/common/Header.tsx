@@ -4,6 +4,7 @@ import { usePathname, useRouter } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
 import AuthModal from "./AuthModal";
+import BudgetPromo from "./BudgetPromo";
 import { isChromelessRoute, routes } from "@/lib/routes";
 import { getCurrentUser, getUserInitials, clearCurrentUser, subscribeAuthChange } from "@/features/auth/currentUser";
 import { searchCars } from "@/features/search/search.api";
@@ -18,6 +19,7 @@ import {
   CarIcon,
   NewsIcon,
   ChevronIcon,
+  DropletIcon,
 } from "@/components/common/icons";
 import CitySelector from "@/components/common/CitySelector";
 import SearchResultsList from "@/components/common/SearchResultsList";
@@ -52,6 +54,9 @@ type NavItem = {
   navIcon?: NavIconName;
   columns?: NavColumn[];
   promo?: { eyebrow: string; title: string; sub: string; cta: string; href: string; image: string };
+  // A row of shortcuts along the foot of the panel, and the link out of it.
+  footerLinks?: NavLink[];
+  footerCta?: { label: string; href: string };
   // Flat list, still right for a short menu like news categories.
   dropdown?: NavLink[];
 };
@@ -73,14 +78,14 @@ const TOOL_LINKS: NavLink[] = [
   { label: "Affordability", href: "/car-affordability-calculator", desc: "What your budget really buys", icon: <WalletIcon className="size-4" /> },
   { label: "Mileage", href: "/mileage-calculator", desc: "Running cost per kilometre", icon: <GaugeIcon className="size-4" /> },
   { label: "EV Charging Time", href: "/ev-charging-time-calculator", desc: "Charge duration by charger type", icon: <BatteryIcon className="size-4" /> },
-  { label: "Fuel Comparison", href: "/fuel-comparison-calculator", desc: "Petrol vs diesel vs CNG vs EV", icon: <FuelIcon className="size-4" /> },
 ];
 
 // Not a calculator — a daily data page, so it gets its own group rather
 // than sitting under "Calculators" where it would misdescribe itself.
 const PRICE_LINKS: NavLink[] = [
   { label: "Fuel Price in India", href: routes.fuelPrice(), desc: "Petrol, diesel and CNG, updated daily", icon: <FuelIcon className="size-4" /> },
-];
+  { label: "Fuel Comparison", href: "/fuel-comparison-calculator", desc: "Compare petrol, diesel, CNG and EV", icon: <DropletIcon className="size-4" /> },
+]
 
 const NAV_ICONS: Record<NavIconName, React.ReactNode> = {
   "new-cars": <CarIcon className="size-[18px]" />,
@@ -135,8 +140,14 @@ function buildNavItems(bodyTypes: BodyType[], articleCategories: ArticleCategory
       navIcon: "tools",
       columns: [
         { heading: "Calculators", links: TOOL_LINKS },
-        { heading: "Prices", links: PRICE_LINKS },
+        { heading: "Fuel & prices", links: PRICE_LINKS },
       ],
+      footerLinks: [
+        { label: "Car loan EMI", href: "/car-loan-emi-calculator" },
+        { label: "Running cost", href: "/mileage-calculator" },
+        { label: "Fuel prices", href: "/fuel-price" },
+      ],
+      footerCta: { label: "Browse all cars", href: "/new-cars" },
     },
     {
       label: "News",
@@ -342,13 +353,14 @@ export default function Header({ bodyTypes, articleCategories }: { bodyTypes: Bo
                 key={`panel-${item.label}`}
                 onMouseEnter={cancelClose}
                 onMouseLeave={closeSoon}
-                className={`absolute inset-x-0 top-full z-50 hidden border-t border-border bg-surface shadow-lg lg:block ${
+                className={`absolute inset-x-0 top-full z-50 hidden px-4 pt-2 lg:block ${
                   openMenu === item.label ? "opacity-100" : "pointer-events-none invisible opacity-0"
                 } transition-opacity duration-150`}
               >
-                <div className="mx-auto flex max-w-7xl items-start gap-10 px-6 py-6">
+                <div className="mx-auto max-w-7xl overflow-hidden rounded-2xl border border-border bg-surface shadow-[0_28px_70px_-28px_rgba(15,23,42,0.4)]">
+                <div className="flex items-start gap-8 p-5">
                   {cols.map((col) => (
-                    <div key={col.heading || item.label} className={cols.length === 1 ? "flex-1" : col.links.length > 8 && !col.links[0]?.icon ? "min-w-96" : "min-w-52"}>
+                    <div key={col.heading || item.label} className={cols.length === 1 ? "flex-1" : col.links.length > 8 && !col.links[0]?.icon ? "min-w-96" : col.links[0]?.icon ? "min-w-[268px]" : "min-w-52"}>
                       {col.heading && (
                         <p className="mb-3 text-[10px] font-bold uppercase tracking-[0.12em] text-subtle">
                           {col.heading}
@@ -360,7 +372,9 @@ export default function Header({ bodyTypes, articleCategories }: { bodyTypes: Bo
                             ? "grid max-w-2xl grid-cols-2 gap-x-8 gap-y-0.5"
                             : col.links.length > 8 && !col.links[0]?.icon
                               ? "columns-2 gap-8 space-y-0.5 pr-2"
-                              : "space-y-0.5 pr-2"
+                              : col.links[0]?.icon
+                                ? "space-y-2"
+                                : "space-y-0.5 pr-2"
                         }
                       >
                         {col.links.map((link) => (
@@ -368,23 +382,28 @@ export default function Header({ bodyTypes, articleCategories }: { bodyTypes: Bo
                             <Link
                               href={link.href}
                               onClick={() => setOpenMenu(null)}
-                              className="flex items-start gap-2.5 rounded-md px-2.5 py-2 no-underline transition-colors hover:bg-page"
+                              className={
+                                link.icon
+                                  ? "flex items-center gap-3 rounded-xl border border-border px-3 py-2.5 no-underline transition-colors hover:border-brand hover:bg-brand-soft/40"
+                                  : "flex items-center gap-2.5 rounded-md px-2.5 py-2 no-underline transition-colors hover:bg-page"
+                              }
                             >
                               {link.icon && (
-                                <span className="mt-0.5 flex size-7 shrink-0 items-center justify-center rounded-md bg-page text-brand">
+                                <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-brand-soft text-brand">
                                   {link.icon}
                                 </span>
                               )}
-                              <span className="min-w-0">
-                                <span className="block text-[13px] font-semibold capitalize text-ink">
+                              <span className="min-w-0 flex-1">
+                                <span className="block truncate text-[13px] font-semibold capitalize text-ink">
                                   {link.label}
                                 </span>
                                 {link.desc && (
-                                  <span className="mt-0.5 block text-[11px] leading-snug text-muted">
+                                  <span className="mt-0.5 block truncate text-[11px] leading-snug text-muted">
                                     {link.desc}
                                   </span>
                                 )}
                               </span>
+                              {link.icon && <ChevronIcon className="size-3 shrink-0 text-faint" />}
                             </Link>
                           </li>
                         ))}
@@ -425,6 +444,40 @@ export default function Header({ bodyTypes, articleCategories }: { bodyTypes: Bo
                       </span>
                     </Link>
                   )}
+
+                  {item.navIcon === "tools" && <BudgetPromo onNavigate={() => setOpenMenu(null)} />}
+                </div>
+
+                {/* The shortcuts people came for, under everything else —
+                    a reader who did not find their tool in the columns is
+                    one row away from the rest. */}
+                {item.footerLinks && (
+                  <div className="flex flex-wrap items-center gap-x-5 gap-y-2 border-t border-border-soft bg-page px-5 py-3">
+                    <span className="text-[11px] font-bold uppercase tracking-[0.1em] text-muted">
+                      Popular
+                    </span>
+                    {item.footerLinks.map((link) => (
+                      <Link
+                        key={link.href}
+                        href={link.href}
+                        onClick={() => setOpenMenu(null)}
+                        className="text-[12.5px] font-semibold text-ink no-underline transition-colors hover:text-brand"
+                      >
+                        {link.label}
+                      </Link>
+                    ))}
+                    {item.footerCta && (
+                      <Link
+                        href={item.footerCta.href}
+                        onClick={() => setOpenMenu(null)}
+                        className="ml-auto flex items-center gap-1.5 text-[12.5px] font-bold text-brand no-underline hover:text-brand-hover"
+                      >
+                        {item.footerCta.label}
+                        <ChevronIcon className="size-3" />
+                      </Link>
+                    )}
+                  </div>
+                )}
                 </div>
               </div>
             );
