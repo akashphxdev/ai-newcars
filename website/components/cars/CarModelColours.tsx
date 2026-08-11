@@ -13,7 +13,7 @@ export default function CarModelColours({ colors, modelName }: { colors: CarDeta
 
   return (
     <div className="grid overflow-hidden rounded-lg border border-border bg-white lg:grid-cols-[minmax(0,1fr)_280px]">
-      <div className="relative min-h-[300px] bg-[#f3f4f6] sm:min-h-[450px]">
+      <div className="relative min-h-[260px] bg-[#f3f4f6] sm:min-h-[450px]">
         {selected?.imageUrl ? (
           <Image
             src={selected.imageUrl}
@@ -45,7 +45,7 @@ export default function CarModelColours({ colors, modelName }: { colors: CarDeta
           <span className="text-[11px] font-semibold text-muted">{colors.length} options</span>
         </div>
 
-        <div className="mt-3 grid gap-1 sm:grid-cols-2 lg:max-h-[390px] lg:grid-cols-1 lg:overflow-y-auto lg:pr-1">
+        <div className="mt-3 grid max-h-[248px] gap-1 overflow-y-auto pr-1 sm:grid-cols-2 lg:max-h-[390px] lg:grid-cols-1">
           {colors.map((color, index) => (
             <button
               key={color.id}

@@ -7,6 +7,7 @@ import Navbar from "@/components/common/Header";
 import Footer from "@/components/common/Footer";
 import DevLoadTimeBadge from "@/components/common/DevLoadTimeBadge";
 import CompareTray from "@/components/compare/CompareTray";
+import CityPrompt from "@/components/common/CityPrompt";
 import PageViewTracker from "@/components/common/PageViewTracker";
 import { getBodyTypes } from "@/features/bodyTypes/bodyType.api";
 import { getArticleCategories } from "@/features/articles/article.api";
@@ -64,6 +65,7 @@ export default async function RootLayout({
         <main className="w-full flex-1">{children}</main>
         <Footer siteSettings={siteSettings} bodyTypes={bodyTypes} articleCategories={articleCategories} />
         <CompareTray />
+        <CityPrompt />
         <PageViewTracker />
         <DevLoadTimeBadge />
       </body>

@@ -11,6 +11,7 @@
 import Link from "next/link";
 import { ChevronIcon, StarIcon } from "@/components/common/icons";
 import { formatSinglePrice, stripPrefix, slugify } from "@/lib/format";
+import { topSellerId } from "@/lib/topSeller";
 import { formatRupee } from "@/lib/calculatorFormat";
 import { routes } from "@/lib/routes";
 import type { CarDetailVariantOption } from "@/features/cars/car.types";
@@ -42,6 +43,7 @@ export default function TrimLadder({
   const at = ladder.findIndex((v) => v.id === currentId);
   if (at === -1 || ladder.length < 2) return null;
 
+  const badgedId = topSellerId(ladder);
   const current = ladder[at];
   const below = at > 0 ? ladder[at - 1] : null;
   const above = at < ladder.length - 1 ? ladder[at + 1] : null;
@@ -60,7 +62,7 @@ export default function TrimLadder({
         </p>
         <p className="mt-2 truncate text-[14px] font-extrabold text-ink group-hover:text-brand">
           {stripPrefix(v.variantName, carName)}
-          {v.isTopSeller && (
+          {v.id === badgedId && (
             <span className="ml-1.5 inline-flex translate-y-[-1px] items-center gap-0.5 rounded bg-brand-soft px-1.5 py-0.5 text-[9px] font-black uppercase tracking-[0.06em] text-brand">
               <StarIcon filled className="size-2" />
               Top seller

@@ -36,15 +36,15 @@ export default function FooterCta() {
         className="pointer-events-none absolute inset-0 bg-[linear-gradient(90deg,rgba(9,11,16,0.96)_0%,rgba(9,11,16,0.86)_38%,rgba(9,11,16,0.25)_72%,transparent_100%)]"
       />
 
-      <div className="relative mx-auto max-w-7xl px-5 py-10 sm:px-8 sm:py-12 lg:py-14">
-        <h2 className="max-w-xl text-balance font-head text-[27px] font-extrabold leading-[1.07] tracking-[-0.03em] text-white sm:text-[33px] lg:text-[38px]">
+      <div className="relative mx-auto max-w-7xl px-5 py-8 sm:px-8 sm:py-12 lg:py-14">
+        <h2 className="max-w-xl text-balance font-head text-[23px] font-extrabold leading-[1.07] tracking-[-0.03em] text-white sm:text-[33px] lg:text-[38px]">
           Ready to shortlist your next car?
         </h2>
-        <p className="mt-2.5 max-w-lg text-[14px] leading-6 text-white/70 sm:text-[15px]">
+        <p className="mt-2 max-w-lg text-[13px] leading-6 text-white/70 sm:text-[15px]">
           Compare prices, ownership costs, offers, and reviews before you visit the showroom.
         </p>
 
-        <div className="mt-6 flex flex-wrap gap-3">
+        <div className="mt-5 flex flex-wrap gap-3">
           <Link
             href={routes.newCars()}
             className="inline-flex min-h-11 items-center gap-2.5 rounded-[7px] bg-brand px-5 text-[13.5px] font-bold text-white no-underline transition-[background-color,transform] hover:-translate-y-0.5 hover:bg-brand-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand active:translate-y-0"

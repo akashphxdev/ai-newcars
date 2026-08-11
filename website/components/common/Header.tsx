@@ -15,6 +15,9 @@ import {
   CompareIcon, BoltIcon, ClockIcon, TagIcon, CalculatorIcon, PercentIcon,
   GaugeIcon, FuelIcon, BatteryIcon, RoadIcon, WalletIcon, ChevronDownIcon,
   PinIcon, SearchIcon,
+  CarIcon,
+  NewsIcon,
+  ChevronIcon,
 } from "@/components/common/icons";
 import CitySelector from "@/components/common/CitySelector";
 import SearchResultsList from "@/components/common/SearchResultsList";
@@ -35,6 +38,7 @@ const PAGE_BG = "var(--color-page)";
 /* ---------------- Search results dropdown ---------------- */
 
 type NavLink = { label: string; href: string; desc?: string; icon?: React.ReactNode };
+type NavIconName = "new-cars" | "compare" | "tools" | "news";
 type NavColumn = { heading: string; links: NavLink[] };
 
 type NavItem = {
@@ -44,6 +48,8 @@ type NavItem = {
   // handful of entries: "New Cars" used to be a single scrolling column of
   // 15 body types, which buried the things people actually arrive wanting
   // (upcoming, electric, by budget) beneath a taxonomy list.
+  // Drawer rows are scanned by shape before they are read.
+  navIcon?: NavIconName;
   columns?: NavColumn[];
   promo?: { eyebrow: string; title: string; sub: string; cta: string; href: string; image: string };
   // Flat list, still right for a short menu like news categories.
@@ -76,10 +82,18 @@ const PRICE_LINKS: NavLink[] = [
   { label: "Fuel Price in India", href: routes.fuelPrice(), desc: "Petrol, diesel and CNG, updated daily", icon: <FuelIcon className="size-4" /> },
 ];
 
+const NAV_ICONS: Record<NavIconName, React.ReactNode> = {
+  "new-cars": <CarIcon className="size-[18px]" />,
+  compare: <CompareIcon className="size-[18px]" />,
+  tools: <CalculatorIcon className="size-[18px]" />,
+  news: <NewsIcon className="size-[18px]" />,
+};
+
 function buildNavItems(bodyTypes: BodyType[], articleCategories: ArticleCategory[]): NavItem[] {
   return [
     {
       label: "New Cars",
+      navIcon: "new-cars",
       columns: [
         {
           heading: "Browse",
@@ -93,7 +107,7 @@ function buildNavItems(bodyTypes: BodyType[], articleCategories: ArticleCategory
         },
         {
           heading: "By Body Type",
-          links: bodyTypes.slice(0, 8).map((bt) => ({ label: bt.name, href: routes.bodyType(bt.slug) })),
+          links: bodyTypes.slice(0, 8).map((bt) => ({ label: bt.name, href: routes.bodyType(bt.slug), icon: <CarIcon className="size-4" /> })),
         },
         { heading: "By Budget", links: BUDGET_BANDS },
       ],
@@ -106,9 +120,10 @@ function buildNavItems(bodyTypes: BodyType[], articleCategories: ArticleCategory
         image: "/design/ev-charging.png",
       },
     },
-    { label: "Compare", href: "/compare-cars" },
+    { label: "Compare", href: "/compare-cars", navIcon: "compare" },
     {
       label: "Tools",
+      navIcon: "tools",
       columns: [
         { heading: "Calculators", links: TOOL_LINKS },
         { heading: "Prices", links: PRICE_LINKS },
@@ -116,7 +131,8 @@ function buildNavItems(bodyTypes: BodyType[], articleCategories: ArticleCategory
     },
     {
       label: "News",
-      dropdown: articleCategories.map((c) => ({ label: c.name, href: routes.newsCategory(c.slug) })),
+      navIcon: "news",
+      dropdown: articleCategories.map((c) => ({ label: c.name, href: routes.newsCategory(c.slug), icon: <NewsIcon className="size-4" /> })),
     },
   ];
 }
@@ -541,13 +557,16 @@ export default function Header({ bodyTypes, articleCategories }: { bodyTypes: Bo
               {item.columns || item.dropdown ? (
                 <>
                   <button
-                    className="flex w-full items-center justify-between border-none bg-transparent py-3 text-sm font-semibold"
+                    className="flex w-full cursor-pointer items-center gap-3 border-none bg-transparent py-3 text-left text-sm font-semibold"
                     style={{ color: DARK }}
                     onClick={() => setMobileExpanded((v) => (v === item.label ? null : item.label))}
                     aria-expanded={mobileExpanded === item.label}
                   >
-                    {item.label}
-                    <ChevronDownIcon className={`size-2.5 text-subtle transition-transform ${mobileExpanded === item.label ? "rotate-180" : ""}`} />
+                    <span className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-brand-soft text-brand">
+                      {NAV_ICONS[item.navIcon ?? "new-cars"]}
+                    </span>
+                    <span className="flex-1">{item.label}</span>
+                    <ChevronDownIcon className={`size-3 text-subtle transition-transform ${mobileExpanded === item.label ? "rotate-180" : ""}`} />
                   </button>
                   {mobileExpanded === item.label && (
                     <div className="pb-3">
@@ -562,15 +581,28 @@ export default function Header({ bodyTypes, articleCategories }: { bodyTypes: Bo
                               {col.heading}
                             </p>
                           )}
-                          <div className="grid grid-cols-2 gap-x-2">
+                          {/* One per row with its icon: the two-column
+                              grid of bare labels gave every entry the same
+                              silhouette, so the list could only be read
+                              word by word. */}
+                          <div className="grid gap-0.5">
                             {col.links.map((link) => (
                               <Link
                                 key={link.href}
                                 href={link.href}
                                 onClick={() => setMobileOpen(false)}
-                                className="block rounded-md px-3 py-2 text-[13px] capitalize text-muted no-underline active:bg-page"
+                                className="flex items-center gap-2.5 rounded-lg px-2.5 py-2 no-underline transition-colors active:bg-page"
                               >
-                                {link.label}
+                                {link.icon && (
+                                  <span className="flex size-7 shrink-0 items-center justify-center rounded-lg bg-page text-brand">
+                                    {link.icon}
+                                  </span>
+                                )}
+                                <span className="min-w-0 flex-1">
+                                  <span className="block truncate text-[13px] font-semibold capitalize text-ink">{link.label}</span>
+                                  {link.desc && <span className="block truncate text-[11px] text-muted">{link.desc}</span>}
+                                </span>
+                                <ChevronIcon className="size-3 shrink-0 text-faint" />
                               </Link>
                             ))}
                           </div>
@@ -583,10 +615,14 @@ export default function Header({ bodyTypes, articleCategories }: { bodyTypes: Bo
                 <Link
                   href={item.href ?? "#"}
                   onClick={() => setMobileOpen(false)}
-                  className="block py-3 text-sm font-semibold no-underline"
+                  className="flex items-center gap-3 py-3 text-sm font-semibold no-underline"
                   style={{ color: isActive(item.href) ? ORANGE : DARK }}
                 >
-                  {item.label}
+                  <span className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-brand-soft text-brand">
+                    {NAV_ICONS[item.navIcon ?? "compare"]}
+                  </span>
+                  <span className="flex-1">{item.label}</span>
+                  <ChevronIcon className="size-3 shrink-0 text-faint" />
                 </Link>
               )}
             </div>

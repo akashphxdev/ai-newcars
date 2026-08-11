@@ -31,6 +31,7 @@ import {
   Lock,
   Luggage,
   MapPin,
+  Newspaper,
   Minus,
   Pencil,
   Percent,
@@ -102,6 +103,7 @@ export const PlugIcon = ({ className = "size-4" }: IconProps) => <Plug className
 export const RupeeIcon = ({ className = "size-4" }: IconProps) => <IndianRupee className={className} strokeWidth={W} />;
 export const DropletIcon = ({ className = "size-4" }: IconProps) => <Droplet className={className} strokeWidth={W} />;
 export const BootIcon = ({ className = "size-4" }: IconProps) => <Luggage className={className} strokeWidth={W} />;
+export const NewsIcon = ({ className = "size-4" }: IconProps) => <Newspaper className={className} strokeWidth={W} />;
 
 // No lucide equivalent — house art.
 export const EngineIcon = ({ className = "size-4" }: IconProps) => (

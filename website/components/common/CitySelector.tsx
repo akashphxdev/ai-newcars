@@ -3,24 +3,19 @@
 // The header's city control. Resolution order, cheapest and least
 // intrusive first:
 //   1. A city the visitor already chose (localStorage) — wins silently.
-//   2. Cloudflare's IP hint, shown as a question ("You're in Jaipur?").
-//      A suggestion, never applied on its own.
-//   3. GPS, only after an explicit tap. Never fired on page load: a
+//   2. GPS, only after an explicit tap. Never fired on page load: a
 //      mis-tapped "Block" is sticky and costs the feature permanently.
-//   4. Pick from the list.
+//   3. Pick from the list.
+//
+// First-visit suggestion lives in CityPrompt, which asks in the middle of
+// the screen — this control is for changing an answer, not collecting one.
 
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { PinIcon, SearchIcon } from "@/components/common/icons";
-import {
-  CITY_EVENT,
-  dismissCityPrompt,
-  getCurrentCity,
-  isCityPromptDismissed,
-  saveCurrentCity,
-} from "@/features/location/currentCity";
-import { detectCityFromIp, getLocationCities, reverseGeocode } from "@/features/location/location.api";
+import { CITY_EVENT, getCurrentCity, saveCurrentCity } from "@/features/location/currentCity";
+import { getLocationCities, reverseGeocode } from "@/features/location/location.api";
 import type { LocationCity } from "@/features/location/location.types";
 
 // City names repeat across states, so the state is what tells two
@@ -46,7 +41,6 @@ export default function CitySelector({ variant = "desktop" }: { variant?: "deskt
   const [query, setQuery] = useState("");
   const [locating, setLocating] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
-  const [suggested, setSuggested] = useState<LocationCity | null>(null);
   const boxRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -54,19 +48,6 @@ export default function CitySelector({ variant = "desktop" }: { variant?: "deskt
     const sync = (e: Event) => setCity((e as CustomEvent<LocationCity>).detail);
     window.addEventListener(CITY_EVENT, sync);
     return () => window.removeEventListener(CITY_EVENT, sync);
-  }, []);
-
-  // The IP hint is the only thing fetched unprompted, and only when we
-  // have no answer yet.
-  useEffect(() => {
-    if (getCurrentCity() || isCityPromptDismissed()) return;
-    let alive = true;
-    detectCityFromIp().then((hit) => {
-      if (alive && hit?.city) setSuggested(hit.city);
-    });
-    return () => {
-      alive = false;
-    };
   }, []);
 
   // Fetched on first open rather than on mount — most visits never touch
@@ -94,7 +75,6 @@ export default function CitySelector({ variant = "desktop" }: { variant?: "deskt
 
   const choose = (next: LocationCity) => {
     saveCurrentCity(next);
-    setSuggested(null);
     setOpen(false);
     setQuery("");
     setNotice(null);
@@ -169,39 +149,6 @@ export default function CitySelector({ variant = "desktop" }: { variant?: "deskt
         </span>
         {label}
       </button>
-
-      {/* The IP hint, offered once and only while no city is set. */}
-      {suggested && !city && !open && (
-        <div
-          className={`absolute z-50 mt-2 w-64 rounded-2xl border border-border bg-surface p-3 shadow-lg ${
-            isMobile ? "left-0" : "right-0"
-          }`}
-        >
-          <p className="text-[13px] font-semibold text-ink">You&apos;re in {suggested.name}?</p>
-          <p className="mt-0.5 text-[11px] text-muted">So we can show cars and offers near you.</p>
-          <div className="mt-2.5 flex gap-2">
-            <button
-              type="button"
-              onClick={() => choose(suggested)}
-              className="flex-1 cursor-pointer rounded-md bg-brand px-3 py-1.5 text-[12px] font-bold text-white transition-colors hover:bg-brand-hover"
-            >
-              Yes
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                setSuggested(null);
-                dismissCityPrompt();
-                setOpen(true);
-                loadCities();
-              }}
-              className="flex-1 cursor-pointer rounded-md border border-border px-3 py-1.5 text-[12px] font-bold text-ink transition-colors hover:bg-page"
-            >
-              Change
-            </button>
-          </div>
-        </div>
-      )}
 
       {open && (
         <div

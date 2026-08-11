@@ -72,6 +72,45 @@ export default function ReviewsSection({
     setShowWriteForm(true);
   };
 
+  // Nothing to read yet: a full section header over an empty shelf
+  // advertises the absence. One line and the invitation is enough until
+  // there is something to show.
+  const isEmpty = !loading && result?.summary.totalReviews === 0;
+
+  const writeButton = (
+    <button
+      type="button"
+      onClick={handleWriteReviewClick}
+      disabled={variantsLoading}
+      className="w-full cursor-pointer border border-brand px-5 py-3 text-[11px] font-black uppercase tracking-[0.08em] text-brand transition-colors hover:bg-brand hover:text-white disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto"
+    >
+      {variantsLoading ? "Loading..." : "Write a Review"}
+    </button>
+  );
+
+  if (isEmpty) {
+    return (
+      <section className="mx-auto max-w-7xl px-4 py-10">
+        <div className="flex flex-col items-center gap-3 rounded-xl border border-dashed border-border bg-page px-5 py-8 text-center sm:flex-row sm:justify-between sm:text-left">
+          <p className="text-[13.5px] font-semibold text-ink">
+            No owner reviews yet.
+            <span className="ml-1 font-medium text-muted">Driven this car? Tell other buyers what it is like.</span>
+          </p>
+          {writeButton}
+        </div>
+        {showWriteForm && (
+          <WriteReviewForm
+            modelId={modelId}
+            variantOptions={variantOptions}
+            onClose={() => setShowWriteForm(false)}
+            onSubmitted={() => load(page)}
+          />
+        )}
+        {showAuth && <AuthModal onClose={() => setShowAuth(false)} />}
+      </section>
+    );
+  }
+
   return (
     <section className="mx-auto max-w-7xl px-4 py-16 sm:py-24">
       <div className="mb-8 flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
@@ -80,14 +119,7 @@ export default function ReviewsSection({
           <h2 className="mt-2 font-head text-3xl font-extrabold text-ink sm:text-4xl">Owner reviews</h2>
           <p className="mt-2 text-[13px] text-muted">Ratings and stories from people who live with this car.</p>
         </div>
-        <button
-          type="button"
-          onClick={handleWriteReviewClick}
-          disabled={variantsLoading}
-          className="w-full cursor-pointer border border-brand px-5 py-3 text-[11px] font-black uppercase tracking-[0.08em] text-brand transition-colors hover:bg-brand hover:text-white disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto"
-        >
-          {variantsLoading ? "Loading..." : "Write a Review"}
-        </button>
+        {writeButton}
       </div>
 
       {result && <ReviewSummary summary={result.summary} />}

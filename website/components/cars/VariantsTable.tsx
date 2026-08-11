@@ -35,6 +35,7 @@ import { formatRupee, formatLakh } from "@/lib/calculatorFormat";
 import { calculateEmi } from "@/lib/emiMath";
 import { routes } from "@/lib/routes";
 import { slugify, stripPrefix } from "@/lib/format";
+import { topSellerId } from "@/lib/topSeller";
 
 // Indicative terms for the "EMI from" line, stated on screen so the figure
 // is never mistaken for a quote.
@@ -145,6 +146,9 @@ export default function VariantsTable({
     return [...keys];
   }, [variants]);
 
+  // Only one row wears the badge; the catalogue flags several.
+  const badgedId = useMemo(() => topSellerId(variants), [variants]);
+
   const toggle = (v: ModelVariant) => {
     if (selected.has(v.id)) {
       removeFromTray(v.id);
@@ -230,7 +234,7 @@ export default function VariantsTable({
                         >
                           {stripPrefix(v.variantName, modelName)}
                         </Link>
-                        {v.isTopSeller && (
+                        {v.id === badgedId && (
                           <span className="ml-2 inline-flex items-center gap-1 rounded bg-brand px-1.5 py-0.5 text-[9.5px] font-bold uppercase tracking-[0.06em] text-white">
                             <StarIcon filled className="size-2.5" />
                             Top seller

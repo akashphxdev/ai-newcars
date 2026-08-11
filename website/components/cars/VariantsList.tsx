@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { formatSinglePrice, slugify } from "@/lib/format";
+import { topSellerId } from "@/lib/topSeller";
 import { getCarVariants } from "@/features/cars/car.api";
 import { CompareIcon, CheckIcon } from "@/components/common/icons";
 import { addToTray, removeFromTray, getTrayItems, subscribeTray, MAX_TRAY_ITEMS } from "@/features/compare/compareTray";
@@ -53,6 +54,7 @@ export default function VariantsList({
   }, [modelSlug]);
 
   const visible = allVariants ?? variantOptions;
+  const badgedId = topSellerId(visible);
   const hasMore = !allVariants && variantCount > variantOptions.length;
 
   async function loadAll() {
@@ -93,7 +95,7 @@ export default function VariantsList({
             <Link href={routes.variant(brandSlug, modelSlug, slugify(opt.variantName))} className="min-w-0">
               <div className="flex flex-wrap items-center gap-2">
                 <span className="text-[13.5px] font-bold text-ink">{opt.variantName}</span>
-                {opt.isTopSeller && (
+                {opt.id === badgedId && (
                   <span className="bg-brand px-2 py-0.5 text-[9px] font-black uppercase tracking-[0.08em] text-white">
                     Best value
                   </span>

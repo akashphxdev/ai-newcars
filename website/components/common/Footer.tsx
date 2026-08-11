@@ -133,17 +133,24 @@ const TOOLS_COL: FooterCol = {
 
 // "New Cars" and "News" mirror the exact same data Header's nav dropdowns
 // use (body types / article categories) — same labels, same routes.
+// Both lists grow with the catalogue: every body type, every news
+// category. Left uncapped they made the footer a 1,100px wall — taller
+// than the phone screen it sat under — so each column shows the first
+// few and the listing pages carry the rest.
+const FOOTER_COL_LIMIT = 6;
+
 function buildFooterCols(bodyTypes: BodyType[], articleCategories: ArticleCategory[]): FooterCol[] {
   return [
     {
       title: "News",
-      links: articleCategories.map((c) => ({ label: c.name, href: `/news/${c.slug}` })),
+      links: articleCategories.slice(0, FOOTER_COL_LIMIT).map((c) => ({ label: c.name, href: `/news/${c.slug}` })),
     },
     {
       title: "New Cars",
       links: [
-        ...bodyTypes.map((bt) => ({ label: bt.name, href: routes.bodyType(bt.slug) })),
+        ...bodyTypes.slice(0, FOOTER_COL_LIMIT - 2).map((bt) => ({ label: bt.name, href: routes.bodyType(bt.slug) })),
         { label: "Electric", href: "/electric-cars" },
+        { label: "All new cars", href: routes.newCars() },
       ],
     },
     TOOLS_COL,
@@ -181,7 +188,7 @@ export default function Footer({
 
       {/* Trust strip */}
       <div className="border-b" style={{ borderColor: BORDER, background: PAGE_BG }}>
-        <div className="mx-auto grid max-w-7xl grid-cols-2 gap-6 px-6 py-6 sm:grid-cols-4">
+        <div className="mx-auto grid max-w-7xl grid-cols-2 gap-x-5 gap-y-4 px-6 py-5 sm:grid-cols-4 sm:gap-6">
           {FEATURES.map((f) => (
             <div key={f.title} className="flex items-center gap-3">
               <span className="flex size-10 shrink-0 items-center justify-center rounded-xl text-brand" style={{ background: PEACH }}>
@@ -201,8 +208,8 @@ export default function Footer({
       </div>
 
       {/* Main columns */}
-      <div className="mx-auto max-w-7xl px-6 py-12">
-        <div className="grid grid-cols-2 gap-x-6 gap-y-8 sm:gap-10 lg:grid-cols-5">
+      <div className="mx-auto max-w-7xl px-6 py-8 sm:py-12">
+        <div className="grid grid-cols-2 gap-x-6 gap-y-7 sm:gap-10 lg:grid-cols-5">
           {/* Brand + about — spans both mobile columns, then 2 of 5 at desktop */}
           <div className="col-span-2">
             <Link href="/" className="inline-flex items-center gap-1.5 no-underline">
@@ -278,7 +285,7 @@ export default function Footer({
 
       {/* Bottom bar */}
       <div style={{ borderTop: `1px solid ${BORDER}` }}>
-        <div className="mx-auto flex max-w-7xl flex-col-reverse items-center justify-between gap-4 px-6 py-6 sm:flex-row">
+        <div className="mx-auto flex max-w-7xl flex-col-reverse items-center justify-between gap-3 px-6 py-4 sm:flex-row sm:py-5">
           <p className="text-[12px]" style={{ color: FAINT }}>
             © {new Date().getFullYear()} TimesAuto. All rights reserved.
           </p>
