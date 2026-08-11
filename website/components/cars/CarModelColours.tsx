@@ -6,43 +6,72 @@ import { formatSinglePrice } from "@/lib/format";
 import { buildSwatchBackground } from "@/lib/colorSwatch";
 import type { CarDetailColor } from "@/features/cars/car.types";
 
-// Plain display list — name, swatch, price delta. Colour -> photo
-// switching lives in the hero gallery above (CarModelGallery), not here.
 export default function CarModelColours({ colors, modelName }: { colors: CarDetailColor[]; modelName: string }) {
   const firstWithImage = colors.findIndex((color) => color.imageUrl);
   const [selectedIndex, setSelectedIndex] = useState(firstWithImage >= 0 ? firstWithImage : 0);
   const selected = colors[selectedIndex] ?? colors[0];
 
   return (
-    <div className="grid overflow-hidden bg-[#151515] text-white lg:grid-cols-[minmax(0,1.45fr)_minmax(300px,0.55fr)]">
-      <div className="relative min-h-[330px] bg-[#242424] sm:min-h-[480px]">
+    <div className="grid overflow-hidden rounded-lg border border-border bg-white lg:grid-cols-[minmax(0,1fr)_280px]">
+      <div className="relative min-h-[300px] bg-[#f3f4f6] sm:min-h-[450px]">
         {selected?.imageUrl ? (
-          <Image src={selected.imageUrl} alt={`${modelName} in ${selected.colorName}`} fill sizes="(min-width: 1024px) 850px, 100vw" className="object-cover" />
+          <Image
+            src={selected.imageUrl}
+            alt={`${modelName} in ${selected.colorName}`}
+            fill
+            sizes="(min-width: 1024px) 650px, 100vw"
+            className="object-contain p-5 mix-blend-multiply sm:p-8"
+          />
         ) : (
-          <div className="absolute inset-0 flex items-center justify-center text-sm text-white/55">Colour image unavailable</div>
+          <div className="absolute inset-0 flex items-center justify-center text-sm text-muted">Colour image unavailable</div>
         )}
-        <div className="absolute inset-x-0 bottom-0 bg-black/70 px-5 py-4 backdrop-blur-sm sm:px-7">
-          <p className="text-[10px] font-black uppercase tracking-[0.14em] text-brand">Selected finish</p>
-          <p className="mt-1 font-head text-xl font-bold">{selected?.colorName}</p>
+
+        <div className="absolute left-4 top-4 rounded-lg border border-white/80 bg-white/90 px-3 py-2 shadow-sm backdrop-blur-sm">
+          <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-muted">Selected finish</p>
+          <p className="mt-0.5 text-[13px] font-extrabold text-ink">{selected?.colorName}</p>
         </div>
+
+        <p className="absolute bottom-4 right-4 text-[11px] font-bold text-muted tabular-nums">
+          {String(selectedIndex + 1).padStart(2, "0")} / {String(colors.length).padStart(2, "0")}
+        </p>
       </div>
 
-      <div className="flex flex-col justify-center px-5 py-7 sm:px-8 lg:px-10">
-        <p className="text-[11px] font-black uppercase tracking-[0.16em] text-brand">Paint studio</p>
-        <h3 className="mt-2 font-head text-2xl font-extrabold leading-tight sm:text-3xl">Find your finish.</h3>
-        <p className="mt-3 text-[12.5px] leading-6 text-white/60">Choose a colour to preview the available factory finish.</p>
+      <div className="border-t border-border p-4 sm:p-5 lg:border-l lg:border-t-0">
+        <div className="flex items-end justify-between gap-3 border-b border-border pb-4">
+          <div>
+            <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-brand">Available colours</p>
+            <h3 className="mt-1 text-[15px] font-extrabold text-ink">Select a finish</h3>
+          </div>
+          <span className="text-[11px] font-semibold text-muted">{colors.length} options</span>
+        </div>
 
-        <div className="mt-7 grid grid-cols-2 gap-x-4 gap-y-5">
+        <div className="mt-3 grid gap-1 sm:grid-cols-2 lg:max-h-[390px] lg:grid-cols-1 lg:overflow-y-auto lg:pr-1">
           {colors.map((color, index) => (
-            <button key={color.id} type="button" onClick={() => setSelectedIndex(index)} className="group text-left">
+            <button
+              key={color.id}
+              type="button"
+              aria-pressed={selected?.id === color.id}
+              onClick={() => setSelectedIndex(index)}
+              className={`group flex min-h-14 w-full items-center gap-3 rounded-lg border px-3 py-2.5 text-left transition-colors ${
+                selected?.id === color.id
+                  ? "border-brand bg-brand-soft"
+                  : "border-transparent hover:border-border hover:bg-page"
+              }`}
+            >
               <span
-                className={`block size-9 rounded-full border-2 transition-transform group-hover:scale-105 ${selected?.id === color.id ? "border-brand" : "border-white/35"}`}
+                className={`block size-8 shrink-0 rounded-full border-2 shadow-sm transition-transform group-hover:scale-105 ${
+                  selected?.id === color.id ? "border-brand" : "border-white"
+                }`}
                 style={{ background: buildSwatchBackground(color.shades) }}
               />
-              <span className="mt-2 block text-[11.5px] font-bold text-white">{color.colorName}</span>
-              {color.additionalCost && Number(color.additionalCost) > 0 && (
-                <span className="mt-0.5 block text-[10.5px] text-white/50">+{formatSinglePrice(color.additionalCost)}</span>
-              )}
+              <span className="min-w-0">
+                <span className="block text-[12px] font-bold leading-4 text-ink">{color.colorName}</span>
+                <span className="mt-0.5 block text-[10.5px] text-muted">
+                  {color.additionalCost && Number(color.additionalCost) > 0
+                    ? `+${formatSinglePrice(color.additionalCost)}`
+                    : "No additional cost"}
+                </span>
+              </span>
             </button>
           ))}
         </div>
