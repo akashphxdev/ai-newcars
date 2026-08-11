@@ -97,6 +97,15 @@ func New(h *handler.Handler, c *cache.Cache, cfg *config.Config) http.Handler {
 			r.Get("/{brandSlug}/{modelSlug}/variant-pick", h.VariantPick)
 		})
 
+		// The in-house ad server. Serving is cached briefly — a campaign
+		// change should appear quickly, and an ad is cheap to re-fetch.
+		// The two events are writes and must never be cached.
+		r.Route("/ads", func(r chi.Router) {
+			r.With(middleware.PublicCache(c, ttlRedirects)).Get("/serve", h.ServeAd)
+			r.Post("/impression", h.AdImpression)
+			r.Post("/click", h.AdClick)
+		})
+
 		// Admin-managed page metadata. Meta is cached like a listing —
 		// an editor changing a title should not wait ten minutes to see
 		// it; redirects use the settings TTL's short cousin because a new

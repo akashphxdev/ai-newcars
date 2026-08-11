@@ -11,6 +11,7 @@
 
 import Link from "next/link";
 import { ChevronIcon } from "@/components/common/icons";
+import AdSlot from "@/components/common/AdSlot";
 
 export interface SidebarLink {
   href: string;
@@ -23,18 +24,11 @@ export interface SidebarBlock {
   links: SidebarLink[];
 }
 
+// Every sidebar on the site is the same shape, so they all draw from the
+// one rectangle placement the admin panel books. AdSlot reserves the
+// height whether or not that placement is sold.
 export function SidebarAdSlot({ id }: { id: string }) {
-  // Reserved rather than filled. No ad provider is configured, and a slot
-  // that collapses to nothing would shift the page the day one is — so it
-  // holds its height and says what it is instead of faking an advert.
-  return (
-    <div
-      data-ad-slot={id}
-      className="flex min-h-[250px] items-center justify-center rounded-xl border border-dashed border-border bg-page"
-    >
-      <span className="text-[11px] uppercase tracking-[0.12em] text-subtle">Advertisement</span>
-    </div>
-  );
+  return <AdSlot placement="article-sidebar-rectangle" id={id} />;
 }
 
 export default function PageSidebar({
