@@ -2,8 +2,10 @@
 -- PostgreSQL database dump
 --
 
--- Dumped from database version 14.17 (Homebrew)
--- Dumped by pg_dump version 14.17 (Homebrew)
+\restrict GvuhuS6BLmojbv07dIVWw5GuHpdVAafDTY4kzHW4w4OwJr4qJJMtsr5VUjGijXr
+
+-- Dumped from database version 16.13 (Ubuntu 16.13-1.pgdg22.04+1)
+-- Dumped by pg_dump version 16.13 (Ubuntu 16.13-1.pgdg22.04+1)
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
@@ -822,41 +824,6 @@ ALTER SEQUENCE public.article_categories_id_seq OWNED BY public.article_categori
 
 
 --
--- Name: article_comments; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public.article_comments (
-    id integer NOT NULL,
-    article_id integer NOT NULL,
-    user_id integer NOT NULL,
-    parent_comment_id integer,
-    body text NOT NULL,
-    status character varying(20) DEFAULT 'visible'::character varying NOT NULL,
-    created_at timestamp(3) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL
-);
-
-
---
--- Name: article_comments_id_seq; Type: SEQUENCE; Schema: public; Owner: -
---
-
-CREATE SEQUENCE public.article_comments_id_seq
-    AS integer
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-
---
--- Name: article_comments_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
---
-
-ALTER SEQUENCE public.article_comments_id_seq OWNED BY public.article_comments.id;
-
-
---
 -- Name: articles; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -1027,11 +994,11 @@ CREATE TABLE public.brands (
     name character varying(100) NOT NULL,
     slug character varying(100) NOT NULL,
     logo_url character varying(255),
-    country_origin_id integer,
     is_active boolean DEFAULT true NOT NULL,
-    created_at timestamp(3) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL
-,
-    display_order integer DEFAULT 0 NOT NULL);
+    created_at timestamp(3) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    country_origin_id integer,
+    display_order integer DEFAULT 0 NOT NULL
+);
 
 
 --
@@ -1254,10 +1221,10 @@ ALTER SEQUENCE public.car_faqs_id_seq OWNED BY public.car_faqs.id;
 CREATE TABLE public.car_images (
     id integer NOT NULL,
     model_id integer NOT NULL,
-    color_id integer,
     image_url character varying(255) NOT NULL,
     is_primary boolean DEFAULT false NOT NULL,
-    angle character varying(30)
+    angle character varying(30),
+    color_id integer
 );
 
 
@@ -1290,7 +1257,6 @@ CREATE TABLE public.car_models (
     brand_id integer NOT NULL,
     name character varying(100) NOT NULL,
     slug character varying(100) NOT NULL,
-    body_type_id integer,
     launch_status character varying(20) DEFAULT 'available'::character varying NOT NULL,
     expected_launch_date date,
     price_min numeric(12,2),
@@ -1298,6 +1264,7 @@ CREATE TABLE public.car_models (
     rating_avg numeric(3,2),
     cover_image_url character varying(255),
     created_at timestamp(3) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    body_type_id integer,
     has_petrol boolean DEFAULT false NOT NULL,
     has_diesel boolean DEFAULT false NOT NULL,
     has_cng boolean DEFAULT false NOT NULL,
@@ -1338,7 +1305,6 @@ CREATE TABLE public.car_powertrains_electric (
     battery_capacity numeric(6,2),
     battery_chemistry character varying(30),
     thermal_management_system character varying(50),
-    drivetrain_id integer,
     power_ps integer,
     torque_nm integer,
     claimed_range integer,
@@ -1361,6 +1327,7 @@ CREATE TABLE public.car_powertrains_electric (
     deleted_at timestamp(3) without time zone,
     expires_at timestamp(3) without time zone,
     created_at timestamp(3) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    drivetrain_id integer,
     charging_options_raw character varying(255),
     charging_port character varying(30),
     emission_norm_compliance character varying(30),
@@ -1407,7 +1374,6 @@ CREATE TABLE public.car_powertrains_ice (
     cylinders integer,
     num_gears integer,
     is_four_by_four boolean DEFAULT false NOT NULL,
-    drivetrain_id integer,
     power_ps integer,
     power_min_rpm integer,
     power_max_rpm integer,
@@ -1424,6 +1390,7 @@ CREATE TABLE public.car_powertrains_ice (
     deleted_at timestamp(3) without time zone,
     expires_at timestamp(3) without time zone,
     created_at timestamp(3) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    drivetrain_id integer,
     emission_norm_compliance character varying(30),
     turbo_charger boolean DEFAULT false NOT NULL
 );
@@ -1459,9 +1426,9 @@ CREATE TABLE public.car_variants (
     variant_name character varying(100) NOT NULL,
     price numeric(12,2) NOT NULL,
     seating_capacity integer NOT NULL,
-    transmission_id integer NOT NULL,
     is_top_seller boolean DEFAULT false NOT NULL,
     created_at timestamp(3) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    transmission_id integer NOT NULL,
     boot_space_litres integer,
     front_brake_type character varying(50),
     front_suspension character varying(100),
@@ -1505,8 +1472,8 @@ CREATE TABLE public.cities (
     name character varying(100) NOT NULL,
     slug character varying(100) NOT NULL,
     is_metro boolean DEFAULT false NOT NULL,
-    is_top_city boolean DEFAULT false NOT NULL,
     is_sell_car_enabled boolean DEFAULT false NOT NULL,
+    is_top_city boolean DEFAULT false NOT NULL,
     logo_url character varying(255),
     state_id integer NOT NULL
 );
@@ -1540,13 +1507,13 @@ CREATE TABLE public.countries (
     id integer NOT NULL,
     name character varying(100) NOT NULL,
     code character varying(5) NOT NULL,
+    is_active boolean DEFAULT true NOT NULL,
     currency character varying(50),
-    currency_symbol character varying(10),
     currency_code character varying(10),
-    exchange_rate numeric(12,6),
+    currency_symbol character varying(10),
     distance_unit character varying(10) DEFAULT 'KM'::character varying,
-    fuel_unit character varying(10) DEFAULT 'Liter'::character varying,
-    is_active boolean DEFAULT true NOT NULL
+    exchange_rate numeric(12,6),
+    fuel_unit character varying(10) DEFAULT 'Liter'::character varying
 );
 
 
@@ -1635,6 +1602,41 @@ ALTER SEQUENCE public.features_id_seq OWNED BY public.features.id;
 
 
 --
+-- Name: fuel_prices; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.fuel_prices (
+    id bigint NOT NULL,
+    city_id integer NOT NULL,
+    fuel_type smallint NOT NULL,
+    price numeric(10,2) NOT NULL,
+    price_change numeric(10,2) DEFAULT 0 NOT NULL,
+    applicable_on date NOT NULL,
+    created_at timestamp(3) without time zone DEFAULT now() NOT NULL,
+    CONSTRAINT fuel_prices_fuel_type_check CHECK ((fuel_type = ANY (ARRAY[1, 2, 3])))
+);
+
+
+--
+-- Name: fuel_prices_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.fuel_prices_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: fuel_prices_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.fuel_prices_id_seq OWNED BY public.fuel_prices.id;
+
+
+--
 -- Name: insurance_leads; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -1685,6 +1687,52 @@ CREATE SEQUENCE public.insurance_leads_id_seq
 --
 
 ALTER SEQUENCE public.insurance_leads_id_seq OWNED BY public.insurance_leads.id;
+
+
+--
+-- Name: launch_notify_leads; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.launch_notify_leads (
+    id integer NOT NULL,
+    user_id integer,
+    mobile character varying(15) NOT NULL,
+    email character varying(150),
+    expected_launch_date_at_subscription date,
+    brand_id integer,
+    model_id integer,
+    is_active boolean DEFAULT true NOT NULL,
+    notified_at timestamp(3) without time zone,
+    lead_channel character varying(30),
+    utm_source character varying(100),
+    utm_medium character varying(100),
+    utm_campaign character varying(150),
+    landing_page character varying(255),
+    device_type character varying(20),
+    ip_address character varying(45),
+    created_at timestamp(3) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    updated_at timestamp(3) without time zone NOT NULL
+);
+
+
+--
+-- Name: launch_notify_leads_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.launch_notify_leads_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: launch_notify_leads_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.launch_notify_leads_id_seq OWNED BY public.launch_notify_leads.id;
 
 
 --
@@ -1857,13 +1905,13 @@ CREATE TABLE public.new_car_offers (
     model_id integer NOT NULL,
     variant_id integer,
     city_id integer,
-    offer_type integer,
     offer_amount numeric(10,2),
     description character varying(255),
     valid_from date,
     valid_until date,
     is_active boolean DEFAULT true NOT NULL,
-    image_url character varying(255) NOT NULL
+    image_url character varying(255) NOT NULL,
+    offer_type integer
 );
 
 
@@ -1925,26 +1973,23 @@ ALTER SEQUENCE public.notifications_id_seq OWNED BY public.notifications.id;
 
 
 --
--- Name: page_views; Type: TABLE; Schema: public; Owner: -
+-- Name: page_view_daily_stats; Type: TABLE; Schema: public; Owner: -
 --
 
-CREATE TABLE public.page_views (
-    id bigint NOT NULL,
-    page_type character varying(30),
-    page_id integer,
-    user_id integer,
-    page_url character varying(255),
-    device_type character varying(20),
-    ip_address character varying(45),
-    viewed_at timestamp(3) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL
+CREATE TABLE public.page_view_daily_stats (
+    id integer NOT NULL,
+    page_url character varying(255) NOT NULL,
+    view_date date NOT NULL,
+    view_count integer DEFAULT 0 NOT NULL
 );
 
 
 --
--- Name: page_views_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+-- Name: page_view_daily_stats_id_seq; Type: SEQUENCE; Schema: public; Owner: -
 --
 
-CREATE SEQUENCE public.page_views_id_seq
+CREATE SEQUENCE public.page_view_daily_stats_id_seq
+    AS integer
     START WITH 1
     INCREMENT BY 1
     NO MINVALUE
@@ -1953,10 +1998,10 @@ CREATE SEQUENCE public.page_views_id_seq
 
 
 --
--- Name: page_views_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+-- Name: page_view_daily_stats_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
 --
 
-ALTER SEQUENCE public.page_views_id_seq OWNED BY public.page_views.id;
+ALTER SEQUENCE public.page_view_daily_stats_id_seq OWNED BY public.page_view_daily_stats.id;
 
 
 --
@@ -2211,6 +2256,85 @@ ALTER SEQUENCE public.reviews_id_seq OWNED BY public.reviews.id;
 
 
 --
+-- Name: road_tax_fixed_charges; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.road_tax_fixed_charges (
+    id integer NOT NULL,
+    state_id integer,
+    registration numeric(10,2) DEFAULT 600 NOT NULL,
+    hsrp numeric(10,2) DEFAULT 400 NOT NULL,
+    fastag numeric(10,2) DEFAULT 500 NOT NULL,
+    hypothecation numeric(10,2) DEFAULT 1500 NOT NULL,
+    effective_from date NOT NULL,
+    source_url text
+);
+
+
+--
+-- Name: road_tax_fixed_charges_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.road_tax_fixed_charges_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: road_tax_fixed_charges_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.road_tax_fixed_charges_id_seq OWNED BY public.road_tax_fixed_charges.id;
+
+
+--
+-- Name: road_tax_rates; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.road_tax_rates (
+    id integer NOT NULL,
+    state_id integer NOT NULL,
+    fuel_type text,
+    basis text NOT NULL,
+    slab_min numeric(12,2) DEFAULT 0 NOT NULL,
+    slab_max numeric(12,2),
+    rate_pct numeric(5,2) NOT NULL,
+    min_amount numeric(12,2),
+    effective_from date NOT NULL,
+    source_url text,
+    verified boolean DEFAULT false NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    CONSTRAINT road_tax_fuel_known CHECK (((fuel_type IS NULL) OR (fuel_type = ANY (ARRAY['petrol'::text, 'diesel'::text, 'electric'::text, 'cng'::text])))),
+    CONSTRAINT road_tax_rates_basis_check CHECK ((basis = ANY (ARRAY['price'::text, 'engine_cc'::text]))),
+    CONSTRAINT road_tax_slab_sane CHECK (((slab_max IS NULL) OR (slab_max > slab_min)))
+);
+
+
+--
+-- Name: road_tax_rates_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.road_tax_rates_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: road_tax_rates_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.road_tax_rates_id_seq OWNED BY public.road_tax_rates.id;
+
+
+--
 -- Name: role_permissions; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -2399,7 +2523,9 @@ CREATE TABLE public.seo_redirects (
     redirect_type integer DEFAULT 301 NOT NULL,
     is_active boolean DEFAULT true NOT NULL,
     created_by integer,
-    created_at timestamp(3) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL
+    created_at timestamp(3) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    updated_at timestamp(3) without time zone NOT NULL,
+    updated_by integer
 );
 
 
@@ -2557,9 +2683,9 @@ CREATE TABLE public.states (
     id integer NOT NULL,
     country_id integer NOT NULL,
     name character varying(100) NOT NULL,
-    code character varying(10)
-,
-    slug character varying(100) NOT NULL);
+    code character varying(10),
+    slug character varying(100) NOT NULL
+);
 
 
 --
@@ -2936,6 +3062,38 @@ ALTER SEQUENCE public.variant_features_id_seq OWNED BY public.variant_features.i
 
 
 --
+-- Name: wishlists; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.wishlists (
+    id integer NOT NULL,
+    user_id integer NOT NULL,
+    model_id integer NOT NULL,
+    created_at timestamp(3) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL
+);
+
+
+--
+-- Name: wishlists_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.wishlists_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: wishlists_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.wishlists_id_seq OWNED BY public.wishlists.id;
+
+
+--
 -- Name: ad_campaigns id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -3059,13 +3217,6 @@ ALTER TABLE ONLY public.article_car_models ALTER COLUMN id SET DEFAULT nextval('
 --
 
 ALTER TABLE ONLY public.article_categories ALTER COLUMN id SET DEFAULT nextval('public.article_categories_id_seq'::regclass);
-
-
---
--- Name: article_comments id; Type: DEFAULT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.article_comments ALTER COLUMN id SET DEFAULT nextval('public.article_comments_id_seq'::regclass);
 
 
 --
@@ -3202,10 +3353,24 @@ ALTER TABLE ONLY public.features ALTER COLUMN id SET DEFAULT nextval('public.fea
 
 
 --
+-- Name: fuel_prices id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.fuel_prices ALTER COLUMN id SET DEFAULT nextval('public.fuel_prices_id_seq'::regclass);
+
+
+--
 -- Name: insurance_leads id; Type: DEFAULT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.insurance_leads ALTER COLUMN id SET DEFAULT nextval('public.insurance_leads_id_seq'::regclass);
+
+
+--
+-- Name: launch_notify_leads id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.launch_notify_leads ALTER COLUMN id SET DEFAULT nextval('public.launch_notify_leads_id_seq'::regclass);
 
 
 --
@@ -3251,10 +3416,10 @@ ALTER TABLE ONLY public.notifications ALTER COLUMN id SET DEFAULT nextval('publi
 
 
 --
--- Name: page_views id; Type: DEFAULT; Schema: public; Owner: -
+-- Name: page_view_daily_stats id; Type: DEFAULT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public.page_views ALTER COLUMN id SET DEFAULT nextval('public.page_views_id_seq'::regclass);
+ALTER TABLE ONLY public.page_view_daily_stats ALTER COLUMN id SET DEFAULT nextval('public.page_view_daily_stats_id_seq'::regclass);
 
 
 --
@@ -3304,6 +3469,20 @@ ALTER TABLE ONLY public.review_replies ALTER COLUMN id SET DEFAULT nextval('publ
 --
 
 ALTER TABLE ONLY public.reviews ALTER COLUMN id SET DEFAULT nextval('public.reviews_id_seq'::regclass);
+
+
+--
+-- Name: road_tax_fixed_charges id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.road_tax_fixed_charges ALTER COLUMN id SET DEFAULT nextval('public.road_tax_fixed_charges_id_seq'::regclass);
+
+
+--
+-- Name: road_tax_rates id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.road_tax_rates ALTER COLUMN id SET DEFAULT nextval('public.road_tax_rates_id_seq'::regclass);
 
 
 --
@@ -3430,6 +3609,13 @@ ALTER TABLE ONLY public.users ALTER COLUMN id SET DEFAULT nextval('public.users_
 --
 
 ALTER TABLE ONLY public.variant_features ALTER COLUMN id SET DEFAULT nextval('public.variant_features_id_seq'::regclass);
+
+
+--
+-- Name: wishlists id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.wishlists ALTER COLUMN id SET DEFAULT nextval('public.wishlists_id_seq'::regclass);
 
 
 --
@@ -3585,14 +3771,6 @@ ALTER TABLE ONLY public.article_categories
 
 
 --
--- Name: article_comments article_comments_pkey; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.article_comments
-    ADD CONSTRAINT article_comments_pkey PRIMARY KEY (id);
-
-
---
 -- Name: articles articles_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -3745,11 +3923,35 @@ ALTER TABLE ONLY public.features
 
 
 --
+-- Name: fuel_prices fuel_prices_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.fuel_prices
+    ADD CONSTRAINT fuel_prices_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: fuel_prices fuel_prices_unique; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.fuel_prices
+    ADD CONSTRAINT fuel_prices_unique UNIQUE (city_id, fuel_type, applicable_on);
+
+
+--
 -- Name: insurance_leads insurance_leads_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.insurance_leads
     ADD CONSTRAINT insurance_leads_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: launch_notify_leads launch_notify_leads_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.launch_notify_leads
+    ADD CONSTRAINT launch_notify_leads_pkey PRIMARY KEY (id);
 
 
 --
@@ -3801,11 +4003,11 @@ ALTER TABLE ONLY public.notifications
 
 
 --
--- Name: page_views page_views_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: page_view_daily_stats page_view_daily_stats_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public.page_views
-    ADD CONSTRAINT page_views_pkey PRIMARY KEY (id);
+ALTER TABLE ONLY public.page_view_daily_stats
+    ADD CONSTRAINT page_view_daily_stats_pkey PRIMARY KEY (id);
 
 
 --
@@ -3862,6 +4064,38 @@ ALTER TABLE ONLY public.review_replies
 
 ALTER TABLE ONLY public.reviews
     ADD CONSTRAINT reviews_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: road_tax_fixed_charges road_tax_fixed_charges_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.road_tax_fixed_charges
+    ADD CONSTRAINT road_tax_fixed_charges_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: road_tax_fixed_charges road_tax_fixed_charges_state_id_effective_from_key; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.road_tax_fixed_charges
+    ADD CONSTRAINT road_tax_fixed_charges_state_id_effective_from_key UNIQUE (state_id, effective_from);
+
+
+--
+-- Name: road_tax_rates road_tax_rates_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.road_tax_rates
+    ADD CONSTRAINT road_tax_rates_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: road_tax_rates road_tax_rates_state_id_fuel_type_basis_slab_min_effective__key; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.road_tax_rates
+    ADD CONSTRAINT road_tax_rates_state_id_fuel_type_basis_slab_min_effective__key UNIQUE (state_id, fuel_type, basis, slab_min, effective_from);
 
 
 --
@@ -4014,6 +4248,14 @@ ALTER TABLE ONLY public.users
 
 ALTER TABLE ONLY public.variant_features
     ADD CONSTRAINT variant_features_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: wishlists wishlists_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.wishlists
+    ADD CONSTRAINT wishlists_pkey PRIMARY KEY (id);
 
 
 --
@@ -4367,17 +4609,17 @@ CREATE UNIQUE INDEX car_variants_model_id_variant_name_key ON public.car_variant
 
 
 --
--- Name: cities_slug_key; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE UNIQUE INDEX cities_slug_key ON public.cities USING btree (slug);
-
-
---
 -- Name: cities_state_id_idx; Type: INDEX; Schema: public; Owner: -
 --
 
 CREATE INDEX cities_state_id_idx ON public.cities USING btree (state_id);
+
+
+--
+-- Name: cities_state_id_slug_key; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX cities_state_id_slug_key ON public.cities USING btree (state_id, slug);
 
 
 --
@@ -4402,6 +4644,20 @@ CREATE UNIQUE INDEX features_name_key ON public.features USING btree (name);
 
 
 --
+-- Name: fuel_prices_day_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX fuel_prices_day_idx ON public.fuel_prices USING btree (applicable_on DESC);
+
+
+--
+-- Name: fuel_prices_latest_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX fuel_prices_latest_idx ON public.fuel_prices USING btree (city_id, fuel_type, applicable_on DESC);
+
+
+--
 -- Name: insurance_leads_brand_id_model_id_idx; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -4420,6 +4676,27 @@ CREATE INDEX insurance_leads_mobile_idx ON public.insurance_leads USING btree (m
 --
 
 CREATE INDEX insurance_leads_status_created_at_idx ON public.insurance_leads USING btree (status, created_at);
+
+
+--
+-- Name: launch_notify_leads_brand_id_model_id_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX launch_notify_leads_brand_id_model_id_idx ON public.launch_notify_leads USING btree (brand_id, model_id);
+
+
+--
+-- Name: launch_notify_leads_is_active_created_at_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX launch_notify_leads_is_active_created_at_idx ON public.launch_notify_leads USING btree (is_active, created_at);
+
+
+--
+-- Name: launch_notify_leads_mobile_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX launch_notify_leads_mobile_idx ON public.launch_notify_leads USING btree (mobile);
 
 
 --
@@ -4472,6 +4749,20 @@ CREATE INDEX new_car_offers_model_id_idx ON public.new_car_offers USING btree (m
 
 
 --
+-- Name: page_view_daily_stats_page_url_view_date_key; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX page_view_daily_stats_page_url_view_date_key ON public.page_view_daily_stats USING btree (page_url, view_date);
+
+
+--
+-- Name: page_view_daily_stats_view_date_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX page_view_daily_stats_view_date_idx ON public.page_view_daily_stats USING btree (view_date);
+
+
+--
 -- Name: permissions_permission_key_key; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -4511,6 +4802,13 @@ CREATE UNIQUE INDEX review_helpful_votes_review_id_user_id_key ON public.review_
 --
 
 CREATE INDEX reviews_model_id_status_idx ON public.reviews USING btree (model_id, status);
+
+
+--
+-- Name: road_tax_rates_lookup_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX road_tax_rates_lookup_idx ON public.road_tax_rates USING btree (state_id, effective_from DESC, slab_min);
 
 
 --
@@ -4563,6 +4861,13 @@ CREATE UNIQUE INDEX seo_meta_page_type_entity_id_key ON public.seo_meta USING bt
 
 
 --
+-- Name: seo_redirects_is_active_created_at_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX seo_redirects_is_active_created_at_idx ON public.seo_redirects USING btree (is_active, created_at);
+
+
+--
 -- Name: seo_redirects_old_path_key; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -4595,6 +4900,13 @@ CREATE INDEX soft_leads_status_created_at_idx ON public.soft_leads USING btree (
 --
 
 CREATE INDEX states_country_id_idx ON public.states USING btree (country_id);
+
+
+--
+-- Name: states_slug_key; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX states_slug_key ON public.states USING btree (slug);
 
 
 --
@@ -4672,6 +4984,20 @@ CREATE INDEX variant_features_feature_id_idx ON public.variant_features USING bt
 --
 
 CREATE UNIQUE INDEX variant_features_variant_id_feature_id_key ON public.variant_features USING btree (variant_id, feature_id);
+
+
+--
+-- Name: wishlists_model_id_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX wishlists_model_id_idx ON public.wishlists USING btree (model_id);
+
+
+--
+-- Name: wishlists_user_id_model_id_key; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX wishlists_user_id_model_id_key ON public.wishlists USING btree (user_id, model_id);
 
 
 --
@@ -5056,30 +5382,6 @@ ALTER TABLE ONLY public.article_categories
 
 
 --
--- Name: article_comments article_comments_article_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.article_comments
-    ADD CONSTRAINT article_comments_article_id_fkey FOREIGN KEY (article_id) REFERENCES public.articles(id) ON UPDATE CASCADE ON DELETE RESTRICT;
-
-
---
--- Name: article_comments article_comments_parent_comment_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.article_comments
-    ADD CONSTRAINT article_comments_parent_comment_id_fkey FOREIGN KEY (parent_comment_id) REFERENCES public.article_comments(id) ON UPDATE CASCADE ON DELETE SET NULL;
-
-
---
--- Name: article_comments article_comments_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.article_comments
-    ADD CONSTRAINT article_comments_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id) ON UPDATE CASCADE ON DELETE RESTRICT;
-
-
---
 -- Name: articles articles_author_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -5344,6 +5646,14 @@ ALTER TABLE ONLY public.features
 
 
 --
+-- Name: fuel_prices fuel_prices_city_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.fuel_prices
+    ADD CONSTRAINT fuel_prices_city_id_fkey FOREIGN KEY (city_id) REFERENCES public.cities(id);
+
+
+--
 -- Name: insurance_leads insurance_leads_brand_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -5389,6 +5699,30 @@ ALTER TABLE ONLY public.insurance_leads
 
 ALTER TABLE ONLY public.insurance_leads
     ADD CONSTRAINT insurance_leads_variant_id_fkey FOREIGN KEY (variant_id) REFERENCES public.car_variants(id) ON UPDATE CASCADE ON DELETE SET NULL;
+
+
+--
+-- Name: launch_notify_leads launch_notify_leads_brand_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.launch_notify_leads
+    ADD CONSTRAINT launch_notify_leads_brand_id_fkey FOREIGN KEY (brand_id) REFERENCES public.brands(id) ON UPDATE CASCADE ON DELETE SET NULL;
+
+
+--
+-- Name: launch_notify_leads launch_notify_leads_model_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.launch_notify_leads
+    ADD CONSTRAINT launch_notify_leads_model_id_fkey FOREIGN KEY (model_id) REFERENCES public.car_models(id) ON UPDATE CASCADE ON DELETE SET NULL;
+
+
+--
+-- Name: launch_notify_leads launch_notify_leads_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.launch_notify_leads
+    ADD CONSTRAINT launch_notify_leads_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id) ON UPDATE CASCADE ON DELETE SET NULL;
 
 
 --
@@ -5504,14 +5838,6 @@ ALTER TABLE ONLY public.notifications
 
 
 --
--- Name: page_views page_views_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.page_views
-    ADD CONSTRAINT page_views_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id) ON UPDATE CASCADE ON DELETE SET NULL;
-
-
---
 -- Name: price_drop_alert_leads price_drop_alert_leads_brand_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -5616,6 +5942,22 @@ ALTER TABLE ONLY public.reviews
 
 
 --
+-- Name: road_tax_fixed_charges road_tax_fixed_charges_state_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.road_tax_fixed_charges
+    ADD CONSTRAINT road_tax_fixed_charges_state_id_fkey FOREIGN KEY (state_id) REFERENCES public.states(id) ON DELETE CASCADE;
+
+
+--
+-- Name: road_tax_rates road_tax_rates_state_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.road_tax_rates
+    ADD CONSTRAINT road_tax_rates_state_id_fkey FOREIGN KEY (state_id) REFERENCES public.states(id) ON DELETE CASCADE;
+
+
+--
 -- Name: role_permissions role_permissions_permission_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -5701,6 +6043,14 @@ ALTER TABLE ONLY public.seo_meta
 
 ALTER TABLE ONLY public.seo_redirects
     ADD CONSTRAINT seo_redirects_created_by_fkey FOREIGN KEY (created_by) REFERENCES public.admin_users(id) ON UPDATE CASCADE ON DELETE SET NULL;
+
+
+--
+-- Name: seo_redirects seo_redirects_updated_by_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.seo_redirects
+    ADD CONSTRAINT seo_redirects_updated_by_fkey FOREIGN KEY (updated_by) REFERENCES public.admin_users(id) ON UPDATE CASCADE ON DELETE SET NULL;
 
 
 --
@@ -5896,66 +6246,24 @@ ALTER TABLE ONLY public.variant_features
 
 
 --
+-- Name: wishlists wishlists_model_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.wishlists
+    ADD CONSTRAINT wishlists_model_id_fkey FOREIGN KEY (model_id) REFERENCES public.car_models(id) ON UPDATE CASCADE ON DELETE RESTRICT;
+
+
+--
+-- Name: wishlists wishlists_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.wishlists
+    ADD CONSTRAINT wishlists_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id) ON UPDATE CASCADE ON DELETE RESTRICT;
+
+
+--
 -- PostgreSQL database dump complete
 --
 
-\restrict lXmU4GEt7mx7LvAbBjpC06bEConofDmMhzUEb90Fk7S0vbi8xthvXgstiqx5dbn
-CREATE TABLE public.fuel_prices (
-    id bigint NOT NULL,
-    city_id integer NOT NULL,
-    fuel_type smallint NOT NULL,
-    price numeric(10,2) NOT NULL,
-    price_change numeric(10,2) DEFAULT 0 NOT NULL,
-    applicable_on date NOT NULL,
-    created_at timestamp(3) without time zone DEFAULT now() NOT NULL,
-    CONSTRAINT fuel_prices_fuel_type_check CHECK ((fuel_type = ANY (ARRAY[1, 2, 3])))
-);
-ALTER TABLE public.fuel_prices OWNER TO postgres;
-CREATE SEQUENCE public.fuel_prices_id_seq
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-ALTER SEQUENCE public.fuel_prices_id_seq OWNER TO postgres;
-ALTER SEQUENCE public.fuel_prices_id_seq OWNED BY public.fuel_prices.id;
-ALTER TABLE ONLY public.fuel_prices ALTER COLUMN id SET DEFAULT nextval('public.fuel_prices_id_seq'::regclass);
-ALTER TABLE ONLY public.fuel_prices
-    ADD CONSTRAINT fuel_prices_pkey PRIMARY KEY (id);
-ALTER TABLE ONLY public.fuel_prices
-    ADD CONSTRAINT fuel_prices_unique UNIQUE (city_id, fuel_type, applicable_on);
-CREATE INDEX fuel_prices_day_idx ON public.fuel_prices USING btree (applicable_on DESC);
-CREATE INDEX fuel_prices_latest_idx ON public.fuel_prices USING btree (city_id, fuel_type, applicable_on DESC);
-ALTER TABLE ONLY public.fuel_prices
-    ADD CONSTRAINT fuel_prices_city_id_fkey FOREIGN KEY (city_id) REFERENCES public.cities(id);
-\unrestrict lXmU4GEt7mx7LvAbBjpC06bEConofDmMhzUEb90Fk7S0vbi8xthvXgstiqx5dbn
+\unrestrict GvuhuS6BLmojbv07dIVWw5GuHpdVAafDTY4kzHW4w4OwJr4qJJMtsr5VUjGijXr
 
-CREATE TABLE public.road_tax_rates (
-    id integer NOT NULL,
-    state_id integer NOT NULL,
-    fuel_type text,
-    basis text NOT NULL,
-    slab_min numeric(12,2) DEFAULT 0 NOT NULL,
-    slab_max numeric(12,2),
-    rate_pct numeric(5,2) NOT NULL,
-    min_amount numeric(12,2),
-    effective_from date NOT NULL,
-    source_url text,
-    verified boolean DEFAULT false NOT NULL,
-    created_at timestamp with time zone DEFAULT now() NOT NULL
-);
-ALTER TABLE public.road_tax_rates OWNER TO postgres;
-ALTER TABLE ONLY public.road_tax_rates ADD CONSTRAINT road_tax_rates_pkey PRIMARY KEY (id);
-
-CREATE TABLE public.road_tax_fixed_charges (
-    id integer NOT NULL,
-    state_id integer,
-    registration numeric(10,2) DEFAULT 600 NOT NULL,
-    hsrp numeric(10,2) DEFAULT 400 NOT NULL,
-    fastag numeric(10,2) DEFAULT 500 NOT NULL,
-    hypothecation numeric(10,2) DEFAULT 1500 NOT NULL,
-    effective_from date NOT NULL,
-    source_url text
-);
-ALTER TABLE public.road_tax_fixed_charges OWNER TO postgres;
-ALTER TABLE ONLY public.road_tax_fixed_charges ADD CONSTRAINT road_tax_fixed_charges_pkey PRIMARY KEY (id);

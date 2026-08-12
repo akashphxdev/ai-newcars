@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"github.com/timesauto/go-backend/internal/authx"
 	"net/http"
 	"strconv"
 	"strings"
@@ -19,10 +20,17 @@ type Handler struct {
 	Q     *store.Queries
 	Cache *cache.Cache
 	Cfg   *config.Config
+	Auth  *authx.Verifier
 }
 
 func New(db *pgxpool.Pool, c *cache.Cache, cfg *config.Config) *Handler {
-	return &Handler{DB: db, Q: store.New(db), Cache: c, Cfg: cfg}
+	return &Handler{
+		DB:    db,
+		Q:     store.New(db),
+		Cache: c,
+		Cfg:   cfg,
+		Auth:  authx.New(cfg.JWTSecret, cfg.JWTExpiry),
+	}
 }
 
 // Query-parameter helpers. These reproduce the coercion the Zod schemas

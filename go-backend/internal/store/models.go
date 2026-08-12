@@ -288,16 +288,6 @@ type ArticleCategory struct {
 	UpdatedAt time.Time `json:"updated_at"`
 }
 
-type ArticleComment struct {
-	ID              int32     `json:"id"`
-	ArticleID       int32     `json:"article_id"`
-	UserID          int32     `json:"user_id"`
-	ParentCommentID *int32    `json:"parent_comment_id"`
-	Body            string    `json:"body"`
-	Status          string    `json:"status"`
-	CreatedAt       time.Time `json:"created_at"`
-}
-
 type AttributeOption struct {
 	ID       int32  `json:"id"`
 	Category string `json:"category"`
@@ -340,9 +330,9 @@ type Brand struct {
 	Name            string    `json:"name"`
 	Slug            string    `json:"slug"`
 	LogoUrl         *string   `json:"logo_url"`
-	CountryOriginID *int32    `json:"country_origin_id"`
 	IsActive        bool      `json:"is_active"`
 	CreatedAt       time.Time `json:"created_at"`
+	CountryOriginID *int32    `json:"country_origin_id"`
 	DisplayOrder    int32     `json:"display_order"`
 }
 
@@ -417,10 +407,10 @@ type CarFaq struct {
 type CarImage struct {
 	ID        int32   `json:"id"`
 	ModelID   int32   `json:"model_id"`
-	ColorID   *int32  `json:"color_id"`
 	ImageUrl  string  `json:"image_url"`
 	IsPrimary bool    `json:"is_primary"`
 	Angle     *string `json:"angle"`
+	ColorID   *int32  `json:"color_id"`
 }
 
 type CarModel struct {
@@ -428,7 +418,6 @@ type CarModel struct {
 	BrandID            int32               `json:"brand_id"`
 	Name               string              `json:"name"`
 	Slug               string              `json:"slug"`
-	BodyTypeID         *int32              `json:"body_type_id"`
 	LaunchStatus       string              `json:"launch_status"`
 	ExpectedLaunchDate *time.Time          `json:"expected_launch_date"`
 	PriceMin           decimal.NullDecimal `json:"price_min"`
@@ -436,6 +425,7 @@ type CarModel struct {
 	RatingAvg          decimal.NullDecimal `json:"rating_avg"`
 	CoverImageUrl      *string             `json:"cover_image_url"`
 	CreatedAt          time.Time           `json:"created_at"`
+	BodyTypeID         *int32              `json:"body_type_id"`
 	HasPetrol          bool                `json:"has_petrol"`
 	HasDiesel          bool                `json:"has_diesel"`
 	HasCng             bool                `json:"has_cng"`
@@ -451,7 +441,6 @@ type CarPowertrainsElectric struct {
 	BatteryCapacity           decimal.NullDecimal `json:"battery_capacity"`
 	BatteryChemistry          *string             `json:"battery_chemistry"`
 	ThermalManagementSystem   *string             `json:"thermal_management_system"`
-	DrivetrainID              *int32              `json:"drivetrain_id"`
 	PowerPs                   *int32              `json:"power_ps"`
 	TorqueNm                  *int32              `json:"torque_nm"`
 	ClaimedRange              *int32              `json:"claimed_range"`
@@ -474,6 +463,7 @@ type CarPowertrainsElectric struct {
 	DeletedAt                 *time.Time          `json:"deleted_at"`
 	ExpiresAt                 *time.Time          `json:"expires_at"`
 	CreatedAt                 time.Time           `json:"created_at"`
+	DrivetrainID              *int32              `json:"drivetrain_id"`
 	ChargingOptionsRaw        *string             `json:"charging_options_raw"`
 	ChargingPort              *string             `json:"charging_port"`
 	EmissionNormCompliance    *string             `json:"emission_norm_compliance"`
@@ -495,7 +485,6 @@ type CarPowertrainsIce struct {
 	Cylinders              *int32              `json:"cylinders"`
 	NumGears               *int32              `json:"num_gears"`
 	IsFourByFour           bool                `json:"is_four_by_four"`
-	DrivetrainID           *int32              `json:"drivetrain_id"`
 	PowerPs                *int32              `json:"power_ps"`
 	PowerMinRpm            *int32              `json:"power_min_rpm"`
 	PowerMaxRpm            *int32              `json:"power_max_rpm"`
@@ -512,6 +501,7 @@ type CarPowertrainsIce struct {
 	DeletedAt              *time.Time          `json:"deleted_at"`
 	ExpiresAt              *time.Time          `json:"expires_at"`
 	CreatedAt              time.Time           `json:"created_at"`
+	DrivetrainID           *int32              `json:"drivetrain_id"`
 	EmissionNormCompliance *string             `json:"emission_norm_compliance"`
 	TurboCharger           bool                `json:"turbo_charger"`
 }
@@ -522,9 +512,9 @@ type CarVariant struct {
 	VariantName       string          `json:"variant_name"`
 	Price             decimal.Decimal `json:"price"`
 	SeatingCapacity   int32           `json:"seating_capacity"`
-	TransmissionID    int32           `json:"transmission_id"`
 	IsTopSeller       bool            `json:"is_top_seller"`
 	CreatedAt         time.Time       `json:"created_at"`
+	TransmissionID    int32           `json:"transmission_id"`
 	BootSpaceLitres   *int32          `json:"boot_space_litres"`
 	FrontBrakeType    *string         `json:"front_brake_type"`
 	FrontSuspension   *string         `json:"front_suspension"`
@@ -543,8 +533,8 @@ type City struct {
 	Name             string  `json:"name"`
 	Slug             string  `json:"slug"`
 	IsMetro          bool    `json:"is_metro"`
-	IsTopCity        bool    `json:"is_top_city"`
 	IsSellCarEnabled bool    `json:"is_sell_car_enabled"`
+	IsTopCity        bool    `json:"is_top_city"`
 	LogoUrl          *string `json:"logo_url"`
 	StateID          int32   `json:"state_id"`
 }
@@ -553,13 +543,13 @@ type Country struct {
 	ID             int32               `json:"id"`
 	Name           string              `json:"name"`
 	Code           string              `json:"code"`
-	Currency       *string             `json:"currency"`
-	CurrencySymbol *string             `json:"currency_symbol"`
-	CurrencyCode   *string             `json:"currency_code"`
-	ExchangeRate   decimal.NullDecimal `json:"exchange_rate"`
-	DistanceUnit   *string             `json:"distance_unit"`
-	FuelUnit       *string             `json:"fuel_unit"`
 	IsActive       bool                `json:"is_active"`
+	Currency       *string             `json:"currency"`
+	CurrencyCode   *string             `json:"currency_code"`
+	CurrencySymbol *string             `json:"currency_symbol"`
+	DistanceUnit   *string             `json:"distance_unit"`
+	ExchangeRate   decimal.NullDecimal `json:"exchange_rate"`
+	FuelUnit       *string             `json:"fuel_unit"`
 }
 
 type Feature struct {
@@ -612,6 +602,27 @@ type InsuranceLead struct {
 	RegistrationStateID     *int32     `json:"registration_state_id"`
 	RegistrationYear        *int32     `json:"registration_year"`
 	VariantID               *int32     `json:"variant_id"`
+}
+
+type LaunchNotifyLead struct {
+	ID                               int32      `json:"id"`
+	UserID                           *int32     `json:"user_id"`
+	Mobile                           string     `json:"mobile"`
+	Email                            *string    `json:"email"`
+	ExpectedLaunchDateAtSubscription *time.Time `json:"expected_launch_date_at_subscription"`
+	BrandID                          *int32     `json:"brand_id"`
+	ModelID                          *int32     `json:"model_id"`
+	IsActive                         bool       `json:"is_active"`
+	NotifiedAt                       *time.Time `json:"notified_at"`
+	LeadChannel                      *string    `json:"lead_channel"`
+	UtmSource                        *string    `json:"utm_source"`
+	UtmMedium                        *string    `json:"utm_medium"`
+	UtmCampaign                      *string    `json:"utm_campaign"`
+	LandingPage                      *string    `json:"landing_page"`
+	DeviceType                       *string    `json:"device_type"`
+	IpAddress                        *string    `json:"ip_address"`
+	CreatedAt                        time.Time  `json:"created_at"`
+	UpdatedAt                        time.Time  `json:"updated_at"`
 }
 
 type LeadActivity struct {
@@ -681,13 +692,13 @@ type NewCarOffer struct {
 	ModelID     int32               `json:"model_id"`
 	VariantID   *int32              `json:"variant_id"`
 	CityID      *int32              `json:"city_id"`
-	OfferType   *int32              `json:"offer_type"`
 	OfferAmount decimal.NullDecimal `json:"offer_amount"`
 	Description *string             `json:"description"`
 	ValidFrom   *time.Time          `json:"valid_from"`
 	ValidUntil  *time.Time          `json:"valid_until"`
 	IsActive    bool                `json:"is_active"`
 	ImageUrl    string              `json:"image_url"`
+	OfferType   *int32              `json:"offer_type"`
 }
 
 type Notification struct {
@@ -703,15 +714,11 @@ type Notification struct {
 	CreatedAt     time.Time  `json:"created_at"`
 }
 
-type PageView struct {
-	ID         int64     `json:"id"`
-	PageType   *string   `json:"page_type"`
-	PageID     *int32    `json:"page_id"`
-	UserID     *int32    `json:"user_id"`
-	PageUrl    *string   `json:"page_url"`
-	DeviceType *string   `json:"device_type"`
-	IpAddress  *string   `json:"ip_address"`
-	ViewedAt   time.Time `json:"viewed_at"`
+type PageViewDailyStat struct {
+	ID        int32     `json:"id"`
+	PageUrl   string    `json:"page_url"`
+	ViewDate  time.Time `json:"view_date"`
+	ViewCount int32     `json:"view_count"`
 }
 
 type Permission struct {
@@ -909,6 +916,8 @@ type SeoRedirect struct {
 	IsActive     bool      `json:"is_active"`
 	CreatedBy    *int32    `json:"created_by"`
 	CreatedAt    time.Time `json:"created_at"`
+	UpdatedAt    time.Time `json:"updated_at"`
+	UpdatedBy    *int32    `json:"updated_by"`
 }
 
 type SiteSetting struct {
@@ -1095,5 +1104,12 @@ type VariantFeature struct {
 	VariantID int32     `json:"variant_id"`
 	FeatureID int32     `json:"feature_id"`
 	Value     *string   `json:"value"`
+	CreatedAt time.Time `json:"created_at"`
+}
+
+type Wishlist struct {
+	ID        int32     `json:"id"`
+	UserID    int32     `json:"user_id"`
+	ModelID   int32     `json:"model_id"`
 	CreatedAt time.Time `json:"created_at"`
 }

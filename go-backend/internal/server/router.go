@@ -97,6 +97,16 @@ func New(h *handler.Handler, c *cache.Cache, cfg *config.Config) http.Handler {
 			r.Get("/{brandSlug}/{modelSlug}/variant-pick", h.VariantPick)
 		})
 
+		// A page-view counter and the visitor's saved models. Both are
+		// writes and neither may be cached.
+		r.Post("/analytics/page-views", h.PageView)
+
+		r.Route("/wishlist", func(r chi.Router) {
+			r.Get("/", h.MyWishlist)
+			r.Post("/", h.WishlistAdd)
+			r.Delete("/{modelId}", h.WishlistRemove)
+		})
+
 		// Compare's option and pairing endpoints. The spec table itself
 		// (GET /compare) is still Node's; nginx keeps that one path there.
 		r.Route("/compare", func(r chi.Router) {
