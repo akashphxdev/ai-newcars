@@ -97,6 +97,18 @@ func New(h *handler.Handler, c *cache.Cache, cfg *config.Config) http.Handler {
 			r.Get("/{brandSlug}/{modelSlug}/variant-pick", h.VariantPick)
 		})
 
+		// Compare's option and pairing endpoints. The spec table itself
+		// (GET /compare) is still Node's; nginx keeps that one path there.
+		r.Route("/compare", func(r chi.Router) {
+			r.Use(middleware.PublicCache(c, ttlListing))
+			r.Get("/car-options", h.CompareCarOptions)
+			r.Get("/car-options/{slug}/variants", h.CompareVariantOptions)
+			r.Get("/car-options/{slug}/variants/{variantId}/powertrains", h.ComparePowertrainOptions)
+			r.Get("/random-pairs", h.CompareRandomPairs)
+			r.Get("/brand-cross-pairs", h.CompareBrandCrossPairs)
+			r.Get("/model-cross-pairs", h.CompareModelCrossPairs)
+		})
+
 		// The in-house ad server. Serving is cached briefly — a campaign
 		// change should appear quickly, and an ad is cheap to re-fetch.
 		// The two events are writes and must never be cached.
