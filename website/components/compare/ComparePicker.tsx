@@ -7,6 +7,7 @@ import { formatSinglePrice } from "@/lib/format";
 import { savePendingCompareSelection } from "@/features/compare/comparePendingSelection";
 import AddCarSlot, { type SelectedCompareCar } from "./AddCarSlot";
 import type { CarOption } from "@/features/compare/compare.types";
+import { isComparablePrice } from "@/lib/comparable";
 
 const MAX_CARS = 4;
 const MIN_CARS = 2;
@@ -65,6 +66,9 @@ export default function ComparePicker({ options }: { options: CarOption[] }) {
 
   const brands = useMemo(() => [...byBrand.keys()].sort(), [byBrand]);
   const excludeSlugs = new Set(selected.map((c) => c.slug));
+  // Nothing is filtered until a first car exists to compare against;
+  // after that the offer narrows to what the same buyer could choose.
+  const chosenPrices = selected.map((c) => c.priceMin);
   const emptySlotCount = MAX_CARS - selected.length;
 
   const addCar = (car: SelectedCompareCar) => {
@@ -121,7 +125,14 @@ export default function ComparePicker({ options }: { options: CarOption[] }) {
             shifts to a new visual position keeps whatever the previous
             slot at that index had already picked. */}
         {Array.from({ length: emptySlotCount }, (_, i) => (
-          <AddCarSlot key={`${selected.length}-${i}`} brands={brands} byBrand={byBrand} excludeSlugs={excludeSlugs} onPick={addCar} />
+          <AddCarSlot
+            key={`${selected.length}-${i}`}
+            brands={brands}
+            byBrand={byBrand}
+            excludeSlugs={excludeSlugs}
+            isOffered={(car) => chosenPrices.every((p) => isComparablePrice(p, car.priceMin))}
+            onPick={addCar}
+          />
         ))}
 
         {selected.length === 2 && (

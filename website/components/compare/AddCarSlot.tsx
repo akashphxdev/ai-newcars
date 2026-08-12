@@ -26,11 +26,15 @@ export default function AddCarSlot({
   brands,
   byBrand,
   excludeSlugs,
+  isOffered,
   onPick,
 }: {
   brands: string[];
   byBrand: Map<string, CarOption[]>;
   excludeSlugs: Set<string>;
+  // True when this car can sensibly be compared with what is already
+  // picked. Defaults to offering everything, for the first slot.
+  isOffered?: (car: CarOption) => boolean;
   onPick: (car: SelectedCompareCar) => void;
 }) {
   const [brand, setBrand] = useState("");
@@ -42,7 +46,11 @@ export default function AddCarSlot({
   const [loadingVariants, setLoadingVariants] = useState(false);
   const [loadingPowertrains, setLoadingPowertrains] = useState(false);
 
-  const models = (brand ? byBrand.get(brand) ?? [] : []).filter((m) => !excludeSlugs.has(m.slug));
+  const all = brand ? byBrand.get(brand) ?? [] : [];
+  const models = all.filter((m) => !excludeSlugs.has(m.slug) && (isOffered?.(m) ?? true));
+  // A brand can have cars and still offer none of them here. Saying so
+  // beats an empty dropdown that reads as a loading failure.
+  const hiddenByPrice = all.length > 0 && models.length === 0;
 
   function resetFromBrand(nextBrand: string) {
     setBrand(nextBrand);
@@ -114,13 +122,21 @@ export default function AddCarSlot({
       </select>
 
       <select value={model?.slug ?? ""} disabled={!brand} onChange={(e) => selectModel(e.target.value)} className={selectClass}>
-        <option value="">{brand ? "Select Model" : "Pick a brand first"}</option>
+        <option value="">
+          {!brand ? "Pick a brand first" : hiddenByPrice ? "None in this price range" : "Select Model"}
+        </option>
         {models.map((m) => (
           <option key={m.id} value={m.slug}>
             {m.name}
           </option>
         ))}
       </select>
+
+      {hiddenByPrice && (
+        <p className="text-[11px] leading-snug text-muted">
+          Nothing from this brand sits close enough in price to the car you picked.
+        </p>
+      )}
 
       {model && (
         <select

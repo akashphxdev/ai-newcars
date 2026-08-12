@@ -22,6 +22,9 @@ export interface CompareTrayItem {
   carName: string;
   brandName: string;
   imageUrl: string | null;
+  // Optional: entries queued before this existed have none, and an
+  // unknown price is treated as comparable rather than dropped.
+  price?: string | null;
 }
 
 function read(): CompareTrayItem[] {

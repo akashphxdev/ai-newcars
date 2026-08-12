@@ -153,7 +153,7 @@ export default function VariantsTable({
     if (selected.has(v.id)) {
       removeFromTray(v.id);
     } else {
-      addToTray({ modelSlug, variantId: v.id, variantName: v.variantName, carName: modelName, brandName, imageUrl });
+      addToTray({ modelSlug, variantId: v.id, variantName: v.variantName, carName: modelName, brandName, imageUrl, price: v.price });
     }
   };
 

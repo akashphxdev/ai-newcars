@@ -7,6 +7,7 @@ import { CloseIcon, CompareIcon } from "@/components/common/icons";
 import { getVariantPowertrainOptions } from "@/features/compare/compare.api";
 import { savePendingCompareSelection } from "@/features/compare/comparePendingSelection";
 import { getTrayItems, removeFromTray, clearTray, subscribeTray, MAX_TRAY_ITEMS, type CompareTrayItem } from "@/features/compare/compareTray";
+import { isComparableSet } from "@/lib/comparable";
 
 const MIN_TRAY_ITEMS = 2;
 
@@ -35,8 +36,14 @@ export default function CompareTray() {
   const isDismissed = dismissedAtCount !== null && items.length <= dismissedAtCount;
   if (items.length === 0 || isDismissed) return null;
 
+  // The tray collects cars from anywhere on the site, so it is the one
+  // place a Nexon and a Phantom can end up side by side. Comparing them
+  // is blocked rather than hidden — the reader queued these deliberately
+  // and is owed a reason.
+  const comparable = isComparableSet(items.map((i) => i.price ?? null));
+
   const handleCompareNow = async () => {
-    if (items.length < MIN_TRAY_ITEMS || comparing) return;
+    if (items.length < MIN_TRAY_ITEMS || comparing || !comparable) return;
     setComparing(true);
     try {
       const powertrainIds = await Promise.all(
@@ -93,12 +100,18 @@ export default function CompareTray() {
         <button
           type="button"
           onClick={handleCompareNow}
-          disabled={items.length < MIN_TRAY_ITEMS || comparing}
+          disabled={items.length < MIN_TRAY_ITEMS || comparing || !comparable}
           className="flex shrink-0 cursor-pointer items-center gap-1.5 rounded-xl bg-brand px-5 py-2.5 text-[13px] font-bold text-white transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
         >
           <CompareIcon className="size-4" />
           {comparing ? "Loading…" : `Compare Now${items.length >= MIN_TRAY_ITEMS ? ` (${items.length})` : ""}`}
         </button>
+
+        {!comparable && (
+          <p className="order-last w-full text-[11.5px] leading-snug text-muted sm:order-none sm:w-auto sm:max-w-56">
+            These are too far apart in price to compare usefully — swap one for something closer.
+          </p>
+        )}
 
         <button
           type="button"

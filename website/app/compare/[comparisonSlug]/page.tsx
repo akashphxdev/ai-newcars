@@ -8,6 +8,7 @@ import {
   parseRobotsMeta,
 } from "@/features/seo/seo.api";
 import { SEO_PAGE_TYPE } from "@/features/seo/seo.types";
+import { isComparableSet } from "@/lib/comparable";
 import { getUploadUrl } from "@/lib/apiClient";
 import SeoJsonLd from "@/components/common/SeoJsonLd";
 import Link from "next/link";
@@ -79,7 +80,13 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     // This pair's own path, never the template's canonical — one shared
     // canonical would collapse every comparison onto a single URL.
     alternates: { canonical: `/compare/${(await params).comparisonSlug}` },
-    robots: parseRobotsMeta(seo?.robotsMeta ?? null),
+    // Any two slugs form a URL here, so the pairs nobody would cross-shop
+    // are reachable by construction — hundreds of thousands of them. The
+    // page still renders for whoever followed the link; it just does not
+    // ask to be indexed.
+    robots: isComparableSet(data.cars.map((c) => c.priceMin))
+      ? parseRobotsMeta(seo?.robotsMeta ?? null)
+      : { index: false, follow: true },
     openGraph: {
       title: fillComparePlaceholders(seo?.ogTitle, data.cars) ?? title,
       description: fillComparePlaceholders(seo?.ogDescription, data.cars) ?? description,

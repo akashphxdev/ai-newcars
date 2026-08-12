@@ -71,7 +71,7 @@ export default function VariantsList({
     if (queuedVariantIds.has(opt.id)) {
       removeFromTray(opt.id);
     } else {
-      addToTray({ modelSlug, variantId: opt.id, variantName: opt.variantName, carName, brandName, imageUrl });
+      addToTray({ modelSlug, variantId: opt.id, variantName: opt.variantName, carName, brandName, imageUrl, price: opt.price });
     }
   }
 
