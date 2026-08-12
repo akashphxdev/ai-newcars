@@ -63,7 +63,19 @@ export default async function RootLayout({
             to a much narrower auto/content-based width instead. This one
             fix applies to every page, current and future. */}
         <main className="w-full flex-1">{children}</main>
-        <Footer siteSettings={siteSettings} bodyTypes={bodyTypes} articleCategories={articleCategories} />
+        <Footer
+          siteSettings={{
+            contactEmail: siteSettings.contactEmail,
+            supportEmail: siteSettings.supportEmail,
+            facebookUrl: siteSettings.facebookUrl,
+            instagramUrl: siteSettings.instagramUrl,
+            twitterUrl: siteSettings.twitterUrl,
+            youtubeUrl: siteSettings.youtubeUrl,
+            linkedinUrl: siteSettings.linkedinUrl,
+          }}
+          bodyTypes={bodyTypes}
+          articleCategories={articleCategories}
+        />
         <CompareTray />
         <CityPrompt />
         <PageViewTracker />

@@ -2,11 +2,23 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { isChromelessRoute, routes } from "@/lib/routes";
-import type { PublicSiteSetting } from "@/features/siteSettings/siteSetting.types";
+// Deliberately not PublicSiteSetting: this is a client component, so
+// anything in this object ships to the browser in the page payload even
+// when nothing renders it. The registered company name, postal address
+// and phone numbers are therefore never passed in.
+export type FooterSettings = {
+  contactEmail: string | null;
+  supportEmail: string | null;
+  facebookUrl: string | null;
+  instagramUrl: string | null;
+  twitterUrl: string | null;
+  youtubeUrl: string | null;
+  linkedinUrl: string | null;
+};
 import type { BodyType } from "@/features/bodyTypes/bodyType.types";
 import type { ArticleCategory } from "@/features/articles/article.types";
 import FooterCta from "@/components/common/FooterCta";
-import { ShieldIcon, SparkleIcon, CompareIcon, RupeeIcon, PinIcon, PhoneIcon } from "@/components/common/icons";
+import { ShieldIcon, SparkleIcon, CompareIcon, RupeeIcon } from "@/components/common/icons";
 
 const ORANGE = "var(--color-brand)";
 const DARK = "var(--color-ink)";
@@ -26,26 +38,10 @@ const MailIcon = () => (
   </svg>
 );
 
-const WhatsAppIcon = () => (
-  <svg width="15" height="15" viewBox="0 0 24 24" fill="none">
-    <path
-      d="M12 3.5a8.4 8.4 0 0 0-7.2 12.7L3.5 20.5l4.4-1.3A8.4 8.4 0 1 0 12 3.5Z"
-      stroke={MUTED}
-      strokeWidth="1.7"
-      strokeLinejoin="round"
-    />
-    <path
-      d="M8.7 8.3c.3-.6.6-.6.9-.6h.6c.2 0 .4 0 .6.5.2.5.7 1.6.7 1.7.1.1.1.3 0 .4-.1.2-.1.3-.3.4-.1.2-.3.3-.4.5-.1.1-.3.3-.1.6.2.3.8 1.2 1.6 1.9 1.1 1 2 1.2 2.3 1.4.3.1.5.1.6-.1.2-.2.7-.8.9-1.1.2-.2.4-.2.6-.1l1.5.7c.2.1.4.2.4.4 0 .2 0 1-.5 1.5-.4.6-1.5 1-2.4.9-2.4-.3-4.5-1.6-5.9-3.4-.6-.7-1.6-2-1.7-3.1-.1-1 .3-1.5.5-1.8Z"
-      stroke={MUTED}
-      strokeWidth="1"
-      strokeLinejoin="round"
-    />
-  </svg>
-);
 
 type SocialDef = { label: string; href: string; brand: string; icon: React.ReactNode };
 
-function buildSocials(s: PublicSiteSetting): SocialDef[] {
+function buildSocials(s: FooterSettings): SocialDef[] {
   const defs: { label: string; href: string | null; brand: string; icon: React.ReactNode }[] = [
     {
       label: "Facebook",
@@ -171,7 +167,7 @@ export default function Footer({
   bodyTypes,
   articleCategories,
 }: {
-  siteSettings: PublicSiteSetting;
+  siteSettings: FooterSettings;
   bodyTypes: BodyType[];
   articleCategories: ArticleCategory[];
 }) {
@@ -179,7 +175,6 @@ export default function Footer({
   if (isChromelessRoute(pathname)) return null;
 
   const socials = buildSocials(siteSettings);
-  const whatsappHref = siteSettings.whatsappNumber ? `https://wa.me/${siteSettings.whatsappNumber.replace(/\D/g, "")}` : null;
   const footerCols = buildFooterCols(bodyTypes, articleCategories);
 
   return (
@@ -222,13 +217,10 @@ export default function Footer({
               listings, real owner reviews and unbiased expert opinions in one place.
             </p>
 
+            {/* Email only. The registered company name, postal address and
+                both phone numbers were removed from public view — they are
+                still in site settings for the admin panel's own use. */}
             <div className="mt-5 flex flex-col gap-2.5">
-              {siteSettings.address && (
-                <div className="flex items-center gap-2 text-[13px]" style={{ color: MUTED }}>
-                  <PinIcon className="size-[15px]" />
-                  {siteSettings.address}
-                </div>
-              )}
               {siteSettings.contactEmail && (
                 <a href={`mailto:${siteSettings.contactEmail}`} className="flex items-center gap-2 text-[13px] no-underline" style={{ color: MUTED }}>
                   <MailIcon />
@@ -239,18 +231,6 @@ export default function Footer({
                 <a href={`mailto:${siteSettings.supportEmail}`} className="flex items-center gap-2 text-[13px] no-underline" style={{ color: MUTED }}>
                   <MailIcon />
                   Support: {siteSettings.supportEmail}
-                </a>
-              )}
-              {siteSettings.contactNumber && (
-                <a href={`tel:${siteSettings.contactNumber}`} className="flex items-center gap-2 text-[13px] no-underline" style={{ color: MUTED }}>
-                  <PhoneIcon className="size-[15px]" />
-                  {siteSettings.contactNumber}
-                </a>
-              )}
-              {whatsappHref && (
-                <a href={whatsappHref} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-[13px] no-underline" style={{ color: MUTED }}>
-                  <WhatsAppIcon />
-                  WhatsApp: {siteSettings.whatsappNumber}
                 </a>
               )}
             </div>
