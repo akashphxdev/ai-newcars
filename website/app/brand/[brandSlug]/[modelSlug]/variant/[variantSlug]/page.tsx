@@ -31,10 +31,11 @@ import {
 } from "@/components/common/icons";
 import type { CarDetailResult, CarDetailFeatureGroup, CarDetailVariantOption } from "@/features/cars/car.types";
 import type { MetroFuelPrices } from "@/features/fuel/fuel.types";
-import { routes } from "@/lib/routes";
+import { routes, absoluteUrl } from "@/lib/routes";
 import { fillPlaceholders, getEntityPageMetadata, getEntitySchemas, getSeoMeta } from "@/features/seo/seo.api";
 import { SEO_PAGE_TYPE } from "@/features/seo/seo.types";
 import SeoJsonLd from "@/components/common/SeoJsonLd";
+import { buildBreadcrumbSchema } from "@/lib/schema";
 
 type Props = {
   params: Promise<{ brandSlug: string; modelSlug: string; variantSlug: string }>;
@@ -187,8 +188,14 @@ export default async function CarVariantPage(props: Props) {
   const { car, variantSlug, siblings, metros } = await loadCar(props);
   const variant = car.selectedVariant!;
   const seoVars = variantSeoVars(car, variantSlug);
+  const breadcrumbSchema = buildBreadcrumbSchema([
+    { name: "Home", url: absoluteUrl(routes.home()) },
+    { name: car.brand.name, url: absoluteUrl(routes.brand(car.brand.slug)) },
+    { name: car.name, url: absoluteUrl(routes.model(car.brand.slug, car.slug)) },
+    { name: variant.variantName, url: absoluteUrl(routes.variant(car.brand.slug, car.slug, variantSlug)) },
+  ]);
   const [schemas, seo] = await Promise.all([
-    getEntitySchemas(SEO_PAGE_TYPE.DETAIL, variant.id, seoVars),
+    getEntitySchemas(SEO_PAGE_TYPE.DETAIL, variant.id, seoVars, ["breadcrumbSchema"]),
     getSeoMeta({ pageType: SEO_PAGE_TYPE.DETAIL, entityId: variant.id }),
   ]);
   const safetyItems = buildSafetyItems(variant.features);
@@ -255,7 +262,7 @@ export default async function CarVariantPage(props: Props) {
 
   return (
     <main className="variant-detail-page bg-white">
-      <SeoJsonLd schemas={schemas} />
+      <SeoJsonLd schemas={[...schemas, breadcrumbSchema]} />
       <div className="border-b border-border bg-white">
         <nav className="mx-auto flex max-w-7xl items-center gap-1.5 overflow-x-auto px-4 py-3 text-[11.5px] font-medium text-faint scrollbar-none">
           <Link href="/" className="hover:text-brand">Home</Link>

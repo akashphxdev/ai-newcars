@@ -3,6 +3,8 @@ import type { Metadata } from "next";
 import { getAllSchemas, getSeoMeta, getStaticPageMetadata } from "@/features/seo/seo.api";
 import { SEO_PAGE_TYPE } from "@/features/seo/seo.types";
 import SeoJsonLd from "@/components/common/SeoJsonLd";
+import { buildSiteSchema } from "@/lib/schema";
+import { SITE_URL } from "@/lib/routes";
 import HeroSection from "@/components/home/HeroSection";
 import CuratedCars from "@/components/home/CuratedCars";
 import ElectricCars from "@/components/home/Electriccars";
@@ -109,7 +111,7 @@ async function StoriesData() {
 
 async function HomeJsonLd() {
   const seo = await getSeoMeta({ pageType: SEO_PAGE_TYPE.STATIC, staticPageSlug: "home" });
-  return <SeoJsonLd schemas={getAllSchemas(seo)} />;
+  return <SeoJsonLd schemas={[...getAllSchemas(seo), buildSiteSchema(SITE_URL, "TimesAuto")]} />;
 }
 
 export default function HomePage() {

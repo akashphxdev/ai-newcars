@@ -31,3 +31,50 @@ export function buildFaqPageSchema(faqs: { question: string; answer: string }[])
     })),
   });
 }
+
+// BreadcrumbList tells Google the path to a page, which is what turns the
+// green URL line in a result into "TimesAuto › Tata › Nexon". The site
+// renders a breadcrumb on every model and variant page and described it
+// to nobody.
+export function buildBreadcrumbSchema(trail: { name: string; url: string }[]): string | null {
+  if (trail.length < 2) return null;
+  return JSON.stringify({
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: trail.map((crumb, i) => ({
+      "@type": "ListItem",
+      position: i + 1,
+      name: crumb.name,
+      item: crumb.url,
+    })),
+  });
+}
+
+// Organization and WebSite for the home page. The SearchAction is what
+// makes Google offer a search box under the brand result, and it can only
+// do that if a site declares where its search lives.
+export function buildSiteSchema(siteUrl: string, name: string): string {
+  return JSON.stringify({
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "Organization",
+        "@id": `${siteUrl}/#organization`,
+        name,
+        url: siteUrl,
+      },
+      {
+        "@type": "WebSite",
+        "@id": `${siteUrl}/#website`,
+        url: siteUrl,
+        name,
+        publisher: { "@id": `${siteUrl}/#organization` },
+        potentialAction: {
+          "@type": "SearchAction",
+          target: { "@type": "EntryPoint", urlTemplate: `${siteUrl}/new-cars?search={search_term_string}` },
+          "query-input": "required name=search_term_string",
+        },
+      },
+    ],
+  });
+}

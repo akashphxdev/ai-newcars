@@ -31,7 +31,14 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   if (!car) return {};
 
   const title = `${carTitle(car)} Images`;
-  return { title, description: `All photos of the ${carTitle(car)} — exterior, interior, and colour options.` };
+  return {
+    title,
+    description: `All photos of the ${carTitle(car)} — exterior, interior, and colour options.`,
+    // This page is in the sitemap and was the only indexable page type
+    // shipping without one, so any tracking parameter on an inbound link
+    // became a separate URL in the index.
+    alternates: { canonical: routes.modelPhotos(brandSlug, modelSlug) },
+  };
 }
 
 export default async function CarPhotosPage({ params }: Props) {

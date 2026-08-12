@@ -23,11 +23,11 @@ import type { CarDetailResult, CarDetailFeatureGroup, CarFaq, VariantPick } from
 import type { HomeArticle } from "@/features/articles/article.types";
 import type { RandomComparisonPair } from "@/features/compare/compare.types";
 import type { MetroFuelPrices } from "@/features/fuel/fuel.types";
-import { routes } from "@/lib/routes";
+import { routes, absoluteUrl } from "@/lib/routes";
 import { fillPlaceholders, getEntityPageMetadata, getEntitySchemas, getSeoMeta } from "@/features/seo/seo.api";
 import { SEO_PAGE_TYPE } from "@/features/seo/seo.types";
 import SeoJsonLd from "@/components/common/SeoJsonLd";
-import { buildFaqPageSchema } from "@/lib/schema";
+import { buildFaqPageSchema, buildBreadcrumbSchema } from "@/lib/schema";
 import { generateCarFaqs } from "@/lib/carFaqs";
 
 // The overview lists what the car has. Items recorded as "Not Available"
@@ -118,7 +118,7 @@ export default async function CarModelPage(props: Props) {
   const { car, faqs, articles, comparisonPairs, variantPick, metros } = await loadCar(props);
   const seoVars = modelSeoVars(car);
   const [adminSchemas, seo] = await Promise.all([
-    getEntitySchemas(SEO_PAGE_TYPE.MODEL, car.id, seoVars),
+    getEntitySchemas(SEO_PAGE_TYPE.MODEL, car.id, seoVars, ["breadcrumbSchema"]),
     getSeoMeta({ pageType: SEO_PAGE_TYPE.MODEL, entityId: car.id }),
   ]);
   const variant = car.selectedVariant;
@@ -136,12 +136,17 @@ export default async function CarModelPage(props: Props) {
     ? faqs.map((f) => ({ question: f.question, answer: f.answer }))
     : generateCarFaqs({ car, variant, variantPick, metros, safetyItems });
   const faqSchema = buildFaqPageSchema(faqList);
+  const breadcrumbSchema = buildBreadcrumbSchema([
+    { name: "Home", url: absoluteUrl(routes.home()) },
+    { name: car.brand.name, url: absoluteUrl(routes.brand(car.brand.slug)) },
+    { name: car.name, url: absoluteUrl(routes.model(car.brand.slug, car.slug)) },
+  ]);
   const editorialImage = car.images[1]?.imageUrl ?? car.images[0]?.imageUrl ?? car.coverImageUrl;
   const totalHighlights = overviewGroups.reduce((count, group) => count + group.items.length, 0);
 
   return (
     <main className="model-detail-page bg-page">
-      <SeoJsonLd schemas={[...adminSchemas, faqSchema]} />
+      <SeoJsonLd schemas={[...adminSchemas, faqSchema, breadcrumbSchema]} />
       <div className="border-b border-border bg-white">
         <nav className="mx-auto flex max-w-7xl items-center gap-1.5 overflow-x-auto px-4 py-3 text-[11.5px] font-medium text-faint scrollbar-none">
           <Link href="/" className="hover:text-brand">Home</Link>
