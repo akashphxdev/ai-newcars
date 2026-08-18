@@ -139,9 +139,7 @@ export async function updateBuyNewCarLeadStatus(
   return lead;
 }
 
-// Independent of any list filter/pagination — a dashboard-style summary
-// always reflects the full table, same reasoning as
-// modules/ai/dashboard's "today" counts.
+// Independent of any list filter/pagination; this summary always reflects the full table.
 export async function getBuyNewCarLeadStats() {
   const [today, thisWeek, thisMonth, converted] = await Promise.all([
     prisma.buyNewCarLead.count({ where: { createdAt: { gte: startOfToday() } } }),

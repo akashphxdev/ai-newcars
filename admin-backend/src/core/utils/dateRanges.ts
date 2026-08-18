@@ -1,8 +1,5 @@
 // src/core/utils/dateRanges.ts
-//
-// Plain Date math (no date-fns dependency — same convention as
-// modules/ai/dashboard/dashboard.service.ts's startOfToday()). Every
-// range is a lower bound only (`gte`) — queries are always relative to
+// Plain Date math helpers used by dashboard and analytics queries.
 // "now", so nothing after `since` needs an upper bound.
 
 export function startOfToday(): Date {
@@ -28,12 +25,8 @@ export function startOfMonth(): Date {
 
 // "YYYY-MM-DD" in the server's LOCAL calendar day — deliberately NOT
 // `date.toISOString().slice(0, 10)`, which reads the UTC day instead.
-// Trend-chart bucketing (dashboard.service.ts, ai/dashboard's own, and
-// pageView's) needs every date it buckets by — today's boundary AND
-// each row's own timestamp — read the same way, or the "today" bucket
-// silently lands on the wrong day for any server timezone ahead of UTC
-// (e.g. IST): local midnight, once serialized back through
-// toISOString(), rolls back to the previous UTC day.
+// Trend-chart bucketing needs every date read in the same local-calendar way,
+// or the today bucket can land on the wrong day for timezones ahead of UTC.
 export function toLocalDateKey(date: Date): string {
   const year = date.getFullYear();
   const month = String(date.getMonth() + 1).padStart(2, '0');

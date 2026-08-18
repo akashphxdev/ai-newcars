@@ -25,9 +25,7 @@ const SETTING_SELECT = {
   updatedAt: true,
 } as const;
 
-// There is only ever one settings row in practice — the earliest one
-// created is treated as "the" config, same singleton convention as
-// AiSetting.
+// There is only ever one settings row in practice; the earliest row is the config.
 export async function getSettings(): Promise<SiteSettingResponse | null> {
   const row = await prisma.siteSetting.findFirst({
     orderBy: { id: 'asc' },

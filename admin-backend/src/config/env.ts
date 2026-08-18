@@ -16,7 +16,7 @@ const jwtSecret = required('JWT_SECRET');
 
 const KNOWN_PLACEHOLDER_SECRETS = [
   'change_this_to_a_long_random_string',
-  'change_this_to_a_lon g_random_string', // matches the typo'd value from .env.example
+  'change_this_to_a_lon g_random_string',
   'your_jwt_secret_here',
   'secret',
 ];
@@ -36,12 +36,9 @@ if (isProd) {
 
 const rawCorsOrigin = process.env.CORS_ORIGIN?.trim();
 
-// A wildcard CORS origin combined with credentials:true (see app.ts) means
-// ANY website can make authenticated requests on a logged-in admin's
-// behalf. That's fine for local dev but must never reach production.
 if (isProd && (!rawCorsOrigin || rawCorsOrigin === '*')) {
   throw new Error(
-    'CORS_ORIGIN must be set to your real frontend origin(s) in production (comma-separated) — wildcard ("*") is not allowed when credentials are enabled.',
+    'CORS_ORIGIN must be set to your real frontend origin(s) in production (comma-separated); wildcard ("*") is not allowed when credentials are enabled.',
   );
 }
 
@@ -51,20 +48,12 @@ export const env = {
   databaseUrl: required('DATABASE_URL'),
   jwtSecret,
   jwtExpiresIn: process.env.JWT_EXPIRES_IN || '7d',
-  // 64-char hex string (32 bytes) for AES-256-GCM — used only to
-  // encrypt/decrypt AiSetting.apiKey at rest, see core/utils/crypto.ts.
-  aiSettingsEncryptionKey: required('AI_SETTINGS_ENCRYPTION_KEY'),
   corsOrigin: (rawCorsOrigin || '*')
     .split(',')
     .map((url) => url.trim())
     .filter(Boolean),
   isProd,
-  // Used only by the public API's response cache (src/core/cache). Not
-  // required — if Redis is unreachable, publicCache just skips caching
-  // and requests fall through to the DB, see redisClient.ts.
   redisUrl: process.env.REDIS_URL || 'redis://localhost:6379',
-  // Gmail SMTP (app password) — used by core/utils/mailer.ts to send
-  // OTP emails. Required: admin login has no other OTP delivery channel.
   gmailUser: required('GMAIL_USER'),
   gmailAppPassword: required('GMAIL_APP_PASSWORD'),
 };

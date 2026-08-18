@@ -52,10 +52,8 @@ export const createTestimonialSchema = z.object(testimonialShape);
 // this shape either — see updateTestimonialStatusSchema below.
 export const updateTestimonialSchema = z.object(testimonialShape);
 
-// Moderation workflow — pending -> approved/rejected, same reviewedBy/
-// reviewedAt pattern as aiFaq.service.ts's approve/reject. rejectedReason
-// is required when rejecting, same "conditionally required" convention
-// as article.validation.ts's withScheduleRule.
+// Moderation workflow: pending -> approved/rejected. reviewedBy/reviewedAt
+// are set by the service, and rejectedReason is required only when rejecting.
 export const updateTestimonialStatusSchema = z
   .object({
     status: z.enum(TESTIMONIAL_STATUSES),

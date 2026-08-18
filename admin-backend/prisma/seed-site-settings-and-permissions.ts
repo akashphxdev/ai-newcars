@@ -18,14 +18,8 @@
 //     aren't already in the table; existing ones are silently skipped,
 //     not re-inserted or duplicated.
 //
-// NOTE: several keys below (e.g. "ai.image-pool.upload", "reviews.moderate",
-// "ad-placements.view") don't fit the admin panel's "Add Permission" form
-// validation (permission.validation.ts only allows module = [a-z_]+ and
-// action = view/create/update/delete — no hyphens, no "moderate"/"upload").
-// That form would reject re-creating these by hand if one were ever
-// deleted, so this script inserts them directly instead of going through
-// that validated endpoint. Flagging this as a pre-existing gap worth
-// fixing in permission.validation.ts at some point — not fixed here.
+// NOTE: several keys below (e.g. "reviews.moderate", "ad-placements.view")
+// do not fit the admin panel's "Add Permission" form validation.
 
 import { PrismaClient } from '@prisma/client';
 
@@ -42,14 +36,6 @@ const PERMISSION_KEYS = [
   'dashboard.view',
   'ad-placements.create', 'ad-placements.delete', 'ad-placements.update', 'ad-placements.view',
   'adminlogs.view',
-  'ai.articles.delete', 'ai.articles.update', 'ai.articles.view',
-  'ai.automation-rules.update', 'ai.automation-rules.view',
-  'ai.dashboard.view',
-  'ai.faqs.delete', 'ai.faqs.update', 'ai.faqs.view',
-  'ai.image-pool.delete', 'ai.image-pool.upload', 'ai.image-pool.view',
-  'ai.logs.view',
-  'ai.settings.update', 'ai.settings.view',
-  'ai.story-items.delete', 'ai.story-items.update', 'ai.story-items.view',
   'alladmins.create', 'alladmins.delete', 'alladmins.update', 'alladmins.view',
   'article-categories.create', 'article-categories.delete', 'article-categories.update', 'article-categories.view',
   'articles.create', 'articles.delete', 'articles.update', 'articles.view',
@@ -59,6 +45,7 @@ const PERMISSION_KEYS = [
   'brands.create', 'brands.delete', 'brands.update', 'brands.view',
   'carmodels.create', 'carmodels.delete', 'carmodels.update', 'carmodels.view',
   'cities.create', 'cities.delete', 'cities.update', 'cities.view',
+  'codex-proposals.moderate', 'codex-proposals.view',
   'colors.create', 'colors.delete', 'colors.update', 'colors.view',
   'countries.create', 'countries.delete', 'countries.update', 'countries.view',
   'faqs.create', 'faqs.delete', 'faqs.update', 'faqs.view',

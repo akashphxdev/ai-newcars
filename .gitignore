@@ -6,3 +6,8 @@ dist/
 build/
 .DS_Store
 *.zip
+__pycache__/
+*.pyc
+scripts/scheduler-state.json
+scripts/telegram-offset.json
+.claude/

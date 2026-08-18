@@ -60,12 +60,6 @@ export interface DashboardSeo {
   dynamicByType: SeoPageTypeCount[];
 }
 
-export interface DashboardAiSnapshot {
-  activeAutomations: number;
-  totalFeatures: number;
-  pendingReviewTotal: number;
-}
-
 export interface DashboardActivityItem {
   id: string;
   adminName: string;
@@ -84,7 +78,6 @@ export interface DashboardSummary {
   content: DashboardContent;
   ads: DashboardAds;
   seo: DashboardSeo;
-  ai: DashboardAiSnapshot;
   recentActivity: DashboardActivityItem[];
   pendingActions: DashboardPendingActions;
 }

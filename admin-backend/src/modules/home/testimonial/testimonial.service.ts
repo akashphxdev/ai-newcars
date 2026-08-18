@@ -194,9 +194,8 @@ export async function updateTestimonial(
   return testimonial as unknown as TestimonialRecord;
 }
 
-// Moderation workflow — pending -> approved/rejected. Sets
-// reviewedBy/reviewedAt server-side, same pattern as aiFaq.service.ts's
-// approveAiFaq/rejectAiFaq.
+// Moderation workflow: pending -> approved/rejected. The service sets
+// reviewedBy/reviewedAt server-side.
 export async function updateTestimonialStatus(
   id: number,
   input: UpdateTestimonialStatusParsed,

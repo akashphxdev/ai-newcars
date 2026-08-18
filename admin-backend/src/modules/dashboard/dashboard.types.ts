@@ -58,12 +58,6 @@ export interface DashboardSeo {
   dynamicByType: SeoPageTypeCount[];
 }
 
-export interface DashboardAiSnapshot {
-  activeAutomations: number;
-  totalFeatures: number;
-  pendingReviewTotal: number;
-}
-
 export interface DashboardActivityItem {
   id: string; // AdminLog.id is a BigInt — stringified for JSON transport
   adminName: string;
@@ -82,7 +76,6 @@ export interface DashboardSummary {
   content: DashboardContent;
   ads: DashboardAds;
   seo: DashboardSeo;
-  ai: DashboardAiSnapshot;
   recentActivity: DashboardActivityItem[];
   pendingActions: DashboardPendingActions;
 }

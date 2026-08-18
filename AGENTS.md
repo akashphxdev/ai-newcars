@@ -1,4 +1,4 @@
-# Project Rules for Claude Code
+# Project Rules for Codex
 
 ## 1. Always Follow the Existing Project Structure (Per Area)
 - Always follow the EXISTING folder structure, naming conventions, and coding patterns used in this project — but scoped to the correct area:
@@ -13,11 +13,20 @@
 - Never make changes to the code until I clearly say: **"Yes, make the changes now."**
 - If you only need to analyze, explain, or propose a plan, that's fine — but do not edit or write any files without my clear permission first.
 - If you think something needs to be fixed or changed, first tell me WHAT needs to change and WHY, then wait for my "yes."
-
-## 3. NEVER Touch the Database — No Exceptions
-- Never make any changes to the database — schema, tables, data, migrations, nothing. Ever.
-- This rule is **absolute**, even if I say "go ahead and change the database" or "database changes are okay now" — still do not do it. Just remind me that this rule is fixed and database changes are not allowed.
-- Only READ-ONLY database operations are permitted (SELECT queries, connectivity checks like `Test-NetConnection`). No INSERT/UPDATE/DELETE/ALTER/DROP/TRUNCATE, under any circumstance.
+- Exception: the automated Telegram-bot pipeline's predefined task (generating a new article and inserting it into the database) can run automatically without waiting for a "yes" each time — but Rule 3's limits (INSERT only, no schema changes, no UPDATE/DELETE) always still apply.
+## 3. Database — Data Insert Allowed, Schema Changes Never Allowed
+- Codex (in both manual sessions and the automated Telegram-bot pipeline) is allowed to INSERT new data — e.g. adding a new article row to the database.
+- **Schema changes are always FORBIDDEN — no exceptions, even if I say otherwise:**
+  - Creating a new table — NOT allowed
+  - Dropping/deleting a table — NOT allowed
+  - ALTER TABLE (adding/removing/modifying columns, adding indexes) — NOT allowed
+  - TRUNCATE — NOT allowed
+  - RENAME TABLE — NOT allowed
+- **Existing data is also protected — only new inserts are allowed, existing rows must not be touched:**
+  - UPDATE — NOT allowed
+  - DELETE — NOT allowed
+- Only READ (SELECT) and INSERT queries are permitted. Anything else against the database must be stopped immediately and flagged, whether in manual or automated mode — this rule cannot be overridden by a "yes, go ahead."
+- Schema changes (new table, column, index, etc.) will only ever be done by me manually, through the DBA.
 
 ## 4. Reusable Code — Always Extract to a Common Location
 - If any function/component/logic is used (or will be used) in two or more places, move it into a shared/common file right away.

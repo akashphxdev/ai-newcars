@@ -51,9 +51,8 @@ export const api = createApi({
              "CarModel", "Variant", "PowertrainIce", "PowertrainElectric", "CarColor", "CarImage", "Feature",
              "FeatureCategory", "VariantFeature", "Faq",
              "Offer", "BodyType", "AttributeOption", "Article", "ArticleCategory",
-             "StoryGroup", "StoryItem", "Advertiser", "AdPlacement", "AdCampaign", "AiFaq", "AiSetting", "AiAutomationRule",
-             "AiLog", "AiImagePool", "AiArticle", "AiStoryItem", "Banner", "Testimonial", "AdClick", "AdImpression",
+             "StoryGroup", "StoryItem", "Advertiser", "AdPlacement", "AdCampaign", "Banner", "Testimonial", "AdClick", "AdImpression",
              "SiteSetting", "SearchLog", "Review", "BuyNewCarLead", "InsuranceLead", "PriceDropAlertLead", "SoftLead", "Lender", "LoanLead",
-             "SeoMeta", "LaunchNotifyLead", "PageView", "SeoRedirect"],
+             "SeoMeta", "LaunchNotifyLead", "PageView", "SeoRedirect", "CodexProposal", "CodexRun"],
   endpoints: () => ({}),
 });

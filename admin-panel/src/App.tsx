@@ -50,19 +50,26 @@ import AllAdvertisers from "./pages/Ads/Advertisers/AllAdvertisers";
 import AllCampaigns from "./pages/Ads/Campaigns/AllCampaigns";
 import AllImpressions from "./pages/Ads/Impressions/AllImpressions";
 import AllClicks from "./pages/Ads/Clicks/AllClicks";
-import AISettings from "./pages/Ai/Settings/Settings";
-import AIDashboard from "./pages/Ai/Dashboard/Dashboard";
-import AllAiFaqs from "./pages/Ai/Faqs/AllAiFaqs";
-import AllAiLogs from "./pages/Ai/Logs/AllAiLogs";
-import AllImagePool from "./pages/Ai/ImagePool/AllImagePool";
-import AllAiSeos from "./pages/Ai/Seo/AllAiSeos";
-import AllAiArticles from "./pages/Ai/Articles/AllAiArticles";
-import AllAiStoryItems from "./pages/Ai/Stories/AllAiStoryItems";
 import AllBanners from "./pages/Home/Banners/AllBanners";
 import AllTestimonials from "./pages/Home/Testimonials/AllTestimonials";
 import SiteSettings from "./pages/SiteSettings/SiteSettings";
 import AllSeoMetas from "./pages/Seo/SeoMeta/AllSeoMetas";
 import AllSeoRedirects from "./pages/Seo/SeoRedirects/AllSeoRedirects";
+import AllCodexBrands from "./pages/Codex/Brands/AllCodexBrands";
+import AllCodexCarModels from "./pages/Codex/CarModels/AllCodexCarModels";
+import AllCodexCarVariants from "./pages/Codex/CarVariants/AllCodexCarVariants";
+import AllCodexPowertrainIce from "./pages/Codex/PowertrainIce/AllCodexPowertrainIce";
+import AllCodexPowertrainElectric from "./pages/Codex/PowertrainElectric/AllCodexPowertrainElectric";
+import AllCodexFeatureCategories from "./pages/Codex/FeatureCategories/AllCodexFeatureCategories";
+import AllCodexFeatures from "./pages/Codex/Features/AllCodexFeatures";
+import AllCodexVariantFeatures from "./pages/Codex/VariantFeatures/AllCodexVariantFeatures";
+import AllCodexCarColors from "./pages/Codex/CarColors/AllCodexCarColors";
+import AllCodexColorShades from "./pages/Codex/ColorShades/AllCodexColorShades";
+import AllCodexCarImages from "./pages/Codex/CarImages/AllCodexCarImages";
+import AllCodexArticles from "./pages/Codex/Articles/AllCodexArticles";
+import AllCodexArticleBrands from "./pages/Codex/ArticleBrands/AllCodexArticleBrands";
+import AllCodexArticleCarModels from "./pages/Codex/ArticleCarModels/AllCodexArticleCarModels";
+import AllCodexCarFaqs from "./pages/Codex/CarFaqs/AllCodexCarFaqs";
 // ── Auth guard — baad mein real auth logic lagao ──────────────────────────────
 function RequireAuth({ children }: { children: React.ReactNode }) {
   const isLoggedIn = !!localStorage.getItem("admin_token"); // apna auth check yahan
@@ -146,16 +153,23 @@ export default function App() {
           <Route path="/analytics/search-logs" element={<AllSearchLogs />} />
           <Route path="/analytics/page-views" element={<AllPageViews />} />
 
-          <Route path="/ai/dashboard" element={<AIDashboard />} />
-          <Route path="/ai/car-faqs/review" element={<AllAiFaqs />} />
-          <Route path="/ai/article/review" element={<AllAiArticles />} />
-          <Route path="/ai/story/review" element={<AllAiStoryItems />} />
-          <Route path ="/ai/seo/review" element={<AllAiSeos/>}/>
-          <Route path="/ai/image-pool" element={<AllImagePool />} />
-          <Route path ="/ai/logs" element={<AllAiLogs/>}/>
-          <Route path ="/ai/settings" element={<AISettings/>}/>
-
           <Route path="/settings" element={<SiteSettings/>}/>
+          <Route path="/codex/approvals" element={<Navigate to="/codex/brands" replace />} />
+          <Route path="/codex/brands" element={<AllCodexBrands />} />
+          <Route path="/codex/models" element={<AllCodexCarModels />} />
+          <Route path="/codex/variants" element={<AllCodexCarVariants />} />
+          <Route path="/codex/powertrains-ice" element={<AllCodexPowertrainIce />} />
+          <Route path="/codex/powertrains-electric" element={<AllCodexPowertrainElectric />} />
+          <Route path="/codex/feature-categories" element={<AllCodexFeatureCategories />} />
+          <Route path="/codex/features" element={<AllCodexFeatures />} />
+          <Route path="/codex/variant-features" element={<AllCodexVariantFeatures />} />
+          <Route path="/codex/colors" element={<AllCodexCarColors />} />
+          <Route path="/codex/color-shades" element={<AllCodexColorShades />} />
+          <Route path="/codex/images" element={<AllCodexCarImages />} />
+          <Route path="/codex/articles" element={<AllCodexArticles />} />
+          <Route path="/codex/article-brands" element={<AllCodexArticleBrands />} />
+          <Route path="/codex/article-models" element={<AllCodexArticleCarModels />} />
+          <Route path="/codex/faqs" element={<AllCodexCarFaqs />} />
            
         </Route>
 

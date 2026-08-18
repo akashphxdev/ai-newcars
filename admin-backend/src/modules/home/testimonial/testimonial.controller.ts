@@ -74,8 +74,7 @@ export async function updateTestimonial(req: Request, res: Response) {
 }
 
 // PATCH /testimonials/:id/status
-// Moderation route — approve/reject from the review queue, same
-// pattern as aiFaq's approve/reject actions.
+// Moderation route for approving or rejecting testimonials from the review queue.
 export async function updateTestimonialStatus(req: Request, res: Response) {
   const { id } = testimonialIdParamSchema.parse(req.params);
   const input = updateTestimonialStatusSchema.parse(req.body);

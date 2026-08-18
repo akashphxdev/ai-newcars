@@ -9,7 +9,6 @@ import NewCarsRoutes from './new-cars'
 import ArticlesRoutes from './articles'
 import StoriesRoutes from './stories'
 import AdsRoutes from './ads'
-import AiRoutes from './ai'
 import HomeRoutes from './home'
 import SiteSettingRoutes from './site-setting'
 import AnalyticsRoutes from './analytics'
@@ -18,6 +17,7 @@ import LeadsRoutes from './leads'
 import LendersRoutes from './lenders'
 import SeoRoutes from './seo'
 import DashboardRoutes from '@/modules/dashboard/dashboard.routes'
+import CodexRoutes from './codex'
 
 const router = Router();
 
@@ -30,7 +30,6 @@ router.use('/new-cars', NewCarsRoutes)
 router.use('/articles', ArticlesRoutes)
 router.use('/stories', StoriesRoutes)
 router.use('/ads' , AdsRoutes)
-router.use('/ai', AiRoutes)
 router.use('/home', HomeRoutes)
 router.use('/site-settings',SiteSettingRoutes)
 router.use('/analytics', AnalyticsRoutes)
@@ -39,6 +38,7 @@ router.use('/leads', LeadsRoutes)
 router.use('/lenders', LendersRoutes)
 router.use('/seo', SeoRoutes)
 router.use('/dashboard', DashboardRoutes)
+router.use('/codex', CodexRoutes)
 
 
 export default router;

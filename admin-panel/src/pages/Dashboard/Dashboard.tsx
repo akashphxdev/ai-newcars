@@ -1,10 +1,4 @@
 // src/pages/Dashboard/Dashboard.tsx
-//
-// Main admin overview — every number comes from GET /dashboard (see
-// dashboard.api.ts), polled every 60s. Sections: top KPIs, leads
-// (breakdown + 30-day trend), content, ads, SEO coverage, an AI Studio
-// snapshot (full detail lives at /ai/dashboard), recent activity, and
-// pending-action shortcuts.
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useGetDashboardSummaryQuery, POLL_INTERVAL_MS, type LeadTypeKey } from "./dashboard.api";
@@ -129,7 +123,7 @@ export default function Dashboard() {
     );
   }
 
-  const { kpis, leads, traffic, content, ads, seo, ai, recentActivity, pendingActions } = data;
+  const { kpis, leads, traffic, content, ads, seo, recentActivity, pendingActions } = data;
   const staticTotal = STATIC_PAGE_SLUG_OPTIONS.length;
 
   return (
@@ -241,59 +235,32 @@ export default function Dashboard() {
         </SectionCard>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
-        {/* SEO coverage */}
-        <SectionCard
-          title="SEO Coverage"
-          action={
-            <button
-              onClick={() => navigate("/seo/meta")}
-              className="cursor-pointer text-[11.5px] font-bold text-[#4a4640] hover:text-[#1c1a17]"
-            >
-              Manage →
-            </button>
-          }
-        >
-          <StatCard
-            label="Static Pages"
-            value={`${seo.staticCovered}/${staticTotal}`}
-            sub={seo.staticCovered === staticTotal ? "fully covered" : `${staticTotal - seo.staticCovered} missing`}
-            positive={seo.staticCovered === staticTotal}
-          />
-          <div className="grid grid-cols-2 gap-3 mt-3">
-            {seo.dynamicByType.map((d) => (
-              <div key={d.pageType} className="bg-[#f7f5f1] rounded-lg p-3 flex items-center justify-between">
-                <span className="text-[11px] font-semibold text-[#4a4640]">{getSeoPageTypeLabel(d.pageType)}</span>
-                <span className="text-[13px] font-black text-[#1c1a17]">{d.count}</span>
-              </div>
-            ))}
-          </div>
-        </SectionCard>
-
-        {/* AI Studio snapshot */}
-        <SectionCard
-          title="AI Studio"
-          action={
-            <button
-              onClick={() => navigate("/ai/dashboard")}
-              className="cursor-pointer text-[11.5px] font-bold text-white px-3 py-1.5 rounded-lg"
-              style={{ background: ACCENT }}
-            >
-              Open AI Studio →
-            </button>
-          }
-        >
-          <div className="grid grid-cols-3 gap-3">
-            <StatCard label="Active" value={`${ai.activeAutomations}`} sub={`of ${ai.totalFeatures}`} positive={ai.activeAutomations > 0} />
-            <StatCard
-              label="Pending Review"
-              value={`${ai.pendingReviewTotal}`}
-              sub={ai.pendingReviewTotal > 0 ? "needs attention" : "all clear"}
-              positive={ai.pendingReviewTotal === 0}
-            />
-          </div>
-        </SectionCard>
-      </div>
+      <SectionCard
+        title="SEO Coverage"
+        action={
+          <button
+            onClick={() => navigate("/seo/meta")}
+            className="cursor-pointer text-[11.5px] font-bold text-[#4a4640] hover:text-[#1c1a17]"
+          >
+            Manage â†’
+          </button>
+        }
+      >
+        <StatCard
+          label="Static Pages"
+          value={`${seo.staticCovered}/${staticTotal}`}
+          sub={seo.staticCovered === staticTotal ? "fully covered" : `${staticTotal - seo.staticCovered} missing`}
+          positive={seo.staticCovered === staticTotal}
+        />
+        <div className="grid grid-cols-2 gap-3 mt-3">
+          {seo.dynamicByType.map((d) => (
+            <div key={d.pageType} className="bg-[#f7f5f1] rounded-lg p-3 flex items-center justify-between">
+              <span className="text-[11px] font-semibold text-[#4a4640]">{getSeoPageTypeLabel(d.pageType)}</span>
+              <span className="text-[13px] font-black text-[#1c1a17]">{d.count}</span>
+            </div>
+          ))}
+        </div>
+      </SectionCard>
 
       {/* Pending actions */}
       {pendingActions.reviewsPending > 0 && (

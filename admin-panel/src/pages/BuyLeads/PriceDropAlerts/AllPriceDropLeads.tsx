@@ -29,7 +29,7 @@ function fmtPrice(value: string | null): string {
   return `₹${Number(value).toLocaleString("en-IN")}`;
 }
 
-// Same stat-card pattern as pages/Ai/Dashboard/Dashboard.tsx's topStats row.
+// Compact summary card used by the lead tables.
 function StatCard({ label, value }: { label: string; value: number }) {
   return (
     <div className="bg-white border border-[#e8e4dc] rounded-xl p-4 flex flex-col gap-2">

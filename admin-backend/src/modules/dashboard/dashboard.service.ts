@@ -2,11 +2,8 @@
 //
 // Read-only aggregation for the main admin dashboard — every number here
 // comes from a count()/groupBy() against existing tables, no writes.
-// AI Studio numbers are reused from ai/dashboard's own summary instead of
-// re-querying the same tables a second time (see getAiSnapshot below).
 
 import { prisma } from '@/prisma/client';
-import { getDashboardSummary as getAiDashboardSummary } from '../ai/dashboard/dashboard.service';
 import { SEO_PAGE_TYPE_CODES, STATIC_PAGE_TYPE } from '../seo/seoMeta/seoMeta.validation';
 import { startOfToday, toLocalDateKey } from '@/core/utils/dateRanges';
 import type {
@@ -172,15 +169,6 @@ async function getSeo() {
   return { staticCovered, dynamicByType };
 }
 
-async function getAiSnapshot() {
-  const ai = await getAiDashboardSummary();
-  return {
-    activeAutomations: ai.activeAutomations,
-    totalFeatures: ai.totalFeatures,
-    pendingReviewTotal: ai.pendingReviewTotal,
-  };
-}
-
 async function getRecentActivity() {
   const logs = await prisma.adminLog.findMany({
     orderBy: { createdAt: 'desc' },
@@ -207,17 +195,16 @@ export async function getDashboardSummary(): Promise<DashboardSummary> {
   const trendStart = new Date(since);
   trendStart.setDate(trendStart.getDate() - (TREND_DAYS - 1));
 
-  const [kpis, leads, traffic, content, ads, seo, ai, recentActivity, pendingActions] = await Promise.all([
+  const [kpis, leads, traffic, content, ads, seo, recentActivity, pendingActions] = await Promise.all([
     getKpis(),
     getLeads(trendStart),
     getTraffic(trendStart),
     getContent(),
     getAds(since),
     getSeo(),
-    getAiSnapshot(),
     getRecentActivity(),
     getPendingActions(),
   ]);
 
-  return { kpis, leads, traffic, content, ads, seo, ai, recentActivity, pendingActions };
+  return { kpis, leads, traffic, content, ads, seo, recentActivity, pendingActions };
 }

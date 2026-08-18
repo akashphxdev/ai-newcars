@@ -53,6 +53,32 @@ const NAV: NavGroup[] = [
   {
     group: "Management",
     items: [
+      {
+        label: "Codex",
+        icon: (
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
+            <path d="M12 3L4 7v10l8 4 8-4V7l-8-4Z" strokeLinejoin="round" />
+            <path d="M8 9.5h8M8 14.5h5" strokeLinecap="round" />
+          </svg>
+        ),
+        children: [
+          { label: "Brands", href: "/codex/brands" },
+          { label: "Car Models", href: "/codex/models" },
+          { label: "Variants", href: "/codex/variants" },
+          { label: "ICE Powertrains", href: "/codex/powertrains-ice" },
+          { label: "Electric Powertrains", href: "/codex/powertrains-electric" },
+          { label: "Feature Categories", href: "/codex/feature-categories" },
+          { label: "Features", href: "/codex/features" },
+          { label: "Variant Features", href: "/codex/variant-features" },
+          { label: "Colors", href: "/codex/colors" },
+          { label: "Color Shades", href: "/codex/color-shades" },
+          { label: "Images", href: "/codex/images" },
+          { label: "Articles", href: "/codex/articles" },
+          { label: "Article Brands", href: "/codex/article-brands" },
+          { label: "Article Models", href: "/codex/article-models" },
+          { label: "FAQs", href: "/codex/faqs" },
+        ],
+      },
        {
         label: "Admin Users",
         icon: (
@@ -249,30 +275,6 @@ const NAV: NavGroup[] = [
         ),
         children: [
           { label: "All Reviews", href: "/reviews/all-reviews" },
-        ],
-      },
-    ],
-  },
-  {
-    group: "AI Studio",
-    items: [
-      {
-        label: "AI",
-        icon: (
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
-            <path d="M12 3l1.9 4.6L18.5 9.5l-4.6 1.9L12 16l-1.9-4.6L5.5 9.5l4.6-1.9L12 3z" strokeLinejoin="round" />
-            <path d="M19 15l.9 2.1L22 18l-2.1.9L19 21l-.9-2.1L16 18l2.1-.9L19 15z" strokeLinejoin="round" />
-          </svg>
-        ),
-        children: [
-          { label: "Dashboard", href: "/ai/dashboard" },
-          { label: "FAQ Review", href: "/ai/car-faqs/review" },
-          { label: "Story Review", href: "/ai/story/review" },
-          { label: "Article Review", href: "/ai/article/review" },
-          { label: "SEO Review", href: "/ai/seo/review" },
-          { label: "Image Pool", href: "/ai/image-pool" },
-          { label: "AI Logs", href: "/ai/logs" },
-          { label: "AI Settings", href: "/ai/settings" },
         ],
       },
     ],
