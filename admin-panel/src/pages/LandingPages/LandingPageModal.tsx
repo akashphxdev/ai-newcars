@@ -17,8 +17,9 @@ const ACCENT = "#D4300F";
 const SLUG_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 
 // Mirrors the server's list. Kept here only to explain a rejection before
-// the upload rather than after it — the server decides.
-const BLOCKED = /\.(php|phtml|php5|phar|inc|env|sh|bash|py|rb|pl|cgi|htaccess|htpasswd)$/i;
+// the upload rather than after it — the server decides. PHP is absent
+// deliberately: it is the one server-side language landing pages can run.
+const BLOCKED = /\.(phtml|php5|phar|inc|env|sh|bash|py|rb|pl|cgi|htaccess|htpasswd)$/i;
 
 function relativePathOf(file: File): string {
   const rel = (file as File & { webkitRelativePath?: string }).webkitRelativePath;
@@ -88,7 +89,7 @@ export default function LandingPageModal({
     if (!slugValid) return setError("Use lowercase letters, numbers and single hyphens — e.g. mahindra-scorpio");
     if (rejected.length > 0) {
       return setError(
-        `This server runs no PHP, so ${rejected[0].path} would be refused rather than executed. Remove it — a form has to post to the API instead.`,
+        `${rejected[0].path} cannot run here. PHP is the only server-side language landing pages support — anything else would be served as source and expose what is inside it.`,
       );
     }
     // The folder can supply its own index.html, so pasted markup is only
@@ -173,8 +174,9 @@ export default function LandingPageModal({
               </label>
             </div>
             <p className="mt-1 text-xs text-gray-500">
-              Subfolders are kept, so <code>css/site.css</code> stays at <code>css/site.css</code>. Server-side files
-              (<code>.php</code>) cannot run here.
+              Subfolders are kept, so <code>css/site.css</code> stays at <code>css/site.css</code>. PHP runs, so a
+              form can post to its own <code>submit.php</code>; <code>config.php</code> and anything under{" "}
+              <code>storage/</code> are never readable from the web.
             </p>
 
             {picked.length > 0 && (

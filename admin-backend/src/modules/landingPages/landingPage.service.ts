@@ -109,6 +109,7 @@ export async function saveLandingPageHtml(slug: string, html: string): Promise<L
   const dir = pageDir(slug);
   await fs.mkdir(dir, { recursive: true });
   await fs.writeFile(path.join(dir, INDEX_FILE), html, 'utf8');
+  await adoptSiteOwner(path.join(dir, INDEX_FILE));
   return getLandingPage(slug);
 }
 
@@ -119,18 +120,19 @@ export async function readLandingPageHtml(slug: string): Promise<string> {
   return html;
 }
 
-// Server-side code would be served as source by this vhost — there is no
-// PHP handler — so uploading it would publish whatever is inside. nginx
-// refuses to serve these too; refusing the upload as well means the
-// author finds out now rather than from a blank page later.
+// PHP is the one server-side language wired up for /drive/ (apache on
+// :81 handles it, as the site user). Everything else here would be sent
+// to the browser as source rather than executed, publishing whatever is
+// inside; nginx refuses to serve them, and refusing the upload too means
+// the author finds out now rather than from a leaked file later.
 const BLOCKED_EXTENSIONS = new Set([
-  '.php', '.phtml', '.php5', '.phar', '.inc', '.env', '.sh', '.bash', '.py', '.rb', '.pl', '.cgi',
+  '.phtml', '.php5', '.phar', '.inc', '.env', '.sh', '.bash', '.py', '.rb', '.pl', '.cgi',
   '.htaccess', '.htpasswd',
 ]);
 
-// Anything a static page legitimately loads.
+// Anything a landing page legitimately serves.
 const ALLOWED_EXTENSIONS = new Set([
-  '.html', '.htm', '.css', '.js', '.mjs', '.json', '.txt', '.xml', '.webmanifest', '.map',
+  '.html', '.htm', '.php', '.css', '.js', '.mjs', '.json', '.txt', '.xml', '.webmanifest', '.map',
   '.jpg', '.jpeg', '.png', '.webp', '.avif', '.gif', '.svg', '.ico',
   '.woff', '.woff2', '.ttf', '.otf', '.eot',
   '.mp4', '.webm', '.mp3',
@@ -157,7 +159,7 @@ export function safeRelativePath(slug: string, filename: string): string {
   const ext = path.extname(parts[parts.length - 1]).toLowerCase();
   if (BLOCKED_EXTENSIONS.has(ext)) {
     throw ApiError.badRequest(
-      `"${filename}" is server-side code. This server has no PHP handler, so the file would be refused rather than run — move that logic to the API instead.`,
+      `"${filename}" cannot run here — PHP is the only server-side language enabled for landing pages, so this would be served as source and expose whatever is inside it.`,
     );
   }
   if (!ALLOWED_EXTENSIONS.has(ext)) {
@@ -171,6 +173,40 @@ export function safeRelativePath(slug: string, filename: string): string {
   return target;
 }
 
+// This API runs as root, but PHP under /drive/ runs as the site user. A
+// page folder left root-owned is one submit.php cannot create its
+// storage/ directory inside — and its filesystem calls are all
+// error-suppressed, so leads would disappear with nothing in any log.
+// The owner is read off the drive root rather than configured, so it
+// tracks whatever the site user actually is.
+let siteOwner: { uid: number; gid: number } | null | undefined;
+
+async function ownerOfLandingRoot(): Promise<{ uid: number; gid: number } | null> {
+  if (siteOwner === undefined) {
+    const stat = await fs.stat(LANDING_ROOT).catch(() => null);
+    siteOwner = stat ? { uid: stat.uid, gid: stat.gid } : null;
+  }
+  return siteOwner;
+}
+
+// Every directory between the drive root and the file is adopted too: a
+// subfolder created along the way would otherwise stay root-owned and
+// block writes just as surely as the page folder would. Not running as
+// root is the normal case in development, where chown is both impossible
+// and unnecessary — hence the swallowed error.
+async function adoptSiteOwner(target: string): Promise<void> {
+  const owner = await ownerOfLandingRoot();
+  if (!owner) return;
+
+  const paths: string[] = [];
+  for (let p = target; p.startsWith(LANDING_ROOT) && p !== LANDING_ROOT; p = path.dirname(p)) {
+    paths.push(p);
+  }
+  for (const p of paths) {
+    await fs.chown(p, owner.uid, owner.gid).catch(() => undefined);
+  }
+}
+
 // Files keep the exact name the page references — an uploaded
 // "scorpio-hero.jpg" has to land as exactly that, or the relative src in
 // the HTML breaks.
@@ -178,6 +214,7 @@ export async function saveLandingAsset(slug: string, filename: string, data: Buf
   const target = safeRelativePath(slug, filename);
   await fs.mkdir(path.dirname(target), { recursive: true });
   await fs.writeFile(target, data);
+  await adoptSiteOwner(target);
 }
 
 export interface LandingFile {
@@ -220,5 +257,7 @@ export async function deleteLandingPage(slug: string): Promise<void> {
 // Creating the folder is enough to make a page exist: uploading an
 // index.html is as valid a way to publish as pasting the markup.
 export async function ensureLandingPage(slug: string): Promise<void> {
-  await fs.mkdir(pageDir(slug), { recursive: true });
+  const dir = pageDir(slug);
+  await fs.mkdir(dir, { recursive: true });
+  await adoptSiteOwner(dir);
 }
