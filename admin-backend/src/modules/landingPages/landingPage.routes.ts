@@ -11,8 +11,10 @@ import { landingAssetUploader } from '@/core/middleware/upload.middleware';
 import {
   getLandingPages,
   getLandingPage,
+  getLandingFiles,
   saveLandingPage,
   uploadLandingAssets,
+  deleteLandingFile,
   deleteLandingPage,
 } from './landingPage.controller';
 
@@ -29,6 +31,8 @@ router.post(
   landingAssetUploader,
   asyncHandler(uploadLandingAssets),
 );
+router.get('/:slug/files', requirePermission('landing-pages.view'), asyncHandler(getLandingFiles));
+router.delete('/:slug/files', requirePermission('landing-pages.delete'), asyncHandler(deleteLandingFile));
 router.delete('/:slug', requirePermission('landing-pages.delete'), asyncHandler(deleteLandingPage));
 
 export default router;

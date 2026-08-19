@@ -1,15 +1,36 @@
 // src/pages/LandingPages/LandingPageModal.tsx
 //
-// Paste a finished HTML document, name it, attach the images it
-// references. The markup is stored and served verbatim — the page is
-// already designed, and rewriting it here would be a surprise.
+// A landing page is a folder at timesauto.net/drive/<slug>/, so this is
+// really a folder editor: upload the whole thing as the designer built
+// it, subdirectories and all. Pasting the markup stays available for a
+// single-file page, but it is the smaller of the two paths now.
 
-import { useEffect, useState } from "react";
-import { useGetLandingPageQuery } from "./landingPage.api";
+import { useEffect, useMemo, useState } from "react";
+import {
+  useGetLandingPageQuery,
+  useGetLandingFilesQuery,
+  useDeleteLandingFileMutation,
+} from "./landingPage.api";
 import { extractApiError } from "../../lib/apiClient";
 
 const ACCENT = "#D4300F";
 const SLUG_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
+
+// Mirrors the server's list. Kept here only to explain a rejection before
+// the upload rather than after it — the server decides.
+const BLOCKED = /\.(php|phtml|php5|phar|inc|env|sh|bash|py|rb|pl|cgi|htaccess|htpasswd)$/i;
+
+function relativePathOf(file: File): string {
+  const rel = (file as File & { webkitRelativePath?: string }).webkitRelativePath;
+  if (rel) return rel.split("/").slice(1).join("/") || file.name;
+  return file.name;
+}
+
+function formatSize(bytes: number): string {
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${Math.round(bytes / 1024)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+}
 
 export default function LandingPageModal({
   slug,
@@ -23,6 +44,8 @@ export default function LandingPageModal({
   onSave: (slug: string, html: string, files: File[]) => Promise<void>;
 }) {
   const { data: existing, isLoading } = useGetLandingPageQuery(slug ?? "", { skip: !slug });
+  const { data: onDisk } = useGetLandingFilesQuery(slug ?? "", { skip: !slug });
+  const [deleteFile] = useDeleteLandingFileMutation();
 
   const [name, setName] = useState(slug ?? "");
   const [html, setHtml] = useState("");
@@ -34,19 +57,45 @@ export default function LandingPageModal({
     if (existing) setHtml(existing.html);
   }, [existing]);
 
-  // The filenames the pasted document asks for, so it is obvious which
-  // images still need uploading rather than discovering it on the live page.
-  const referenced = Array.from(
-    new Set([...html.matchAll(/(?:src|href)=["']([^"':/][^"']*\.(?:jpg|jpeg|png|webp|avif|gif|svg))["']/gi)].map((m) => m[1])),
+  const picked = useMemo(
+    () => files.map((file) => ({ file, path: relativePathOf(file) })),
+    [files],
   );
-  const attached = new Set(files.map((f) => f.name));
+  const rejected = picked.filter((f) => BLOCKED.test(f.path));
 
+  // What the page asks for by relative path, so a missing stylesheet is
+  // visible here rather than on the live page.
+  const referenced = useMemo(
+    () =>
+      Array.from(
+        new Set(
+          [
+            ...html.matchAll(
+              /(?:src|href)=["']([^"':#][^"']*\.(?:jpg|jpeg|png|webp|avif|gif|svg|ico|css|js|mp4|webm|woff2?))["']/gi,
+            ),
+          ].map((m) => m[1].replace(/^\.?\//, "")),
+        ),
+      ),
+    [html],
+  );
+
+  const present = new Set([...picked.map((f) => f.path), ...(onDisk ?? []).map((f) => f.name)]);
+  const uploadingIndex = picked.some((f) => f.path === "index.html");
   const slugValid = SLUG_PATTERN.test(name);
 
   async function handleSubmit() {
     setError(null);
     if (!slugValid) return setError("Use lowercase letters, numbers and single hyphens — e.g. mahindra-scorpio");
-    if (!html.trim()) return setError("Paste the page's HTML");
+    if (rejected.length > 0) {
+      return setError(
+        `This server runs no PHP, so ${rejected[0].path} would be refused rather than executed. Remove it — a form has to post to the API instead.`,
+      );
+    }
+    // The folder can supply its own index.html, so pasted markup is only
+    // required when nothing else provides one.
+    if (!html.trim() && !uploadingIndex && !existing?.hasIndex) {
+      return setError("Paste the page's HTML, or include an index.html in the upload");
+    }
 
     setSaving(true);
     try {
@@ -55,6 +104,16 @@ export default function LandingPageModal({
       setError(extractApiError(err));
     } finally {
       setSaving(false);
+    }
+  }
+
+  async function handleDelete(fileName: string) {
+    if (!slug) return;
+    if (!confirm(`Delete ${fileName} from this page?`)) return;
+    try {
+      await deleteFile({ slug, name: fileName }).unwrap();
+    } catch (err) {
+      setError(extractApiError(err));
     }
   }
 
@@ -89,39 +148,97 @@ export default function LandingPageModal({
           </div>
 
           <div>
-            <label className="mb-1 block text-xs font-bold text-gray-700">Page HTML</label>
+            <label className="mb-1 block text-xs font-bold text-gray-700">Page files</label>
+            <div className="flex flex-wrap gap-4">
+              <label className="cursor-pointer text-sm">
+                <span className="mb-1 block text-xs text-gray-600">Whole folder</span>
+                <input
+                  type="file"
+                  multiple
+                  // Not in the React types; the folder picker is the whole
+                  // point of this control.
+                  {...{ webkitdirectory: "", directory: "" }}
+                  onChange={(e) => setFiles(Array.from(e.target.files ?? []))}
+                  className="block w-full text-sm"
+                />
+              </label>
+              <label className="cursor-pointer text-sm">
+                <span className="mb-1 block text-xs text-gray-600">Individual files</span>
+                <input
+                  type="file"
+                  multiple
+                  onChange={(e) => setFiles(Array.from(e.target.files ?? []))}
+                  className="block w-full text-sm"
+                />
+              </label>
+            </div>
+            <p className="mt-1 text-xs text-gray-500">
+              Subfolders are kept, so <code>css/site.css</code> stays at <code>css/site.css</code>. Server-side files
+              (<code>.php</code>) cannot run here.
+            </p>
+
+            {picked.length > 0 && (
+              <ul className="mt-2 max-h-40 space-y-1 overflow-y-auto rounded-md border border-gray-200 p-2">
+                {picked.map(({ file, path }) => (
+                  <li key={path} className="flex items-center gap-2 text-xs">
+                    <span className={BLOCKED.test(path) ? "text-red-600" : "text-green-600"}>
+                      {BLOCKED.test(path) ? "✕" : "↑"}
+                    </span>
+                    <code className="flex-1 truncate">{path}</code>
+                    <span className="text-gray-500">{formatSize(file.size)}</span>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+
+          {slug && (onDisk?.length ?? 0) > 0 && (
+            <div>
+              <label className="mb-1 block text-xs font-bold text-gray-700">Already in this folder</label>
+              <ul className="max-h-40 space-y-1 overflow-y-auto rounded-md border border-gray-200 p-2">
+                {onDisk!.map((file) => (
+                  <li key={file.name} className="flex items-center gap-2 text-xs">
+                    <code className="flex-1 truncate">{file.name}</code>
+                    <span className="text-gray-500">{formatSize(file.sizeBytes)}</span>
+                    <button
+                      type="button"
+                      onClick={() => handleDelete(file.name)}
+                      className="cursor-pointer text-red-600 hover:underline"
+                    >
+                      Delete
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          <div>
+            <label className="mb-1 block text-xs font-bold text-gray-700">
+              Page HTML {(uploadingIndex || existing?.hasIndex) && <span className="font-normal text-gray-500">(optional)</span>}
+            </label>
             <textarea
               value={html}
               onChange={(e) => setHtml(e.target.value)}
-              placeholder={isLoading ? "Loading…" : "<!DOCTYPE html> …"}
-              rows={14}
+              placeholder={isLoading ? "Loading…" : uploadingIndex ? "Taken from the uploaded index.html" : "<!DOCTYPE html> …"}
+              rows={12}
               spellCheck={false}
               className="w-full rounded-md border border-gray-300 px-3 py-2 font-mono text-xs"
             />
             <p className="mt-1 text-xs text-gray-500">
-              Served exactly as pasted. Reference images by filename only (e.g. <code>scorpio-hero.jpg</code>) and upload them below.
+              Served exactly as pasted. Leave empty when the upload already contains an <code>index.html</code>.
             </p>
-          </div>
 
-          <div>
-            <label className="mb-1 block text-xs font-bold text-gray-700">Images</label>
-            <input
-              type="file"
-              multiple
-              accept="image/*"
-              onChange={(e) => setFiles(Array.from(e.target.files ?? []))}
-              className="block w-full text-sm"
-            />
             {referenced.length > 0 && (
               <ul className="mt-2 space-y-1">
                 {referenced.map((file) => (
                   <li key={file} className="flex items-center gap-2 text-xs">
-                    <span className={attached.has(file) ? "text-green-600" : "text-amber-600"}>
-                      {attached.has(file) ? "✓" : "•"}
+                    <span className={present.has(file) ? "text-green-600" : "text-amber-600"}>
+                      {present.has(file) ? "✓" : "•"}
                     </span>
                     <code>{file}</code>
                     <span className="text-gray-500">
-                      {attached.has(file) ? "attached" : "referenced by the page — upload it, or it must already exist"}
+                      {present.has(file) ? "present" : "referenced by the page but missing"}
                     </span>
                   </li>
                 ))}

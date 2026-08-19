@@ -104,8 +104,10 @@ export default function AllLandingPages() {
   ];
 
   async function handleSave(slug: string, html: string, files: File[]) {
-    await saveLandingPage({ slug, html }).unwrap();
+    // Assets first: an upload can carry the page's own index.html, and
+    // writing empty markup afterwards would overwrite it.
     if (files.length > 0) await uploadAssets({ slug, files }).unwrap();
+    if (html.trim()) await saveLandingPage({ slug, html }).unwrap();
     setBanner({ kind: "ok", text: `Saved. Live at /drive/${slug}/` });
     setModalOpen(false);
     setEditing(null);

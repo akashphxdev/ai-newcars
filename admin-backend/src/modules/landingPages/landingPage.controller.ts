@@ -30,17 +30,51 @@ export async function saveLandingPage(req: Request, res: Response) {
 // POST /api/v1/landing-pages/:slug/assets
 export async function uploadLandingAssets(req: Request, res: Response) {
   const { slug } = landingPageSlugSchema.parse(req.params);
+  await service.ensureLandingPage(slug);
   const files = (req.files as Express.Multer.File[] | undefined) ?? [];
   if (files.length === 0) throw ApiError.badRequest('No files uploaded');
 
-  for (const file of files) {
-    // Kept under its original name so the page's relative src still
-    // resolves — see landingAssetUploader for why that is not automatic.
-    await service.saveLandingAsset(slug, file.originalname, file.buffer);
+  // A multipart filename cannot carry a directory: busboy keeps only the
+  // last segment, so a folder upload would flatten "css/site.css" to
+  // "site.css" and every relative href in the page would 404. The client
+  // therefore sends the paths separately, in the same order as the files.
+  let paths: string[] = [];
+  const rawPaths = req.body?.paths;
+  if (typeof rawPaths === 'string' && rawPaths.trim()) {
+    try {
+      const parsed = JSON.parse(rawPaths);
+      if (Array.isArray(parsed)) paths = parsed.map((p) => String(p));
+    } catch {
+      throw ApiError.badRequest('paths must be a JSON array');
+    }
+  }
+
+  for (const [i, file] of files.entries()) {
+    // Kept under the name the designer used so the page's relative src
+    // still resolves — see landingAssetUploader for why that is not
+    // automatic.
+    await service.saveLandingAsset(slug, paths[i] || file.originalname, file.buffer);
   }
 
   const page = await service.getLandingPage(slug);
   return sendSuccess(res, page, 'Assets uploaded', 201);
+}
+
+// GET /api/v1/landing-pages/:slug/files
+export async function getLandingFiles(req: Request, res: Response) {
+  const { slug } = landingPageSlugSchema.parse(req.params);
+  await service.getLandingPage(slug);
+  const files = await service.listLandingFiles(slug);
+  return sendSuccess(res, files, 'Files fetched successfully');
+}
+
+// DELETE /api/v1/landing-pages/:slug/files?name=<relative path>
+export async function deleteLandingFile(req: Request, res: Response) {
+  const { slug } = landingPageSlugSchema.parse(req.params);
+  const name = String(req.query.name ?? '');
+  if (!name) throw ApiError.badRequest('name is required');
+  await service.deleteLandingFile(slug, name);
+  return sendSuccess(res, null, 'File deleted');
 }
 
 // DELETE /api/v1/landing-pages/:slug

@@ -119,17 +119,95 @@ export async function readLandingPageHtml(slug: string): Promise<string> {
   return html;
 }
 
-// Assets keep the filename the page references — an uploaded
+// Server-side code would be served as source by this vhost — there is no
+// PHP handler — so uploading it would publish whatever is inside. nginx
+// refuses to serve these too; refusing the upload as well means the
+// author finds out now rather than from a blank page later.
+const BLOCKED_EXTENSIONS = new Set([
+  '.php', '.phtml', '.php5', '.phar', '.inc', '.env', '.sh', '.bash', '.py', '.rb', '.pl', '.cgi',
+  '.htaccess', '.htpasswd',
+]);
+
+// Anything a static page legitimately loads.
+const ALLOWED_EXTENSIONS = new Set([
+  '.html', '.htm', '.css', '.js', '.mjs', '.json', '.txt', '.xml', '.webmanifest', '.map',
+  '.jpg', '.jpeg', '.png', '.webp', '.avif', '.gif', '.svg', '.ico',
+  '.woff', '.woff2', '.ttf', '.otf', '.eot',
+  '.mp4', '.webm', '.mp3',
+]);
+
+const MAX_PATH_DEPTH = 3;
+
+// A landing page is a folder, so a file may be "css/site.css" as easily
+// as "hero.jpg". Every segment is checked and the result re-resolved
+// against the page directory, so no relative path can climb out of it.
+export function safeRelativePath(slug: string, filename: string): string {
+  const dir = pageDir(slug);
+  const parts = filename.replace(/\\/g, '/').split('/').filter((p) => p !== '' && p !== '.');
+
+  if (parts.length === 0 || parts.length > MAX_PATH_DEPTH) {
+    throw ApiError.badRequest(`Invalid file path "${filename}"`);
+  }
+  for (const part of parts) {
+    if (part === '..' || !/^[A-Za-z0-9._-]+$/.test(part) || part.startsWith('.')) {
+      throw ApiError.badRequest(`Invalid file path "${filename}"`);
+    }
+  }
+
+  const ext = path.extname(parts[parts.length - 1]).toLowerCase();
+  if (BLOCKED_EXTENSIONS.has(ext)) {
+    throw ApiError.badRequest(
+      `"${filename}" is server-side code. This server has no PHP handler, so the file would be refused rather than run — move that logic to the API instead.`,
+    );
+  }
+  if (!ALLOWED_EXTENSIONS.has(ext)) {
+    throw ApiError.badRequest(`"${filename}" has an unsupported file type`);
+  }
+
+  const target = path.resolve(dir, parts.join('/'));
+  if (target !== path.join(dir, ...parts)) {
+    throw ApiError.badRequest(`Invalid file path "${filename}"`);
+  }
+  return target;
+}
+
+// Files keep the exact name the page references — an uploaded
 // "scorpio-hero.jpg" has to land as exactly that, or the relative src in
 // the HTML breaks.
 export async function saveLandingAsset(slug: string, filename: string, data: Buffer): Promise<void> {
-  const dir = pageDir(slug);
-  const safe = path.basename(filename);
-  if (!safe || safe.startsWith('.') || safe === INDEX_FILE) {
-    throw ApiError.badRequest('Invalid asset filename');
+  const target = safeRelativePath(slug, filename);
+  await fs.mkdir(path.dirname(target), { recursive: true });
+  await fs.writeFile(target, data);
+}
+
+export interface LandingFile {
+  name: string;
+  sizeBytes: number;
+  updatedAt: string;
+}
+
+// Walks the folder so subdirectories show up too; the admin needs to see
+// everything that is actually there, not just the top level.
+export async function listLandingFiles(slug: string, prefix = ''): Promise<LandingFile[]> {
+  const dir = path.join(pageDir(slug), prefix);
+  const entries = await fs.readdir(dir, { withFileTypes: true }).catch(() => []);
+  const out: LandingFile[] = [];
+
+  for (const entry of entries) {
+    const rel = prefix ? `${prefix}/${entry.name}` : entry.name;
+    if (entry.isDirectory()) {
+      if (rel.split('/').length < MAX_PATH_DEPTH) out.push(...(await listLandingFiles(slug, rel)));
+      continue;
+    }
+    const stat = await fs.stat(path.join(dir, entry.name)).catch(() => null);
+    if (stat) out.push({ name: rel, sizeBytes: stat.size, updatedAt: stat.mtime.toISOString() });
   }
-  await fs.mkdir(dir, { recursive: true });
-  await fs.writeFile(path.join(dir, safe), data);
+  return out.sort((a, b) => a.name.localeCompare(b.name));
+}
+
+export async function deleteLandingFile(slug: string, filename: string): Promise<void> {
+  const target = safeRelativePath(slug, filename);
+  await fs.rm(target, { force: true });
 }
 
 export async function deleteLandingPage(slug: string): Promise<void> {
@@ -137,4 +215,10 @@ export async function deleteLandingPage(slug: string): Promise<void> {
   const stat = await fs.stat(dir).catch(() => null);
   if (!stat?.isDirectory()) throw ApiError.notFound(`Landing page "${slug}" not found`);
   await fs.rm(dir, { recursive: true, force: true });
+}
+
+// Creating the folder is enough to make a page exist: uploading an
+// index.html is as valid a way to publish as pasting the markup.
+export async function ensureLandingPage(slug: string): Promise<void> {
+  await fs.mkdir(pageDir(slug), { recursive: true });
 }
