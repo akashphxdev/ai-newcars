@@ -79,6 +79,8 @@ export const env = {
   // points at the volume nginx serves as static.timesauto.net; locally
   // it defaults to ./uploads so nothing has to be configured for dev.
   assetStorageRoot: process.env.ASSET_STORAGE_ROOT || '',
+  // Where /drive/ landing pages live on disk; nginx serves them from here.
+  landingPageRoot: process.env.LANDING_PAGE_ROOT || '',
 
   // Origin that serves the files above. Only used to build the
   // convenience `url` field on upload responses — what gets persisted is

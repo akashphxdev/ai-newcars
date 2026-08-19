@@ -46,6 +46,7 @@ import SellLeadActivities from "./pages/SellLeads/LeadActivities";
 import AllStoryGroups from "./pages/Stories/StoryGroups/AllStoryGroups";
 import AllStoryItems from "./pages/Stories/StoryItems/AllStoryItems";
 import AllPlacements from "./pages/Ads/Placements/AllPlacements";
+import AllLandingPages from "./pages/LandingPages/AllLandingPages";
 import AllAdvertisers from "./pages/Ads/Advertisers/AllAdvertisers";
 import AllCampaigns from "./pages/Ads/Campaigns/AllCampaigns";
 import AllImpressions from "./pages/Ads/Impressions/AllImpressions";
@@ -135,6 +136,7 @@ export default function App() {
           <Route path="/leads/sell/activities" element={<SellLeadActivities />} />
 
           <Route path ="/ads/placements" element={<AllPlacements/>}/>
+          <Route path="/landing-pages" element={<AllLandingPages/>}/>
           <Route path ="/ads/advertisers" element={<AllAdvertisers/>}/>
           <Route path ="/ads/campaigns" element={<AllCampaigns/>}/>
           <Route path ="/ads/impressions" element={<AllImpressions/>}/>

@@ -101,6 +101,17 @@ const NAV: NavGroup[] = [
 
         ],
       },
+      {
+        label: "Landing Pages",
+        href: "/landing-pages",
+        icon: (
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
+            <rect x="3" y="4" width="18" height="16" rx="2" />
+            <path d="M3 9h18" strokeLinecap="round" />
+            <path d="M7 13h6M7 16h9" strokeLinecap="round" />
+          </svg>
+        ),
+      },
     ],
   },
   {

@@ -9,6 +9,7 @@ import NewCarsRoutes from './new-cars'
 import ArticlesRoutes from './articles'
 import StoriesRoutes from './stories'
 import AdsRoutes from './ads'
+import LandingPageRoutes from '@/modules/landingPages/landingPage.routes'
 import AiRoutes from './ai'
 import HomeRoutes from './home'
 import SiteSettingRoutes from './site-setting'
@@ -31,6 +32,7 @@ router.use('/new-cars', NewCarsRoutes)
 router.use('/articles', ArticlesRoutes)
 router.use('/stories', StoriesRoutes)
 router.use('/ads' , AdsRoutes)
+router.use('/landing-pages', LandingPageRoutes)
 router.use('/ai', AiRoutes)
 router.use('/home', HomeRoutes)
 router.use('/site-settings',SiteSettingRoutes)

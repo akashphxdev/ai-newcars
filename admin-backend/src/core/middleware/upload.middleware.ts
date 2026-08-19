@@ -265,3 +265,24 @@ export function documentUploader(folder: string) {
     ),
   );
 }
+
+// Landing-page assets, which are different from every other upload here
+// in one way that matters: the filename must survive.
+//
+// A campaign page references its image by the name the designer used
+// ("scorpio-hero.jpg"). buildUploader renames every file to a timestamp,
+// and withAvifConversion rewrites images to .avif — either would leave
+// the page pointing at a file that no longer exists. So this keeps the
+// original name, does no conversion, and hands the bytes to the caller in
+// memory for the service to place beside the HTML.
+const LANDING_ASSET_MAX_BYTES = 8 * 1024 * 1024;
+
+export const landingAssetUploader = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: LANDING_ASSET_MAX_BYTES, files: 20 },
+  fileFilter: (_req, file, cb) => {
+    const allowed = { ...IMAGE_EXTENSIONS, 'image/gif': '.gif', 'image/svg+xml': '.svg' };
+    if (file.mimetype in allowed) return cb(null, true);
+    cb(new Error('Only JPG, PNG, WEBP, AVIF, GIF or SVG assets are allowed'));
+  },
+}).array('files', 20);
