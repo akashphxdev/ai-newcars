@@ -23,8 +23,13 @@ export interface AdCampaignRecord {
   advertiserId: number | null;
   advertiser: AdCampaignAdvertiserSummary | null;
   name: string;
-  creativeImageUrl: string;
-  targetUrl: string;
+  creativeType: string;
+  // Both null on a script campaign, which has no creative of ours and no
+  // click of ours to send anywhere.
+  creativeImageUrl: string | null;
+  targetUrl: string | null;
+  scriptSrc: string | null;
+  scriptAttrs: Record<string, string> | null;
   priority: number;
   startDate: Date | null;
   endDate: Date | null;

@@ -14,6 +14,7 @@ import type {
   SubmitSoftLeadInput,
   SubmitLoanLeadInput,
   SubmitLaunchNotifyLeadInput,
+  SubmitScrapLeadInput,
   SubmitLeadResult,
 } from "./lead.types";
 
@@ -88,6 +89,17 @@ export async function submitLoanLead(input: SubmitLoanLeadInput): Promise<Submit
 
 export async function submitLaunchNotifyLead(input: SubmitLaunchNotifyLeadInput): Promise<SubmitLeadResult> {
   return apiFetch<SubmitLeadResult>("/leads/buy/launch-notify", {
+    method: "POST",
+    headers: authHeaders(),
+    body: JSON.stringify({ ...input, ...captureContext() }),
+  });
+}
+
+// Scrapping is disposal, not purchase, hence the /sell/ prefix. This form
+// has no OTP step — a Turnstile token stands in for it, and the server
+// rejects the submission outright without one.
+export async function submitScrapLead(input: SubmitScrapLeadInput): Promise<SubmitLeadResult> {
+  return apiFetch<SubmitLeadResult>("/leads/sell/scrap", {
     method: "POST",
     headers: authHeaders(),
     body: JSON.stringify({ ...input, ...captureContext() }),

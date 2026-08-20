@@ -95,3 +95,30 @@ export interface SubmitSoftLeadInput {
   calculatorType: SoftLeadCalculatorType;
   inputSummary?: string;
 }
+
+export type ScrapVehicleCondition = "running" | "not_running" | "accidental";
+
+export interface SubmitScrapLeadInput {
+  name?: string;
+  mobile: string;
+  email?: string;
+  // Catalogue ids when the car is one we know, free text when it is not.
+  // A scrappable car is 15+ years old and frequently predates the
+  // catalogue, so these text fields carry most real submissions.
+  brandId?: number;
+  modelId?: number;
+  brandName?: string;
+  modelName?: string;
+  registrationNumber?: string;
+  registrationYear?: number;
+  registrationStateId?: number;
+  cityId?: number;
+  fuelType?: string;
+  vehicleCondition?: ScrapVehicleCondition;
+  hasOriginalRc?: boolean;
+  isHypothecated?: boolean;
+  hasPendingChallan?: boolean;
+  wantsCertificateOfDeposit?: boolean;
+  preferredPickupDate?: string;
+  turnstileToken: string;
+}

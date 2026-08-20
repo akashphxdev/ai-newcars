@@ -31,13 +31,11 @@ export async function createAdCampaign(req: Request, res: Response) {
     throw ApiError.unauthorized();
   }
 
-  if (!req.file) {
-    throw ApiError.badRequest('A creative image is required (expected field name "creativeImage")');
-  }
-
+  // Whether an image is required depends on the creative type, which is
+  // only known once the body is parsed — so the service decides, not this.
   try {
     const input = createAdCampaignSchema.parse(req.body);
-    const campaign = await adCampaignService.createAdCampaign(input, req.auth.id, req.file.filename, getClientIp(req));
+    const campaign = await adCampaignService.createAdCampaign(input, req.auth.id, req.file?.filename, getClientIp(req));
     return sendSuccess(res, campaign, 'Ad campaign created successfully', 201);
   } catch (err) {
     if (req.file) {

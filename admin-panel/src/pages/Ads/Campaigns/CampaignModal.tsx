@@ -5,6 +5,7 @@ import {
   useUpdateAdCampaignMutation,
   type AdCampaignRecord,
   type CampaignStatus,
+  type CreativeType,
 } from "./adCampaign.api";
 import { useGetAdPlacementsQuery } from "../Placements/placement.api";
 import { useGetAdvertisersQuery } from "../Advertisers/advertiser.api";
@@ -18,8 +19,19 @@ interface FieldErrors {
   name?: string;
   creativeImage?: string;
   targetUrl?: string;
+  scriptSnippet?: string;
   priority?: string;
   endDate?: string;
+}
+
+// The stored src and attributes, put back into the tag they came from —
+// an editor should see what the page is running, not a set of fields
+// they would have to reassemble in their head.
+function renderSnippet(src: string, attrs: Record<string, string> | null): string {
+  const rest = Object.entries(attrs ?? {})
+    .map(([name, value]) => ` ${name}="${value}"`)
+    .join("");
+  return `<script${rest} src="${src}"></script>`;
 }
 
 function RequiredMark() {
@@ -68,7 +80,13 @@ export default function CampaignModal({
   const [placementId, setPlacementId] = useState<number | "">(campaign?.placementId ?? "");
   const [advertiserId, setAdvertiserId] = useState<number | "">(campaign?.advertiserId ?? "");
   const [name, setName] = useState(campaign?.name ?? "");
+  const [creativeType, setCreativeType] = useState<CreativeType>(campaign?.creativeType ?? "image");
   const [targetUrl, setTargetUrl] = useState(campaign?.targetUrl ?? "");
+  // Rebuilt from the stored parts so an existing script campaign shows
+  // the tag it is actually running, not an empty box.
+  const [scriptSnippet, setScriptSnippet] = useState(() =>
+    campaign?.scriptSrc ? renderSnippet(campaign.scriptSrc, campaign.scriptAttrs) : "",
+  );
   const [priority, setPriority] = useState(campaign ? String(campaign.priority) : "0");
   const [startDate, setStartDate] = useState(toLocalInputValue(campaign?.startDate));
   const [endDate, setEndDate] = useState(toLocalInputValue(campaign?.endDate));
@@ -104,10 +122,18 @@ export default function CampaignModal({
     if (!placementId) next.placementId = "Placement is required.";
     if (name.trim().length < 3) next.name = "Name must be at least 3 characters.";
 
-    if (!creativeImage && !campaign?.creativeImageUrl) {
-      next.creativeImage = "Creative image is required.";
+    if (creativeType === "script") {
+      if (!scriptSnippet.trim()) {
+        next.scriptSnippet = "Paste the ad network snippet.";
+      } else if (!/<script\b[^>]*\bsrc\s*=/i.test(scriptSnippet)) {
+        next.scriptSnippet = 'The snippet must contain a <script src="…"> tag.';
+      }
+    } else {
+      if (!creativeImage && !campaign?.creativeImageUrl) {
+        next.creativeImage = "Creative image is required.";
+      }
+      if (!targetUrl.trim()) next.targetUrl = "Target URL is required.";
     }
-    if (!targetUrl.trim()) next.targetUrl = "Target URL is required.";
 
     if (!priority.trim() || !/^\d+$/.test(priority.trim())) {
       next.priority = "Priority must be a whole number, 0 or greater.";
@@ -130,7 +156,9 @@ export default function CampaignModal({
       placementId: Number(placementId),
       advertiserId: advertiserId === "" ? undefined : Number(advertiserId),
       name: name.trim(),
-      targetUrl: targetUrl.trim(),
+      creativeType,
+      targetUrl: creativeType === "image" ? targetUrl.trim() : undefined,
+      scriptSnippet: creativeType === "script" ? scriptSnippet.trim() : undefined,
       priority: Number(priority),
       startDate: startDate ? new Date(startDate).toISOString() : null,
       endDate: endDate ? new Date(endDate).toISOString() : null,
@@ -144,7 +172,7 @@ export default function CampaignModal({
           input: { ...commonInput, creativeImage: creativeImage ?? undefined },
         }).unwrap();
       } else {
-        await createAdCampaign({ ...commonInput, creativeImage: creativeImage as File }).unwrap();
+        await createAdCampaign({ ...commonInput, creativeImage: creativeImage ?? undefined }).unwrap();
       }
       onClose();
     } catch (err) {
@@ -232,35 +260,81 @@ export default function CampaignModal({
             {errors.name && <p className="text-[11px] font-medium text-[#D4300F] mt-1">{errors.name}</p>}
           </Field>
 
-          <Field label="Creative image" required>
-            <div className="flex items-center gap-3">
-              {creativePreview && (
-                <img src={creativePreview} alt="" className="w-14 h-14 rounded-lg object-cover border border-[#e8e4dc]" />
-              )}
-              <input
-                type="file"
-                accept="image/jpeg,image/png,image/webp,image/avif"
-                onChange={(e) => handleCreativeChange(e.target.files?.[0] ?? null)}
-                className="text-xs"
-              />
+          <Field label="Creative type" required>
+            <div className="flex gap-4">
+              {(["image", "script"] as CreativeType[]).map((type) => (
+                <label key={type} className="flex items-center gap-2 text-xs cursor-pointer">
+                  <input
+                    type="radio"
+                    name="creativeType"
+                    checked={creativeType === type}
+                    onChange={() => setCreativeType(type)}
+                  />
+                  {type === "image" ? "Image we host" : "Ad network script"}
+                </label>
+              ))}
             </div>
-            {errors.creativeImage && (
-              <p className="text-[11px] font-medium text-[#D4300F] mt-1">{errors.creativeImage}</p>
-            )}
+            <p className="text-[11px] text-[#8a8378] mt-1">
+              {creativeType === "image"
+                ? "We serve the creative and count the clicks."
+                : "The network renders and tracks its own ad. Clicks are not counted here."}
+            </p>
           </Field>
 
-          <Field label="Target URL" required>
-            <input
-              type="text"
-              value={targetUrl}
-              onChange={(e) => setTargetUrl(e.target.value)}
-              placeholder="https://timesauto.in/cars/creta"
-              className={inputClass}
-              style={{ borderColor: errors.targetUrl ? "#f0997b" : "#e2ddd5" }}
-              maxLength={255}
-            />
-            {errors.targetUrl && <p className="text-[11px] font-medium text-[#D4300F] mt-1">{errors.targetUrl}</p>}
-          </Field>
+          {creativeType === "image" ? (
+            <>
+              <Field label="Creative image" required>
+                <div className="flex items-center gap-3">
+                  {creativePreview && (
+                    <img src={creativePreview} alt="" className="w-14 h-14 rounded-lg object-cover border border-[#e8e4dc]" />
+                  )}
+                  <input
+                    type="file"
+                    accept="image/jpeg,image/png,image/webp,image/avif"
+                    onChange={(e) => handleCreativeChange(e.target.files?.[0] ?? null)}
+                    className="text-xs"
+                  />
+                </div>
+                {errors.creativeImage && (
+                  <p className="text-[11px] font-medium text-[#D4300F] mt-1">{errors.creativeImage}</p>
+                )}
+              </Field>
+
+              <Field label="Target URL" required>
+                <input
+                  type="text"
+                  value={targetUrl}
+                  onChange={(e) => setTargetUrl(e.target.value)}
+                  placeholder="https://timesauto.in/cars/creta"
+                  className={inputClass}
+                  style={{ borderColor: errors.targetUrl ? "#f0997b" : "#e2ddd5" }}
+                  maxLength={255}
+                />
+                {errors.targetUrl && <p className="text-[11px] font-medium text-[#D4300F] mt-1">{errors.targetUrl}</p>}
+              </Field>
+            </>
+          ) : (
+            <Field label="Network snippet" required>
+              <textarea
+                value={scriptSnippet}
+                onChange={(e) => setScriptSnippet(e.target.value)}
+                placeholder={'<script data-cfasync="false" src="https://…/abc.js"></script>'}
+                rows={5}
+                spellCheck={false}
+                className={`${inputClass} font-mono text-[11px]`}
+                style={{ borderColor: errors.scriptSnippet ? "#f0997b" : "#e2ddd5" }}
+                maxLength={4000}
+              />
+              {errors.scriptSnippet && (
+                <p className="text-[11px] font-medium text-[#D4300F] mt-1">{errors.scriptSnippet}</p>
+              )}
+              <p className="text-[11px] text-[#8a8378] mt-1">
+                Paste it exactly as the network gave it. Only the script URL and its attributes are stored, and the
+                host must be one that has been approved on the server — this script runs with the same access to the
+                page as our own code.
+              </p>
+            </Field>
+          )}
 
           <div className="grid grid-cols-2 gap-3">
             <Field label="Priority" required>

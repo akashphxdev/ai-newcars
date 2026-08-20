@@ -6,6 +6,7 @@ import priceDropAlertLeadRoute from '@/modules/buyLeads/priceDropAlerts/priceDro
 import softLeadRoute from '@/modules/buyLeads/softLeads/softLead.routes';
 import loanLeadRoute from '@/modules/buyLeads/loanLeads/loanLead.routes';
 import launchNotifyLeadRoute from '@/modules/buyLeads/launchNotify/launchNotifyLead.routes';
+import scrapLeadRoute from '@/modules/sellLeads/scrapLeads/scrapLead.routes';
 
 const router = Router();
 
@@ -15,5 +16,8 @@ router.use('/buy/price-drop', priceDropAlertLeadRoute);
 router.use('/buy/soft', softLeadRoute);
 router.use('/buy/loan', loanLeadRoute);
 router.use('/buy/launch-notify', launchNotifyLeadRoute);
+
+// Disposal rather than purchase, so it sits under its own prefix.
+router.use('/sell/scrap', scrapLeadRoute);
 
 export default router;

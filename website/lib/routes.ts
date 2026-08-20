@@ -66,6 +66,9 @@ export const routes = {
   evChargingCalculator: () => "/ev-charging-time-calculator",
   fuelComparisonCalculator: () => "/fuel-comparison-calculator",
 
+  // ---- Sell / dispose ----------------------------------------------
+  scrapCar: () => "/scrap-car",
+
   stories: () => "/stories",
   profile: () => "/profile",
 } as const;

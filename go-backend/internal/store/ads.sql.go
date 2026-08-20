@@ -103,8 +103,11 @@ func (q *Queries) RecordAdImpression(ctx context.Context, arg RecordAdImpression
 const serveAdForPlacement = `-- name: ServeAdForPlacement :one
 SELECT c.id,
        c.placement_id,
+       c.creative_type,
        c.creative_image_url,
        c.target_url,
+       c.script_src,
+       c.script_attrs,
        c.name,
        p.dimensions,
        p.slug AS placement_slug
@@ -120,13 +123,16 @@ LIMIT 1
 `
 
 type ServeAdForPlacementRow struct {
-	ID               int32  `json:"id"`
-	PlacementID      int32  `json:"placement_id"`
-	CreativeImageUrl string `json:"creative_image_url"`
-	TargetUrl        string `json:"target_url"`
-	Name             string `json:"name"`
-	Dimensions       string `json:"dimensions"`
-	PlacementSlug    string `json:"placement_slug"`
+	ID               int32   `json:"id"`
+	PlacementID      int32   `json:"placement_id"`
+	CreativeType     string  `json:"creative_type"`
+	CreativeImageUrl *string `json:"creative_image_url"`
+	TargetUrl        *string `json:"target_url"`
+	ScriptSrc        *string `json:"script_src"`
+	ScriptAttrs      []byte  `json:"script_attrs"`
+	Name             string  `json:"name"`
+	Dimensions       string  `json:"dimensions"`
+	PlacementSlug    string  `json:"placement_slug"`
 }
 
 // The campaign to show in one placement, right now.
@@ -144,8 +150,11 @@ func (q *Queries) ServeAdForPlacement(ctx context.Context, slug string) (ServeAd
 	err := row.Scan(
 		&i.ID,
 		&i.PlacementID,
+		&i.CreativeType,
 		&i.CreativeImageUrl,
 		&i.TargetUrl,
+		&i.ScriptSrc,
+		&i.ScriptAttrs,
 		&i.Name,
 		&i.Dimensions,
 		&i.PlacementSlug,

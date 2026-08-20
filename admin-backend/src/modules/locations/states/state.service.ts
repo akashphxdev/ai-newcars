@@ -15,6 +15,7 @@ const STATE_SELECT = {
   id: true,
   countryId: true,
   name: true,
+  slug: true,
   code: true,
   country: { select: { id: true, name: true, code: true } },
 } as const;
@@ -106,6 +107,21 @@ async function assertNameAvailableInCountry(countryId: number, name: string, exc
   }
 }
 
+// states.slug is globally unique (states_slug_key), unlike the name,
+// which is only unique within a country. Checked here so a clash reads as
+// a conflict rather than a raw constraint error, same as
+// city.service.ts's assertSlugAvailable.
+async function assertSlugAvailable(slug: string, excludeId?: number) {
+  const conflict = await prisma.state.findFirst({
+    where: { slug, id: excludeId ? { not: excludeId } : undefined },
+    select: { id: true },
+  });
+
+  if (conflict) {
+    throw ApiError.conflict(`A state with the slug "${slug}" already exists`);
+  }
+}
+
 export async function createState(
   input: CreateStateParsed,
   actorId: number,
@@ -113,11 +129,13 @@ export async function createState(
 ) {
   await assertCountryExists(input.countryId);
   await assertNameAvailableInCountry(input.countryId, input.name);
+  await assertSlugAvailable(input.slug);
 
   const state = await prisma.state.create({
     data: {
       countryId: input.countryId,
       name: input.name,
+      slug: input.slug,
       code: input.code,
     },
     select: STATE_SELECT,
@@ -148,6 +166,10 @@ export async function updateState(
 
   if (input.name || input.countryId) {
     await assertNameAvailableInCountry(targetCountryId, input.name ?? existing.name, id);
+  }
+
+  if (input.slug !== existing.slug) {
+    await assertSlugAvailable(input.slug, id);
   }
 
   const state = await prisma.state.update({

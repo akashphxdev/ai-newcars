@@ -13,6 +13,7 @@ export const LEAD_TYPES = {
   SOFT_LEAD: 'soft_lead',
   LOAN: 'loan',
   LAUNCH_NOTIFY: 'launch_notify',
+  SCRAP_CAR: 'scrap_car',
 } as const;
 
 export type LeadType = (typeof LEAD_TYPES)[keyof typeof LEAD_TYPES];

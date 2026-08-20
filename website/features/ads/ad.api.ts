@@ -13,8 +13,15 @@ export interface ServedAd {
   campaignId: number;
   placementId: number;
   placement: string;
-  imageUrl: string;
-  targetUrl: string;
+  // "image" is a creative we host and click-track ourselves. "script" is
+  // a network tag that renders and tracks itself, so the image and target
+  // are absent and the script fields are present instead.
+  creativeType: "image" | "script";
+  imageUrl?: string;
+  targetUrl?: string;
+  scriptSrc?: string;
+  // Whatever the network put on its tag — data-cfasync, type, id.
+  scriptAttrs?: Record<string, string>;
   name: string;
   // "300x250" — the placement's booked size, used to reserve the box at
   // the right shape before the creative loads.

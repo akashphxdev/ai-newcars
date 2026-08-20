@@ -8,6 +8,7 @@ export interface StateRecord {
   id: number;
   countryId: number;
   name: string;
+  slug: string;
   code: string | null;
   country: { id: number; name: string; code: string } | null;
 }
@@ -31,12 +32,14 @@ export interface ListStatesParams {
 export interface CreateStateInput {
   countryId: number;
   name: string;
+  slug: string;
   code: string;
 }
 
 export interface UpdateStateInput {
   countryId: number;
   name: string;
+  slug: string;
   code: string;
 }
 

@@ -66,6 +66,7 @@ const STATIC_PATHS: [string, SitemapEntry["changefreq"], number][] = [
   [routes.compare(), "weekly", 0.7],
   [routes.stories(), "weekly", 0.5],
   [routes.fuelPrice(), "daily", 0.8],
+  [routes.scrapCar(), "monthly", 0.6],
   ["/car-loan-emi-calculator", "monthly", 0.5],
   ["/mileage-calculator", "monthly", 0.5],
   ["/down-payment-calculator", "monthly", 0.5],

@@ -8,14 +8,18 @@ import {
 } from "./state.api";
 import { useGetCountryOptionsQuery } from "../Countries/country.api";
 import { extractApiError } from "../../../lib/apiClient";
+import { slugify } from "../../../lib/slugify";
 
 const ACCENT = "#D4300F";
 
 interface FieldErrors {
   countryId?: string;
   name?: string;
+  slug?: string;
   code?: string;
 }
+
+const SLUG_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 
 function RequiredMark() {
   return <span className="text-[#D4300F]">*</span>;
@@ -95,7 +99,11 @@ export default function StateModal({
 
   const [countryId, setCountryId] = useState<number | "">(state ? state.countryId : "");
   const [name, setName] = useState(state ? state.name : "");
+  const [slug, setSlug] = useState(state ? state.slug : "");
   const [code, setCode] = useState(state ? state.code ?? "" : "");
+  // Auto-follows the name until the user edits it, and never in edit mode
+  // — an existing slug is a live URL. Same rule as CityModal.
+  const [slugTouched, setSlugTouched] = useState(isEditMode);
 
   const [errors, setErrors] = useState<FieldErrors>({});
   const [serverError, setServerError] = useState("");
@@ -108,6 +116,8 @@ export default function StateModal({
   const resetForm = () => {
     setCountryId("");
     setName("");
+    setSlug("");
+    setSlugTouched(false);
     setCode("");
     setErrors({});
     setServerError("");
@@ -128,10 +138,27 @@ export default function StateModal({
     onClose();
   };
 
+  const handleNameChange = (value: string) => {
+    setName(value);
+    if (!slugTouched) {
+      setSlug(slugify(value));
+    }
+  };
+
+  const handleSlugChange = (value: string) => {
+    setSlugTouched(true);
+    setSlug(value);
+  };
+
   const validate = (): boolean => {
     const next: FieldErrors = {};
     if (!countryId) next.countryId = "Please select a country.";
     if (name.trim().length < 2) next.name = "Name must be at least 2 characters.";
+    if (!slug.trim()) {
+      next.slug = "Slug is required.";
+    } else if (!SLUG_PATTERN.test(slug.trim())) {
+      next.slug = "Slug must be lowercase letters/numbers separated by hyphens (e.g. \"tamil-nadu\").";
+    }
     if (!code.trim()) next.code = "Code is required.";
     setErrors(next);
     return Object.keys(next).length === 0;
@@ -145,6 +172,7 @@ export default function StateModal({
     const payload = {
       countryId: Number(countryId),
       name: name.trim(),
+      slug: slug.trim(),
       code: code.trim(),
     };
 
@@ -218,7 +246,7 @@ export default function StateModal({
 
           <div className="grid grid-cols-2 gap-3">
             <Field label="Name" required>
-              <TextField value={name} onChange={setName} placeholder="e.g. Maharashtra" error={errors.name} inputRef={nameRef} />
+              <TextField value={name} onChange={handleNameChange} placeholder="e.g. Maharashtra" error={errors.name} inputRef={nameRef} />
             </Field>
             <Field label="Code" required>
               <TextField
@@ -231,6 +259,10 @@ export default function StateModal({
               />
             </Field>
           </div>
+
+          <Field label="Slug" required>
+            <TextField value={slug} onChange={handleSlugChange} placeholder="e.g. maharashtra" error={errors.slug} />
+          </Field>
 
           {serverError && (
             <div className="flex items-center gap-2 bg-red-50 border border-red-100 rounded-lg px-3.5 py-2.5">

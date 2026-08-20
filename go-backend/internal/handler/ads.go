@@ -19,14 +19,21 @@ import (
 // Serving is a read; impressions and clicks are writes that must reach
 // the database every time, so they are never cached and never batched.
 
+// Two shapes behind one field. An "image" ad is a creative we host and a
+// click we count; a "script" ad is a network tag that renders and tracks
+// itself, so its image and target are absent and omitted rather than sent
+// as empty strings the browser would have to test.
 type servedAd struct {
-	CampaignID  int32  `json:"campaignId"`
-	PlacementID int32  `json:"placementId"`
-	Placement   string `json:"placement"`
-	ImageURL    string `json:"imageUrl"`
-	TargetURL   string `json:"targetUrl"`
-	Name        string `json:"name"`
-	Dimensions  string `json:"dimensions"`
+	CampaignID   int32             `json:"campaignId"`
+	PlacementID  int32             `json:"placementId"`
+	Placement    string            `json:"placement"`
+	CreativeType string            `json:"creativeType"`
+	ImageURL     *string           `json:"imageUrl,omitempty"`
+	TargetURL    *string           `json:"targetUrl,omitempty"`
+	ScriptSrc    *string           `json:"scriptSrc,omitempty"`
+	ScriptAttrs  map[string]string `json:"scriptAttrs,omitempty"`
+	Name         string            `json:"name"`
+	Dimensions   string            `json:"dimensions"`
 }
 
 type adEventBody struct {
@@ -60,14 +67,29 @@ func (h *Handler) ServeAd(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Stored as jsonb rather than a fixed set of columns, because which
+	// attributes a network wants on its tag is the network's business.
+	// Unreadable attributes drop the ad rather than serving a tag the
+	// network did not ask for.
+	var attrs map[string]string
+	if len(row.ScriptAttrs) > 0 {
+		if err := json.Unmarshal(row.ScriptAttrs, &attrs); err != nil {
+			httpx.Success(w, nil, "No ad for this placement")
+			return
+		}
+	}
+
 	httpx.Success(w, servedAd{
-		CampaignID:  row.ID,
-		PlacementID: row.PlacementID,
-		Placement:   row.PlacementSlug,
-		ImageURL:    row.CreativeImageUrl,
-		TargetURL:   row.TargetUrl,
-		Name:        row.Name,
-		Dimensions:  row.Dimensions,
+		CampaignID:   row.ID,
+		PlacementID:  row.PlacementID,
+		Placement:    row.PlacementSlug,
+		CreativeType: row.CreativeType,
+		ImageURL:     row.CreativeImageUrl,
+		TargetURL:    row.TargetUrl,
+		ScriptSrc:    row.ScriptSrc,
+		ScriptAttrs:  attrs,
+		Name:         row.Name,
+		Dimensions:   row.Dimensions,
 	}, "Ad fetched successfully")
 }
 

@@ -42,6 +42,7 @@ import AllLaunchNotifyLeads from "./pages/BuyLeads/LaunchNotify/AllLaunchNotifyL
 import UsedCarListings from "./pages/UsedCars/Listings";
 import UsedCarInspections from "./pages/UsedCars/Inspections";
 import AllSellLeads from "./pages/SellLeads/AllSellLeads";
+import AllScrapLeads from "./pages/SellLeads/ScrapLeads/AllScrapLeads";
 import SellLeadActivities from "./pages/SellLeads/LeadActivities";
 import AllStoryGroups from "./pages/Stories/StoryGroups/AllStoryGroups";
 import AllStoryItems from "./pages/Stories/StoryItems/AllStoryItems";
@@ -133,6 +134,7 @@ export default function App() {
           <Route path="/used-cars/listings" element={<UsedCarListings />} />
           <Route path="/used-cars/inspections" element={<UsedCarInspections />} />
           <Route path="/leads/sell" element={<AllSellLeads />} />
+          <Route path="/leads/sell/scrap" element={<AllScrapLeads />} />
           <Route path="/leads/sell/activities" element={<SellLeadActivities />} />
 
           <Route path ="/ads/placements" element={<AllPlacements/>}/>

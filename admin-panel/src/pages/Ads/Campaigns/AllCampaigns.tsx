@@ -64,13 +64,22 @@ function StatusSelect({
 }
 
 function CreativeThumb({ campaign }: { campaign: AdCampaignRecord }) {
-  return (
-    <img
-      src={getUploadUrl(campaign.creativeImageUrl) ?? undefined}
-      alt=""
-      className="w-9 h-9 rounded-lg object-cover border border-[#e8e4dc]"
-    />
-  );
+  const src = getUploadUrl(campaign.creativeImageUrl);
+
+  // A network campaign has no creative of ours to show, and an <img>
+  // with no src renders as a broken icon.
+  if (!src) {
+    return (
+      <span
+        title={campaign.scriptSrc ?? "No creative"}
+        className="w-9 h-9 rounded-lg border border-[#e8e4dc] bg-[#f6f3ee] flex items-center justify-center text-[9px] font-bold text-[#8a8378]"
+      >
+        JS
+      </span>
+    );
+  }
+
+  return <img src={src} alt="" className="w-9 h-9 rounded-lg object-cover border border-[#e8e4dc]" />;
 }
 
 export default function AllCampaigns() {

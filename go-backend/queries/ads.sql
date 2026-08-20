@@ -10,8 +10,11 @@
 -- creative is a new row rather than an edit to a live one.
 SELECT c.id,
        c.placement_id,
+       c.creative_type,
        c.creative_image_url,
        c.target_url,
+       c.script_src,
+       c.script_attrs,
        c.name,
        p.dimensions,
        p.slug AS placement_slug

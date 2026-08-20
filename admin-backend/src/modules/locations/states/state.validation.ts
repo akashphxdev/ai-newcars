@@ -22,15 +22,31 @@ export const stateIdParamSchema = z.object({
   id: z.coerce.number().int().positive(),
 });
 
+const slugRegex = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
+
+// Same convention as city.validation.ts: the frontend generates and sends
+// the literal slug, the backend does not derive one. states.slug is NOT
+// NULL with no default, so omitting it here is a constraint violation at
+// insert time rather than a silent gap.
+const stateSlugSchema = z
+  .string()
+  .trim()
+  .toLowerCase()
+  .min(2, 'Slug is required')
+  .max(100)
+  .regex(slugRegex, 'Slug must be lowercase letters/numbers separated by hyphens (e.g. "tamil-nadu")');
+
 export const createStateSchema = z.object({
   countryId: z.coerce.number().int().positive('countryId is required'),
   name: z.string().trim().min(2, 'Name must be at least 2 characters').max(100),
+  slug: stateSlugSchema,
   code: z.string().trim().toUpperCase().min(1, 'Code is required').max(10),
 });
 
 export const updateStateSchema = z.object({
   countryId: z.coerce.number().int().positive('countryId is required'),
   name: z.string().trim().min(2, 'Name must be at least 2 characters').max(100),
+  slug: stateSlugSchema,
   code: z.string().trim().toUpperCase().min(1, 'Code is required').max(10),
 });
 

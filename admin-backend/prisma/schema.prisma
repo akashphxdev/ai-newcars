@@ -34,29 +34,30 @@ model Country {
 }
 
 model State {
-  id        Int      @id @default(autoincrement())
-  countryId Int      @map("country_id")
-  name      String   @db.VarChar(100)
-  slug      String   @unique @db.VarChar(100)
-  code      String?  @db.VarChar(10)
-  country   Country  @relation(fields: [countryId], references: [id])
-  cities    City[]
+  id             Int             @id @default(autoincrement())
+  countryId      Int             @map("country_id")
+  name           String          @db.VarChar(100)
+  slug           String          @unique @db.VarChar(100)
+  code           String?         @db.VarChar(10)
+  country        Country         @relation(fields: [countryId], references: [id])
+  cities         City[]
   insuranceLeads InsuranceLead[]
+  scrapCarLeads  ScrapCarLead[]
+
   @@index([countryId])
   @@map("states")
 }
 
-
 model City {
-  id                Int      @id @default(autoincrement())
-  stateId           Int      @map("state_id")
-  name              String   @db.VarChar(100)
-  slug              String   @db.VarChar(100)
-  isMetro           Boolean  @default(false) @map("is_metro")
-  isTopCity         Boolean  @default(false) @map("is_top_city")
-  isSellCarEnabled  Boolean  @default(false) @map("is_sell_car_enabled")
-  logoUrl           String?  @map("logo_url") @db.VarChar(255)
-  state             State    @relation(fields: [stateId], references: [id])
+  id               Int     @id @default(autoincrement())
+  stateId          Int     @map("state_id")
+  name             String  @db.VarChar(100)
+  slug             String  @db.VarChar(100)
+  isMetro          Boolean @default(false) @map("is_metro")
+  isTopCity        Boolean @default(false) @map("is_top_city")
+  isSellCarEnabled Boolean @default(false) @map("is_sell_car_enabled")
+  logoUrl          String? @map("logo_url") @db.VarChar(255)
+  state            State   @relation(fields: [stateId], references: [id])
 
   users           User[]
   usedCarListings UsedCarListing[]
@@ -65,7 +66,9 @@ model City {
   sellCarLeads    SellCarLead[]
   buyNewCarLeads  BuyNewCarLead[]
   insuranceLeads  InsuranceLead[]
+  scrapCarLeads   ScrapCarLead[]
   userAddresses   UserAddress[]
+
   @@unique([stateId, slug])
   @@index([stateId])
   @@map("cities")
@@ -101,8 +104,8 @@ model AttributeOption {
   slug     String @db.VarChar(50)
 
   variantTransmissions CarVariant[]            @relation("VariantTransmission")
-  iceDrivetrains       CarPowertrainIce[]       @relation("IceDrivetrain")
-  electricDrivetrains  CarPowertrainElectric[]  @relation("ElectricDrivetrain")
+  iceDrivetrains       CarPowertrainIce[]      @relation("IceDrivetrain")
+  electricDrivetrains  CarPowertrainElectric[] @relation("ElectricDrivetrain")
 
   @@unique([category, slug])
   @@map("attribute_options")
@@ -189,10 +192,10 @@ model AdminUser {
   deletedIcePowertrains CarPowertrainIce[]
   deletedEvPowertrains  CarPowertrainElectric[]
   leadActivities        LeadActivity[]
-  seoMetaCreated       SeoMeta[]           @relation("SeoMetaCreatedBy")
-  seoMetaUpdated       SeoMeta[]           @relation("SeoMetaUpdatedBy")
-  seoRedirectsCreated   SeoRedirect[]       @relation("SeoRedirectCreatedBy")
-  seoRedirectsUpdated   SeoRedirect[]       @relation("SeoRedirectUpdatedBy")
+  seoMetaCreated        SeoMeta[]               @relation("SeoMetaCreatedBy")
+  seoMetaUpdated        SeoMeta[]               @relation("SeoMetaUpdatedBy")
+  seoRedirectsCreated   SeoRedirect[]           @relation("SeoRedirectCreatedBy")
+  seoRedirectsUpdated   SeoRedirect[]           @relation("SeoRedirectUpdatedBy")
 
   articlesAuthored         Article[]         @relation("ArticleAuthor")
   articlesCreated          Article[]         @relation("ArticleCreatedBy")
@@ -203,28 +206,27 @@ model AdminUser {
   adPlacementsCreated AdPlacement[] @relation("AdPlacementCreatedBy")
   adPlacementsUpdated AdPlacement[] @relation("AdPlacementUpdatedBy")
   advertisersCreated  Advertiser[]  @relation("AdvertiserCreatedBy")
-  advertisersUpdated  Advertiser[]  @relation("AdvertiserUpdatedBy")  
-  lendersCreated Lender[] @relation("LenderCreatedBy")
-  lendersUpdated Lender[] @relation("LenderUpdatedBy")
+  advertisersUpdated  Advertiser[]  @relation("AdvertiserUpdatedBy")
+  lendersCreated      Lender[]      @relation("LenderCreatedBy")
+  lendersUpdated      Lender[]      @relation("LenderUpdatedBy")
 
-
-  adCampaignsCreated  AdCampaign[]  @relation("AdCampaignCreatedBy")
-  adCampaignsUpdated  AdCampaign[]  @relation("AdCampaignUpdatedBy")
+  adCampaignsCreated AdCampaign[] @relation("AdCampaignCreatedBy")
+  adCampaignsUpdated AdCampaign[] @relation("AdCampaignUpdatedBy")
 
   storyGroupsCreated StoryGroup[] @relation("StoryGroupCreatedBy")
   storyGroupsUpdated StoryGroup[] @relation("StoryGroupUpdatedBy")
   storyItemsCreated  StoryItem[]  @relation("StoryItemCreatedBy")
   storyItemsUpdated  StoryItem[]  @relation("StoryItemUpdatedBy")
 
-  aiSettingsCreated        AiSetting[]         @relation("AiSettingCreatedBy")
-  aiSettingsUpdated        AiSetting[]         @relation("AiSettingUpdatedBy")
-  siteSettingsCreated      SiteSetting[]       @relation("SiteSettingCreatedBy")
-  siteSettingsUpdated      SiteSetting[]       @relation("SiteSettingUpdatedBy")
-  aiAutomationRulesCreated AiAutomationRule[]  @relation("AiAutomationRuleCreatedBy")
-  aiAutomationRulesUpdated AiAutomationRule[]  @relation("AiAutomationRuleUpdatedBy")
-  aiFaqsReviewed           AiFaq[]             @relation("AiFaqReviewedBy")
-  aiArticlesReviewed       AiArticle[]         @relation("AiArticleReviewedBy")
-  aiStoryItemsReviewed     AiStoryItem[]       @relation("AiStoryItemReviewedBy")
+  aiSettingsCreated        AiSetting[]        @relation("AiSettingCreatedBy")
+  aiSettingsUpdated        AiSetting[]        @relation("AiSettingUpdatedBy")
+  siteSettingsCreated      SiteSetting[]      @relation("SiteSettingCreatedBy")
+  siteSettingsUpdated      SiteSetting[]      @relation("SiteSettingUpdatedBy")
+  aiAutomationRulesCreated AiAutomationRule[] @relation("AiAutomationRuleCreatedBy")
+  aiAutomationRulesUpdated AiAutomationRule[] @relation("AiAutomationRuleUpdatedBy")
+  aiFaqsReviewed           AiFaq[]            @relation("AiFaqReviewedBy")
+  aiArticlesReviewed       AiArticle[]        @relation("AiArticleReviewedBy")
+  aiStoryItemsReviewed     AiStoryItem[]      @relation("AiStoryItemReviewedBy")
 
   aiImagesUploaded AiImagePool[] @relation("AiImagePoolUploadedBy")
 
@@ -232,8 +234,9 @@ model AdminUser {
   bannersUpdated Banner[] @relation("BannerUpdatedBy")
 
   testimonialsCreated  Testimonial[] @relation("TestimonialCreatedBy")
-  testimonialsReviewed Testimonial[] @relation("TestimonialReviewedBy")  
-  reviewRepliesPosted ReviewReply[]
+  testimonialsReviewed Testimonial[] @relation("TestimonialReviewedBy")
+  reviewRepliesPosted  ReviewReply[]
+
   @@index([roleId])
   @@map("admin_users")
 }
@@ -245,6 +248,7 @@ model AdminLog {
   description String?   @db.VarChar(255)
   ipAddress   String?   @map("ip_address") @db.VarChar(45)
   createdAt   DateTime  @default(now()) @map("created_at")
+
   @@index([adminId, createdAt])
   @@map("admin_logs")
 }
@@ -260,6 +264,7 @@ model AdminOtpVerification {
   expiresAt  DateTime  @map("expires_at")
   verifiedAt DateTime? @map("verified_at")
   createdAt  DateTime  @default(now()) @map("created_at")
+
   @@index([mobile, purpose])
   @@map("admin_otp_verifications")
 }
@@ -291,6 +296,7 @@ model User {
   buyNewCarLeads      BuyNewCarLead[]
   buyUsedCarLeads     BuyUsedCarLead[]
   insuranceLeads      InsuranceLead[]
+  scrapCarLeads       ScrapCarLead[]
   loanLeads           LoanLead[]
   softLeads           SoftLead[]
   priceDropAlertLeads PriceDropAlertLead[]
@@ -305,7 +311,7 @@ model User {
   notifications       Notification[]
   searchLogs          SearchLog[]
   userAddresses       UserAddress[]
-  testimonials        Testimonial[] 
+  testimonials        Testimonial[]
 
   @@map("users")
 }
@@ -347,6 +353,7 @@ model Brand {
   buyNewCarLeads      BuyNewCarLead[]
   buyUsedCarLeads     BuyUsedCarLead[]
   insuranceLeads      InsuranceLead[]
+  scrapCarLeads       ScrapCarLead[]
   loanLeads           LoanLead[]
   softLeads           SoftLead[]
   priceDropAlertLeads PriceDropAlertLead[]
@@ -392,6 +399,7 @@ model CarModel {
   buyNewCarLeads      BuyNewCarLead[]
   buyUsedCarLeads     BuyUsedCarLead[]
   insuranceLeads      InsuranceLead[]
+  scrapCarLeads       ScrapCarLead[]
   loanLeads           LoanLead[]
   softLeads           SoftLead[]
   priceDropAlertLeads PriceDropAlertLead[]
@@ -411,27 +419,27 @@ model CarModel {
 }
 
 model CarVariant {
-  id              Int      @id @default(autoincrement())
-  modelId         Int      @map("model_id")
-  model           CarModel @relation(fields: [modelId], references: [id])
-  variantName     String   @map("variant_name") @db.VarChar(100)
-  price           Decimal  @db.Decimal(12, 2)
-  seatingCapacity Int      @map("seating_capacity")
+  id              Int             @id @default(autoincrement())
+  modelId         Int             @map("model_id")
+  model           CarModel        @relation(fields: [modelId], references: [id])
+  variantName     String          @map("variant_name") @db.VarChar(100)
+  price           Decimal         @db.Decimal(12, 2)
+  seatingCapacity Int             @map("seating_capacity")
   transmissionId  Int             @map("transmission_id")
   transmission    AttributeOption @relation("VariantTransmission", fields: [transmissionId], references: [id], onDelete: Restrict)
-  isTopSeller     Boolean  @default(false) @map("is_top_seller")
-  createdAt       DateTime @default(now()) @map("created_at")
-  length            Int?     @map("length_mm")
-  width             Int?     @map("width_mm")
-  height            Int?     @map("height_mm")
-  wheelBase         Int?     @map("wheel_base_mm")
-  groundClearance   Int?     @map("ground_clearance_mm")
-  bootSpace         Int?     @map("boot_space_litres")
-  frontSuspension   String?  @map("front_suspension") @db.VarChar(100)
-  rearSuspension    String?  @map("rear_suspension") @db.VarChar(100)
-  steeringType      String?  @map("steering_type") @db.VarChar(50)
-  frontBrakeType    String?  @map("front_brake_type") @db.VarChar(50)
-  rearBrakeType     String?  @map("rear_brake_type") @db.VarChar(50)
+  isTopSeller     Boolean         @default(false) @map("is_top_seller")
+  createdAt       DateTime        @default(now()) @map("created_at")
+  length          Int?            @map("length_mm")
+  width           Int?            @map("width_mm")
+  height          Int?            @map("height_mm")
+  wheelBase       Int?            @map("wheel_base_mm")
+  groundClearance Int?            @map("ground_clearance_mm")
+  bootSpace       Int?            @map("boot_space_litres")
+  frontSuspension String?         @map("front_suspension") @db.VarChar(100)
+  rearSuspension  String?         @map("rear_suspension") @db.VarChar(100)
+  steeringType    String?         @map("steering_type") @db.VarChar(50)
+  frontBrakeType  String?         @map("front_brake_type") @db.VarChar(50)
+  rearBrakeType   String?         @map("rear_brake_type") @db.VarChar(50)
 
   icePowertrains      CarPowertrainIce[]
   electricPowertrains CarPowertrainElectric[]
@@ -439,10 +447,9 @@ model CarVariant {
   newCarOffers        NewCarOffer[]
   usedCarListings     UsedCarListing[]
   reviews             Review[]
-  buyNewCarLeads BuyNewCarLead[]
-  insuranceLeads InsuranceLead[]
-  loanLeads LoanLead[]
-
+  buyNewCarLeads      BuyNewCarLead[]
+  insuranceLeads      InsuranceLead[]
+  loanLeads           LoanLead[]
 
   @@unique([modelId, variantName])
   @@index([modelId])
@@ -450,98 +457,100 @@ model CarVariant {
 }
 
 model CarPowertrainIce {
-  id                  Int        @id @default(autoincrement())
-  variantId           Int        @map("variant_id")
-  variant             CarVariant @relation(fields: [variantId], references: [id])
-  fuelType            Int        @map("fuel_type")
-  fuelTypeSubCategory String?    @map("fuel_type_sub_category") @db.VarChar(30)
-  fuelTankCapacity    Decimal?   @map("fuel_tank_capacity") @db.Decimal(5, 2)
-  cngTankCapacity     Decimal?   @map("cng_tank_capacity") @db.Decimal(5, 2)
-  kerbWeight          Int?       @map("kerb_weight")
-  engineDisplacement  Decimal?   @map("engine_displacement") @db.Decimal(5, 2)
-  cubicCapacity       Int?       @map("cubic_capacity")
-  cylinders           Int?
-  numGears            Int?       @map("num_gears")
-  isFourByFour        Boolean    @default(false) @map("is_four_by_four")
-  drivetrainId        Int?             @map("drivetrain_id")
-  drivetrain          AttributeOption? @relation("IceDrivetrain", fields: [drivetrainId], references: [id])
-  powerPs             Int?       @map("power_ps")
-  powerMinRpm         Int?       @map("power_min_rpm")
-  powerMaxRpm         Int?       @map("power_max_rpm")
-  torqueNm            Int?       @map("torque_nm")
-  torqueMinRpm        Int?       @map("torque_min_rpm")
-  torqueMaxRpm        Int?       @map("torque_max_rpm")
-  claimedFe           Decimal?   @map("claimed_fe") @db.Decimal(5, 2)
-  realWorldMileage    Decimal?   @map("real_world_mileage") @db.Decimal(5, 2)
-  topSpeedKmph        Int?       @map("top_speed_kmph")
-  topSpeedTimeSec     Decimal?   @map("top_speed_time_sec") @db.Decimal(5, 2)
-  isDefault           Boolean    @default(false) @map("is_default")
-  isDeleted           Boolean    @default(false) @map("is_deleted")
-  deletedBy           Int?       @map("deleted_by")
-  deletedByAdmin      AdminUser? @relation(fields: [deletedBy], references: [id])
-  deletedAt           DateTime?  @map("deleted_at")
-  expiresAt           DateTime?  @map("expires_at")
-  createdAt           DateTime   @default(now()) @map("created_at")
-  emissionNormCompliance String?  @map("emission_norm_compliance") @db.VarChar(30)
-  turboCharger           Boolean  @default(false) @map("turbo_charger")
+  id                     Int              @id @default(autoincrement())
+  variantId              Int              @map("variant_id")
+  variant                CarVariant       @relation(fields: [variantId], references: [id])
+  fuelType               Int              @map("fuel_type")
+  fuelTypeSubCategory    String?          @map("fuel_type_sub_category") @db.VarChar(30)
+  fuelTankCapacity       Decimal?         @map("fuel_tank_capacity") @db.Decimal(5, 2)
+  cngTankCapacity        Decimal?         @map("cng_tank_capacity") @db.Decimal(5, 2)
+  kerbWeight             Int?             @map("kerb_weight")
+  engineDisplacement     Decimal?         @map("engine_displacement") @db.Decimal(5, 2)
+  cubicCapacity          Int?             @map("cubic_capacity")
+  cylinders              Int?
+  numGears               Int?             @map("num_gears")
+  isFourByFour           Boolean          @default(false) @map("is_four_by_four")
+  drivetrainId           Int?             @map("drivetrain_id")
+  drivetrain             AttributeOption? @relation("IceDrivetrain", fields: [drivetrainId], references: [id])
+  powerPs                Int?             @map("power_ps")
+  powerMinRpm            Int?             @map("power_min_rpm")
+  powerMaxRpm            Int?             @map("power_max_rpm")
+  torqueNm               Int?             @map("torque_nm")
+  torqueMinRpm           Int?             @map("torque_min_rpm")
+  torqueMaxRpm           Int?             @map("torque_max_rpm")
+  claimedFe              Decimal?         @map("claimed_fe") @db.Decimal(5, 2)
+  realWorldMileage       Decimal?         @map("real_world_mileage") @db.Decimal(5, 2)
+  topSpeedKmph           Int?             @map("top_speed_kmph")
+  topSpeedTimeSec        Decimal?         @map("top_speed_time_sec") @db.Decimal(5, 2)
+  isDefault              Boolean          @default(false) @map("is_default")
+  isDeleted              Boolean          @default(false) @map("is_deleted")
+  deletedBy              Int?             @map("deleted_by")
+  deletedByAdmin         AdminUser?       @relation(fields: [deletedBy], references: [id])
+  deletedAt              DateTime?        @map("deleted_at")
+  expiresAt              DateTime?        @map("expires_at")
+  createdAt              DateTime         @default(now()) @map("created_at")
+  emissionNormCompliance String?          @map("emission_norm_compliance") @db.VarChar(30)
+  turboCharger           Boolean          @default(false) @map("turbo_charger")
 
   @@index([variantId, isDeleted])
   @@map("car_powertrains_ice")
 }
 
 model CarPowertrainElectric {
-  id                      Int        @id @default(autoincrement())
-  variantId               Int        @map("variant_id")
-  variant                 CarVariant @relation(fields: [variantId], references: [id])
-  numMotors               Int?       @map("num_motors")
-  motorType               String?    @map("motor_type") @db.VarChar(50)
-  batteryCapacity         Decimal?   @map("battery_capacity") @db.Decimal(6, 2)
-  batteryChemistry        String?    @map("battery_chemistry") @db.VarChar(30)
-  thermalManagementSystem String?    @map("thermal_management_system") @db.VarChar(50)
-  drivetrainId            Int?             @map("drivetrain_id")
-  drivetrain              AttributeOption? @relation("ElectricDrivetrain", fields: [drivetrainId], references: [id])
-  powerPs                 Int?       @map("power_ps")
-  torqueNm                Int?       @map("torque_nm")
-  claimedRange            Int?       @map("claimed_range")
-  realWorldRange          Int?       @map("real_world_range")
-  topSpeedKmph            Int?       @map("top_speed_kmph")
-  topSpeedTimeSec         Decimal?   @map("top_speed_time_sec") @db.Decimal(5, 2)
-  acChargingOutput        Decimal?   @map("ac_charging_output") @db.Decimal(5, 2)
-  acChargingTime          Decimal?   @map("ac_charging_time") @db.Decimal(5, 2)
-  dcChargingOutput        Decimal?   @map("dc_charging_output") @db.Decimal(5, 2)
-  dcFastChargingTime      String?    @map("dc_fast_charging_time") @db.VarChar(50)
-  batteryWarrantyKm       Int?       @map("battery_warranty_km")
-  batteryWarrantyYears    Int?       @map("battery_warranty_years")
-  motorWarrantyKm         Int?       @map("motor_warranty_km")
-  motorWarrantyYears      Int?       @map("motor_warranty_years")
-  standardWarrantyKm      String?    @map("standard_warranty_km") @db.VarChar(20)
-  standardWarrantyYears   Int?       @map("standard_warranty_years")
-  isDefault               Boolean    @default(false) @map("is_default")
-  isDeleted               Boolean    @default(false) @map("is_deleted")
-  deletedBy               Int?       @map("deleted_by")
-  deletedByAdmin          AdminUser? @relation(fields: [deletedBy], references: [id])
-  deletedAt               DateTime?  @map("deleted_at")
-  expiresAt               DateTime?  @map("expires_at")
-  createdAt               DateTime   @default(now()) @map("created_at")
-  emissionNormCompliance    String?  @map("emission_norm_compliance") @db.VarChar(30)
-  motorPowerKw              Decimal? @map("motor_power_kw") @db.Decimal(6, 2)
-  chargingPort              String?  @map("charging_port") @db.VarChar(30)
-  chargingOptionsRaw        String?  @map("charging_options_raw") @db.VarChar(255)
-  regenerativeBraking       Boolean  @default(false) @map("regenerative_braking")
-  regenerativeBrakingLevels Int?     @map("regenerative_braking_levels")
+  id                        Int              @id @default(autoincrement())
+  variantId                 Int              @map("variant_id")
+  variant                   CarVariant       @relation(fields: [variantId], references: [id])
+  numMotors                 Int?             @map("num_motors")
+  motorType                 String?          @map("motor_type") @db.VarChar(50)
+  batteryCapacity           Decimal?         @map("battery_capacity") @db.Decimal(6, 2)
+  batteryChemistry          String?          @map("battery_chemistry") @db.VarChar(30)
+  thermalManagementSystem   String?          @map("thermal_management_system") @db.VarChar(50)
+  drivetrainId              Int?             @map("drivetrain_id")
+  drivetrain                AttributeOption? @relation("ElectricDrivetrain", fields: [drivetrainId], references: [id])
+  powerPs                   Int?             @map("power_ps")
+  torqueNm                  Int?             @map("torque_nm")
+  claimedRange              Int?             @map("claimed_range")
+  realWorldRange            Int?             @map("real_world_range")
+  topSpeedKmph              Int?             @map("top_speed_kmph")
+  topSpeedTimeSec           Decimal?         @map("top_speed_time_sec") @db.Decimal(5, 2)
+  acChargingOutput          Decimal?         @map("ac_charging_output") @db.Decimal(5, 2)
+  acChargingTime            Decimal?         @map("ac_charging_time") @db.Decimal(5, 2)
+  dcChargingOutput          Decimal?         @map("dc_charging_output") @db.Decimal(5, 2)
+  dcFastChargingTime        String?          @map("dc_fast_charging_time") @db.VarChar(50)
+  batteryWarrantyKm         Int?             @map("battery_warranty_km")
+  batteryWarrantyYears      Int?             @map("battery_warranty_years")
+  motorWarrantyKm           Int?             @map("motor_warranty_km")
+  motorWarrantyYears        Int?             @map("motor_warranty_years")
+  standardWarrantyKm        String?          @map("standard_warranty_km") @db.VarChar(20)
+  standardWarrantyYears     Int?             @map("standard_warranty_years")
+  isDefault                 Boolean          @default(false) @map("is_default")
+  isDeleted                 Boolean          @default(false) @map("is_deleted")
+  deletedBy                 Int?             @map("deleted_by")
+  deletedByAdmin            AdminUser?       @relation(fields: [deletedBy], references: [id])
+  deletedAt                 DateTime?        @map("deleted_at")
+  expiresAt                 DateTime?        @map("expires_at")
+  createdAt                 DateTime         @default(now()) @map("created_at")
+  emissionNormCompliance    String?          @map("emission_norm_compliance") @db.VarChar(30)
+  motorPowerKw              Decimal?         @map("motor_power_kw") @db.Decimal(6, 2)
+  chargingPort              String?          @map("charging_port") @db.VarChar(30)
+  chargingOptionsRaw        String?          @map("charging_options_raw") @db.VarChar(255)
+  regenerativeBraking       Boolean          @default(false) @map("regenerative_braking")
+  regenerativeBrakingLevels Int?             @map("regenerative_braking_levels")
+
   @@index([variantId, isDeleted])
   @@map("car_powertrains_electric")
 }
 
 model CarImage {
-  id        Int         @id @default(autoincrement())
-  modelId   Int         @map("model_id")
-  model     CarModel    @relation(fields: [modelId], references: [id])
-  colorId   Int?        @map("color_id")
-  color     CarColor?   @relation(fields: [colorId], references: [id])
-  imageUrl  String      @map("image_url") @db.VarChar(255)
-  isPrimary Boolean     @default(false) @map("is_primary")
-  angle     String?     @db.VarChar(30)
+  id        Int       @id @default(autoincrement())
+  modelId   Int       @map("model_id")
+  model     CarModel  @relation(fields: [modelId], references: [id])
+  colorId   Int?      @map("color_id")
+  color     CarColor? @relation(fields: [colorId], references: [id])
+  imageUrl  String    @map("image_url") @db.VarChar(255)
+  isPrimary Boolean   @default(false) @map("is_primary")
+  angle     String?   @db.VarChar(30)
+
   @@index([modelId])
   @@map("car_images")
 }
@@ -565,6 +574,7 @@ model Feature {
   createdAt  DateTime         @default(now()) @map("created_at")
 
   variantFeatures VariantFeature[]
+
   @@index([categoryId])
   @@map("features")
 }
@@ -606,10 +616,11 @@ model CarColor {
   colorName      String   @map("color_name") @db.VarChar(50)
   imageUrl       String?  @map("image_url") @db.VarChar(255)
   additionalCost Decimal? @map("additional_cost") @db.Decimal(8, 2)
-  
+
   shades CarColorShade[]
   images CarImage[]
-  @@index([modelId]) 
+
+  @@index([modelId])
   @@map("car_colors")
 }
 
@@ -644,6 +655,7 @@ model NewCarOffer {
   validUntil  DateTime?   @map("valid_until") @db.Date
   isActive    Boolean     @default(true) @map("is_active")
   imageUrl    String      @map("image_url") @db.VarChar(255)
+
   @@index([modelId])
   @@index([isActive])
   @@map("new_car_offers")
@@ -679,6 +691,7 @@ model UsedCarListing {
 
   images          UsedCarListingImage[]
   buyUsedCarLeads BuyUsedCarLead[]
+
   @@index([modelId])
   @@index([cityId])
   @@index([sellerId])
@@ -730,37 +743,98 @@ model SellCarLead {
   @@map("sell_car_leads")
 }
 
+// Scrapping is not selling: the owner is disposing of an end-of-life
+// vehicle, and what they are really buying is the Certificate of Deposit
+// that earns a road-tax rebate on their next car. Kept as its own table
+// for the same reason every other lead type is — a shared table would
+// leave half its columns null whichever intent it held.
+model ScrapCarLead {
+  id     Int     @id @default(autoincrement())
+  userId Int?    @map("user_id")
+  user   User?   @relation(fields: [userId], references: [id])
+  name   String? @db.VarChar(100)
+  mobile String  @db.VarChar(15)
+  email  String? @db.VarChar(150)
+
+  // A scrappable car is 15+ years old, so it is frequently not in the
+  // catalogue at all. The ids stay nullable and the free-text fields are
+  // the fallback — losing the lead would defeat the point of the module.
+  brandId   Int?      @map("brand_id")
+  brand     Brand?    @relation(fields: [brandId], references: [id])
+  modelId   Int?      @map("model_id")
+  model     CarModel? @relation(fields: [modelId], references: [id])
+  brandName String?   @map("brand_name") @db.VarChar(100)
+  modelName String?   @map("model_name") @db.VarChar(100)
+
+  registrationNumber  String? @map("registration_number") @db.VarChar(20)
+  registrationYear    Int?    @map("registration_year")
+  registrationStateId Int?    @map("registration_state_id")
+  registrationState   State?  @relation(fields: [registrationStateId], references: [id])
+  cityId              Int?    @map("city_id")
+  city                City?   @relation(fields: [cityId], references: [id])
+  fuelType            String? @map("fuel_type") @db.VarChar(20)
+
+  // What the yard needs to know before quoting: a non-running or
+  // accidental car costs more to collect, and missing paperwork can stop
+  // the scrappage certificate being issued at all.
+  vehicleCondition          String?   @map("vehicle_condition") @db.VarChar(20)
+  hasOriginalRc             Boolean?  @map("has_original_rc")
+  isHypothecated            Boolean?  @map("is_hypothecated")
+  hasPendingChallan         Boolean?  @map("has_pending_challan")
+  wantsCertificateOfDeposit Boolean?  @map("wants_certificate_of_deposit")
+  preferredPickupDate       DateTime? @map("preferred_pickup_date") @db.Date
+
+  quotedPrice Decimal? @map("quoted_price") @db.Decimal(12, 2)
+  notes       String?  @db.Text
+
+  status       String      @default("new") @db.VarChar(20)
+  leadChannel  String?     @map("lead_channel") @db.VarChar(30)
+  utmSource    String?     @map("utm_source") @db.VarChar(100)
+  utmMedium    String?     @map("utm_medium") @db.VarChar(100)
+  utmCampaign  String?     @map("utm_campaign") @db.VarChar(150)
+  landingPage  String?     @map("landing_page") @db.VarChar(255)
+  deviceType   String?     @map("device_type") @db.VarChar(20)
+  ipAddress    String?     @map("ip_address") @db.VarChar(45)
+  createdAt    DateTime    @default(now()) @map("created_at")
+  updatedAt    DateTime    @updatedAt @map("updated_at")
+
+  @@index([status, createdAt])
+  @@index([mobile])
+  @@index([registrationNumber])
+  @@index([cityId])
+  @@map("scrap_car_leads")
+}
+
 model BuyNewCarLead {
-  id           Int       @id @default(autoincrement())
-  userId       Int?      @map("user_id")
-  user         User?     @relation(fields: [userId], references: [id])
-  name         String?   @db.VarChar(100)
-  mobile       String    @db.VarChar(15)
-  email        String?   @map("email") @db.VarChar(150)
-  brandId      Int?      @map("brand_id")
-  brand        Brand?    @relation(fields: [brandId], references: [id])
-  modelId      Int?      @map("model_id")
-  model        CarModel? @relation(fields: [modelId], references: [id])
-  variantId    Int?         @map("variant_id")
-  variant      CarVariant?  @relation(fields: [variantId], references: [id])
-  cityId       Int?      @map("city_id")
-  city         City?     @relation(fields: [cityId], references: [id])
-  interestType String?   @map("interest_type") @db.VarChar(30)
-  status       String    @default("new") @db.VarChar(20)
-  leadChannel  String?   @map("lead_channel") @db.VarChar(30)
-  utmSource    String?   @map("utm_source") @db.VarChar(100)
-  utmMedium    String?   @map("utm_medium") @db.VarChar(100)
-  utmCampaign  String?   @map("utm_campaign") @db.VarChar(150)
-  landingPage  String?   @map("landing_page") @db.VarChar(255)
-  deviceType   String?   @map("device_type") @db.VarChar(20)
-  ipAddress    String?   @map("ip_address") @db.VarChar(45)
-  createdAt    DateTime  @default(now()) @map("created_at")
-  updatedAt    DateTime  @updatedAt @map("updated_at")
+  id           Int         @id @default(autoincrement())
+  userId       Int?        @map("user_id")
+  user         User?       @relation(fields: [userId], references: [id])
+  name         String?     @db.VarChar(100)
+  mobile       String      @db.VarChar(15)
+  email        String?     @map("email") @db.VarChar(150)
+  brandId      Int?        @map("brand_id")
+  brand        Brand?      @relation(fields: [brandId], references: [id])
+  modelId      Int?        @map("model_id")
+  model        CarModel?   @relation(fields: [modelId], references: [id])
+  variantId    Int?        @map("variant_id")
+  variant      CarVariant? @relation(fields: [variantId], references: [id])
+  cityId       Int?        @map("city_id")
+  city         City?       @relation(fields: [cityId], references: [id])
+  interestType String?     @map("interest_type") @db.VarChar(30)
+  status       String      @default("new") @db.VarChar(20)
+  leadChannel  String?     @map("lead_channel") @db.VarChar(30)
+  utmSource    String?     @map("utm_source") @db.VarChar(100)
+  utmMedium    String?     @map("utm_medium") @db.VarChar(100)
+  utmCampaign  String?     @map("utm_campaign") @db.VarChar(150)
+  landingPage  String?     @map("landing_page") @db.VarChar(255)
+  deviceType   String?     @map("device_type") @db.VarChar(20)
+  ipAddress    String?     @map("ip_address") @db.VarChar(45)
+  createdAt    DateTime    @default(now()) @map("created_at")
+  updatedAt    DateTime    @updatedAt @map("updated_at")
 
   @@index([status, createdAt])
   @@index([mobile])
   @@index([brandId, modelId])
-
   @@map("buy_new_car_leads")
 }
 
@@ -793,42 +867,41 @@ model BuyUsedCarLead {
 }
 
 model InsuranceLead {
-  id                 Int       @id @default(autoincrement())
-  userId             Int?      @map("user_id")
-  user               User?     @relation(fields: [userId], references: [id])
-  name               String?   @db.VarChar(100)
-  mobile             String    @db.VarChar(15)
-  brandId            Int?      @map("brand_id")
-  brand              Brand?    @relation(fields: [brandId], references: [id])
-  modelId            Int?      @map("model_id")
-  model              CarModel? @relation(fields: [modelId], references: [id])
-  variantId          Int?      @map("variant_id")
-  variant            CarVariant? @relation(fields: [variantId], references: [id])
-  registrationYear   Int?      @map("registration_year")
-  registrationStateId Int?     @map("registration_state_id")
-  registrationState  State?    @relation(fields: [registrationStateId], references: [id])
-  registrationNumber String?   @map("registration_number") @db.VarChar(20)
-  cityId             Int?      @map("city_id")
-  city               City?     @relation(fields: [cityId], references: [id])
-  insuranceType          String?   @map("insurance_type") @db.VarChar(20)
-  currentInsuranceCompany String?  @map("current_insurance_company") @db.VarChar(150)
-  policyExpiryDate       DateTime? @map("policy_expiry_date") @db.Date
-  hadClaim               Boolean?  @map("had_claim")
-  status             String    @default("new") @db.VarChar(20)
-  leadChannel        String?   @map("lead_channel") @db.VarChar(30)
-  utmSource          String?   @map("utm_source") @db.VarChar(100)
-  utmMedium          String?   @map("utm_medium") @db.VarChar(100)
-  utmCampaign        String?   @map("utm_campaign") @db.VarChar(150)
-  landingPage        String?   @map("landing_page") @db.VarChar(255)
-  deviceType         String?   @map("device_type") @db.VarChar(20)
-  ipAddress          String?   @map("ip_address") @db.VarChar(45)
-  createdAt          DateTime  @default(now()) @map("created_at")
-  updatedAt          DateTime  @updatedAt @map("updated_at")
+  id                      Int         @id @default(autoincrement())
+  userId                  Int?        @map("user_id")
+  user                    User?       @relation(fields: [userId], references: [id])
+  name                    String?     @db.VarChar(100)
+  mobile                  String      @db.VarChar(15)
+  brandId                 Int?        @map("brand_id")
+  brand                   Brand?      @relation(fields: [brandId], references: [id])
+  modelId                 Int?        @map("model_id")
+  model                   CarModel?   @relation(fields: [modelId], references: [id])
+  variantId               Int?        @map("variant_id")
+  variant                 CarVariant? @relation(fields: [variantId], references: [id])
+  registrationYear        Int?        @map("registration_year")
+  registrationStateId     Int?        @map("registration_state_id")
+  registrationState       State?      @relation(fields: [registrationStateId], references: [id])
+  registrationNumber      String?     @map("registration_number") @db.VarChar(20)
+  cityId                  Int?        @map("city_id")
+  city                    City?       @relation(fields: [cityId], references: [id])
+  insuranceType           String?     @map("insurance_type") @db.VarChar(20)
+  currentInsuranceCompany String?     @map("current_insurance_company") @db.VarChar(150)
+  policyExpiryDate        DateTime?   @map("policy_expiry_date") @db.Date
+  hadClaim                Boolean?    @map("had_claim")
+  status                  String      @default("new") @db.VarChar(20)
+  leadChannel             String?     @map("lead_channel") @db.VarChar(30)
+  utmSource               String?     @map("utm_source") @db.VarChar(100)
+  utmMedium               String?     @map("utm_medium") @db.VarChar(100)
+  utmCampaign             String?     @map("utm_campaign") @db.VarChar(150)
+  landingPage             String?     @map("landing_page") @db.VarChar(255)
+  deviceType              String?     @map("device_type") @db.VarChar(20)
+  ipAddress               String?     @map("ip_address") @db.VarChar(45)
+  createdAt               DateTime    @default(now()) @map("created_at")
+  updatedAt               DateTime    @updatedAt @map("updated_at")
 
   @@index([status, createdAt])
   @@index([mobile])
   @@index([brandId, modelId])
-
   @@map("insurance_leads")
 }
 
@@ -841,15 +914,13 @@ model Lender {
   maxLoanAmount   Decimal? @map("max_loan_amount") @db.Decimal(12, 2)
   maxTenureYears  Int?     @map("max_tenure_years")
 
-  isActive        Boolean  @default(true) @map("is_active")
-  createdAt       DateTime @default(now()) @map("created_at")
+  isActive       Boolean    @default(true) @map("is_active")
+  createdAt      DateTime   @default(now()) @map("created_at")
   updatedAt      DateTime   @updatedAt @map("updated_at")
   createdBy      Int?       @map("created_by")
   createdByAdmin AdminUser? @relation("LenderCreatedBy", fields: [createdBy], references: [id])
   updatedBy      Int?       @map("updated_by")
   updatedByAdmin AdminUser? @relation("LenderUpdatedBy", fields: [updatedBy], references: [id])
-
-
 
   loanLeads LoanLead[]
 
@@ -857,40 +928,38 @@ model Lender {
 }
 
 model LoanLead {
-  id            Int       @id @default(autoincrement())
-  userId        Int?      @map("user_id")
-  user          User?     @relation(fields: [userId], references: [id])
-  name          String?   @db.VarChar(100)
-  mobile        String    @db.VarChar(15)
-  brandId       Int?      @map("brand_id")
-  brand         Brand?    @relation(fields: [brandId], references: [id])
-  modelId       Int?      @map("model_id")
-  model         CarModel? @relation(fields: [modelId], references: [id])
-  variantId     Int?      @map("variant_id")
+  id            Int         @id @default(autoincrement())
+  userId        Int?        @map("user_id")
+  user          User?       @relation(fields: [userId], references: [id])
+  name          String?     @db.VarChar(100)
+  mobile        String      @db.VarChar(15)
+  brandId       Int?        @map("brand_id")
+  brand         Brand?      @relation(fields: [brandId], references: [id])
+  modelId       Int?        @map("model_id")
+  model         CarModel?   @relation(fields: [modelId], references: [id])
+  variantId     Int?        @map("variant_id")
   variant       CarVariant? @relation(fields: [variantId], references: [id])
-  lenderId      Int?      @map("lender_id")
-  lender        Lender?   @relation(fields: [lenderId], references: [id])
-  loanAmount    Decimal?  @map("loan_amount") @db.Decimal(12, 2)
-  tenureYears   Int?      @map("tenure_years")
-  interestRate  Decimal?  @map("interest_rate") @db.Decimal(4, 2)
-  monthlyIncome Decimal?  @map("monthly_income") @db.Decimal(10, 2)
-  status        String    @default("new") @db.VarChar(20)
-  leadChannel   String?   @map("lead_channel") @db.VarChar(30)
-  utmSource     String?   @map("utm_source") @db.VarChar(100)
-  utmMedium     String?   @map("utm_medium") @db.VarChar(100)
-  utmCampaign   String?   @map("utm_campaign") @db.VarChar(150)
-  landingPage   String?   @map("landing_page") @db.VarChar(255)
-  deviceType    String?   @map("device_type") @db.VarChar(20)
-  ipAddress     String?   @map("ip_address") @db.VarChar(45)
-  createdAt     DateTime  @default(now()) @map("created_at")
-  updatedAt     DateTime  @updatedAt @map("updated_at")
+  lenderId      Int?        @map("lender_id")
+  lender        Lender?     @relation(fields: [lenderId], references: [id])
+  loanAmount    Decimal?    @map("loan_amount") @db.Decimal(12, 2)
+  tenureYears   Int?        @map("tenure_years")
+  interestRate  Decimal?    @map("interest_rate") @db.Decimal(4, 2)
+  monthlyIncome Decimal?    @map("monthly_income") @db.Decimal(10, 2)
+  status        String      @default("new") @db.VarChar(20)
+  leadChannel   String?     @map("lead_channel") @db.VarChar(30)
+  utmSource     String?     @map("utm_source") @db.VarChar(100)
+  utmMedium     String?     @map("utm_medium") @db.VarChar(100)
+  utmCampaign   String?     @map("utm_campaign") @db.VarChar(150)
+  landingPage   String?     @map("landing_page") @db.VarChar(255)
+  deviceType    String?     @map("device_type") @db.VarChar(20)
+  ipAddress     String?     @map("ip_address") @db.VarChar(45)
+  createdAt     DateTime    @default(now()) @map("created_at")
+  updatedAt     DateTime    @updatedAt @map("updated_at")
 
-
-  @@map("loan_leads")
   @@index([status, createdAt])
   @@index([mobile])
   @@index([brandId, modelId])
-
+  @@map("loan_leads")
 }
 
 model SoftLead {
@@ -914,6 +983,7 @@ model SoftLead {
   ipAddress      String?   @map("ip_address") @db.VarChar(45)
   createdAt      DateTime  @default(now()) @map("created_at")
   updatedAt      DateTime  @updatedAt @map("updated_at")
+
   @@index([status, createdAt])
   @@index([mobile])
   @@index([brandId, modelId])
@@ -921,33 +991,32 @@ model SoftLead {
 }
 
 model PriceDropAlertLead {
-  id          Int       @id @default(autoincrement())
-  userId      Int?      @map("user_id")
-  user        User?     @relation(fields: [userId], references: [id])
-  mobile      String    @db.VarChar(15)
-  email       String?   @db.VarChar(150)
-  priceAtSubscription Decimal? @map("price_at_subscription") @db.Decimal(12, 2)
-  brandId     Int?      @map("brand_id")
-  brand       Brand?    @relation(fields: [brandId], references: [id])
-  modelId     Int?      @map("model_id")
-  model       CarModel? @relation(fields: [modelId], references: [id])
-  alertType   String?   @map("alert_type") @db.VarChar(20)
-  isActive    Boolean   @default(true) @map("is_active")
-  notifiedAt  DateTime? @map("notified_at")
-  leadChannel String?   @map("lead_channel") @db.VarChar(30)
-  utmSource   String?   @map("utm_source") @db.VarChar(100)
-  utmMedium   String?   @map("utm_medium") @db.VarChar(100)
-  utmCampaign String?   @map("utm_campaign") @db.VarChar(150)
-  landingPage String?   @map("landing_page") @db.VarChar(255)
-  deviceType  String?   @map("device_type") @db.VarChar(20)
-  ipAddress   String?   @map("ip_address") @db.VarChar(45)
-  createdAt   DateTime  @default(now()) @map("created_at")
-  updatedAt   DateTime  @updatedAt @map("updated_at")
+  id                  Int       @id @default(autoincrement())
+  userId              Int?      @map("user_id")
+  user                User?     @relation(fields: [userId], references: [id])
+  mobile              String    @db.VarChar(15)
+  email               String?   @db.VarChar(150)
+  priceAtSubscription Decimal?  @map("price_at_subscription") @db.Decimal(12, 2)
+  brandId             Int?      @map("brand_id")
+  brand               Brand?    @relation(fields: [brandId], references: [id])
+  modelId             Int?      @map("model_id")
+  model               CarModel? @relation(fields: [modelId], references: [id])
+  alertType           String?   @map("alert_type") @db.VarChar(20)
+  isActive            Boolean   @default(true) @map("is_active")
+  notifiedAt          DateTime? @map("notified_at")
+  leadChannel         String?   @map("lead_channel") @db.VarChar(30)
+  utmSource           String?   @map("utm_source") @db.VarChar(100)
+  utmMedium           String?   @map("utm_medium") @db.VarChar(100)
+  utmCampaign         String?   @map("utm_campaign") @db.VarChar(150)
+  landingPage         String?   @map("landing_page") @db.VarChar(255)
+  deviceType          String?   @map("device_type") @db.VarChar(20)
+  ipAddress           String?   @map("ip_address") @db.VarChar(45)
+  createdAt           DateTime  @default(now()) @map("created_at")
+  updatedAt           DateTime  @updatedAt @map("updated_at")
 
   @@index([isActive, createdAt])
   @@index([mobile])
   @@index([brandId, modelId])
-
   @@map("price_drop_alert_leads")
 }
 
@@ -965,27 +1034,27 @@ model Wishlist {
 }
 
 model LaunchNotifyLead {
-  id                                Int       @id @default(autoincrement())
-  userId                            Int?      @map("user_id")
-  user                              User?     @relation(fields: [userId], references: [id])
-  mobile                            String    @db.VarChar(15)
-  email                             String?   @db.VarChar(150)
-  expectedLaunchDateAtSubscription  DateTime? @map("expected_launch_date_at_subscription") @db.Date
-  brandId                           Int?      @map("brand_id")
-  brand                             Brand?    @relation(fields: [brandId], references: [id])
-  modelId                           Int?      @map("model_id")
-  model                             CarModel? @relation(fields: [modelId], references: [id])
-  isActive                          Boolean   @default(true) @map("is_active")
-  notifiedAt                        DateTime? @map("notified_at")
-  leadChannel                       String?   @map("lead_channel") @db.VarChar(30)
-  utmSource                         String?   @map("utm_source") @db.VarChar(100)
-  utmMedium                         String?   @map("utm_medium") @db.VarChar(100)
-  utmCampaign                       String?   @map("utm_campaign") @db.VarChar(150)
-  landingPage                       String?   @map("landing_page") @db.VarChar(255)
-  deviceType                        String?   @map("device_type") @db.VarChar(20)
-  ipAddress                         String?   @map("ip_address") @db.VarChar(45)
-  createdAt                         DateTime  @default(now()) @map("created_at")
-  updatedAt                         DateTime  @updatedAt @map("updated_at")
+  id                               Int       @id @default(autoincrement())
+  userId                           Int?      @map("user_id")
+  user                             User?     @relation(fields: [userId], references: [id])
+  mobile                           String    @db.VarChar(15)
+  email                            String?   @db.VarChar(150)
+  expectedLaunchDateAtSubscription DateTime? @map("expected_launch_date_at_subscription") @db.Date
+  brandId                          Int?      @map("brand_id")
+  brand                            Brand?    @relation(fields: [brandId], references: [id])
+  modelId                          Int?      @map("model_id")
+  model                            CarModel? @relation(fields: [modelId], references: [id])
+  isActive                         Boolean   @default(true) @map("is_active")
+  notifiedAt                       DateTime? @map("notified_at")
+  leadChannel                      String?   @map("lead_channel") @db.VarChar(30)
+  utmSource                        String?   @map("utm_source") @db.VarChar(100)
+  utmMedium                        String?   @map("utm_medium") @db.VarChar(100)
+  utmCampaign                      String?   @map("utm_campaign") @db.VarChar(150)
+  landingPage                      String?   @map("landing_page") @db.VarChar(255)
+  deviceType                       String?   @map("device_type") @db.VarChar(20)
+  ipAddress                        String?   @map("ip_address") @db.VarChar(45)
+  createdAt                        DateTime  @default(now()) @map("created_at")
+  updatedAt                        DateTime  @updatedAt @map("updated_at")
 
   @@index([isActive, createdAt])
   @@index([mobile])
@@ -1002,6 +1071,7 @@ model LeadActivity {
   activityType String?   @map("activity_type") @db.VarChar(20)
   notes        String?   @db.VarChar(500)
   createdAt    DateTime  @default(now()) @map("created_at")
+
   @@index([leadType, leadId])
   @@index([adminId])
   @@map("lead_activities")
@@ -1110,13 +1180,13 @@ model MileageLog {
 // ============================================================
 
 model AdPlacement {
-  id         Int     @id @default(autoincrement())
-  name       String  @db.VarChar(100)
-  slug       String  @unique @db.VarChar(100)
-  pageType   Int    @map("page_type")
-  adType     Int    @map("ad_type")
-  dimensions String @db.VarChar(20)
-  isActive   Boolean @default(true) @map("is_active")
+  id             Int        @id @default(autoincrement())
+  name           String     @db.VarChar(100)
+  slug           String     @unique @db.VarChar(100)
+  pageType       Int        @map("page_type")
+  adType         Int        @map("ad_type")
+  dimensions     String     @db.VarChar(20)
+  isActive       Boolean    @default(true) @map("is_active")
   createdBy      Int?       @map("created_by")
   createdByAdmin AdminUser? @relation("AdPlacementCreatedBy", fields: [createdBy], references: [id])
   updatedBy      Int?       @map("updated_by")
@@ -1125,26 +1195,26 @@ model AdPlacement {
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
-  campaigns AdCampaign[]
+  campaigns   AdCampaign[]
   impressions AdImpression[]
-  clicks      AdClick[]   
+  clicks      AdClick[]
 
   @@map("ad_placements")
 }
 
 model Advertiser {
-  id            Int      @id @default(autoincrement())
-  name          String   @db.VarChar(150)
-  contactName   String  @map("contact_name") @db.VarChar(100)
-  contactMobile String  @map("contact_mobile") @db.VarChar(15)
-  contactEmail  String  @map("contact_email") @db.VarChar(150)
-  isActive      Boolean  @default(true) @map("is_active")
+  id             Int        @id @default(autoincrement())
+  name           String     @db.VarChar(150)
+  contactName    String     @map("contact_name") @db.VarChar(100)
+  contactMobile  String     @map("contact_mobile") @db.VarChar(15)
+  contactEmail   String     @map("contact_email") @db.VarChar(150)
+  isActive       Boolean    @default(true) @map("is_active")
   createdBy      Int?       @map("created_by")
   createdByAdmin AdminUser? @relation("AdvertiserCreatedBy", fields: [createdBy], references: [id])
   updatedBy      Int?       @map("updated_by")
   updatedByAdmin AdminUser? @relation("AdvertiserUpdatedBy", fields: [updatedBy], references: [id])
-  createdAt     DateTime @default(now()) @map("created_at")
-  updatedAt     DateTime @updatedAt @map("updated_at")
+  createdAt      DateTime   @default(now()) @map("created_at")
+  updatedAt      DateTime   @updatedAt @map("updated_at")
 
   campaigns AdCampaign[]
 
@@ -1157,19 +1227,25 @@ model AdCampaign {
   placement        AdPlacement @relation(fields: [placementId], references: [id])
   advertiserId     Int?        @map("advertiser_id")
   advertiser       Advertiser? @relation(fields: [advertiserId], references: [id])
-  name             String     @db.VarChar(150)
-  creativeImageUrl String     @map("creative_image_url") @db.VarChar(255)
-  targetUrl        String     @map("target_url") @db.VarChar(255)
+  name             String      @db.VarChar(150)
+  // "image" for an in-house creative we host and click-track, "script"
+  // for a network tag that renders and tracks itself. The image columns
+  // are nullable because a script campaign has neither.
+  creativeType     String      @default("image") @map("creative_type") @db.VarChar(20)
+  creativeImageUrl String?     @map("creative_image_url") @db.VarChar(255)
+  targetUrl        String?     @map("target_url") @db.VarChar(255)
+  scriptSrc        String?     @map("script_src") @db.VarChar(500)
+  scriptAttrs      Json?       @map("script_attrs")
   priority         Int         @default(0)
   startDate        DateTime?   @map("start_date")
   endDate          DateTime?   @map("end_date")
   status           String      @default("active") @db.VarChar(20)
   createdAt        DateTime    @default(now()) @map("created_at")
-  createdBy      Int?       @map("created_by")
-  createdByAdmin AdminUser? @relation("AdCampaignCreatedBy", fields: [createdBy], references: [id])
-  updatedBy      Int?       @map("updated_by")
-  updatedByAdmin AdminUser? @relation("AdCampaignUpdatedBy", fields: [updatedBy], references: [id])
-  updatedAt      DateTime   @updatedAt @map("updated_at")
+  createdBy        Int?        @map("created_by")
+  createdByAdmin   AdminUser?  @relation("AdCampaignCreatedBy", fields: [createdBy], references: [id])
+  updatedBy        Int?        @map("updated_by")
+  updatedByAdmin   AdminUser?  @relation("AdCampaignUpdatedBy", fields: [updatedBy], references: [id])
+  updatedAt        DateTime    @updatedAt @map("updated_at")
 
   impressions AdImpression[]
   clicks      AdClick[]
@@ -1178,49 +1254,49 @@ model AdCampaign {
 }
 
 model AdImpression {
-  id         BigInt     @id @default(autoincrement())
-  campaignId Int        @map("campaign_id")
-  campaign   AdCampaign @relation(fields: [campaignId], references: [id])
-  userId     Int?       @map("user_id")
-  user       User?      @relation(fields: [userId], references: [id])
-  pageUrl    String?    @map("page_url") @db.VarChar(255)
-  deviceType String?    @map("device_type") @db.VarChar(20)
-  ipAddress  String?    @map("ip_address") @db.VarChar(45)
-  viewedAt   DateTime   @default(now()) @map("viewed_at")
-  sessionId     String?   @map("session_id") @db.VarChar(100)
-  referrerUrl   String?   @map("referrer_url") @db.VarChar(255)
-  userAgent     String?   @map("user_agent") @db.VarChar(255)
-  placementId   Int?      @map("placement_id")
-  placement     AdPlacement? @relation(fields: [placementId], references: [id])
-  clicks        AdClick[]    
+  id          BigInt       @id @default(autoincrement())
+  campaignId  Int          @map("campaign_id")
+  campaign    AdCampaign   @relation(fields: [campaignId], references: [id])
+  userId      Int?         @map("user_id")
+  user        User?        @relation(fields: [userId], references: [id])
+  pageUrl     String?      @map("page_url") @db.VarChar(255)
+  deviceType  String?      @map("device_type") @db.VarChar(20)
+  ipAddress   String?      @map("ip_address") @db.VarChar(45)
+  viewedAt    DateTime     @default(now()) @map("viewed_at")
+  sessionId   String?      @map("session_id") @db.VarChar(100)
+  referrerUrl String?      @map("referrer_url") @db.VarChar(255)
+  userAgent   String?      @map("user_agent") @db.VarChar(255)
+  placementId Int?         @map("placement_id")
+  placement   AdPlacement? @relation(fields: [placementId], references: [id])
+  clicks      AdClick[]
 
-  @@map("ad_impressions")
   @@index([campaignId, viewedAt])
   @@index([sessionId])
+  @@map("ad_impressions")
 }
 
 model AdClick {
-  id         BigInt     @id @default(autoincrement())
-  campaignId Int        @map("campaign_id")
-  campaign   AdCampaign @relation(fields: [campaignId], references: [id])
-  userId     Int?       @map("user_id")
-  user       User?      @relation(fields: [userId], references: [id])
-  pageUrl    String?    @map("page_url") @db.VarChar(255)
-  deviceType String?    @map("device_type") @db.VarChar(20)
-  ipAddress  String?    @map("ip_address") @db.VarChar(45)
-  clickedAt  DateTime   @default(now()) @map("clicked_at")
-  impressionId  BigInt?   @map("impression_id")
-  impression    AdImpression?  @relation(fields: [impressionId], references: [id])
-  placementId   Int?      @map("placement_id")
-  placement     AdPlacement?   @relation(fields: [placementId], references: [id])
-  sessionId     String?   @map("session_id") @db.VarChar(100)
-  referrerUrl   String?   @map("referrer_url") @db.VarChar(255)
-  userAgent     String?   @map("user_agent") @db.VarChar(255)
+  id           BigInt        @id @default(autoincrement())
+  campaignId   Int           @map("campaign_id")
+  campaign     AdCampaign    @relation(fields: [campaignId], references: [id])
+  userId       Int?          @map("user_id")
+  user         User?         @relation(fields: [userId], references: [id])
+  pageUrl      String?       @map("page_url") @db.VarChar(255)
+  deviceType   String?       @map("device_type") @db.VarChar(20)
+  ipAddress    String?       @map("ip_address") @db.VarChar(45)
+  clickedAt    DateTime      @default(now()) @map("clicked_at")
+  impressionId BigInt?       @map("impression_id")
+  impression   AdImpression? @relation(fields: [impressionId], references: [id])
+  placementId  Int?          @map("placement_id")
+  placement    AdPlacement?  @relation(fields: [placementId], references: [id])
+  sessionId    String?       @map("session_id") @db.VarChar(100)
+  referrerUrl  String?       @map("referrer_url") @db.VarChar(255)
+  userAgent    String?       @map("user_agent") @db.VarChar(255)
 
-  @@map("ad_clicks")
   @@index([campaignId, clickedAt])
   @@index([sessionId])
   @@index([impressionId])
+  @@map("ad_clicks")
 }
 
 // ============================================================
@@ -1242,6 +1318,7 @@ model Notification {
 
   @@map("notifications")
 }
+
 model PageViewDailyStat {
   id        Int      @id @default(autoincrement())
   pageUrl   String   @map("page_url") @db.VarChar(255)
@@ -1252,6 +1329,7 @@ model PageViewDailyStat {
   @@index([viewDate])
   @@map("page_view_daily_stats")
 }
+
 model SearchLog {
   id           BigInt   @id @default(autoincrement())
   userId       Int?     @map("user_id")
@@ -1265,9 +1343,9 @@ model SearchLog {
   sessionId    String?  @map("session_id") @db.VarChar(100)
   userAgent    String?  @map("user_agent") @db.VarChar(255)
 
-  @@map("search_logs")
   @@index([createdAt])
   @@index([userId])
+  @@map("search_logs")
 }
 
 // ============================================================
@@ -1275,30 +1353,30 @@ model SearchLog {
 // ============================================================
 
 model SeoMeta {
-  id              Int        @id @default(autoincrement())
-  pageType        Int        @map("page_type")
-  entityId        Int?       @map("entity_id")
-  staticPageSlug  String?    @map("static_page_slug") @db.VarChar(100)
+  id             Int     @id @default(autoincrement())
+  pageType       Int     @map("page_type")
+  entityId       Int?    @map("entity_id")
+  staticPageSlug String? @map("static_page_slug") @db.VarChar(100)
 
-  metaTitle       String?    @map("meta_title") @db.VarChar(255)
-  metaDescription String?    @map("meta_description") @db.Text
-  metaKeywords    String?    @map("meta_keywords") @db.Text
-  canonicalUrl    String?    @map("canonical_url") @db.VarChar(255)
-  h1Tag           String?    @map("h1_tag") @db.VarChar(255)
-  ogTitle         String?    @map("og_title") @db.VarChar(255)
-  ogDescription   String?    @map("og_description") @db.Text
-  ogImage         String?    @map("og_image") @db.VarChar(255)
-  robotsMeta      String?    @map("robots_meta") @db.VarChar(100)
+  metaTitle       String? @map("meta_title") @db.VarChar(255)
+  metaDescription String? @map("meta_description") @db.Text
+  metaKeywords    String? @map("meta_keywords") @db.Text
+  canonicalUrl    String? @map("canonical_url") @db.VarChar(255)
+  h1Tag           String? @map("h1_tag") @db.VarChar(255)
+  ogTitle         String? @map("og_title") @db.VarChar(255)
+  ogDescription   String? @map("og_description") @db.Text
+  ogImage         String? @map("og_image") @db.VarChar(255)
+  robotsMeta      String? @map("robots_meta") @db.VarChar(100)
 
   // ---- structured data / JSON-LD (car listing site ke liye important schemas) ----
-  vehicleSchema    String? @map("vehicle_schema") @db.Text   // specs + price + rating sab isi mein
+  vehicleSchema    String? @map("vehicle_schema") @db.Text // specs + price + rating sab isi mein
   faqSchema        String? @map("faq_schema") @db.Text
   reviewSchema     String? @map("review_schema") @db.Text
   articleSchema    String? @map("article_schema") @db.Text
   authorSchema     String? @map("author_schema") @db.Text
   breadcrumbSchema String? @map("breadcrumb_schema") @db.Text
 
-  status          Boolean    @default(true)
+  status Boolean @default(true)
 
   createdBy      Int?       @map("created_by")
   createdByAdmin AdminUser? @relation("SeoMetaCreatedBy", fields: [createdBy], references: [id])
@@ -1311,7 +1389,6 @@ model SeoMeta {
   @@unique([pageType, entityId])
   @@map("seo_meta")
 }
-
 
 model SeoRedirect {
   id             Int        @id @default(autoincrement())
@@ -1368,10 +1445,10 @@ model UserAddress {
 // ============================================================
 
 model ArticleCategory {
-  id       Int      @id @default(autoincrement())
-  name     String   @db.VarChar(50)
-  slug     String   @unique @db.VarChar(50)
-  isActive Boolean  @default(true) @map("is_active")
+  id       Int     @id @default(autoincrement())
+  name     String  @db.VarChar(50)
+  slug     String  @unique @db.VarChar(50)
+  isActive Boolean @default(true) @map("is_active")
 
   createdBy      Int?       @map("created_by")
   createdByAdmin AdminUser? @relation("ArticleCategoryCreatedBy", fields: [createdBy], references: [id])
@@ -1400,23 +1477,23 @@ model Article {
   updatedBy      Int?       @map("updated_by")
   updatedByAdmin AdminUser? @relation("ArticleUpdatedBy", fields: [updatedBy], references: [id])
 
-  title           String    @db.VarChar(200)
-  slug            String    @unique @db.VarChar(200)
-  excerpt         String?   @db.VarChar(300)
+  title           String  @db.VarChar(200)
+  slug            String  @unique @db.VarChar(200)
+  excerpt         String? @db.VarChar(300)
   body            String?
-  coverImageUrl   String?   @map("cover_image_url") @db.VarChar(255)
-  readTimeMinutes Int?      @map("read_time_minutes")
+  coverImageUrl   String? @map("cover_image_url") @db.VarChar(255)
+  readTimeMinutes Int?    @map("read_time_minutes")
 
   // draft | scheduled | published
-  status      String    @default("draft") @db.VarChar(20)
-  isActive    Boolean   @default(true) @map("is_active")
-  scheduledAt DateTime? @map("scheduled_at")
-  publishedAt DateTime? @map("published_at")
-  viewCount   Int       @default(0) @map("view_count")
-  metaTitle       String? @map("meta_title") @db.VarChar(160)
-  metaDescription String? @map("meta_description") @db.VarChar(300)
-  metaKeywords    String? @map("meta_keywords") @db.VarChar(255)
-  ogImageUrl      String? @map("og_image_url") @db.VarChar(255)
+  status          String    @default("draft") @db.VarChar(20)
+  isActive        Boolean   @default(true) @map("is_active")
+  scheduledAt     DateTime? @map("scheduled_at")
+  publishedAt     DateTime? @map("published_at")
+  viewCount       Int       @default(0) @map("view_count")
+  metaTitle       String?   @map("meta_title") @db.VarChar(160)
+  metaDescription String?   @map("meta_description") @db.VarChar(300)
+  metaKeywords    String?   @map("meta_keywords") @db.VarChar(255)
+  ogImageUrl      String?   @map("og_image_url") @db.VarChar(255)
 
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
@@ -1441,8 +1518,9 @@ model ArticleBrand {
   article   Article @relation(fields: [articleId], references: [id])
   brandId   Int     @map("brand_id")
   brand     Brand   @relation(fields: [brandId], references: [id])
-  @@index([brandId]) 
+
   @@unique([articleId, brandId])
+  @@index([brandId])
   @@map("article_brands")
 }
 
@@ -1454,8 +1532,8 @@ model ArticleCarModel {
   modelId   Int      @map("model_id")
   model     CarModel @relation(fields: [modelId], references: [id])
 
-  @@index([modelId]) 
   @@unique([articleId, modelId])
+  @@index([modelId])
   @@map("article_car_models")
 }
 
@@ -1464,8 +1542,8 @@ model ArticleCarModel {
 // ============================================================
 
 model StoryGroup {
-  id        Int    @id @default(autoincrement())
-  title     String @db.VarChar(100)
+  id    Int    @id @default(autoincrement())
+  title String @db.VarChar(100)
 
   coverMediaType String @map("cover_media_type") @db.VarChar(10)
   coverMediaUrl  String @map("cover_media_url") @db.VarChar(255)
@@ -1474,19 +1552,19 @@ model StoryGroup {
   isActive     Boolean @default(true) @map("is_active")
   displayOrder Int     @map("display_order")
 
-  createdBy Int?       @map("created_by")
+  createdBy      Int?       @map("created_by")
   createdByAdmin AdminUser? @relation("StoryGroupCreatedBy", fields: [createdBy], references: [id])
-  createdAt DateTime   @default(now()) @map("created_at")
-  updatedBy Int?       @map("updated_by")
+  createdAt      DateTime   @default(now()) @map("created_at")
+  updatedBy      Int?       @map("updated_by")
   updatedByAdmin AdminUser? @relation("StoryGroupUpdatedBy", fields: [updatedBy], references: [id])
-  updatedAt DateTime?  @updatedAt @map("updated_at")
+  updatedAt      DateTime?  @updatedAt @map("updated_at")
 
   items        StoryItem[]
   aiStoryItems AiStoryItem[]
+
   @@unique([displayOrder])
   @@map("story_groups")
 }
-
 
 model StoryItem {
   id      Int        @id @default(autoincrement())
@@ -1498,38 +1576,37 @@ model StoryItem {
 
   description String? @db.VarChar(300)
 
-  link        String? @db.VarChar(255)
+  link String? @db.VarChar(255)
 
-  viewCount    Int     @default(0) @map("view_count")
-  status  String    @default("draft") @db.VarChar(10) @map("status")
-  startAt DateTime? @map("start_at")
-  endAt   DateTime? @map("end_at")
-  displayOrder Int     @map("display_order")
+  viewCount    Int       @default(0) @map("view_count")
+  status       String    @default("draft") @map("status") @db.VarChar(10)
+  startAt      DateTime? @map("start_at")
+  endAt        DateTime? @map("end_at")
+  displayOrder Int       @map("display_order")
 
-  createdBy Int?       @map("created_by")
-  createdByAdmin AdminUser? @relation("StoryItemCreatedBy", fields: [createdBy], references: [id])
-  createdAt DateTime   @default(now()) @map("created_at")
-  updatedBy Int?       @map("updated_by")
-  updatedByAdmin AdminUser? @relation("StoryItemUpdatedBy", fields: [updatedBy], references: [id])
-  updatedAt DateTime?  @updatedAt @map("updated_at")
+  createdBy          Int?          @map("created_by")
+  createdByAdmin     AdminUser?    @relation("StoryItemCreatedBy", fields: [createdBy], references: [id])
+  createdAt          DateTime      @default(now()) @map("created_at")
+  updatedBy          Int?          @map("updated_by")
+  updatedByAdmin     AdminUser?    @relation("StoryItemUpdatedBy", fields: [updatedBy], references: [id])
+  updatedAt          DateTime?     @updatedAt @map("updated_at")
   aiStoryItemSources AiStoryItem[]
 
   @@unique([groupId, displayOrder])
   @@map("story_items")
-
 }
 
 model AiSetting {
-  id            Int        @id @default(autoincrement())
-  provider      Int
-  baseUrl       String?    @map("base_url") @db.VarChar(255)
-  apiKey        String?    @map("api_key") @db.Text
-  model         String     @db.VarChar(100)
+  id       Int     @id @default(autoincrement())
+  provider Int
+  baseUrl  String? @map("base_url") @db.VarChar(255)
+  apiKey   String? @map("api_key") @db.Text
+  model    String  @db.VarChar(100)
 
-  createdBy      Int        @map("created_by")
-  createdByAdmin AdminUser  @relation("AiSettingCreatedBy", fields: [createdBy], references: [id])
-  updatedBy      Int        @map("updated_by")
-  updatedByAdmin AdminUser  @relation("AiSettingUpdatedBy", fields: [updatedBy], references: [id])
+  createdBy      Int       @map("created_by")
+  createdByAdmin AdminUser @relation("AiSettingCreatedBy", fields: [createdBy], references: [id])
+  updatedBy      Int       @map("updated_by")
+  updatedByAdmin AdminUser @relation("AiSettingUpdatedBy", fields: [updatedBy], references: [id])
 
   createdAt DateTime  @default(now()) @map("created_at")
   updatedAt DateTime? @updatedAt @map("updated_at")
@@ -1593,13 +1670,13 @@ model AiFaq {
 }
 
 model AiLog {
-  id         BigInt   @id @default(autoincrement())
-  featureKey Int      @map("feature_key")
-  action     String   @db.VarChar(50)
+  id         BigInt @id @default(autoincrement())
+  featureKey Int    @map("feature_key")
+  action     String @db.VarChar(50)
   status     Int
-  message    String   @db.VarChar(500)
+  message    String @db.VarChar(500)
   meta       Json?
-  durationMs Int?     @map("duration_ms")
+  durationMs Int?   @map("duration_ms")
 
   createdAt DateTime @default(now()) @map("created_at")
 
@@ -1608,13 +1685,13 @@ model AiLog {
 }
 
 model AiImagePool {
-  id               Int        @id @default(autoincrement())
-  featureKey       Int        @map("feature_key")
-  imageUrl         String     @map("image_url") @db.VarChar(255)
-  originalFilename String?    @map("original_filename") @db.VarChar(255)
-  isUsed           Boolean    @default(false) @map("is_used")
-  usedForId        Int?       @map("used_for_id")
-  usedAt           DateTime?  @map("used_at")
+  id               Int       @id @default(autoincrement())
+  featureKey       Int       @map("feature_key")
+  imageUrl         String    @map("image_url") @db.VarChar(255)
+  originalFilename String?   @map("original_filename") @db.VarChar(255)
+  isUsed           Boolean   @default(false) @map("is_used")
+  usedForId        Int?      @map("used_for_id")
+  usedAt           DateTime? @map("used_at")
 
   uploadedBy      Int?       @map("uploaded_by")
   uploadedByAdmin AdminUser? @relation("AiImagePoolUploadedBy", fields: [uploadedBy], references: [id])
@@ -1731,23 +1808,23 @@ model AiStoryItem {
 }
 
 model Banner {
-  id             Int       @id @default(autoincrement())
-  name           String    @db.VarChar(150)
-  tagLabel       String    @map("tag_label") @db.VarChar(100)
-  heading        String    @db.VarChar(200)
-  highlightText  String    @map("highlight_text") @db.VarChar(150)
-  description    String    @db.VarChar(300)
+  id            Int    @id @default(autoincrement())
+  name          String @db.VarChar(150)
+  tagLabel      String @map("tag_label") @db.VarChar(100)
+  heading       String @db.VarChar(200)
+  highlightText String @map("highlight_text") @db.VarChar(150)
+  description   String @db.VarChar(300)
 
-  mediaType      Int       @map("media_type") // 1=Image, 2=Video
-  imageUrl       String?   @map("image_url") @db.VarChar(255)
-  videoUrl       String?   @map("video_url") @db.VarChar(255)
+  mediaType Int     @map("media_type") // 1=Image, 2=Video
+  imageUrl  String? @map("image_url") @db.VarChar(255)
+  videoUrl  String? @map("video_url") @db.VarChar(255)
 
-  ctaText        String    @map("cta_text") @db.VarChar(50)
-  ctaLink        String    @map("cta_link") @db.VarChar(255)
+  ctaText String @map("cta_text") @db.VarChar(50)
+  ctaLink String @map("cta_link") @db.VarChar(255)
 
-  displayOrder   Int       @default(0) @map("display_order")
-  isActive       Boolean   @default(true) @map("is_active")
-  clickCount     Int       @default(0) @map("click_count")
+  displayOrder Int     @default(0) @map("display_order")
+  isActive     Boolean @default(true) @map("is_active")
+  clickCount   Int     @default(0) @map("click_count")
 
   createdBy      Int        @map("created_by")
   createdByAdmin AdminUser  @relation("BannerCreatedBy", fields: [createdBy], references: [id])
@@ -1756,12 +1833,13 @@ model Banner {
 
   createdAt DateTime  @default(now()) @map("created_at")
   updatedAt DateTime? @updatedAt @map("updated_at")
+
   @@index([isActive, displayOrder])
   @@map("banners")
 }
 
 model Testimonial {
-  id     Int   @id @default(autoincrement())
+  id Int @id @default(autoincrement())
 
   userId Int?  @map("user_id")
   user   User? @relation(fields: [userId], references: [id])
@@ -1789,29 +1867,28 @@ model Testimonial {
   @@map("testimonials")
 }
 
-
 model SiteSetting {
-  id                Int       @id @default(autoincrement())
+  id Int @id @default(autoincrement())
 
-  maintenanceMode    Boolean   @default(false) @map("maintenance_mode")
-  maintenanceMessage String?   @map("maintenance_message") @db.Text
+  maintenanceMode    Boolean @default(false) @map("maintenance_mode")
+  maintenanceMessage String? @map("maintenance_message") @db.Text
 
-  supportEmail      String?   @map("support_email") @db.VarChar(255)
-  contactEmail      String?   @map("contact_email") @db.VarChar(255)
-  contactNumber     String?   @map("contact_number") @db.VarChar(20)
-  whatsappNumber    String?   @map("whatsapp_number") @db.VarChar(20)
-  address           String?   @db.Text
+  supportEmail   String? @map("support_email") @db.VarChar(255)
+  contactEmail   String? @map("contact_email") @db.VarChar(255)
+  contactNumber  String? @map("contact_number") @db.VarChar(20)
+  whatsappNumber String? @map("whatsapp_number") @db.VarChar(20)
+  address        String? @db.Text
 
-  facebookUrl       String?   @map("facebook_url") @db.VarChar(255)
-  instagramUrl      String?   @map("instagram_url") @db.VarChar(255)
-  twitterUrl        String?   @map("twitter_url") @db.VarChar(255)
-  youtubeUrl        String?   @map("youtube_url") @db.VarChar(255)
-  linkedinUrl       String?   @map("linkedin_url") @db.VarChar(255)
+  facebookUrl  String? @map("facebook_url") @db.VarChar(255)
+  instagramUrl String? @map("instagram_url") @db.VarChar(255)
+  twitterUrl   String? @map("twitter_url") @db.VarChar(255)
+  youtubeUrl   String? @map("youtube_url") @db.VarChar(255)
+  linkedinUrl  String? @map("linkedin_url") @db.VarChar(255)
 
-  createdBy      Int        @map("created_by")
-  createdByAdmin AdminUser  @relation("SiteSettingCreatedBy", fields: [createdBy], references: [id])
-  updatedBy      Int        @map("updated_by")
-  updatedByAdmin AdminUser  @relation("SiteSettingUpdatedBy", fields: [updatedBy], references: [id])
+  createdBy      Int       @map("created_by")
+  createdByAdmin AdminUser @relation("SiteSettingCreatedBy", fields: [createdBy], references: [id])
+  updatedBy      Int       @map("updated_by")
+  updatedByAdmin AdminUser @relation("SiteSettingUpdatedBy", fields: [updatedBy], references: [id])
 
   createdAt DateTime  @default(now()) @map("created_at")
   updatedAt DateTime? @updatedAt @map("updated_at")

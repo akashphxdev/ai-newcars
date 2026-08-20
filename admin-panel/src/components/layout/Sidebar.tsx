@@ -189,6 +189,7 @@ const NAV: NavGroup[] = [
         ),
         children: [
           { label: "All Sell Leads", href: "/leads/sell" },
+          { label: "Scrap Car Leads", href: "/leads/sell/scrap" },
           { label: "Lead Activities", href: "/leads/sell/activities" },
         ],
       },

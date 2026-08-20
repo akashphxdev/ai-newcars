@@ -8,8 +8,12 @@
 
 import { prisma } from '@/prisma/client';
 
-export async function listPublicCityOptions() {
+// sellCarOnly narrows the list to cities where we actually operate a
+// buy/scrap service. Filtered here rather than in the browser so the
+// response carries only the rows the form can use.
+export async function listPublicCityOptions(sellCarOnly = false) {
   return prisma.city.findMany({
+    where: sellCarOnly ? { isSellCarEnabled: true } : undefined,
     select: { id: true, name: true, stateId: true },
     orderBy: { name: 'asc' },
   });

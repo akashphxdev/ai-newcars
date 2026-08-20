@@ -97,6 +97,7 @@ export default function AllStates() {
 
   const columns: DataTableColumn<StateRecord>[] = [
     { header: "Name", render: (s) => <span className="font-semibold text-[#1c1a17]">{s.name}</span> },
+    { header: "Slug", render: (s) => <span className="text-[#7a7670]">{s.slug}</span> },
     { header: "Code", render: (s) => <span className="text-[#7a7670]">{s.code ?? <span className="text-[#c0bab0]">—</span>}</span> },
     { header: "Country", render: (s) => <span className="text-[#7a7670]">{s.country?.name ?? "—"}</span> },
     {

@@ -82,6 +82,19 @@ export const env = {
   // Where /drive/ landing pages live on disk; nginx serves them from here.
   landingPageRoot: process.env.LANDING_PAGE_ROOT || '',
 
+  // Cloudflare Turnstile. The secret half never leaves the server; the
+  // site key is public and lives in the website's own build config.
+  turnstileSecretKey: process.env.TURNSTILE_SECRET_KEY || '',
+
+  // Hosts a third-party ad script may be loaded from. These scripts run
+  // in the main document, so each one has the same reach over the page
+  // as our own code — adding a network belongs in deployment config, not
+  // in a form an admin can fill in. A leading dot covers subdomains.
+  adScriptHosts: (process.env.AD_SCRIPT_HOSTS || '')
+    .split(',')
+    .map((h) => h.trim())
+    .filter(Boolean),
+
   // Origin that serves the files above. Only used to build the
   // convenience `url` field on upload responses — what gets persisted is
   // always the host-relative path, so this hostname stays out of the

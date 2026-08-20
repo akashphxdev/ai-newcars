@@ -5,6 +5,8 @@ import { prisma } from '@/prisma/client';
 import { ApiError } from '@/core/errors/ApiError';
 import { createLog } from '@/core/utils/createLog';
 import { buildPublicPath, deleteUploadedFile } from '@/core/utils/fileStorage.util';
+import { AdScriptError, assertAllowedHost, parseAdScriptSnippet } from '@/core/utils/adScript.util';
+import { env } from '@/config/env';
 import type {
   AdCampaignListQueryParsed,
   CreateAdCampaignParsed,
@@ -20,8 +22,11 @@ const AD_CAMPAIGN_SELECT = {
   advertiserId: true,
   advertiser: { select: { id: true, name: true } },
   name: true,
+  creativeType: true,
   creativeImageUrl: true,
   targetUrl: true,
+  scriptSrc: true,
+  scriptAttrs: true,
   priority: true,
   startDate: true,
   endDate: true,
@@ -33,6 +38,31 @@ const AD_CAMPAIGN_SELECT = {
   updatedByAdmin: { select: { id: true, name: true } },
   updatedAt: true,
 } as const;
+
+// A script campaign stores the pieces of the snippet; an image campaign
+// stores neither. Returning both halves keeps create and update from
+// each re-deriving which columns apply.
+function creativeColumns(input: CreateAdCampaignParsed | UpdateAdCampaignParsed) {
+  if (input.creativeType !== 'script') {
+    return { creativeType: 'image', targetUrl: input.targetUrl ?? null, scriptSrc: null, scriptAttrs: Prisma.DbNull };
+  }
+
+  let parsed;
+  try {
+    parsed = parseAdScriptSnippet(input.scriptSnippet as string);
+    assertAllowedHost(parsed.src, env.adScriptHosts);
+  } catch (err) {
+    if (err instanceof AdScriptError) throw ApiError.badRequest(err.message);
+    throw err;
+  }
+
+  return {
+    creativeType: 'script',
+    targetUrl: null,
+    scriptSrc: parsed.src,
+    scriptAttrs: parsed.attrs as Prisma.InputJsonValue,
+  };
+}
 
 async function assertPlacementExists(placementId: number) {
   const placement = await prisma.adPlacement.findUnique({ where: { id: placementId }, select: { id: true } });
@@ -122,7 +152,11 @@ export async function createAdCampaign(
   }
   await assertPriorityAvailable(input.placementId, input.priority);
 
-  if (!creativeImageFilename) {
+  const creative = creativeColumns(input);
+
+  // A script campaign has no creative of ours to upload — the network
+  // renders its own.
+  if (creative.creativeType === 'image' && !creativeImageFilename) {
     throw ApiError.badRequest('A creative image is required (expected field name "creativeImage")');
   }
 
@@ -131,8 +165,8 @@ export async function createAdCampaign(
       placementId: input.placementId,
       advertiserId: input.advertiserId ?? null,
       name: input.name,
-      creativeImageUrl: buildPublicPath('ad-campaigns', creativeImageFilename),
-      targetUrl: input.targetUrl,
+      ...creative,
+      creativeImageUrl: creativeImageFilename ? buildPublicPath('ad-campaigns', creativeImageFilename) : null,
       priority: input.priority,
       startDate: input.startDate ?? null,
       endDate: input.endDate ?? null,
@@ -179,7 +213,7 @@ export async function updateAdCampaign(
       placementId: input.placementId,
       advertiserId: input.advertiserId ?? null,
       name: input.name,
-      targetUrl: input.targetUrl,
+      ...creativeColumns(input),
       priority: input.priority,
       startDate: input.startDate ?? null,
       endDate: input.endDate ?? null,
@@ -249,7 +283,9 @@ export async function deleteAdCampaign(id: number, actorId: number, ipAddress?: 
 
   await prisma.adCampaign.delete({ where: { id } });
 
-  await deleteUploadedFile(campaign.creativeImageUrl);
+  if (campaign.creativeImageUrl) {
+    await deleteUploadedFile(campaign.creativeImageUrl);
+  }
 
   await createLog({
     adminId: actorId,

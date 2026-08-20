@@ -1,6 +1,7 @@
 // components/common/AdSlot.tsx
 //
-// A booked placement, filled by the in-house ad server.
+// A booked placement, filled either by the in-house ad server or by a
+// third-party network tag.
 //
 // The slot reserves its height whether or not an ad arrives — an empty
 // slot that collapses would shift the page the day one is sold, and most
@@ -10,6 +11,12 @@
 // when it is fetched: a slot three screens below the fold that nobody
 // scrolled to was never seen, and billing an advertiser for it would be
 // counting the wrong thing.
+//
+// A network tag is injected rather than rendered. React's JSX and
+// dangerouslySetInnerHTML both refuse to execute <script>, so the element
+// has to be built by hand — and because that script then runs with the
+// same reach over the page as our own code, it is not injected until the
+// slot is nearly in view. Nothing is fetched for a slot nobody reaches.
 
 "use client";
 
@@ -40,6 +47,7 @@ export default function AdSlot({
   const [ad, setAd] = useState<ServedAd | null>(null);
   const impressionId = useRef<number | null>(null);
   const seen = useRef(false);
+  const injected = useRef(false);
   const box = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -73,12 +81,56 @@ export default function AdSlot({
     return () => observer.disconnect();
   }, [ad]);
 
+  // Injected a screen early, so the network has time to fill before the
+  // reader arrives — a tag that starts loading at the moment the slot
+  // becomes visible shows an empty box for as long as it takes.
+  useEffect(() => {
+    const scriptSrc = ad?.scriptSrc;
+    if (ad?.creativeType !== "script" || !scriptSrc || !box.current || injected.current) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        for (const entry of entries) {
+          if (!entry.isIntersecting || injected.current) continue;
+          injected.current = true;
+          observer.disconnect();
+
+          const script = document.createElement("script");
+          for (const [name, value] of Object.entries(ad.scriptAttrs ?? {})) {
+            // The server strips these already; not trusting that twice
+            // costs one comparison.
+            if (!/^on/i.test(name)) script.setAttribute(name, value);
+          }
+          script.src = scriptSrc;
+          script.async = true;
+          box.current?.appendChild(script);
+        }
+      },
+      { rootMargin: "300px" },
+    );
+    observer.observe(box.current);
+    return () => observer.disconnect();
+  }, [ad]);
+
   const [width, height] = ad ? sizeOf(ad.dimensions) : [300, 250];
   const src = getUploadUrl(ad?.imageUrl);
+
+  // The network writes its own creative into this box, so there is
+  // nothing of ours to render inside it — only the reserved space and the
+  // label that has to appear whether or not the tag fills.
+  if (ad?.creativeType === "script") {
+    return (
+      <div ref={box} data-ad-slot={id} data-ad-campaign={ad.campaignId} className={className}>
+        <div style={{ minHeight: height }} />
+        <p className="mt-1 text-center text-[10px] uppercase tracking-[0.12em] text-subtle">Advertisement</p>
+      </div>
+    );
+  }
 
   if (!ad || !src) {
     return (
       <div
+        ref={box}
         data-ad-slot={id}
         className={`flex min-h-[250px] items-center justify-center rounded-xl border border-dashed border-border bg-page ${className}`}
       >

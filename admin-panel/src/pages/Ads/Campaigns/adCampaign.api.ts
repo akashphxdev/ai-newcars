@@ -7,6 +7,10 @@ import { api } from "../../../store/baseApi";
 
 export type CampaignStatus = "active" | "paused" | "expired";
 
+// "image" is a creative we host and click-track. "script" is a network
+// tag that renders and tracks itself.
+export type CreativeType = "image" | "script";
+
 export interface AdCampaignRecord {
   id: number;
   placementId: number;
@@ -14,8 +18,13 @@ export interface AdCampaignRecord {
   advertiserId: number | null;
   advertiser: { id: number; name: string } | null;
   name: string;
-  creativeImageUrl: string;
-  targetUrl: string;
+  creativeType: CreativeType;
+  // Both null on a script campaign, which has no creative of ours and no
+  // click of ours to send anywhere.
+  creativeImageUrl: string | null;
+  targetUrl: string | null;
+  scriptSrc: string | null;
+  scriptAttrs: Record<string, string> | null;
   priority: number;
   startDate: string | null;
   endDate: string | null;
@@ -54,7 +63,12 @@ export interface AdCampaignFormInput {
   placementId: number;
   advertiserId?: number;
   name: string;
-  targetUrl: string;
+  creativeType: CreativeType;
+  // targetUrl for an image campaign, scriptSnippet for a script one. The
+  // server parses the snippet — what gets stored is the src and the
+  // attributes, never the markup.
+  targetUrl?: string;
+  scriptSnippet?: string;
   priority: number;
   startDate?: string | null;
   endDate?: string | null;
@@ -62,7 +76,9 @@ export interface AdCampaignFormInput {
 }
 
 export interface CreateAdCampaignInput extends AdCampaignFormInput {
-  creativeImage: File;
+  // Required for an image campaign; a script campaign has no creative of
+  // ours to upload.
+  creativeImage?: File;
 }
 
 export interface UpdateAdCampaignInput extends AdCampaignFormInput {
@@ -92,7 +108,12 @@ function buildFormData(input: CreateAdCampaignInput | UpdateAdCampaignInput): Fo
   formData.append("placementId", String(input.placementId));
   if (input.advertiserId) formData.append("advertiserId", String(input.advertiserId));
   formData.append("name", input.name);
-  formData.append("targetUrl", input.targetUrl);
+  formData.append("creativeType", input.creativeType);
+  if (input.creativeType === "script") {
+    formData.append("scriptSnippet", input.scriptSnippet ?? "");
+  } else {
+    formData.append("targetUrl", input.targetUrl ?? "");
+  }
   formData.append("priority", String(input.priority));
   if (input.startDate) formData.append("startDate", input.startDate);
   if (input.endDate) formData.append("endDate", input.endDate);

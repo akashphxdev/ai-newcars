@@ -16,8 +16,11 @@ type AdCampaign struct {
 	PlacementID      int32      `json:"placement_id"`
 	AdvertiserID     *int32     `json:"advertiser_id"`
 	Name             string     `json:"name"`
-	CreativeImageUrl string     `json:"creative_image_url"`
-	TargetUrl        string     `json:"target_url"`
+	CreativeType     string     `json:"creative_type"`
+	CreativeImageUrl *string    `json:"creative_image_url"`
+	TargetUrl        *string    `json:"target_url"`
+	ScriptSrc        *string    `json:"script_src"`
+	ScriptAttrs      []byte     `json:"script_attrs"`
 	StartDate        *time.Time `json:"start_date"`
 	EndDate          *time.Time `json:"end_date"`
 	Status           string     `json:"status"`
