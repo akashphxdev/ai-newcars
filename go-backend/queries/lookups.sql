@@ -54,6 +54,15 @@ SELECT id, name, state_id
 FROM cities
 ORDER BY name ASC;
 
+-- Cities where we actually run a buy/scrap service. Filtered in SQL so
+-- the response carries only rows the form can offer, rather than making
+-- the browser discard 788 of 799.
+-- name: ListSellCarCityOptions :many
+SELECT id, name, state_id
+FROM cities
+WHERE is_sell_car_enabled = true
+ORDER BY name ASC;
+
 -- name: ListLenderOptions :many
 SELECT id, name, logo_url, min_interest_rate, max_interest_rate,
        max_loan_amount, max_tenure_years

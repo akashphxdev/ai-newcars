@@ -216,15 +216,31 @@ func (h *Handler) StateOptions(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) CityOptions(w http.ResponseWriter, r *http.Request) {
-	rows, err := h.Q.ListCityOptions(r.Context())
-	if err != nil {
-		httpx.Fail(w, r, err)
-		return
+	// ?sellCarOnly=true narrows the list to cities where we actually buy
+	// or scrap. Two separate queries rather than one with a flag, because
+	// sqlc generates a distinct row type per query anyway.
+	out := make([]map[string]any, 0)
+
+	if r.URL.Query().Get("sellCarOnly") == "true" {
+		rows, err := h.Q.ListSellCarCityOptions(r.Context())
+		if err != nil {
+			httpx.Fail(w, r, err)
+			return
+		}
+		for _, c := range rows {
+			out = append(out, map[string]any{"id": c.ID, "name": c.Name, "stateId": c.StateID})
+		}
+	} else {
+		rows, err := h.Q.ListCityOptions(r.Context())
+		if err != nil {
+			httpx.Fail(w, r, err)
+			return
+		}
+		for _, c := range rows {
+			out = append(out, map[string]any{"id": c.ID, "name": c.Name, "stateId": c.StateID})
+		}
 	}
-	out := make([]map[string]any, 0, len(rows))
-	for _, c := range rows {
-		out = append(out, map[string]any{"id": c.ID, "name": c.Name, "stateId": c.StateID})
-	}
+
 	httpx.Success(w, out, "City options fetched successfully")
 }
 

@@ -426,6 +426,42 @@ func (q *Queries) ListLenderOptions(ctx context.Context) ([]ListLenderOptionsRow
 	return items, nil
 }
 
+const listSellCarCityOptions = `-- name: ListSellCarCityOptions :many
+SELECT id, name, state_id
+FROM cities
+WHERE is_sell_car_enabled = true
+ORDER BY name ASC
+`
+
+type ListSellCarCityOptionsRow struct {
+	ID      int32  `json:"id"`
+	Name    string `json:"name"`
+	StateID int32  `json:"state_id"`
+}
+
+// Cities where we actually run a buy/scrap service. Filtered in SQL so
+// the response carries only rows the form can offer, rather than making
+// the browser discard 788 of 799.
+func (q *Queries) ListSellCarCityOptions(ctx context.Context) ([]ListSellCarCityOptionsRow, error) {
+	rows, err := q.db.Query(ctx, listSellCarCityOptions)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []ListSellCarCityOptionsRow{}
+	for rows.Next() {
+		var i ListSellCarCityOptionsRow
+		if err := rows.Scan(&i.ID, &i.Name, &i.StateID); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const listStateOptions = `-- name: ListStateOptions :many
 SELECT id, name
 FROM states
