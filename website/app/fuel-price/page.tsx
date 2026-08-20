@@ -3,13 +3,13 @@ import PageSidebar from "@/components/common/PageSidebar";
 import Image from "next/image";
 import Link from "next/link";
 import JsonLd from "@/components/common/JsonLd";
-import { BellIcon, PinIcon, ShieldIcon } from "@/components/common/icons";
+import { ShieldIcon } from "@/components/common/icons";
 import FuelCitySearch from "@/components/fuel/FuelCitySearch";
 import FuelFaq from "@/components/fuel/FuelFaq";
 import FuelPopularCities from "@/components/fuel/FuelPopularCities";
 import FuelStateCityPicker from "@/components/fuel/FuelStateCityPicker";
 import FuelStateDirectory from "@/components/fuel/FuelStateDirectory";
-import FuelSummaryCard from "@/components/fuel/FuelSummaryCard";
+import FuelTodayInCity from "@/components/fuel/FuelTodayInCity";
 import MetroFuelComparison from "@/components/fuel/MetroFuelComparison";
 import {
   getFuelHistory,
@@ -18,7 +18,6 @@ import {
   getMetroFuelPrices,
   getPopularCityFuelPrices,
 } from "@/features/fuel/fuel.api";
-import type { FuelName } from "@/features/fuel/fuel.types";
 import { formatFuelDate } from "@/lib/fuel";
 import { routes } from "@/lib/routes";
 import { breadcrumbJsonLd } from "@/lib/seo";
@@ -74,93 +73,63 @@ export default async function FuelPricePage() {
         />
         <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(90deg,#fbfaf8_0%,rgba(251,250,248,0.97)_30%,rgba(251,250,248,0.74)_56%,rgba(251,250,248,0.16)_100%)]" />
         <div className="pointer-events-none absolute inset-0 opacity-[0.18] [background-image:linear-gradient(#cfd3da_1px,transparent_1px),linear-gradient(90deg,#cfd3da_1px,transparent_1px)] [background-size:48px_48px]" />
-        <div className="relative mx-auto max-w-7xl px-4 pb-12 pt-8 sm:pb-14 sm:pt-10 lg:min-h-[520px]">
+        <div className="relative mx-auto max-w-7xl px-4 pb-8 pt-5 sm:pb-10 sm:pt-6">
           <nav aria-label="Breadcrumb" className="flex items-center gap-2 text-[11px] text-muted">
             <Link href={routes.home()} className="text-muted no-underline hover:text-brand">Home</Link>
             <span aria-hidden>/</span>
             <span className="font-semibold text-ink">Fuel prices</span>
           </nav>
 
-          <div className="mt-9 max-w-[720px]">
+          <div className="mt-4 max-w-[720px]">
             <div className="relative z-10">
               <p className="text-[11px] font-bold uppercase tracking-[0.11em] text-brand">Daily fuel watch</p>
               {/* The date belongs in the heading: it is the difference
                   between a page that looks maintained and one that does
                   not, and it is what the query itself usually asks for. */}
-              <h1 className="mt-3 max-w-3xl text-balance font-head text-[38px] font-extrabold leading-[1.02] text-ink sm:text-[58px] sm:leading-[0.98] lg:text-[68px]">
-                <span className="block sm:inline">Fuel prices</span>{" "}
-                <span className="block sm:inline">in India</span>
-                {asOfLabel && (
-                  <span className="mt-4 block font-body text-[15px] font-semibold leading-6 text-muted sm:text-[18px]">
-                    Live petrol, diesel and CNG rates across {totalCities.toLocaleString("en-IN")} cities. Updated {asOfLabel} at 6:00 AM.
-                  </span>
-                )}
+              <h1 className="mt-1.5 max-w-3xl text-balance font-head text-[30px] font-extrabold leading-[1.05] text-ink sm:text-[40px] sm:leading-[1.02]">
+                Fuel prices in India
               </h1>
+              {asOfLabel && (
+                <p className="mt-2 font-body text-[13px] font-semibold leading-5 text-muted sm:text-[14.5px]">
+                  Live petrol, diesel and CNG across {totalCities.toLocaleString("en-IN")} cities in{" "}
+                  {statePrices.length || states.length} regions. Updated {asOfLabel}, 6:00 AM.
+                </p>
+              )}
 
-              <div className="mt-7 grid max-w-[620px] gap-3 sm:grid-cols-[minmax(0,1fr)_auto]">
+              <div className="mt-4 grid max-w-[620px] gap-2.5 sm:grid-cols-[minmax(0,1fr)_auto]">
                 <div id="city-search">
                   <FuelCitySearch />
                 </div>
                 <a
                   href="#state-directory"
-                  className="inline-flex min-h-12 items-center justify-center rounded-[7px] border border-ink bg-surface px-5 text-[13px] font-bold text-ink no-underline transition hover:bg-ink hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
+                  className="inline-flex min-h-11 items-center justify-center rounded-[7px] border border-ink bg-surface px-5 text-[13px] font-bold text-ink no-underline transition hover:bg-ink hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
                 >
                   Browse states
                 </a>
               </div>
-              <div className="mt-3 max-w-[620px]">
+              <div className="mt-2.5 max-w-[620px]">
                 <FuelStateCityPicker states={states} />
               </div>
 
-              <div className="mt-6 grid max-w-[620px] gap-3 sm:grid-cols-3">
-                <div className="border-l-2 border-brand bg-surface/70 py-2 pl-3 shadow-[0_16px_42px_-36px_rgba(17,24,39,0.5)] backdrop-blur">
-                  <p className="text-[10px] font-semibold uppercase tracking-[0.08em] text-muted">Cities</p>
-                  <p className="mt-1 font-head text-[24px] font-extrabold leading-none text-ink tabular-nums">
-                    {totalCities.toLocaleString("en-IN")}
-                  </p>
-                </div>
-                <div className="border-l-2 border-ev bg-surface/70 py-2 pl-3 shadow-[0_16px_42px_-36px_rgba(17,24,39,0.5)] backdrop-blur">
-                  <p className="text-[10px] font-semibold uppercase tracking-[0.08em] text-muted">Regions</p>
-                  <p className="mt-1 font-head text-[24px] font-extrabold leading-none text-ink tabular-nums">
-                    {statePrices.length || states.length}
-                  </p>
-                </div>
-                <div className="border-l-2 border-ink bg-surface/70 py-2 pl-3 shadow-[0_16px_42px_-36px_rgba(17,24,39,0.5)] backdrop-blur">
-                  <p className="text-[10px] font-semibold uppercase tracking-[0.08em] text-muted">Daily reset</p>
-                  <p className="mt-1 font-head text-[24px] font-extrabold leading-none text-ink tabular-nums">6 AM</p>
-                </div>
-              </div>
-
-              <p className="mt-5 flex items-center gap-2 text-[10.5px] font-semibold text-muted">
+              {/* The three stat tiles said what the sentence above already
+                  says, in far more vertical space — the prices are what
+                  the visitor came for, so they win the fold. */}
+              <p className="mt-3 flex items-center gap-1.5 text-[10.5px] font-semibold text-muted">
                 <ShieldIcon className="size-3.5" /> Prices include state taxes and dealer commission.
               </p>
             </div>
           </div>
 
           {featured && (
-            <div className="mt-12 lg:mt-16">
-              <div className="mb-5 flex flex-col gap-3 border-t border-border/80 pt-7 sm:flex-row sm:items-center sm:justify-between">
-                <h2 className="flex items-center gap-2 text-[13px] font-extrabold uppercase tracking-[0.08em] text-ink">
-                  <PinIcon className="size-4 text-brand" /> Today in {featured.cityName}
-                </h2>
-                <div className="flex flex-wrap gap-3">
-                  <a href="#metro-comparison" className="text-[12px] font-bold text-brand no-underline hover:text-brand-hover">Compare with another city</a>
-                  <a href="mailto:support@timesauto.net?subject=Fuel%20price%20alert" className="inline-flex items-center gap-1.5 text-[12px] font-bold text-ink no-underline hover:text-brand">
-                    <BellIcon className="size-3.5" /> Set price alert
-                  </a>
-                </div>
-              </div>
-              <div className="grid gap-5 md:grid-cols-3">
-                {(["petrol", "diesel", "cng"] as FuelName[]).map((fuel) => (
-                  <FuelSummaryCard
-                    key={fuel}
-                    fuel={fuel}
-                    point={featured.prices[fuel]}
-                    citySlug={featured.citySlug}
-                    stateSlug={featured.stateSlug}
-                  />
-                ))}
-              </div>
+            <div className="mt-6 border-t border-border/80 pt-5">
+              <FuelTodayInCity
+                fallback={{
+                  cityName: featured.cityName,
+                  citySlug: featured.citySlug,
+                  stateSlug: featured.stateSlug,
+                  prices: featured.prices,
+                }}
+              />
             </div>
           )}
         </div>
