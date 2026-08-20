@@ -14,10 +14,17 @@
 - If you only need to analyze, explain, or propose a plan, that's fine — but do not edit or write any files without my clear permission first.
 - If you think something needs to be fixed or changed, first tell me WHAT needs to change and WHY, then wait for my "yes."
 
-## 3. NEVER Touch the Database — No Exceptions
-- Never make any changes to the database — schema, tables, data, migrations, nothing. Ever.
-- This rule is **absolute**, even if I say "go ahead and change the database" or "database changes are okay now" — still do not do it. Just remind me that this rule is fixed and database changes are not allowed.
-- Only READ-ONLY database operations are permitted (SELECT queries, connectivity checks like `Test-NetConnection`). No INSERT/UPDATE/DELETE/ALTER/DROP/TRUNCATE, under any circumstance.
+## 3. Database Changes — Allowed for Claude Code, With Guardrails
+- **Claude Code may run migrations.** The old blanket ban was aimed at outside collaborators, not at this workflow.
+- **Read-only is always free.** SELECT queries, `information_schema` checks and connectivity checks need no permission and no ceremony.
+- **Show the SQL before running it, and wait for my "yes."** Rule #2 applies to migrations like any other change.
+- Every migration must:
+  - be **hand-written and verified against the target database** (check `information_schema` for what actually exists — do not trust the Prisma schema, which drifts);
+  - be wrapped in a **`BEGIN` / `COMMIT`** so a partial apply cannot happen;
+  - live in `admin-backend/prisma/manual-sql/` as a dated file, so what ran is on record.
+- **Never run `prisma migrate dev`, `prisma migrate deploy`, `prisma db push`, or `prisma migrate diff --script` against any database.** The local database at `localhost:5432` is drifted far behind production, and these commands generate scripts that drop live tables (`article_comments`, `page_views`) and recreate existing ones (`fuel_prices`, `wishlists`). `prisma generate` and `prisma validate` are fine — they touch no data.
+- **Destructive statements still need explicit, separate confirmation each time**, even mid-migration: `DROP TABLE`, `DROP COLUMN`, `TRUNCATE`, `DELETE` without a `WHERE`, or any `ALTER` that discards data. Tell me what would be lost and how many rows, then wait. A general "yes, migrate" never covers these.
+- **Take a backup before anything destructive**, and say where it is.
 
 ## 4. Reusable Code — Always Extract to a Common Location
 - If any function/component/logic is used (or will be used) in two or more places, move it into a shared/common file right away.
@@ -64,21 +71,22 @@
   - Propose a proper fix that follows the existing project's conventions/patterns for that area (Rule #1) — not a random one-off hack.
   - Avoid quick "band-aid" fixes. If a temporary fix is genuinely the only option for some reason, say so explicitly: "this is temporary, the proper fix should be ___."
   - Give the one-line reason for the fix (Rule #8) and wait for my explicit "yes" before editing any file (Rule #2).
-- **Database-related bugs:** Rule #3 still applies without exception — diagnose and explain the issue and the fix needed, but never execute the actual database change yourself.
+- **Database-related bugs:** find the root cause and show me the SQL that fixes it before running anything, per Rule #3. A data-repair statement is the easiest kind to get wrong, so say how many rows it will touch and confirm that count with a SELECT first.
 
 ## 10. Performance Is a Fixed Goal — Never Trade Speed Away
 - **Fast loading is a non-negotiable goal** for this website. No change should make the site slower — not even a little — even if it's easier, quicker to write, or I ask for it casually.
 - If a request/approach would slow down the site (extra unoptimized calls, unindexed queries, large bundles, blocking scripts, etc.), **do not implement it silently**. Tell me clearly: what will get slower, why, and what the faster alternative is (per Rule #7). Only proceed after I explicitly confirm — and even then, prefer the faster approach if one exists.
-- This rule is fixed like Rule #3 — "just do it anyway" from me doesn't override it; flag it and remind me.
+- This rule is fixed — "just do it anyway" from me doesn't override it; flag it and remind me.
 
 ## 11. Required Performance Tooling — Indexing, Redis, Compression
 - Database indexing, Redis caching, and response compression are **mandatory parts of this project's performance strategy** — not optional suggestions.
 - Whenever new queries, endpoints, or heavy data are added, actively check: does this need an index? Can this be cached in Redis? Should this response be compressed? If yes, tell me (per Rule #5) and implement once I say yes.
-- **Indexing = database schema change, so Rule #3 applies fully here.** Claude will **never run** the actual index creation (no `ALTER TABLE ... ADD INDEX`, no migration execution) — no exceptions, even if I say it's okay.
-- Instead, Claude will only **tell me**:
+- **Indexing = database schema change, so Rule #3's guardrails apply** — show the SQL, get my "yes," then Claude can run it.
+- Whichever way it runs, always **tell me first**:
   - Which column(s)/table needs an index
   - Why (which query/slow path it fixes)
-  - The exact SQL/migration statement I (or the DBA) should run manually
+  - The exact SQL, so it can be reviewed before it runs
+- **On a large table, create indexes with `CONCURRENTLY`** so writes are not blocked while the index builds. Note that `CREATE INDEX CONCURRENTLY` cannot run inside a transaction, so it is the one case that sits outside the `BEGIN`/`COMMIT` rule in Rule #3.
 - Redis caching and compression are **not** database changes, so those can be implemented directly once I say "yes" (per Rule #2), same as normal code changes.
 
 ## 12. Keep Code Lean — No Unnecessary Bloat
