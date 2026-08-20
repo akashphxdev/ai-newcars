@@ -106,7 +106,7 @@ function LoginForm({ onSuccess }: LoginFormProps) {
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              placeholder="admin@timesauto.in"
+              placeholder="admin@timesauto.net"
               autoComplete="email"
               className="flex-1 bg-transparent text-sm font-medium text-[#1c1a17] outline-none placeholder:text-[#c0bab0]"
             />

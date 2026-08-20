@@ -237,7 +237,7 @@ export default function EditAdminModal({
 
           <div className="grid grid-cols-2 gap-3">
             <Field label="Email">
-              <TextField value={email} onChange={setEmail} placeholder="admin@timesauto.in" type="email" error={errors.email} />
+              <TextField value={email} onChange={setEmail} placeholder="admin@timesauto.net" type="email" error={errors.email} />
             </Field>
             <Field label="Mobile">
               <TextField value={mobile} onChange={setMobile} placeholder="9876543210" error={errors.mobile} />

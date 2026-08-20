@@ -262,6 +262,10 @@ The database was restored from a PostgreSQL 18 dump onto this PostgreSQL
 - **The API must be able to write to the asset volume.** Fine on one
   host or a shared mount; separate machines need NFS/EFS or a push step.
   See [asset-cdn.md](./asset-cdn.md).
-- **`timesauto.in` still appears in the UI** — form placeholders in the
-  admin panel and `support@timesauto.in` on the website's maintenance
-  page. The latter is user-visible.
+- **`timesauto.in` is gone from the code** — the admin-panel placeholders
+  and the maintenance page's support address are now `timesauto.net`. The
+  two addresses stored in `site_settings` (which the footer renders on
+  every page) are changed by
+  `prisma/manual-sql/2026-08-20-timesauto-in-to-net.sql`. Mail for
+  `support@` and `contact@timesauto.net` has to exist before that runs, or
+  the site advertises an address nobody reads.

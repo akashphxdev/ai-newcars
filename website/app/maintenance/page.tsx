@@ -63,8 +63,8 @@ export default async function MaintenancePage() {
 
           <p className="text-[13px]" style={{ color: MUTED }}>
             Need urgent help? Email{" "}
-            <a href="mailto:support@timesauto.in" className="font-bold" style={{ color: DARK, borderBottom: `1px solid ${BORDER}` }}>
-              support@timesauto.in
+            <a href="mailto:support@timesauto.net" className="font-bold" style={{ color: DARK, borderBottom: `1px solid ${BORDER}` }}>
+              support@timesauto.net
             </a>
           </p>
         </div>

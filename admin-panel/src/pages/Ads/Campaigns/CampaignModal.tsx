@@ -305,7 +305,7 @@ export default function CampaignModal({
                   type="text"
                   value={targetUrl}
                   onChange={(e) => setTargetUrl(e.target.value)}
-                  placeholder="https://timesauto.in/cars/creta"
+                  placeholder="https://timesauto.net/cars/creta"
                   className={inputClass}
                   style={{ borderColor: errors.targetUrl ? "#f0997b" : "#e2ddd5" }}
                   maxLength={255}

@@ -341,7 +341,7 @@ export default function StoryItemModal({
               type="text"
               value={link}
               onChange={(e) => setLink(e.target.value)}
-              placeholder="e.g. https://timesauto.in/cars/creta"
+              placeholder="e.g. https://timesauto.net/cars/creta"
               maxLength={255}
               className={inputClass}
               style={{
