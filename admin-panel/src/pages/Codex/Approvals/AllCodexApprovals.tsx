@@ -10,12 +10,16 @@ import {
   type CodexProposalRecord,
   type CodexProposalStatus,
   useApproveCodexProposalMutation,
+  useDeleteRejectedCodexProposalMutation,
+  useGetCodexProposalByIdQuery,
   useGetCodexProposalsQuery,
   useRejectCodexProposalMutation,
+  useUpdateCodexProposalMutation,
 } from "./codexApprovals.api";
 
 const ACCENT = "#D4300F";
 const PAGE_SIZE_OPTIONS = [10, 20, 50, 100];
+const SYSTEM_FIELDS = new Set(["id", "runId", "proposalStatus", "reviewedBy", "reviewedAt", "createdAt", "updatedAt"]);
 
 interface AllCodexApprovalsProps {
   entity: CodexEntity;
@@ -51,6 +55,25 @@ function StatusPill({ status }: { status: CodexProposalStatus }) {
   );
 }
 
+function isPresent(value: unknown) {
+  return value !== null && value !== undefined && value !== "";
+}
+
+function getApprovalDependencyWarning(entity: CodexEntity, row: CodexProposalRecord) {
+  if ((entity === "powertrains-ice" || entity === "powertrains-electric") && !isPresent(row.variantId)) {
+    return "Approve the linked variant first.";
+  }
+
+  if (entity === "variant-features") {
+    const missing: string[] = [];
+    if (!isPresent(row.variantId)) missing.push("variant");
+    if (!isPresent(row.featureId)) missing.push("feature");
+    if (missing.length) return `Approve the linked ${missing.join(" and ")} first.`;
+  }
+
+  return "";
+}
+
 function DetailGrid({ data }: { data: CodexProposalRecord }) {
   const entries = Object.entries(data).filter(([, value]) => value !== null && value !== undefined && value !== "");
 
@@ -68,6 +91,171 @@ function DetailGrid({ data }: { data: CodexProposalRecord }) {
   );
 }
 
+function FullProposalDetail({ entity, row }: { entity: CodexEntity; row: CodexProposalRecord }) {
+  const { data, isLoading, error } = useGetCodexProposalByIdQuery({ entity, id: row.id });
+  const fullRow = data ?? row;
+
+  if (isLoading) {
+    return <p className="text-[12px] font-semibold text-[#a39e96]">Loading full row...</p>;
+  }
+
+  if (error) {
+    return <p className="text-[12px] font-semibold text-red-500">Full row could not be loaded.</p>;
+  }
+
+  return (
+    <div className="space-y-3">
+      {fullRow.imageUrl && getUploadUrl(String(fullRow.imageUrl)) && (
+        <img
+          src={getUploadUrl(String(fullRow.imageUrl))!}
+          alt=""
+          className="h-28 w-44 object-cover rounded-lg border border-[#e8e4dc]"
+        />
+      )}
+      <DetailGrid data={fullRow} />
+    </div>
+  );
+}
+
+function stringifyEditValue(value: unknown) {
+  if (value === null || value === undefined) return "";
+  if (typeof value === "object") return JSON.stringify(value, null, 2);
+  return String(value);
+}
+
+function parseEditValue(originalValue: unknown, rawValue: string) {
+  const trimmed = rawValue.trim();
+  if (trimmed === "") return null;
+  if (typeof originalValue === "number") {
+    const numericValue = Number(trimmed);
+    if (!Number.isFinite(numericValue)) throw new Error("number");
+    return numericValue;
+  }
+  if (typeof originalValue === "boolean") {
+    if (trimmed.toLowerCase() === "true") return true;
+    if (trimmed.toLowerCase() === "false") return false;
+    throw new Error("boolean");
+  }
+  if (typeof originalValue === "object" && originalValue !== null) {
+    return JSON.parse(trimmed);
+  }
+  if (originalValue === null || originalValue === undefined) {
+    if (/^-?\d+(\.\d+)?$/.test(trimmed)) return Number(trimmed);
+    if (trimmed.toLowerCase() === "true") return true;
+    if (trimmed.toLowerCase() === "false") return false;
+    if ((trimmed.startsWith("{") && trimmed.endsWith("}")) || (trimmed.startsWith("[") && trimmed.endsWith("]"))) {
+      return JSON.parse(trimmed);
+    }
+  }
+  return rawValue;
+}
+
+function EditProposalDialog({
+  entity,
+  proposal,
+  onClose,
+}: {
+  entity: CodexEntity;
+  proposal: CodexProposalRecord | null;
+  onClose: () => void;
+}) {
+  const open = !!proposal;
+  const { data, isLoading } = useGetCodexProposalByIdQuery(
+    { entity, id: proposal?.id ?? 0 },
+    { skip: !proposal },
+  );
+  const [updateProposal, { isLoading: saving }] = useUpdateCodexProposalMutation();
+  const [values, setValues] = useState<Record<string, string>>({});
+  const [formError, setFormError] = useState("");
+
+  useEffect(() => {
+    if (!data) return;
+    const nextValues: Record<string, string> = {};
+    Object.entries(data).forEach(([key, value]) => {
+      if (!SYSTEM_FIELDS.has(key)) nextValues[key] = stringifyEditValue(value);
+    });
+    setValues(nextValues);
+    setFormError("");
+  }, [data]);
+
+  if (!open) return null;
+
+  const fields = data ? Object.entries(data).filter(([key]) => !SYSTEM_FIELDS.has(key)) : [];
+
+  const handleSave = async () => {
+    if (!proposal || !data) return;
+    setFormError("");
+    try {
+      const payload: Record<string, unknown> = {};
+      for (const [key, originalValue] of fields) {
+        payload[key] = parseEditValue(originalValue, values[key] ?? "");
+      }
+      await updateProposal({ entity, id: proposal.id, data: payload }).unwrap();
+      onClose();
+    } catch (err) {
+      setFormError(err instanceof Error ? `Invalid value. Expected ${err.message}.` : extractApiError(err));
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/40 px-4">
+      <div className="w-full max-w-[820px] max-h-[88vh] overflow-hidden bg-white border border-[#e8e4dc] rounded-2xl shadow-xl">
+        <div className="px-5 py-4 border-b border-[#f0ece6] flex items-start justify-between gap-3">
+          <div>
+            <h2 className="text-[#1c1a17] text-base font-black">Edit proposal</h2>
+            <p className="text-[#7a7670] text-[12px] mt-1">{proposal ? getProposalTitle(proposal) : ""}</p>
+          </div>
+          <button type="button" onClick={onClose} disabled={saving} className="cursor-pointer text-[#7a7670] font-bold">
+            Close
+          </button>
+        </div>
+
+        <div className="p-5 overflow-y-auto max-h-[62vh]">
+          {isLoading && <p className="text-[12px] font-semibold text-[#a39e96]">Loading full row...</p>}
+          {formError && (
+            <div className="mb-3 bg-red-50 border border-red-100 rounded-lg px-3 py-2">
+              <p className="text-red-500 text-xs font-medium">{formError}</p>
+            </div>
+          )}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            {fields.map(([key, originalValue]) => (
+              <label key={key} className="block">
+                <span className="text-[10px] font-bold uppercase text-[#a39e96]">{key}</span>
+                <textarea
+                  value={values[key] ?? ""}
+                  onChange={(event) => setValues((current) => ({ ...current, [key]: event.target.value }))}
+                  rows={typeof originalValue === "object" || String(values[key] ?? "").length > 80 ? 4 : 2}
+                  className="mt-1 w-full resize-y rounded-lg border border-[#e8e4dc] bg-[#fdfcf9] px-3 py-2 text-[12px] font-semibold text-[#1c1a17] outline-none focus:border-[#D4300F]"
+                />
+              </label>
+            ))}
+          </div>
+        </div>
+
+        <div className="px-5 py-4 border-t border-[#f0ece6] flex justify-end gap-2">
+          <button
+            type="button"
+            onClick={onClose}
+            disabled={saving}
+            className="cursor-pointer px-4 py-2 rounded-lg border border-[#e2ddd5] text-sm font-bold text-[#4a4640]"
+          >
+            Cancel
+          </button>
+          <button
+            type="button"
+            onClick={handleSave}
+            disabled={saving || isLoading}
+            className="cursor-pointer px-4 py-2 rounded-lg text-sm font-bold text-white disabled:opacity-50"
+            style={{ background: ACCENT }}
+          >
+            {saving ? "Saving..." : "Save changes"}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function AllCodexApprovals({ entity }: AllCodexApprovalsProps) {
   const [status, setStatus] = useState<CodexProposalStatus>("pending");
   const [page, setPage] = useState(1);
@@ -76,6 +264,8 @@ export default function AllCodexApprovals({ entity }: AllCodexApprovalsProps) {
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [pendingApprove, setPendingApprove] = useState<CodexProposalRecord | null>(null);
   const [pendingReject, setPendingReject] = useState<CodexProposalRecord | null>(null);
+  const [pendingDelete, setPendingDelete] = useState<CodexProposalRecord | null>(null);
+  const [editingProposal, setEditingProposal] = useState<CodexProposalRecord | null>(null);
   const [actionError, setActionError] = useState("");
 
   useEffect(() => {
@@ -108,6 +298,7 @@ export default function AllCodexApprovals({ entity }: AllCodexApprovalsProps) {
 
   const [approveProposal, { isLoading: approving }] = useApproveCodexProposalMutation();
   const [rejectProposal, { isLoading: rejecting }] = useRejectCodexProposalMutation();
+  const [deleteProposal, { isLoading: deleting }] = useDeleteRejectedCodexProposalMutation();
 
   const rows = data?.data ?? [];
   const pagination = data?.pagination;
@@ -140,36 +331,71 @@ export default function AllCodexApprovals({ entity }: AllCodexApprovalsProps) {
       {
         header: "",
         align: "right",
-        render: (row) => (
-          <div className="flex items-center justify-end gap-1.5">
-            <button
-              type="button"
-              onClick={(event) => {
-                event.stopPropagation();
-                setPendingApprove(row);
-              }}
-              className="cursor-pointer text-[10px] font-bold px-2.5 py-1 rounded-lg text-white hover:opacity-90"
-              style={{ background: ACCENT }}
-            >
-              Approve
-            </button>
-            {row.proposalStatus !== "rejected" && (
-              <button
-                type="button"
-                onClick={(event) => {
-                  event.stopPropagation();
-                  setPendingReject(row);
-                }}
-                className="cursor-pointer text-[10px] font-bold px-2.5 py-1 rounded-lg border border-red-100 text-red-500 hover:bg-red-50"
-              >
-                Reject
-              </button>
-            )}
-          </div>
-        ),
+        render: (row) => {
+          const dependencyWarning = getApprovalDependencyWarning(entity, row);
+
+          return (
+            <div className="flex flex-col items-end gap-1.5">
+              {dependencyWarning && (
+                <span className="max-w-[180px] text-right text-[10px] font-semibold text-amber-700">
+                  {dependencyWarning}
+                </span>
+              )}
+              <div className="flex items-center justify-end gap-1.5">
+                <button
+                  type="button"
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    setEditingProposal(row);
+                  }}
+                  className="cursor-pointer text-[10px] font-bold px-2.5 py-1 rounded-lg border border-[#e8e4dc] text-[#4a4640] hover:bg-[#f7f5f1]"
+                >
+                  Edit
+                </button>
+                <button
+                  type="button"
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    if (!dependencyWarning) setPendingApprove(row);
+                  }}
+                  disabled={!!dependencyWarning}
+                  title={dependencyWarning || "Approve proposal"}
+                  className="cursor-pointer text-[10px] font-bold px-2.5 py-1 rounded-lg text-white hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
+                  style={{ background: ACCENT }}
+                >
+                  Approve
+                </button>
+                {row.proposalStatus !== "rejected" && (
+                  <button
+                    type="button"
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      setPendingReject(row);
+                    }}
+                    className="cursor-pointer text-[10px] font-bold px-2.5 py-1 rounded-lg border border-red-100 text-red-500 hover:bg-red-50"
+                  >
+                    Reject
+                  </button>
+                )}
+                {row.proposalStatus === "rejected" && (
+                  <button
+                    type="button"
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      setPendingDelete(row);
+                    }}
+                    className="cursor-pointer text-[10px] font-bold px-2.5 py-1 rounded-lg border border-red-100 text-red-500 hover:bg-red-50"
+                  >
+                    Delete
+                  </button>
+                )}
+              </div>
+            </div>
+          );
+        },
       },
     ],
-    [],
+    [entity],
   );
 
   const handleApprove = async () => {
@@ -189,6 +415,17 @@ export default function AllCodexApprovals({ entity }: AllCodexApprovalsProps) {
     try {
       await rejectProposal({ entity, id: pendingReject.id }).unwrap();
       setPendingReject(null);
+    } catch (err) {
+      setActionError(extractApiError(err));
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!pendingDelete) return;
+    setActionError("");
+    try {
+      await deleteProposal({ entity, id: pendingDelete.id }).unwrap();
+      setPendingDelete(null);
     } catch (err) {
       setActionError(extractApiError(err));
     }
@@ -272,18 +509,7 @@ export default function AllCodexApprovals({ entity }: AllCodexApprovalsProps) {
           loadingMessage="Loading Codex proposals..."
           emptyMessage="No Codex proposals found."
           expandable
-          renderExpanded={(row) => (
-            <div className="space-y-3">
-              {row.imageUrl && getUploadUrl(row.imageUrl) && (
-                <img
-                  src={getUploadUrl(row.imageUrl)!}
-                  alt=""
-                  className="h-28 w-44 object-cover rounded-lg border border-[#e8e4dc]"
-                />
-              )}
-              <DetailGrid data={row} />
-            </div>
-          )}
+          renderExpanded={(row) => <FullProposalDetail entity={entity} row={row} />}
         />
         <Pagination
           pagination={pagination ?? null}
@@ -299,6 +525,9 @@ export default function AllCodexApprovals({ entity }: AllCodexApprovalsProps) {
         title="Approve proposal?"
         itemName={pendingApprove ? getProposalTitle(pendingApprove) : undefined}
         loading={approving}
+        message="This staging row will move into the live table using the existing approval workflow."
+        confirmLabel="Approve"
+        loadingLabel="Approving..."
         onCancel={() => setPendingApprove(null)}
         onConfirm={handleApprove}
       />
@@ -307,9 +536,24 @@ export default function AllCodexApprovals({ entity }: AllCodexApprovalsProps) {
         title="Reject proposal?"
         itemName={pendingReject ? getProposalTitle(pendingReject) : undefined}
         loading={rejecting}
+        message="This staging row will be marked as rejected and will not move into the live table."
+        confirmLabel="Reject"
+        loadingLabel="Rejecting..."
         onCancel={() => setPendingReject(null)}
         onConfirm={handleReject}
       />
+      <ConfirmDialog
+        open={!!pendingDelete}
+        title="Delete rejected proposal?"
+        itemName={pendingDelete ? getProposalTitle(pendingDelete) : undefined}
+        loading={deleting}
+        message="This rejected staging row will be permanently deleted. Live tables will not be touched."
+        confirmLabel="Delete"
+        loadingLabel="Deleting..."
+        onCancel={() => setPendingDelete(null)}
+        onConfirm={handleDelete}
+      />
+      <EditProposalDialog entity={entity} proposal={editingProposal} onClose={() => setEditingProposal(null)} />
     </div>
   );
 }

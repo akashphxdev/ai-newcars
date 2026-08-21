@@ -13,6 +13,8 @@ interface ConfirmDialogProps {
   message?: string;
   loading?: boolean;
   waitSeconds?: number;
+  confirmLabel?: string;
+  loadingLabel?: string;
 }
 
 export default function ConfirmDialog({
@@ -24,6 +26,8 @@ export default function ConfirmDialog({
   message,
   loading = false,
   waitSeconds = WAIT_SECONDS,
+  confirmLabel = "Delete",
+  loadingLabel = "Deleting...",
 }: ConfirmDialogProps) {
   const [secondsLeft, setSecondsLeft] = useState(waitSeconds);
 
@@ -101,12 +105,12 @@ export default function ConfirmDialog({
                 <svg className="animate-spin" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                   <path d="M21 12a9 9 0 1 1-6.219-8.56" />
                 </svg>
-                Deleting...
+                {loadingLabel}
               </>
             ) : secondsLeft > 0 ? (
-              `Delete (${secondsLeft})`
+              `${confirmLabel} (${secondsLeft})`
             ) : (
-              "Delete"
+              confirmLabel
             )}
           </button>
         </div>

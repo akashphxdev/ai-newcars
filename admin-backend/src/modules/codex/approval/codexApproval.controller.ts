@@ -7,6 +7,7 @@ import {
   codexEntityIdParamSchema,
   codexEntityParamSchema,
   codexListQuerySchema,
+  codexProposalUpdateSchema,
   codexRunIdParamSchema,
   codexRunListQuerySchema,
 } from './codexApproval.validation';
@@ -30,10 +31,57 @@ export async function getCodexProposals(req: Request, res: Response) {
   return sendPaginated(res, result.items, result.pagination, 'Codex proposals fetched successfully');
 }
 
+export async function getCodexVariantPriceChanges(req: Request, res: Response) {
+  const query = codexListQuerySchema.parse(req.query);
+  const result = await codexApprovalService.listVariantPriceChanges(query);
+  return sendPaginated(res, result.items, result.pagination, 'Codex variant price changes fetched successfully');
+}
+
+export async function approveCodexVariantPriceChange(req: Request, res: Response) {
+  if (!req.auth) {
+    throw ApiError.unauthorized();
+  }
+
+  const { id } = codexEntityIdParamSchema.pick({ id: true }).parse(req.params);
+  const result = await codexApprovalService.approveVariantPriceChange(id, req.auth.id, getClientIp(req));
+  return sendSuccess(res, result, 'Codex variant price change approved successfully');
+}
+
+export async function rejectCodexVariantPriceChange(req: Request, res: Response) {
+  if (!req.auth) {
+    throw ApiError.unauthorized();
+  }
+
+  const { id } = codexEntityIdParamSchema.pick({ id: true }).parse(req.params);
+  const result = await codexApprovalService.rejectVariantPriceChange(id, req.auth.id, getClientIp(req));
+  return sendSuccess(res, result, 'Codex variant price change rejected successfully');
+}
+
 export async function getCodexProposalById(req: Request, res: Response) {
   const { entity, id } = codexEntityIdParamSchema.parse(req.params);
   const proposal = await codexApprovalService.getProposalById(entity, id);
   return sendSuccess(res, proposal, 'Codex proposal fetched successfully');
+}
+
+export async function updateCodexProposal(req: Request, res: Response) {
+  if (!req.auth) {
+    throw ApiError.unauthorized();
+  }
+
+  const { entity, id } = codexEntityIdParamSchema.parse(req.params);
+  const { data } = codexProposalUpdateSchema.parse(req.body);
+  const proposal = await codexApprovalService.updateProposal(entity, id, data, req.auth.id, getClientIp(req));
+  return sendSuccess(res, proposal, 'Codex proposal updated successfully');
+}
+
+export async function deleteRejectedCodexProposal(req: Request, res: Response) {
+  if (!req.auth) {
+    throw ApiError.unauthorized();
+  }
+
+  const { entity, id } = codexEntityIdParamSchema.parse(req.params);
+  const proposal = await codexApprovalService.deleteRejectedProposal(entity, id, req.auth.id, getClientIp(req));
+  return sendSuccess(res, proposal, 'Rejected Codex proposal deleted successfully');
 }
 
 export async function rejectCodexProposal(req: Request, res: Response) {

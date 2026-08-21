@@ -77,6 +77,7 @@ const NAV: NavGroup[] = [
           { label: "Article Brands", href: "/codex/article-brands" },
           { label: "Article Models", href: "/codex/article-models" },
           { label: "FAQs", href: "/codex/faqs" },
+          { label: "Price Changes", href: "/codex/variant-price-changes" },
         ],
       },
        {

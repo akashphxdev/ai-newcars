@@ -621,6 +621,7 @@ model CodexRun {
   articleBrands       CodexArticleBrand[]
   articleCarModels    CodexArticleCarModel[]
   carFaqs             CodexCarFaq[]
+  variantPriceChanges CodexVariantPriceChange[]
 
   @@index([status, startedAt])
   @@map("codex_runs")
@@ -1087,6 +1088,35 @@ model CodexCarFaq {
   @@index([codexModelId])
   @@index([proposalStatus, createdAt])
   @@map("codex_car_faqs")
+}
+
+model CodexVariantPriceChange {
+  id              Int       @id @default(autoincrement())
+  runId           BigInt?   @map("run_id")
+  run             CodexRun? @relation(fields: [runId], references: [id])
+  variantId       Int       @map("variant_id")
+  oldPrice        Decimal   @map("old_price") @db.Decimal(12, 2)
+  newPrice        Decimal   @map("new_price") @db.Decimal(12, 2)
+  priceDifference Decimal?  @map("price_difference") @db.Decimal(12, 2)
+  currency        String    @default("INR") @db.VarChar(10)
+  priceContext    String?   @map("price_context") @db.VarChar(50)
+  cityId          Int?      @map("city_id")
+  sourceName      String?   @map("source_name") @db.VarChar(100)
+  sourceUrl       String?   @map("source_url") @db.VarChar(500)
+  detectedAt      DateTime  @default(now()) @map("detected_at")
+  confidenceScore Decimal?  @map("confidence_score") @db.Decimal(5, 2)
+  notes           String?   @db.Text
+  proposalStatus  String    @default("pending") @map("proposal_status") @db.VarChar(20)
+  reviewedBy      Int?      @map("reviewed_by")
+  reviewedAt      DateTime? @map("reviewed_at")
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @updatedAt @map("updated_at")
+
+  @@index([variantId])
+  @@index([variantId, proposalStatus])
+  @@index([proposalStatus, createdAt])
+  @@index([detectedAt])
+  @@map("codex_variant_price_changes")
 }
 
 model NewCarOffer {

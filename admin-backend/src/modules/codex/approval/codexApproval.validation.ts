@@ -30,5 +30,9 @@ export const codexRunListQuerySchema = z.object({
   sortOrder: z.enum(['asc', 'desc']).default('desc'),
 });
 
+export const codexProposalUpdateSchema = z.object({
+  data: z.record(z.string(), z.unknown()),
+});
+
 export type CodexListQueryParsed = z.infer<typeof codexListQuerySchema>;
 export type CodexRunListQueryParsed = z.infer<typeof codexRunListQuerySchema>;

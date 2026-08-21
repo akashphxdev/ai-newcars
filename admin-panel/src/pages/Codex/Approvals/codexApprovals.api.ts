@@ -140,8 +140,29 @@ export const codexApprovalsApi = api.injectEndpoints({
       ],
     }),
 
+    updateCodexProposal: builder.mutation<
+      CodexProposalRecord,
+      { entity: CodexEntity; id: number; data: Record<string, unknown> }
+    >({
+      query: ({ entity, id, data }) => ({ url: `/codex/${entity}/${id}`, method: "PATCH", data: { data } }),
+      transformResponse: (res: SingleRawResponse<CodexProposalRecord>) => res.data,
+      invalidatesTags: (_result, _error, { entity, id }) => [
+        { type: "CodexProposal", id: `${entity}-${id}` },
+        CODEX_LIST_TAG,
+      ],
+    }),
+
     rejectCodexProposal: builder.mutation<CodexProposalRecord, { entity: CodexEntity; id: number }>({
       query: ({ entity, id }) => ({ url: `/codex/${entity}/${id}/reject`, method: "PATCH" }),
+      transformResponse: (res: SingleRawResponse<CodexProposalRecord>) => res.data,
+      invalidatesTags: (_result, _error, { entity, id }) => [
+        { type: "CodexProposal", id: `${entity}-${id}` },
+        CODEX_LIST_TAG,
+      ],
+    }),
+
+    deleteRejectedCodexProposal: builder.mutation<CodexProposalRecord, { entity: CodexEntity; id: number }>({
+      query: ({ entity, id }) => ({ url: `/codex/${entity}/${id}`, method: "DELETE" }),
       transformResponse: (res: SingleRawResponse<CodexProposalRecord>) => res.data,
       invalidatesTags: (_result, _error, { entity, id }) => [
         { type: "CodexProposal", id: `${entity}-${id}` },
@@ -168,9 +189,11 @@ export const codexApprovalsApi = api.injectEndpoints({
 
 export const {
   useApproveCodexProposalMutation,
+  useDeleteRejectedCodexProposalMutation,
   useGetCodexProposalByIdQuery,
   useGetCodexProposalsQuery,
   useGetCodexRunEventsQuery,
   useGetCodexRunsQuery,
   useRejectCodexProposalMutation,
+  useUpdateCodexProposalMutation,
 } = codexApprovalsApi;

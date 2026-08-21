@@ -1,5 +1,7 @@
 import { ApiError } from '@/core/errors/ApiError';
 import { createLog } from '@/core/utils/createLog';
+import { deleteUploadedFile } from '@/core/utils/fileStorage.util';
+import { saveRemoteImageToUploads } from '@/core/utils/remoteImageStorage.util';
 import { prisma } from '@/prisma/client';
 import type { CodexEntity } from './codexApproval.types';
 import type { CodexListQueryParsed, CodexRunListQueryParsed } from './codexApproval.validation';
@@ -12,6 +14,45 @@ interface EntityConfig {
   searchFields: string[];
   listSelect: Record<string, true>;
 }
+
+interface VariantPriceChangeRow {
+  id: number;
+  runId: bigint | null;
+  variantId: number;
+  brandName: string;
+  modelName: string;
+  variantName: string;
+  oldPrice: unknown;
+  newPrice: unknown;
+  priceDifference: unknown | null;
+  currency: string;
+  priceContext: string | null;
+  cityId: number | null;
+  sourceName: string | null;
+  sourceUrl: string | null;
+  detectedAt: Date;
+  confidenceScore: unknown | null;
+  notes: string | null;
+  proposalStatus: string;
+  reviewedBy: number | null;
+  reviewedAt: Date | null;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+interface CountRow {
+  total: number;
+}
+
+const SYSTEM_PROPOSAL_FIELDS = new Set([
+  'id',
+  'runId',
+  'proposalStatus',
+  'reviewedBy',
+  'reviewedAt',
+  'createdAt',
+  'updatedAt',
+]);
 
 const ENTITY_CONFIG: Record<CodexEntity, EntityConfig> = {
   brands: {
@@ -221,12 +262,240 @@ export async function listProposals(entity: CodexEntity, query: CodexListQueryPa
   };
 }
 
+export async function listVariantPriceChanges(query: CodexListQueryParsed) {
+  const status = query.status ?? 'pending';
+  const values: unknown[] = [status];
+  const searchParts: string[] = [];
+
+  if (query.search) {
+    values.push(`%${query.search}%`);
+    const param = `$${values.length}`;
+    searchParts.push(
+      `(
+        cv.variant_name ilike ${param}
+        or cm.name ilike ${param}
+        or b.name ilike ${param}
+        or c.source_name ilike ${param}
+        or c.source_url ilike ${param}
+        or c.notes ilike ${param}
+      )`,
+    );
+  }
+  if (query.runId) {
+    values.push(query.runId);
+    searchParts.push(`c.run_id = $${values.length}`);
+  }
+
+  const whereSql = [`c.proposal_status = $1`, ...searchParts].join(' and ');
+  const orderDirection = query.sortOrder === 'asc' ? 'asc' : 'desc';
+  const offset = (query.page - 1) * query.limit;
+  const listValues = [...values, query.limit, offset];
+
+  const items = await prisma.$queryRawUnsafe<VariantPriceChangeRow[]>(
+    `
+      select
+        c.id,
+        c.run_id as "runId",
+        c.variant_id as "variantId",
+        b.name as "brandName",
+        cm.name as "modelName",
+        cv.variant_name as "variantName",
+        c.old_price as "oldPrice",
+        c.new_price as "newPrice",
+        c.price_difference as "priceDifference",
+        c.currency,
+        c.price_context as "priceContext",
+        c.city_id as "cityId",
+        c.source_name as "sourceName",
+        c.source_url as "sourceUrl",
+        c.detected_at as "detectedAt",
+        c.confidence_score as "confidenceScore",
+        c.notes,
+        c.proposal_status as "proposalStatus",
+        c.reviewed_by as "reviewedBy",
+        c.reviewed_at as "reviewedAt",
+        c.created_at as "createdAt",
+        c.updated_at as "updatedAt"
+      from codex_variant_price_changes c
+      join car_variants cv on cv.id = c.variant_id
+      join car_models cm on cm.id = cv.model_id
+      join brands b on b.id = cm.brand_id
+      where ${whereSql}
+      order by c.created_at ${orderDirection}
+      limit $${values.length + 1}
+      offset $${values.length + 2}
+    `,
+    ...listValues,
+  );
+
+  const totalRows = await prisma.$queryRawUnsafe<CountRow[]>(
+    `
+      select count(*)::int as total
+      from codex_variant_price_changes c
+      join car_variants cv on cv.id = c.variant_id
+      join car_models cm on cm.id = cv.model_id
+      join brands b on b.id = cm.brand_id
+      where ${whereSql}
+    `,
+    ...values,
+  );
+  const total = Number(totalRows[0]?.total ?? 0);
+
+  return {
+    items: toJsonSafe(items),
+    pagination: {
+      page: query.page,
+      limit: query.limit,
+      total,
+      totalPages: Math.ceil(total / query.limit) || 1,
+    },
+  };
+}
+
+export async function rejectVariantPriceChange(id: number, actorId: number, ipAddress?: string | null) {
+  const proposal = await prismaDelegate('codexVariantPriceChange').findUnique({ where: { id } });
+  if (!proposal) {
+    throw ApiError.notFound('Codex variant price change proposal not found');
+  }
+  if (proposal.proposalStatus === 'rejected') {
+    return toJsonSafe(proposal);
+  }
+
+  const rejected = await prismaDelegate('codexVariantPriceChange').update({
+    where: { id },
+    data: {
+      proposalStatus: 'rejected',
+      reviewedBy: actorId,
+      reviewedAt: new Date(),
+    },
+  });
+
+  await createLog({
+    adminId: actorId,
+    description: `Rejected Codex variant price change proposal (id ${id})`,
+    ipAddress,
+  });
+
+  return toJsonSafe(rejected);
+}
+
+export async function approveVariantPriceChange(id: number, actorId: number, ipAddress?: string | null) {
+  const result = await prisma.$transaction(async (tx) => {
+    const client = tx as PrismaAny;
+    const proposal = await client.codexVariantPriceChange.findUnique({ where: { id } });
+    if (!proposal) {
+      throw ApiError.notFound('Codex variant price change proposal not found');
+    }
+    if (!['pending', 'rejected'].includes(proposal.proposalStatus)) {
+      throw ApiError.badRequest('Only pending or rejected Codex price changes can be approved');
+    }
+
+    const variant = await client.carVariant.findUnique({
+      where: { id: proposal.variantId },
+      select: { id: true, price: true },
+    });
+    if (!variant) {
+      throw ApiError.notFound('Linked car variant not found');
+    }
+    if (variant.price.toString() !== proposal.oldPrice.toString()) {
+      throw ApiError.conflict('Live variant price has changed since this proposal was created. Recheck price before approving.');
+    }
+
+    const updatedVariant = await client.carVariant.update({
+      where: { id: proposal.variantId },
+      data: { price: proposal.newPrice },
+      select: {
+        id: true,
+        variantName: true,
+        price: true,
+        modelId: true,
+      },
+    });
+
+    await client.codexVariantPriceChange.delete({ where: { id } });
+    return updatedVariant;
+  });
+
+  await createLog({
+    adminId: actorId,
+    description: `Approved Codex variant price change proposal (staging id ${id}, variant id ${result.id})`,
+    ipAddress,
+  });
+
+  return toJsonSafe(result);
+}
+
 export async function getProposalById(entity: CodexEntity, id: number) {
   const proposal = await prismaDelegate(ENTITY_CONFIG[entity].delegate).findUnique({ where: { id } });
   if (!proposal) {
     throw ApiError.notFound(`Codex ${ENTITY_CONFIG[entity].label} proposal not found`);
   }
   return toJsonSafe(proposal);
+}
+
+function buildEditableProposalData(existing: PrismaAny, data: Record<string, unknown>) {
+  const editableData: Record<string, unknown> = {};
+  for (const [key, value] of Object.entries(data)) {
+    if (SYSTEM_PROPOSAL_FIELDS.has(key)) {
+      continue;
+    }
+    if (!(key in existing)) {
+      throw ApiError.badRequest(`Unknown field "${key}"`);
+    }
+    editableData[key] = value;
+  }
+  if (Object.keys(editableData).length === 0) {
+    throw ApiError.badRequest('No editable fields were provided');
+  }
+  return editableData;
+}
+
+export async function updateProposal(
+  entity: CodexEntity,
+  id: number,
+  data: Record<string, unknown>,
+  actorId: number,
+  ipAddress?: string | null,
+) {
+  const delegate = prismaDelegate(ENTITY_CONFIG[entity].delegate);
+  const existing = await delegate.findUnique({ where: { id } });
+  if (!existing) {
+    throw ApiError.notFound(`Codex ${ENTITY_CONFIG[entity].label} proposal not found`);
+  }
+
+  const updated = await delegate.update({
+    where: { id },
+    data: buildEditableProposalData(existing, data),
+  });
+
+  await createLog({
+    adminId: actorId,
+    description: `Updated Codex ${ENTITY_CONFIG[entity].label} proposal (id ${id})`,
+    ipAddress,
+  });
+
+  return toJsonSafe(updated);
+}
+
+export async function deleteRejectedProposal(entity: CodexEntity, id: number, actorId: number, ipAddress?: string | null) {
+  const delegate = prismaDelegate(ENTITY_CONFIG[entity].delegate);
+  const existing = await delegate.findUnique({ where: { id } });
+  if (!existing) {
+    throw ApiError.notFound(`Codex ${ENTITY_CONFIG[entity].label} proposal not found`);
+  }
+  if (existing.proposalStatus !== 'rejected') {
+    throw ApiError.badRequest('Only rejected Codex proposals can be deleted');
+  }
+
+  const deleted = await delegate.delete({ where: { id } });
+
+  await createLog({
+    adminId: actorId,
+    description: `Deleted rejected Codex ${ENTITY_CONFIG[entity].label} proposal (id ${id})`,
+    ipAddress,
+  });
+
+  return toJsonSafe(deleted);
 }
 
 export async function rejectProposal(entity: CodexEntity, id: number, actorId: number, ipAddress?: string | null) {
@@ -251,15 +520,33 @@ export async function rejectProposal(entity: CodexEntity, id: number, actorId: n
 }
 
 export async function approveProposal(entity: CodexEntity, id: number, actorId: number, ipAddress?: string | null) {
-  const result = await prisma.$transaction(async (tx) => approveInTransaction(tx as PrismaAny, entity, id, actorId));
+  let downloadedLogoUrl: string | null = null;
 
-  await createLog({
-    adminId: actorId,
-    description: `Approved Codex ${ENTITY_CONFIG[entity].label} proposal (staging id ${id}, real id ${result.id})`,
-    ipAddress,
-  });
+  if (entity === 'brands') {
+    const row = await getProposalById(entity, id);
+    downloadedLogoUrl = await saveRemoteImageToUploads(row.logoUrl, 'brands', row.slug ?? row.name ?? `brand-${id}`);
+  }
 
-  return toJsonSafe(result);
+  try {
+    const result = await prisma.$transaction(async (tx) => (
+      entity === 'brands'
+        ? approveBrand(tx as PrismaAny, id, downloadedLogoUrl)
+        : approveInTransaction(tx as PrismaAny, entity, id, actorId)
+    ));
+
+    await createLog({
+      adminId: actorId,
+      description: `Approved Codex ${ENTITY_CONFIG[entity].label} proposal (staging id ${id}, real id ${result.id})`,
+      ipAddress,
+    });
+
+    return toJsonSafe(result);
+  } catch (error) {
+    if (downloadedLogoUrl) {
+      await deleteUploadedFile(downloadedLogoUrl);
+    }
+    throw error;
+  }
 }
 
 async function approveInTransaction(tx: PrismaAny, entity: CodexEntity, id: number, actorId: number) {
@@ -310,7 +597,7 @@ async function getStage(tx: PrismaAny, delegate: string, id: number) {
   return row;
 }
 
-async function approveBrand(tx: PrismaAny, id: number) {
+async function approveBrand(tx: PrismaAny, id: number, approvedLogoUrl?: string | null) {
   const row = await getStage(tx, 'codexBrand', id);
   const duplicate = await tx.brand.findUnique({ where: { slug: row.slug }, select: { id: true } });
   if (duplicate) {
@@ -321,7 +608,7 @@ async function approveBrand(tx: PrismaAny, id: number) {
     data: {
       name: row.name,
       slug: row.slug,
-      logoUrl: row.logoUrl,
+      logoUrl: approvedLogoUrl ?? row.logoUrl,
       countryOriginId: row.countryOriginId,
       isActive: row.isActive,
     },

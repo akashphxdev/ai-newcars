@@ -70,6 +70,7 @@ import AllCodexArticles from "./pages/Codex/Articles/AllCodexArticles";
 import AllCodexArticleBrands from "./pages/Codex/ArticleBrands/AllCodexArticleBrands";
 import AllCodexArticleCarModels from "./pages/Codex/ArticleCarModels/AllCodexArticleCarModels";
 import AllCodexCarFaqs from "./pages/Codex/CarFaqs/AllCodexCarFaqs";
+import AllCodexVariantPriceChanges from "./pages/Codex/VariantPriceChanges/AllCodexVariantPriceChanges";
 // ── Auth guard — baad mein real auth logic lagao ──────────────────────────────
 function RequireAuth({ children }: { children: React.ReactNode }) {
   const isLoggedIn = !!localStorage.getItem("admin_token"); // apna auth check yahan
@@ -170,6 +171,7 @@ export default function App() {
           <Route path="/codex/article-brands" element={<AllCodexArticleBrands />} />
           <Route path="/codex/article-models" element={<AllCodexArticleCarModels />} />
           <Route path="/codex/faqs" element={<AllCodexCarFaqs />} />
+          <Route path="/codex/variant-price-changes" element={<AllCodexVariantPriceChanges />} />
            
         </Route>
 

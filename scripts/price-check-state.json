@@ -1,0 +1,7 @@
+{
+  "last_checked_brand_slug": null,
+  "last_checked_model_slug": null,
+  "last_checked_variant_id": null,
+  "last_run_at": null,
+  "notes": "Used by the scheduled price check job to continue variant price scans in batches."
+}

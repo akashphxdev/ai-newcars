@@ -19,6 +19,10 @@ export function buildPublicPath(folder: string, filename: string): string {
   return `/uploads/${folder}/${filename}`;
 }
 
+export function isUploadedPublicPath(publicPath?: string | null): boolean {
+  return !!publicPath && (publicPath.startsWith('/uploads/') || publicPath.startsWith('uploads/'));
+}
+
 // Duplicates an already-uploaded file into a different folder under
 // uploads/ and returns its new public path — used when AI-generated
 // content moves from the shared ai-pool staging folder into the same
