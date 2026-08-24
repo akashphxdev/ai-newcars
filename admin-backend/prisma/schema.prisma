@@ -2034,3 +2034,56 @@ model SiteSetting {
 
   @@map("site_settings")
 }
+
+// ============================================================
+// AGENT MEMORY
+// ============================================================
+
+model AgentConversation {
+  conversationId String   @id @map("conversation_id") @db.VarChar(100)
+  userId         String   @default("local_user") @map("user_id") @db.VarChar(100)
+  title          String   @default("New chat") @db.VarChar(255)
+  kind           String   @default("chat") @db.VarChar(30)
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+
+  messages AgentConversationMessage[]
+
+  @@index([userId, updatedAt])
+  @@map("agent_conversations")
+}
+
+model AgentConversationMessage {
+  messageId      String            @id @map("message_id") @db.VarChar(100)
+  conversationId String            @map("conversation_id") @db.VarChar(100)
+  conversation   AgentConversation @relation(fields: [conversationId], references: [conversationId], onDelete: Cascade)
+  userId         String            @default("local_user") @map("user_id") @db.VarChar(100)
+  role           String            @db.VarChar(20)
+  content        String            @db.Text
+  metadata       Json?
+  createdAt      DateTime          @default(now()) @map("created_at")
+
+  @@index([conversationId, createdAt])
+  @@index([userId, createdAt])
+  @@index([role])
+  @@map("agent_conversation_messages")
+}
+
+model AgentMemory {
+  memoryId    String    @id @map("memory_id") @db.VarChar(100)
+  userId      String    @default("local_user") @map("user_id") @db.VarChar(100)
+  memoryType  String    @map("memory_type") @db.VarChar(50)
+  key         String    @db.VarChar(100)
+  value       Json?
+  content     String    @db.Text
+  importance  Int       @default(5)
+  expiresAt   DateTime? @map("expires_at")
+  metadata    Json?
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+
+  @@index([userId, memoryType, key])
+  @@index([userId, importance])
+  @@index([expiresAt])
+  @@map("agent_memories")
+}
